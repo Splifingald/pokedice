@@ -5,6 +5,7 @@ import {
   foeGoldMultiplier,
   foeLevels,
   isPlayerFoe,
+  matchFoe,
   type AreaFoe,
   autoLevel,
   autoOffersLead,
@@ -217,8 +218,11 @@ import {
   giftRng,
   markMomentDone,
   receiveGift,
+  applyRivalLoss,
   rivalEncounter,
+  rivalLossForgiven,
   rivalsOn,
+  wipeHeals,
   isExtreme,
   lureCfg,
   safariDealable,
@@ -350,7 +354,7 @@ function settleRound(quiet = false): Extract<RunEvent, { kind: 'area_cleared' }>
 
 /** Back to the area screen after an encounter: the round may be complete. */
 function backToArea() {
-  setRun({ phase: 'idle', encounter: null, duel: null })
+  setRun({ phase: 'idle', encounter: null, duel: null, rivalLost: null })
   settleRound()
   // Tracks in the Snow (docs/64 §4.1): back on the glade with Stantler found but not taken, it bolts to another bush.
   boltIfFound()
@@ -382,6 +386,7 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
   const { data, run } = useGame.getState()
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return null
+  const foe = areaVersusHere(save, area, data) ? areaFoeFor(area.id) : null
   return {
     area,
     progress: progressOf(save, area.id),
@@ -405,7 +410,8 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     // Day and night (docs/32): in Johto, only the hour's wild Pokémon come.
     hour: localHour(),
     // Real-player battles (docs/54): the team the server has for this area, if the save meets them here.
-    versusFoe: areaVersusHere(save, area, data) ? areaFoeFor(area.id) : null,
+    // …brought down to the player's level while the level match is on (the user's ask, 2026-11-03).
+    versusFoe: foe && matchFoe(foe, save, area, data),
     // The weather (docs/62 §4): Galar's of the day brings its types out more.
     weather: weatherHere(save, data, area),
   }
@@ -1512,6 +1518,7 @@ function settleBattle(stalemate: boolean) {
     return
   }
   if (out.result === 'lost') {
+    if (loseToRival(withHp)) return
     const lost = inPortalRun(withHp, data, run.areaId) ? portalStateOf(withHp, run.areaId).closed : null
     const dream = inNightmare(withHp, data, run.areaId) ? nightmareStateOf(withHp, run.areaId).round : null
     const race = inTimeRace(withHp, data, run.areaId) ? raceLostOf(withHp, run.areaId) : null
@@ -1585,6 +1592,7 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
     gold += res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
   })
   if (result === 'lost') {
+    if (loseToRival(next)) return
     commitSave(applyWipe(next, run.areaId, data))
     setRun({ phase: 'wipe', trainer: null, events: [], portalLost: null, nightmareLost: null })
     return
@@ -1873,6 +1881,7 @@ export function forfeit() {
     setRun({ phase: 'stalemate', trainer: null, events: [], duel: duelOver(run.encounter.player, false) })
     return
   }
+  if (!run.rebattle && loseToRival(save)) return
   const lost = inPortalRun(save, data, run.areaId) ? portalStateOf(save, run.areaId).closed : null
   const dream = inNightmare(save, data, run.areaId) ? nightmareStateOf(save, run.areaId).round : null
   const race = inTimeRace(save, data, run.areaId) ? raceLostOf(save, run.areaId) : null
@@ -1910,6 +1919,19 @@ function duelOver(foe: AreaFoe, won: boolean | null): NonNullable<RunState['duel
   const outcome = won ? 'won' : 'lost'
   if (run.areaId) noteMeet(foe, run.areaId, outcome)
   return { outcome, foe }
+}
+
+/**
+ * Lost to a rival's set meeting, its switch on (docs/61 §5.4): no wipe. The team healed as a lost round heals it, the
+ * meeting met, and the stalemate's card says so: CONTINUE goes on with the area. False for any other loss.
+ */
+function loseToRival(save: SaveData): boolean {
+  const { run, data } = useGame.getState()
+  const enc = run.encounter
+  if (!run.areaId || enc?.kind !== 'trainer' || !rivalLossForgiven(data, enc.moment)) return false
+  commitSave(applyRivalLoss(save, data, enc.moment))
+  setRun({ phase: 'stalemate', trainer: null, events: [], rivalLost: { name: enc.name, healed: wipeHeals(save, data) } })
+  return true
 }
 
 export function afterStalemate() {

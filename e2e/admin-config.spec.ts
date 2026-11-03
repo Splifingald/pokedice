@@ -74,10 +74,11 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature (39 with the Versus global board, the hidden talents, the legendary intros, real-player
+  // One row per feature (41 with the Versus global board, the hidden talents, the legendary intros, real-player
   // battles, the champion intros, welcome back, the outfits, friendship, 2.9's four side quests and five region
-  // flavours, Friend Battles): its name and its switch, nothing else; energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(39)
+  // flavours, Friend Battles, 2.9.1's rival loss and real-player level match): its name and its switch, nothing else;
+  // energy and the retired switches are gone.
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(41)
   // "On for beta testers" only where the server reads it (docs/65 §3): Friend Battles, not the others.
   const battles = page.getByRole('radiogroup', { name: 'Friend Battles: who has it' })
   await expect(battles.getByRole('radio', { name: 'On for beta testers' })).toBeVisible()

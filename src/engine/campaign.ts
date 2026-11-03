@@ -1,7 +1,7 @@
 // Headless campaign: plays the real run loop — the encounter deck, battles with the greedy AI on both sides, rewards,
 // catches, Centers, wipes and (optionally) upgrade buying — and records what a player would feel, area by area.
 // Powers the admin Simulator (Campaign and Area test tabs, in a Web Worker) and `pnpm balance`.
-import { areaVersusHere, foeGoldMultiplier, foeLevels, type AreaFoe } from './areaVersus'
+import { areaVersusHere, foeGoldMultiplier, foeLevels, matchFoe, type AreaFoe } from './areaVersus'
 import { battleOutcome, createBattle, type BattleKind } from './battle'
 import { uniformLevels, type UpgradeLevels } from './damage'
 import { linearAreas } from './data'
@@ -412,7 +412,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop.
         forceKind: healFirst || teamOf(save).every((p) => p.currentHp <= 0) ? 'center' : null,
         player: playerSideOf(save),
-        versusFoe: opts.realPlayers && areaVersusHere(save, area, data) ? mirrorFoe(save, opts.realPlayers.levelShift ?? 0) : null,
+        versusFoe: opts.realPlayers && areaVersusHere(save, area, data) ? matchFoe(mirrorFoe(save, opts.realPlayers.levelShift ?? 0), save, area, data) : null,
       },
       rng,
     )

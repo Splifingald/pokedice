@@ -808,7 +808,8 @@ function MonRow({ m }: { m: MonRecap }) {
  * The team's XP in one strip (docs/42), a column each, side by side: the sprite, its level, the bar filling, the XP won.
  * A level-up turns its column gold, the level green, the sprite hops and the confetti flies as the bar rolls over; a
  * milestone or an evolution to come is a chip under it. Each column comes as the recap reaches it, in its own place,
- * so nothing reflows. With More details, a row each instead (MonRow): names, figures, Multi XP.
+ * so nothing reflows. With More details, a row each instead (MonRow): names, figures, Multi XP. Between a trainer's
+ * Pokémon, neither: the pick cards carry it (CardXp).
  */
 export function TeamXpStrip({ mons, shown }: { mons: MonRecap[]; shown: number }) {
   return (
@@ -875,6 +876,65 @@ function MonColumn({ m }: { m: MonRecap }) {
   )
 }
 
+/**
+ * Between a trainer's Pokémon the team shows once (the user's call, 2026-11-03: the pick cards and the XP strip under
+ * them were the same three twice): what each one earned goes on its pick card, above INFO — the bar filling, the XP
+ * won, a level-up (green, confetti as it rolls over) and its milestones. Until the recap reaches it, its room is kept
+ * (`live` false: drawn unseen), so the cards never jump.
+ */
+export function CardXp({ m, live }: { m: MonRecap; live: boolean }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const inst = useGame((s) => (s.save ? getInstance(s.save, m.uid) : undefined))
+  const details = useDetails()
+  const [rolls, setRolls] = useState(0)
+  // Nothing to fill until it shows: the fill starts as it comes, as the strip's column does.
+  const fill = useXpFill(inst, live ? m.from : null, () => setRolls((n) => n + 1))
+  const species = data.species[m.dex]
+  if (!species) return null
+  const leveled = m.toLevel != null
+  // Still filling toward its level-up: the celebration waits for the roll (its room kept).
+  const waiting = !!fill && rolls === 0
+  const chips: ReactNode[] = []
+  if (leveled)
+    chips.push(
+      <span
+        key="lv"
+        className="relative inline-flex items-center gap-0.5 bg-hp-green px-1 py-0.5 text-base leading-none text-ink shadow-ring"
+      >
+        <PixelIcon name="up" size={12} />
+        {t('ui.common.level.short', { n: m.toLevel ?? 0 })}
+        {live && !waiting && <Confetti key={rolls} />}
+      </span>,
+    )
+  m.milestones
+    .filter((ms) => ms.effect !== 'EVOLVE')
+    .forEach((ms, i) => chips.push(<MilestoneChip key={`m${i}`} m={ms} type1={species.type1} />))
+  if (m.evolvesTo != null)
+    chips.push(
+      <span key="evo" className="bg-ink px-1 py-0.5 text-sm leading-none text-panel">
+        {t('ui.victory.evolvingInto', { name: data.species[m.evolvesTo]?.name ?? t('ui.common.unknown') })}
+      </span>,
+    )
+  return (
+    <div
+      className={cx('flex flex-col gap-1', !live && 'invisible')}
+      aria-hidden={!live || undefined}
+      role="group"
+      aria-label={`${t('ui.victory.xpGain', { amount: m.xp })}${leveled ? `, ${t('ui.victory.levelUp', { level: m.toLevel ?? 0 })}` : ''}`}
+    >
+      {inst && <XpBar inst={inst} className="w-full" shown={fill} numbers={details} />}
+      <span className="text-center text-base leading-none text-muted">
+        {t('ui.victory.xpGain', { amount: m.xp })}
+        {details && m.shared && <span className="text-sm">{t('ui.victory.multi')}</span>}
+      </span>
+      {chips.length > 0 && (
+        <div className={cx('flex flex-wrap justify-center gap-1', leveled && waiting && 'invisible')}>{chips}</div>
+      )}
+    </div>
+  )
+}
+
 /** How long the autopilot leaves a result card up before closing it (docs/36). */
 const AUTO_CARD_MS = 1600
 
@@ -933,6 +993,10 @@ export function VictoryView() {
   const enc = run.encounter
   const nextMon =
     hasNext && (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer ? enc.team[run.trainer.index + 1] : null
+  // Between a trainer's Pokémon the pick cards carry what each earned (CardXp): the team in one row, not twice. A team
+  // of one has no pick (LeadPicker draws nothing): its XP keeps the strip.
+  const teamSize = useGame((s) => (s.save ? teamOf(s.save).length : 0))
+  const merged = !run.pendingCatchId && hasNext && !!nextMon && teamSize > 1
   // This fight cleared the area and opened the story's way forward (the furthest open area of the region's chain, as
   // Home's CONTINUE offers it): GO TO it is the card's one way on, in CONTINUE's place (docs/15 §6).
   const clearedTo = run.events.flatMap((e) => (e.kind === 'area_cleared' && e.nextAreaId ? [e.nextAreaId] : []))[0]
@@ -1083,8 +1147,9 @@ export function VictoryView() {
       <p className="sr-only" role="status">
         {title}
       </p>
-      {/* Between a trainer's Pokémon, who's next and the pick come first (the rework: the action on top). */}
-      {allShown && !run.pendingCatchId && hasNext && nextMon && (
+      {/* Between a trainer's Pokémon, who's next and the pick come first (the rework: the action on top), from the start
+          when the cards carry the XP. */}
+      {(allShown || merged) && !run.pendingCatchId && hasNext && nextMon && (
         <div ref={follow} className="mb-3 flex scroll-mb-[160px] flex-col gap-2">
           <div className="flex items-center gap-2">
             <motion.div className="shrink-0" initial={reduced ? false : { x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
@@ -1112,12 +1177,20 @@ export function VictoryView() {
             foe={speciesTypes(data, nextMon.dex)}
             go
             fight
+            under={
+              merged
+                ? (p) => {
+                    const i = mons.findIndex((m) => m.uid === p.id)
+                    return i < 0 ? null : <CardXp m={mons[i]!} live={i < shown} />
+                  }
+                : undefined
+            }
           />
         </div>
       )}
       <div ref={list} className="flex flex-col gap-2">
         <AnimatePresence initial={!reduced}>
-          {details ? (
+          {merged ? null : details ? (
             mons.slice(0, shown).map((m) => (
               <motion.div key={m.uid} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
                 <MonRow m={m} />
@@ -1332,10 +1405,36 @@ function DuelLostView({ foe }: { foe: AreaFoe }) {
   )
 }
 
+/**
+ * Lost to a rival's set meeting (docs/61 §5.4): no wipe. The defeat's jingle, the rival moving on, the team healed (or
+ * resting, in Extreme mode), and CONTINUE to the next card of the round.
+ */
+export function RivalLostView({ name, healed }: { name: string; healed: boolean }) {
+  const { t } = useT()
+  useFeelOnce('defeat.jingle')
+  return (
+    <Overlay
+      label={t('ui.rivalLost.title')}
+      footer={
+        <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={afterStalemate}>
+          {t('ui.common.continue')}
+        </AutoButton>
+      }
+    >
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">
+        {t('ui.rivalLost.title')}
+      </h2>
+      <p className="copy mb-3 text-lg">{t(healed ? 'ui.rivalLost.body' : 'ui.rivalLost.bodyRest', { name })}</p>
+    </Overlay>
+  )
+}
+
 export function StalemateView() {
   const { t } = useT()
   const duel = useGame((s) => s.run.duel)
+  const rival = useGame((s) => s.run.rivalLost)
   if (duel) return <DuelLostView foe={duel.foe} />
+  if (rival) return <RivalLostView name={rival.name} healed={rival.healed} />
   return (
     <Overlay
       label={t('ui.stalemate.title')}
