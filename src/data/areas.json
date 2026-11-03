@@ -5610,6 +5610,22 @@
     "unique": true,
     "minQty": 1,
     "maxQty": 1
+   },
+   {
+    "id": "15eb5318-7396-417b-abbd-66b5849fe95e",
+    "itemKey": "metal-coat",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "5de448df-e747-4335-8d28-269202da3502",
+    "itemKey": "metal-coat",
+    "weight": 1,
+    "unique": true,
+    "minQty": 1,
+    "maxQty": 1
    }
   ]
  },
