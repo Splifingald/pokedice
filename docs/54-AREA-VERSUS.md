@@ -185,3 +185,33 @@ Every region together, up to the League (real players at the player's level; wip
 - Unova's League is beyond the simulated player in most runs, card or not (its median of ~600 wipes there), and a few
   Galar and Paldea runs never reach it: read those regions' League columns as noise.
 
+
+## 9. The level match (2026-11-03)
+
+The user's ask: "The real players battles in area are a bit too hard sometimes. Create a system that reduces the
+opponent pokemon levels so it's never more than 1 level above the max player pokemon level of this region." Of the
+options offered (shift every level by the same amount, scale by one ratio, clamp each Pokémon at the cap, match a
+weaker team first on the server), the user picked:
+
+| Question | Answer |
+|---|---|
+| How | **Scale by one ratio**: their best Pokémon lands on the cap, every other level × the same ratio (rounded, Lv 1 at least). 45/42/38/30/22 against a best of 30 → 31/29/26/21/15 |
+| The cap | The player's **best level in the region being played, team and Box together** (a weak team fielded doesn't lower it), **+1** (admin: the margin) |
+| Their upgrades | **The area's dice and combo level** (its `enemyUpgradeLevel`, else game_config's), as the area's trainers fight, not their own, while the match is on |
+| The card | **Just the new levels**: no tag. The ₽ to win follows them (each K.O.'s ₽ is a level's). INFO gains a rule while the match is on |
+
+- `matchFoe(foe, save, area, data)` (engine): the team the card brings, scaled; the same foe with the switch off.
+  `bestOwnedLevel(save)` is the cap's base. The store applies it when it builds the encounter context
+  (`encounterContext`), so the card, the fight, the ₽ and the XP all see the matched team; the server's team is
+  never changed. The simulator (`pnpm area-versus-balance`) runs it too.
+- Its own switch, **Off by default**: Admin › Config › Switches › **Real-player level match** (game_config
+  `areaVersus.levelMatchAccess`; only with Real-player battles open). The margin: Admin › Config › Real-player battles
+  › **Level match margin** (`areaVersus.levelMargin`, 1).
+- INFO's rule "Matched to your level" (`ui.areaVersus.ruleMatch*`), only while the match is on.
+- No migration: the fight is the game's side, the server only hands over the team.
+- Tests: `tests/engine/area-versus.test.ts` › the level match.
+
+### Setting it up
+
+Admin › Config › Switches › **Real-player level match**: **On for admin**, meet a stronger team in an area, then **On
+for everyone**.
