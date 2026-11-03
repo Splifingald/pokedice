@@ -179,8 +179,11 @@ export function rememberedVersus(userId: string | null): MyVersus | null {
   }
 }
 
-/** The board, fetched at most once every `maxAgeMs` (the Versus screen always fetches it fresh). */
-export async function versusBoardCached(maxAgeMs = 10 * 60_000): Promise<VersusEntry[] | null> {
+/**
+ * The board, fetched at most once every `maxAgeMs` (the Versus screen always fetches it fresh). 15 minutes: the server
+ * builds the other players' numbers that often anyway (0136).
+ */
+export async function versusBoardCached(maxAgeMs = 15 * 60_000): Promise<VersusEntry[] | null> {
   if (lastBoard && Date.now() - lastBoard.at < maxAgeMs) return lastBoard.rows
   return fetchVersusBoard()
 }
