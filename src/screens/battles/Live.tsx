@@ -4,8 +4,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import {
-  autoEvents,
-  createRng,
   draftChoices,
   draftOrder,
   draftTurn,
@@ -14,7 +12,6 @@ import {
   pvpLogFor,
   pvpStanding,
   pvpView,
-  randomSeed,
   sameMon,
   versusEdge,
   type BattleEvent,
@@ -582,7 +579,6 @@ export function OrderStep({ match, inline = false }: { match: PvpInfo; inline?: 
 // ---------------------------------------------------------------- the fight
 
 let sliceSeq = 3_000_000
-const autoRng = createRng(randomSeed())
 
 /**
  * The log as the battle screen takes it: your next Pokémon coming out is a free switch (one you switched in, the turn's
@@ -630,7 +626,6 @@ function PvpFight({ match }: { match: PvpInfo }) {
   // The foe's plate counts theirs down by those knocked out before this battle (one switched out still stands).
   const foeIndex = new Set(viewLog.slice(0, start).flatMap((e) => (e.kind === 'faint' && e.side === 'enemy' ? [e.uid] : [])))
     .size
-  const [auto, setAuto] = useState(false)
   const seconds = useSecondsLeft(match.deadline)
   const over = !!engine.winner
 
@@ -651,7 +646,8 @@ function PvpFight({ match }: { match: PvpInfo }) {
       else if (e.t === 'FORFEIT') void sendMove({ k: 'forfeit' })
       // The foe's turn (AI_TURN), the roll: the moves come from the other game, through the server.
     },
-    nextMove: () => (myTurn && !pending ? autoEvents(state, data, autoRng) : []),
+    // No AUTO-MODE between two people (the user's call, 2026-11-03): every move is the player's own.
+    nextMove: () => [],
     trainerName: foe.name,
     trainerSprite: avatarOf(foe.avatar).src,
     foeCount: viewer === 'a' ? engine.b.length : engine.a.length,
@@ -662,7 +658,7 @@ function PvpFight({ match }: { match: PvpInfo }) {
         return () => clearTimeout(id)
       }
     },
-    live: { auto, onAuto: setAuto },
+    live: { auto: false },
     onForfeit: () => void sendMove({ k: 'forfeit' }),
     // Only on the last of their Pokémon: a game catching up on a finished match plays the earlier ones through first.
     end: over && bounds.length <= n ? <PvpResult match={match} /> : undefined,

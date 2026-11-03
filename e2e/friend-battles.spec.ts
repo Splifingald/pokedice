@@ -212,6 +212,9 @@ test('the fight: my ATTACK goes to the server with its number, and its seed play
   await expect(page.getByText('Your turn')).toBeVisible({ timeout: 20_000 })
   const attack = page.getByRole('button', { name: /^attack/i })
   await expect(attack).toBeEnabled({ timeout: 20_000 })
+  // Two people fight it: no AUTO-MODE (the user's call, 2026-11-03), and never the Bag.
+  await expect(page.getByRole('button', { name: /Auto-mode/i })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Bag/ })).toHaveCount(0)
   await shot(page, 'pvp-fight', false)
   await attack.click()
   await expect.poll(() => moves.map((m) => [m.p_seq, m.p_move.k])).toEqual([[1, 'attack']])

@@ -2569,7 +2569,7 @@ Switches' Beta testers list. The switch offers that 4th value only on a feature 
 - **The order** (Draft's, and Classic's "Ready to battle?"): their team (Draft: their three; Classic: three Poké Balls),
   ready or choosing; your three numbered, the lead's number red with a LEAD tag; tap two to swap; READY in the dock.
 - **The fight** is the battle screen (§14) with `versus.live`: your controls on your turn, the other's dice shown as
-  their moves arrive, AUTO-MODE as in the league, no Bag. **Switching** as in every fight (docs/65 §17, 2.9.2): a pip,
+  their moves arrive, **no AUTO-MODE** (each person plays their own turns; 2.9.2), no Bag. **Switching** as in every fight (docs/65 §17, 2.9.2): a pip,
   the send-out's cards ("Switch (costs your turn)"), GO!; the flag in that step gives up the match. Their switch opens
   the next battle on your screen, the one they sent in coming out; the dots on their plate count only K.O.s. A chip at
   the top right says whose turn and the seconds left. The result card:
