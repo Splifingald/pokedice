@@ -10,6 +10,7 @@ import { treatTimeline } from '@/fx/timelines/trick'
 import { TrickRecapBody, TrickScreen, type TrickScreenProps } from '@/screens/area/TrickView'
 import { GiftStage, giftLine } from '@/screens/area/GiftView'
 import { SafariPayButton } from '@/screens/area/AreaIdle'
+import { SafariAskView } from '@/screens/area/SafariAsk'
 import { useGame } from '@/store/game'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -64,6 +65,7 @@ function useLoop(make: () => Omit<TrickOverlay, 'onEnd'>): TrickOverlay {
 function SafariBits() {
   const { t } = useT()
   const [rules, setRules] = useState(false)
+  const [ask, setAsk] = useState<{ price: number; gold: number } | null>(null)
   const foe = spriteKey(CHANSEY, false)
   const band = trickBand(DEFAULT_CONFIG.safari, 'veryRare')
   const baiting = useLoop(() => ({
@@ -137,6 +139,32 @@ function SafariBits() {
         </PixelButton>
         <SafariPayButton price={100} onClick={() => {}} />
       </div>
+      <div className="grid w-full max-w-[360px] grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+        <PixelButton size="lg" className="px-2">
+          {t('ui.nav.home')}
+        </PixelButton>
+        <SafariPayButton price={0} onClick={() => {}} />
+      </div>
+      {/* The round asked before it begins: free, paid, and paid with too few ₽. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <PixelButton size="sm" onClick={() => setAsk({ price: 0, gold: 50 })}>
+          Ask: the free round
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setAsk({ price: 100, gold: 2000 })}>
+          Ask: a paid round
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setAsk({ price: 100, gold: 40 })}>
+          Ask: not enough ₽
+        </PixelButton>
+      </div>
+      <SafariAskView
+        ask={ask && { areaId: 'kitchen', price: ask.price, next: 100 }}
+        gold={ask?.gold ?? 0}
+        areaName="Safari Zone"
+        onGo={() => setAsk(null)}
+        onHome={() => setAsk(null)}
+        onClose={() => setAsk(null)}
+      />
       <PixelButton size="sm" className="self-start" onClick={() => setRules(true)}>
         The Safari's rules
       </PixelButton>

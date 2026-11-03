@@ -31,7 +31,7 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
   const { t } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)
-  const { label, sub, go, explore, off, gym, boss, raid, closed, resting, safariPrice } = useContinue(area)
+  const { label, sub, go, explore, off, gym, boss, raid, closed, resting, safariDue, safariPrice } = useContinue(area)
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
   const locked = useGame((s) => !!portalLock(s.save, s.data))
   const data = useGame((s) => s.data)
@@ -65,7 +65,7 @@ export function AreaIdle({ area, scene = false }: { area: Area; scene?: boolean 
             {t('ui.nav.home')}
           </PixelButton>
         )}
-        {safariPrice > 0 && !off ? (
+        {safariDue && !off ? (
           <SafariPayButton price={safariPrice} onClick={go} />
         ) : (
           <PixelButton variant="primary" size="lg" className="px-2" disabled={off} onClick={go}>
@@ -166,12 +166,13 @@ export function AreaTeam() {
 }
 
 /**
- * CONTINUE when a Safari's paid round waits for this tap (docs/61 §4): its price on the button itself, under the word,
- * as Home's CONTINUE says it (a player's report, 2026-11-03: rounds paid without seeing it).
+ * CONTINUE when a Safari round waits for this tap (docs/61 §4): its price on the button itself, under the word, or
+ * "Free round", as Home's CONTINUE says it (a player's report, 2026-11-03: rounds paid without seeing it). The round's
+ * pop-up asks once more before anything is paid.
  */
 export function SafariPayButton({ price, onClick }: { price: number; onClick: () => void }) {
   const { t } = useT()
-  const sub = t('ui.safari.price', { price })
+  const sub = price > 0 ? t('ui.safari.price', { price }) : t('ui.safari.freeRound')
   return (
     <PixelButton
       variant="primary"

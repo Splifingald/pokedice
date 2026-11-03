@@ -93,14 +93,28 @@ test('a Poké Ball in the Power Plant springs out as Voltorb', async ({ page }) 
   await shot(page, '3-disguise-fight')
 })
 
-test('the Safari: its round on CONTINUE, its card, its rules, Bait and a Safari Ball', async ({ page }) => {
+test('the Safari: its round on CONTINUE, asked first, its card, its rules, Bait and a Safari Ball', async ({ page }) => {
   const save = standingIn('Safari Zone', { safariRounds: 1 }, { gold: 2000 }, 'Fuchsia City')
   await boot(page, save)
   await page.goto('/home')
   await expect(page.getByText('₽100 a round').first()).toBeVisible()
   await shot(page, '4-safari-home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
-  await expect(page.getByRole('button', { name: /Approach it/i })).toBeVisible()
+  // The round is asked first: its price, the player's ₽, HOME beside PAY.
+  await expect(page.getByRole('dialog').getByText('A new round costs ₽100')).toBeVisible()
+  await expect(page.getByRole('dialog').getByText('You have ₽2,000.')).toBeVisible()
+  await page.waitForTimeout(400)
+  await shot(page, '4-safari-ask')
+  await page.getByRole('button', { name: 'Pay ₽100', exact: true }).click()
+  // The round's first card may be a find: picked up until a Safari Pokémon comes.
+  const approach = page.getByRole('button', { name: /Approach it/i })
+  const pickUp = page.getByRole('button', { name: 'PICK IT UP' })
+  for (let i = 0; i < 20 && !(await approach.isVisible()); i++) {
+    if (await pickUp.isVisible()) await pickUp.click()
+    else await page.waitForTimeout(300)
+  }
+  await expect(approach).toBeVisible()
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).gold)).toBe(1900)
   await page.waitForTimeout(600)
   await shot(page, '4-safari-card')
   await page.getByRole('button', { name: /Approach it/i }).click()
@@ -115,7 +129,35 @@ test('the Safari: its round on CONTINUE, its card, its rules, Bait and a Safari 
   await shot(page, '4-safari-bait')
 })
 
-test("the Safari's last card over: HOME on its card, and no round paid by itself", async ({ page }) => {
+test('the Safari entered for the first time: its free round said so, HOME beside it', async ({ page }) => {
+  const save = standingIn('Safari Zone', {}, { gold: 50 }, 'Fuchsia City')
+  await boot(page, save)
+  await page.goto('/home')
+  await expect(page.getByText('Free round').first()).toBeVisible()
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  const ask = page.getByRole('dialog')
+  await expect(ask.getByText('Your first round is free!')).toBeVisible()
+  await expect(ask.getByText('After it, each round here costs ₽100.')).toBeVisible()
+  await page.waitForTimeout(400)
+  await shot(page, '4-safari-ask-free')
+  // HOME: nothing begun, Home.
+  await ask.getByRole('button', { name: 'Home', exact: true }).click()
+  await expect(ask).toHaveCount(0)
+  await expect(page).toHaveURL(/\/home$/)
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  await page.getByRole('button', { name: "Let's go!", exact: true }).click()
+  // The round begun, free (its first card: a Safari Pokémon or a find).
+  await expect(page).toHaveURL(/\/area$/)
+  await expect(page.getByText('Your first round is free!')).toHaveCount(0)
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).areaProgress))
+    .toMatchObject({ [area('Safari Zone').id]: { safariRounds: 1 } })
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).gold)).toBe(50)
+})
+
+test("the Safari's last card over: HOME on its card, the next round asked, nothing paid by itself", async ({
+  page,
+}) => {
   // A player's report (2026-11-03): no way out of the Safari, and round after round paid by itself.
   const save = standingIn(
     'Safari Zone',
@@ -135,11 +177,15 @@ test("the Safari's last card over: HOME on its card, and no round paid by itself
   }
   await expect(home).toBeVisible()
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).click()
-  // The round's last card: the next one costs ₽100, so the player stops on the area's page, nothing paid.
-  await expect(page.getByText('₽100 a round').first()).toBeVisible()
+  // The round's last card: the next one is asked at once, nothing paid.
+  const ask = page.getByRole('dialog')
+  await expect(ask.getByText('A new round costs ₽100')).toBeVisible()
   await expect(page.getByRole('button', { name: /Approach it/i })).toHaveCount(0)
-  const gold = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).gold)
-  expect(gold).toBe(2000)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).gold)).toBe(2000)
+  // Closed (Esc): the area's page, its CONTINUE carrying the price; HOME there goes Home.
+  await page.keyboard.press('Escape')
+  await expect(ask).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'CONTINUE · ₽100 a round', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Home', exact: true }).click()
   await expect(page).toHaveURL(/\/home$/)
 })
@@ -169,15 +215,34 @@ async function nothingCut(page: Page, buttons: Locator) {
 test.describe('the Safari on a 360 × 640 phone', () => {
   test.use({ viewport: { width: 360, height: 640 } })
   for (const lang of LANGS) {
-    test(`${lang}: HOME and CONTINUE on its card, then the price on the area page's CONTINUE`, async ({ page }) => {
-      const tr = (key: string, vars?: Record<string, string | number>) => SHEET(lang, key, vars)
+    const tr = (key: string, vars?: Record<string, string | number>) => SHEET(lang, key, vars)
+    const settings = JSON.stringify({ ...JSON.parse(FAST), lang })
+
+    test(`${lang}: the free round's pop-up on entering`, async ({ page }) => {
+      await boot(page, standingIn('Safari Zone', {}, { gold: 50 }, 'Fuchsia City'), {}, settings)
+      await page.goto('/home')
+      await page.getByRole('button', { name: tr('ui.common.continue'), exact: true }).first().click()
+      const ask = page.getByRole('dialog')
+      await expect(ask.getByText(tr('ui.safari.ask.freeTitle'))).toBeVisible()
+      await expect(ask.getByText(tr('ui.safari.ask.freeText', { price: 100 }))).toBeVisible()
+      await nothingCut(page, ask.getByRole('button'))
+      await page.screenshot({ path: `${process.env.SHOTS_DIR ?? 'test-results'}/safari-phone-${lang}-ask-free.png` })
+      await ask.getByRole('button', { name: tr('ui.safari.ask.start'), exact: true }).click()
+      // The round begun (its first card: a Safari Pokémon or a find).
+      await expect(page).toHaveURL(/\/area$/)
+      await expect(ask.getByText(tr('ui.safari.ask.freeTitle'))).toHaveCount(0)
+    })
+
+    test(`${lang}: HOME and CONTINUE on its card, the paid round's pop-up, the price on the area's CONTINUE`, async ({
+      page,
+    }) => {
       const save = standingIn(
         'Safari Zone',
         { safariRounds: 1, deck: ['wild'] },
         { gold: 2000, safari: { rulesSeen: true } },
         'Fuchsia City',
       )
-      await boot(page, save, {}, JSON.stringify({ ...JSON.parse(FAST), lang }))
+      await boot(page, save, {}, settings)
       await page.goto('/home')
       await page.getByRole('button', { name: tr('ui.common.continue'), exact: true }).first().click()
       await page.getByRole('button', { name: tr('ui.safari.start') }).click()
@@ -189,14 +254,23 @@ test.describe('the Safari on a 360 × 640 phone', () => {
       }
       await expect(home).toBeVisible()
       await nothingCut(page, page.getByRole('dialog').getByRole('button'))
-      await page.screenshot({ path: `test-results/safari-phone-${lang}-card.png` })
+      await page.screenshot({ path: `${process.env.SHOTS_DIR ?? 'test-results'}/safari-phone-${lang}-card.png` })
       await page.getByRole('dialog').getByRole('button', { name: tr('ui.common.continue'), exact: true }).click()
+      // The next round asked: its price, HOME beside PAY.
+      const ask = page.getByRole('dialog')
+      const payNow = ask.getByRole('button', { name: tr('ui.safari.ask.pay', { price: 100 }), exact: true })
+      await expect(payNow).toBeVisible()
+      await expect(ask.getByText(tr('ui.safari.ask.paidTitle', { price: 100 }))).toBeVisible()
+      await nothingCut(page, ask.getByRole('button'))
+      await page.screenshot({ path: `${process.env.SHOTS_DIR ?? 'test-results'}/safari-phone-${lang}-ask-paid.png` })
+      await page.keyboard.press('Escape')
+      await expect(ask).toHaveCount(0)
       const price = tr('ui.safari.price', { price: 100 })
       const pay = page.getByRole('button', { name: `${tr('ui.common.continue')} · ${price}`, exact: true })
       await expect(pay).toBeVisible()
       await expect(pay).toContainText(price)
       await nothingCut(page, page.getByRole('button', { name: tr('ui.nav.home'), exact: true }).or(pay))
-      await page.screenshot({ path: `test-results/safari-phone-${lang}-area.png` })
+      await page.screenshot({ path: `${process.env.SHOTS_DIR ?? 'test-results'}/safari-phone-${lang}-area.png` })
     })
   }
 })

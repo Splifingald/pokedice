@@ -1,5 +1,6 @@
 // The Safari's way out and its price (docs/61 §4): a player's report (2026-11-03) found no HOME on its cards and round
-// after round paid by itself, ₽100 each, with no tap that named the price.
+// after round paid by itself, ₽100 each, with no tap that named the price. Every round is now asked first, in a pop-up
+// saying its price or that it's free, with HOME beside it.
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   createRng,
@@ -11,10 +12,11 @@ import {
   type GameData,
 } from '@/engine'
 import { useGame } from '@/store/game'
-import { leaveTrick, leaveTrickHome, rollNext, seedRun, startNewGame } from '@/store/run'
+import { confirmSafariRound, leaveTrick, leaveTrickHome, rollNext, seedRun, startNewGame } from '@/store/run'
+import { closeSafariAsk, useSafariAsk } from '@/store/safariAsk'
 
 /** A Safari encounter just over (it ran off), in Kanto's Safari Zone, with `rounds` rounds already begun there. */
-function standInSafari(rounds: number, deck: string[] = []) {
+function standInSafari(rounds: number, deck: string[] = [], gold = 1000) {
   seedRun(5)
   startNewGame(3)
   const { data, save, run } = useGame.getState()
@@ -29,7 +31,7 @@ function standInSafari(rounds: number, deck: string[] = []) {
     data: on,
     save: {
       ...save!,
-      gold: 1000,
+      gold,
       currentAreaId: area.id,
       areaProgress: {
         ...save!.areaProgress,
@@ -48,24 +50,64 @@ function standInSafari(rounds: number, deck: string[] = []) {
 }
 
 describe('the Safari round (docs/61 §4)', () => {
-  beforeEach(() => useGame.setState({ battle: null }))
+  beforeEach(() => {
+    useGame.setState({ battle: null })
+    closeSafariAsk()
+  })
+  const ask = () => useSafariAsk.getState().ask
+  const phase = () => useGame.getState().run.phase
+  const gold = () => useGame.getState().save!.gold
 
-  it("a paid round isn't begun on the way: the player waits on the area's page, the ₽ untouched", () => {
-    standInSafari(1)
+  it('a paid round is asked first, over the area: nothing paid until the pop-up says yes', () => {
+    const area = standInSafari(1)
     leaveTrick()
-    expect(useGame.getState().run.phase).toBe('idle')
-    expect(useGame.getState().save!.gold).toBe(1000)
-    // The player's own CONTINUE pays it.
-    rollNext()
-    expect(useGame.getState().run.phase).not.toBe('idle')
-    expect(useGame.getState().save!.gold).toBe(900)
+    expect(phase()).toBe('idle')
+    expect(gold()).toBe(1000)
+    expect(ask()).toEqual({ areaId: area.id, price: 100, next: 100 })
+    confirmSafariRound()
+    expect(phase()).not.toBe('idle')
+    expect(gold()).toBe(900)
+    expect(ask()).toBeNull()
   })
 
-  it('a free round still follows at once', () => {
-    standInSafari(0)
+  it("Home's CONTINUE asks too: the round is begun only by the pop-up's button", () => {
+    const area = standInSafari(1)
+    leaveTrickHome()
+    rollNext()
+    expect(phase()).toBe('idle')
+    expect(gold()).toBe(1000)
+    expect(ask()?.price).toBe(100)
+    // Asked again (the autopilot, a second tap): still one question, nothing paid.
+    rollNext()
+    expect(gold()).toBe(1000)
+    expect(useGame.getState().save!.areaProgress[area.id]!.safariRounds).toBe(1)
+  })
+
+  it('the free round is asked as free, saying what the next ones cost', () => {
+    const area = standInSafari(0)
     leaveTrick()
-    expect(useGame.getState().run.phase).not.toBe('idle')
-    expect(useGame.getState().save!.gold).toBe(1000)
+    expect(phase()).toBe('idle')
+    expect(ask()).toEqual({ areaId: area.id, price: 0, next: 100 })
+    confirmSafariRound()
+    expect(phase()).not.toBe('idle')
+    expect(gold()).toBe(1000)
+    expect(useGame.getState().save!.areaProgress[area.id]!.safariRounds).toBe(1)
+  })
+
+  it('too few ₽: the yes begins nothing', () => {
+    standInSafari(1, [], 40)
+    leaveTrick()
+    expect(ask()?.price).toBe(100)
+    confirmSafariRound()
+    expect(phase()).toBe('idle')
+    expect(gold()).toBe(40)
+  })
+
+  it('mid-round, no question: the round is already paid', () => {
+    standInSafari(1, ['wild', 'wild'])
+    leaveTrick()
+    expect(ask()).toBeNull()
+    expect(phase()).not.toBe('idle')
   })
 
   it('HOME on the result card deals no card, mid-round or not', () => {

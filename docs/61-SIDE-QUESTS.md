@@ -157,11 +157,14 @@ Safari Zone**: the old area's 23 wild Pokémon, a loot table of its own (new, so
   without ₽100 it waits, saying so. A paid round is the player's until its last card, even if they leave and come back
   (the deck is kept, as every area's is). The round gauge and the Map show the price. Read as "the first round free per
   area and per save"; a free round a day would be the same two numbers with a daily reset.
-- **Never paid on the way** (a player's report, 2026-11-03: round after round paid by itself, and no way out): once a
-  round's last card is over, a paid round is not dealt as the next card is everywhere else; the player stops on the
-  area's page, beside HOME a CONTINUE carrying its price under the word ("₽100 a round", `SafariPayButton`), and only
-  that CONTINUE (or Home's, which says the same) pays.
-  A free round still follows at once. Every Safari result card has **HOME** beside CONTINUE, as a battle's has.
+- **Every round asked first** (a player's report, 2026-11-03: round after round paid by itself, and no way out): a
+  round about to begin, wherever it was asked for (Home's CONTINUE, the area's, a round's last card over), opens a
+  pop-up first (`SafariAskPopup`): the free round says so ("Your first round is free! After it, each round here costs
+  ₽100."), a paid one its price and the player's ₽ ("A new round costs ₽100 · You have ₽2,000."). **HOME** beside
+  **LET'S GO!** / **PAY ₽100**; PAY greyed out, saying why, without the ₽; Esc closes it where the player is. Nothing is
+  paid or dealt before that button. Mid-round, nothing is asked: the round is paid. The area's CONTINUE carries the
+  price (or "Free round") on a second line (`SafariPayButton`), as Home's does, and every Safari result card has
+  **HOME** beside CONTINUE, as a battle's has.
 - **Switch**: Off / On for admin / On for everyone (`game_config.safari.access`), checked by the server (`safari_open()`,
   as `trick_or_treat_open()`). Off: the Safari areas are still secret areas off the main road, and their cards are
   fought as wild Pokémon, as today, so no species is locked behind the switch.
@@ -384,6 +387,7 @@ Where it differs from the plan:
 | ![](61-side-quests/2-roadblock-home.png) Routes 12–15: a Pokémon blocks the way | ![](61-side-quests/2-roadblock-fight.png) Snorlax, a wild one's words |
 | ![](61-side-quests/3-disguise-find.png) A Poké Ball in the Power Plant | ![](61-side-quests/3-disguise-sprung.png) It springs out: Voltorb |
 | ![](61-side-quests/4-safari-home.png) The Safari's round on CONTINUE | ![](61-side-quests/4-safari-card.png) Its card |
+| ![](61-side-quests/4-safari-ask-free.png) The free round, said on entering | ![](61-side-quests/4-safari-ask.png) A paid round, asked first |
 | ![](61-side-quests/4-safari-rules.png) Its rules, once | ![](61-side-quests/4-safari-screen.png) Bait and Safari Balls |
 | ![](61-side-quests/5-gift-offer.png) A gift: Eevee in Celadon | ![](61-side-quests/5-gift-received.png) Taken |
 | ![](61-side-quests/5-gift-choice.png) Hitmonlee or Hitmonchan | ![](61-side-quests/5-gift-sale.png) The Magikarp salesman |
