@@ -5,6 +5,7 @@
  * Each power has a switch (docs/15 §20). Mega Evolution's and Gigantamax's turn on their newer rules; off, they work as
  * they always have (docs/12 §3–4). Z-Moves are new: off, there are none.
  */
+import { zCrystalsOf, zCrystalsOn } from './trials'
 import type { CreateBattleOptions, EnemyPlan } from './battle'
 import { eventOpenTo } from './events'
 import { megaRaidGem } from './raidSpecials'
@@ -17,7 +18,7 @@ import {
   regionCaseOf,
   regionCases,
   regionOf,
-  regionSpecies,
+  regionsHolding,
 } from './regions'
 import {
   POWER_KINDS,
@@ -53,6 +54,8 @@ export function powerHome(data: GameData, kind: PowerKind): { region: RegionId; 
 
 /** The badge that opens a power (Korrina's, Kabu's, Lana's) is won, whatever the switches say. */
 export function powerEarned(save: SaveData, data: GameData, kind: PowerKind): boolean {
+  // With Z-Crystals (docs/62 §6), Z-Moves open with the first one won.
+  if (kind === 'z' && zCrystalsOn(data)) return zCrystalsOf(save, data).length > 0
   const home = powerHome(data, kind)
   const badges = regionCases(save, data).find((c) => c.id === home.region)?.badges ?? []
   return !!badges[home.badge - 1]?.earned
@@ -130,6 +133,17 @@ export const gemOf = (data: GameData, megaDex: number) =>
 /** The gems a save holds (item keys). */
 export const ownedGems = (save: Pick<SaveData, 'powers'>): string[] => save.powers?.gems ?? []
 
+/**
+ * Two copies of one save, one replacing the other (the cloud sync, another tab): a gem either holds stays held — a gem
+ * is bought or won once and never used up. The same save back when there's nothing to add.
+ */
+export function keepGemsHeld(save: SaveData, other: SaveData | null | undefined): SaveData {
+  const mine = ownedGems(save)
+  const add = (other ? ownedGems(other) : []).filter((key) => !mine.includes(key))
+  if (!add.length) return save
+  return { ...save, powers: { ...save.powers, gems: [...mine, ...add] } }
+}
+
 /** The Mega forms a list of gems opens. */
 export function megaFormsOfGems(data: GameData, gems: readonly string[]): number[] {
   return gems.flatMap((k) => {
@@ -150,17 +164,6 @@ export function megaFormsFor(save: SaveData, data: GameData, dex: number, level:
 
 /** The gems a badge comes with (`gems.rewards`): won, never sold. */
 const rewardGems = (data: GameData) => new Set(data.config.megaEvolution.gems.rewards.map((r) => r.gem))
-
-/** The Pokémon each real region has to offer (regionSpecies), built once per GameData. */
-const speciesByRegion = new WeakMap<GameData, Map<RegionId, Set<number>>>()
-function regionsHolding(data: GameData, dex: number): RegionId[] {
-  let map = speciesByRegion.get(data)
-  if (!map) {
-    map = new Map(realRegions(data).map((r) => [r.id, regionSpecies(data, r.id)]))
-    speciesByRegion.set(data, map)
-  }
-  return [...map].filter(([, set]) => set.has(dex)).map(([id]) => id)
-}
 
 /**
  * The regions whose Mart sells a gem: every region where its Pokémon can be had, or one it evolves from (wild, a
@@ -277,7 +280,7 @@ export function battlePowersFor(
   data: GameData,
 ): Pick<
   CreateBattleOptions,
-  'megaAllowed' | 'gmaxAllowed' | 'zAllowed' | 'megaForms' | 'megaTurns' | 'gmaxBoost'
+  'megaAllowed' | 'gmaxAllowed' | 'zAllowed' | 'zTypes' | 'megaForms' | 'megaTurns' | 'gmaxBoost'
 > {
   const gems = gemRulesOn(data)
   const boost = gmaxBoostOn(data) ? data.config.gigantamax.boost : null
@@ -285,6 +288,8 @@ export function battlePowersFor(
     megaAllowed: megaUnlocked(save, data),
     gmaxAllowed: gmaxUnlocked(save, data),
     zAllowed: zUnlocked(save, data),
+    // With Z-Crystals (docs/62 §6): only the types whose crystal is held.
+    ...(zCrystalsOn(data) && { zTypes: zCrystalsOf(save, data) }),
     ...(gems && {
       megaForms: megaFormsOfGems(data, ownedGems(save)),
       megaTurns: data.config.megaEvolution.gems.turns,
@@ -322,11 +327,19 @@ export function enemyPlanFor(
   save: SaveData,
   data: GameData,
   foe: { dex: number; level: number },
-  trainer: { regionId: RegionId; role: TrainerRole; ace: boolean } | null,
+  trainer: { regionId: RegionId; role: TrainerRole; ace: boolean; items?: readonly string[] | null } | null,
 ): EnemyPlan | null {
   const plan: EnemyPlan = {}
   if (choiceFormsOf(data, foe.dex).length) plan.formChanges = true
   const cfg = data.config
+  // A trainer holding the ace's own Mega Gem in its items (Snowglobe Valley's Champion and his Abomasite, docs/64):
+  // the ace Mega Evolves whatever the region, the player's unlocks or a small world. The gem is the content's choice.
+  const held = trainer?.ace ? megaFormsOfGems(data, trainer.items ?? []) : []
+  const gemMega = megaFormsOf(data, foe.dex).find((f) => held.includes(f.dex))
+  if (gemMega) {
+    plan.mega = gemMega.dex
+    return plan
+  }
   if (trainer?.ace && cfg.megaEvolution.trainerRoles.includes(trainer.role)) {
     const gmax = gmaxFormsOf(data, foe.dex)[0]
     const mega = megaOptions(data, foe.dex, foe.level)[0]

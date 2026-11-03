@@ -14,64 +14,24 @@ import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type {
-  Area,
-  BossDef,
   BundleRaw,
-  EncounterKind,
-  LootEntry,
   Region,
   SmallWorld,
-  Trainer,
   TrickGhost,
   TrickOrTreatConfig,
   TrickTier,
-  WildPoolEntry,
 } from '../src/engine/types'
 import { DEFAULT_PORTAL_RUN } from '../src/engine/portalMode'
 import { DEFAULT_NIGHTMARE } from '../src/engine/nightmareMode'
 import { DEFAULT_CONFIG } from '../src/engine/defaults'
-import { stableUuid, upsert } from './seed'
+import { stableUuid } from './seed'
+import { balls, buildAreas, worldSql, type AreaSpec, type WorldContent } from './world-content'
 
 export const REGION_ID = 'world-haunted-hollow'
 export const WORLD_ID = 'haunted-hollow-2026'
 const ORDER0 = 9100
 
 const id = (...parts: (string | number)[]) => stableUuid(['haunted-hollow', ...parts].join(':'))
-
-type Mon = [dex: number, level: number]
-interface TrainerSpec {
-  name: string
-  sprite: string
-  team: Mon[]
-  role?: Trainer['role']
-  items?: string[]
-}
-interface AreaSpec {
-  key: string
-  name: string
-  /** Its picture (public/area-art), for src/fx/areaArtMap.ts. */
-  art: string
-  banner: string
-  min: number
-  max: number
-  rounds: number | null
-  deck: Partial<Record<EncounterKind, number>>
-  upgrade: number
-  wild: [dex: number, weight: number, min: number, max: number][]
-  trainers: TrainerSpec[]
-  loot: [key: string, weight: number, min: number, max: number, unique?: boolean][]
-  hidden?: boolean
-  unlock?: Area['unlockConditions']
-  boss?: BossDef[]
-  gyms?: TrainerSpec[]
-  background?: Area['battleBackground']
-  mode?: Area['mode']
-}
-
-const balls = (lo: [number, number], hi?: [number, number]): AreaSpec['loot'] => [
-  ['poke-ball', 3, ...lo],
-  ...(hi ? ([['great-ball', 2, ...hi]] as AreaSpec['loot']) : []),
-]
 
 /** The world's areas, in order: its chain, its league, then its secret areas. */
 export const AREAS: AreaSpec[] = [
@@ -1086,73 +1046,10 @@ const SHOP: SmallWorld['shop'] = [
   { key: 'cracked-pot', price: 200, limit: null },
 ]
 
-const sprite = (s: string) => `/trainers/classes/${s}.png`
-
-function trainerOf(areaKey: string, t: TrainerSpec): Trainer {
-  return {
-    id: id('trainer', areaKey, t.name),
-    name: t.name,
-    spriteUrl: sprite(t.sprite),
-    team: t.team.map(([dex, level]) => ({ dex, level })),
-    role: t.role ?? 'trainer',
-    // A world's trainers give no badge (docs/21 §8c: the leaderboard keeps rows with badges only).
-    badge: null,
-    upgradeLevel: null,
-    battleBackground: null,
-    ...(t.items && { items: t.items }),
-  } as Trainer
-}
-
 /** Its region row, areas, trainers and world settings. */
-export function haunted(): { region: Region; areas: Area[]; trainers: Trainer[]; world: Omit<SmallWorld, 'previewHours'> } {
-  const trainers: Trainer[] = []
-  const areas = AREAS.map((a, i): Area => {
-    const pool = a.trainers.map((t) => trainerOf(a.key, t))
-    const gyms = (a.gyms ?? []).map((t) => trainerOf(a.key, t))
-    trainers.push(...pool, ...gyms)
-    const deck = { wild: 0, trainer: 0, center: 0, item: 0, casino: 0, ...a.deck }
-    // Every area's deck holds one item and one Pokémon Center (the user's rule); the Shadow Elite has no deck. The ten
-    // main areas add a Trick or Treat card (docs/29, 2026-10-15): 11 cards, dealt only while its switch is on.
-    if (a.wild.length || a.trainers.length) Object.assign(deck, { item: 1, center: 1 })
-    if (TRICK_GHOSTS[a.key]) Object.assign(deck, { trick: 1 })
-    return {
-      id: id('area', a.key),
-      orderIndex: ORDER0 + i,
-      regionId: REGION_ID,
-      name: a.name,
-      bannerUrl: a.banner,
-      roundsToClear: a.rounds,
-      minLevel: a.min,
-      maxLevel: a.max,
-      encounterWeights: deck,
-      backtrackMultiplier: 0.5,
-      legendaryBoss: a.boss ?? null,
-      scalesToTeam: false,
-      easyMode: false,
-      enemyUpgradeLevel: a.upgrade,
-      battleBackground: a.background ?? 'default',
-      hidden: !!a.hidden,
-      unlockConditions: a.unlock ?? null,
-      ...(a.mode && { mode: a.mode }),
-      gyms: gyms.map((g) => g.id),
-      wildPool: a.wild.map(([dex, weight, minLevel, maxLevel]): WildPoolEntry => ({
-        id: id('wild', a.key, dex),
-        dex,
-        weight,
-        minLevel,
-        maxLevel,
-      })),
-      trainerPool: pool.map((t) => ({ id: id('pool', a.key, t.id), trainerId: t.id, weight: 10 })),
-      lootPool: a.loot.map(([itemKey, weight, minQty, maxQty, unique]): LootEntry => ({
-        id: id('loot', a.key, itemKey),
-        itemKey,
-        weight,
-        unique: !!unique,
-        minQty,
-        maxQty,
-      })),
-    } as Area
-  })
+export function haunted(): WorldContent {
+  // The ten main areas add a Trick or Treat card (docs/29, 2026-10-15): 11 cards, dealt only while its switch is on.
+  const { areas, trainers } = buildAreas(id, REGION_ID, ORDER0, AREAS, (key) => (TRICK_GHOSTS[key] ? { trick: 1 } : undefined))
   const region: Region = {
     id: REGION_ID,
     name: TITLE.en!,
@@ -1216,158 +1113,17 @@ export function withHaunted(b: BundleRaw): BundleRaw {
   }
 }
 
-const q = (v: string) => `'${v.replace(/'/g, "''")}'`
-
 /**
  * The same content as SQL for a live database (supabase/migrations): upserts of its region, trainers, areas and their
  * pools (rows the script no longer has are deleted), the world added to `smallWorlds` (its switch and other worlds
  * kept), and `configVersion` + 1 so players fetch the new content. Safe to run again.
  */
 export function hauntedSql(): string {
-  const h = haunted()
-  const areaIds = h.areas.map((a) => q(a.id)).join(', ')
-  const keep = (ids: string[]) => (ids.length ? ids.map(q).join(', ') : "''")
-  return [
+  return worldSql(haunted(), [
     '-- Haunted Hollow (docs/26), the ghost small world. Generated by `pnpm haunted-hollow --sql`: do not edit by hand.',
     '-- Its region, areas, pools and trainers, and the world in game_config `smallWorlds` (the switch is left as it is).',
     '-- Safe to run again.',
-    'begin;',
-    upsert(
-      'regions',
-      [
-        'id',
-        'name',
-        'order_index',
-        'dex_range',
-        'starters',
-        'starter_level',
-        'league_area_id',
-        'next_region',
-        'enabled',
-      ],
-      [
-        [
-          h.region.id,
-          h.region.name,
-          h.region.orderIndex,
-          h.region.dexRange,
-          h.region.starters,
-          h.region.starterLevel,
-          h.region.leagueAreaId,
-          h.region.nextRegion,
-          h.region.enabled,
-        ],
-      ],
-      ['id'],
-    ),
-    upsert(
-      'trainers',
-      [
-        'id',
-        'name',
-        'sprite_url',
-        'team',
-        'role',
-        'badge',
-        'upgrade_level',
-        'battle_background',
-        'rival_of',
-        'items',
-      ],
-      h.trainers.map((t) => [
-        t.id,
-        t.name,
-        t.spriteUrl,
-        t.team,
-        t.role,
-        t.badge,
-        t.upgradeLevel,
-        t.battleBackground,
-        null,
-        t.items ?? [],
-      ]),
-      ['id'],
-    ),
-    upsert(
-      'areas',
-      [
-        'id',
-        'order_index',
-        'region_id',
-        'name',
-        'banner_url',
-        'rounds_to_clear',
-        'min_level',
-        'max_level',
-        'encounter_weights',
-        'backtrack_multiplier',
-        'legendary_boss',
-        'scales_to_team',
-        'scale_offsets',
-        'easy_mode',
-        'enemy_upgrade_level',
-        'battle_background',
-        'hidden',
-        'unlock_conditions',
-        'gyms',
-      ],
-      h.areas.map((a) => [
-        a.id,
-        a.orderIndex,
-        a.regionId,
-        a.name,
-        a.bannerUrl,
-        a.roundsToClear,
-        a.minLevel,
-        a.maxLevel,
-        a.encounterWeights,
-        a.backtrackMultiplier,
-        a.legendaryBoss,
-        a.scalesToTeam,
-        null,
-        a.easyMode,
-        a.enemyUpgradeLevel,
-        a.battleBackground,
-        a.hidden,
-        a.unlockConditions,
-        a.gyms,
-      ]),
-      ['id'],
-    ),
-    `delete from area_wild_pool where area_id in (${areaIds}) and id not in (${keep(h.areas.flatMap((a) => a.wildPool.map((w) => w.id)))});`,
-    `delete from area_trainer_pool where area_id in (${areaIds}) and id not in (${keep(h.areas.flatMap((a) => a.trainerPool.map((t) => t.id)))});`,
-    `delete from area_loot_pool where area_id in (${areaIds}) and id not in (${keep(h.areas.flatMap((a) => a.lootPool.map((l) => l.id)))});`,
-    upsert(
-      'area_wild_pool',
-      ['id', 'area_id', 'dex', 'weight', 'min_level', 'max_level'],
-      h.areas.flatMap((a) => a.wildPool.map((w) => [w.id, a.id, w.dex, w.weight, w.minLevel, w.maxLevel])),
-      ['id'],
-    ),
-    upsert(
-      'area_trainer_pool',
-      ['id', 'area_id', 'trainer_id', 'weight'],
-      h.areas.flatMap((a) => a.trainerPool.map((t) => [t.id, a.id, t.trainerId, t.weight])),
-      ['id'],
-    ),
-    upsert(
-      'area_loot_pool',
-      ['id', 'area_id', 'item_key', 'weight', 'unique_find', 'min_qty', 'max_qty'],
-      h.areas.flatMap((a) =>
-        a.lootPool.map((l) => [l.id, a.id, l.itemKey, l.weight, l.unique, l.minQty, l.maxQty]),
-      ),
-      ['id'],
-    ),
-    'insert into game_config (key, value) values (\'smallWorlds\', \'{"access":"admin","list":[]}\'::jsonb) on conflict (key) do nothing;',
-    `update game_config set value = jsonb_set(
-  case when jsonb_typeof(value) = 'object' then value else '{"access":"admin"}'::jsonb end,
-  '{list}',
-  coalesce((select jsonb_agg(w) from jsonb_array_elements(coalesce(value -> 'list', '[]'::jsonb)) w where w ->> 'id' <> ${q(WORLD_ID)}), '[]'::jsonb)
-    || jsonb_build_array(${q(JSON.stringify(h.world))}::jsonb)
-) where key = 'smallWorlds';`,
-    "insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);",
-    'commit;',
-    '',
-  ].join('\n')
+  ])
 }
 
 async function main() {

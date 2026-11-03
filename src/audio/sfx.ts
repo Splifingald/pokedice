@@ -14,6 +14,7 @@ export type SfxName =
   | 'button'
   | 'error'
   | 'heal'
+  | 'talent'
 
 let enabled = false
 let ctx: AudioContext | null = null
@@ -135,6 +136,13 @@ const SOUNDS: Record<SfxName, () => void> = {
     play([
       { f: 196, t: 0, d: 0.1 },
       { f: 147, t: 0.11, d: 0.16 },
+    ]),
+  // A hidden talent at work (docs/51): a quick glint, up and back, under the hit's sounds.
+  talent: () =>
+    play([
+      { f: 1319, t: 0, d: 0.05, type: 'triangle', v: 0.6 },
+      { f: 1760, t: 0.05, d: 0.05, type: 'triangle', v: 0.6 },
+      { f: 2349, t: 0.1, d: 0.16, type: 'triangle', v: 0.5 },
     ]),
   heal: () =>
     play([
@@ -324,6 +332,37 @@ const FX_SOUNDS = {
   'gift.item': (n = 0) => tone(784 * Math.pow(2, (n % 6) / 6), 0.14, { type: 'square', vol: 0.035, slide: 400 }),
   'gift.shiny': () => tone(2637, 0.2, { type: 'triangle', vol: 0.04 }),
   'gift.fanfare': (n = 0) => tone(GIFT_FANFARE[n]!, n === 3 ? 0.5 : 0.12, { type: 'square', vol: 0.045 }),
+  // The Gift card (docs/64 §4.0): a present lands, wobbles, grows a step higher each level (a rising chime, the
+  // level's note), strains, rips and bursts (a crunch and a puff), or opens (the gifts' own untie and pop, then a
+  // chime per thing). Delibird's present (§4.2) bursts with a bigger bang.
+  'present.land': () => hiss(0.08, { freq: 500, vol: 0.06 }),
+  'present.wobble': () => hiss(0.04, { vol: 0.045, freq: 760 }),
+  'present.grow': (n = 1) => {
+    const f = 523 * Math.pow(2, (Math.min(6, n) - 1) / 6)
+    tone(f, 0.08, { type: 'square', vol: 0.035 })
+    tone(f * 1.5, 0.08, { type: 'square', vol: 0.03, at: 0.07 })
+    tone(f * 2, 0.16, { type: 'triangle', vol: 0.04, at: 0.14 })
+  },
+  'present.strain': () => tone(196, 0.35, { type: 'sawtooth', vol: 0.03, slide: 90 }),
+  'present.rip': () => hiss(0.1, { vol: 0.08, freq: 3600, slide: -1800 }),
+  'present.break': () => {
+    hiss(0.4, { vol: 0.1, freq: 1400, slide: -1000 })
+    tone(330, 0.3, { type: 'square', vol: 0.04, slide: -200 })
+  },
+  'present.burst': () => {
+    hiss(0.6, { vol: 0.11, freq: 2400, slide: -1600 })
+    tone(1047, 0.5, { type: 'square', vol: 0.04, slide: 500 })
+    tone(1568, 0.4, { type: 'triangle', vol: 0.04, at: 0.12 })
+  },
+  'present.untie': () => {
+    tone(660, 0.12, { type: 'square', vol: 0.03, slide: 500 })
+    hiss(0.12, { freq: 2600, vol: 0.04 })
+  },
+  'present.open': () => {
+    hiss(0.3, { vol: 0.08, freq: 2800 })
+    tone(1319, 0.3, { type: 'square', vol: 0.035, slide: 300 })
+  },
+  'present.item': (n = 0) => tone(784 * Math.pow(2, (n % 6) / 6), 0.14, { type: 'square', vol: 0.035, slide: 400 }),
   // A trade (docs/23): drawn into the ball, up the link, the other ball down it, open, and a short jingle.
   'trade.recall': () => tone(880, 0.25, { type: 'triangle', vol: 0.04, slide: -500 }),
   'trade.shut': () => hiss(0.06, { freq: 900, vol: 0.06 }),
@@ -467,6 +506,77 @@ const FX_SOUNDS = {
     tone(523, 0.18, { type: 'triangle', vol: 0.04 })
     tone(784, 0.18, { type: 'triangle', vol: 0.04, at: 0.16 })
     tone(1047, 0.45, { type: 'triangle', vol: 0.045, at: 0.32 })
+  },
+  // The race of time and space (docs/64 §4.4): the clock's tick (a dry click, higher in its last 30 s), the rift
+  // tearing space open (a rising hiss over a wobbling hum), a gate taken (two quick notes up), a time shard (a bright
+  // glassy chime climbing) and time and space settling at the win (a low bell under a chord).
+  'race.tick': (n = 0) => tone(n ? 1760 : 1320, 0.03, { type: 'square', vol: n ? 0.035 : 0.025 }),
+  'race.rift': () => {
+    hiss(1.1, { freq: 500, slide: 2600, vol: 0.06 })
+    tone(150, 1.0, { type: 'triangle', vol: 0.04, slide: 60 })
+    tone(156, 1.0, { type: 'sine', vol: 0.03, slide: 50 })
+  },
+  'race.gate': () => {
+    tone(659, 0.07, { type: 'square', vol: 0.04 })
+    tone(988, 0.12, { type: 'square', vol: 0.04, at: 0.07 })
+  },
+  'race.shard': () => {
+    tone(1568, 0.08, { type: 'triangle', vol: 0.045 })
+    tone(2093, 0.08, { type: 'triangle', vol: 0.045, at: 0.07 })
+    tone(2637, 0.22, { type: 'triangle', vol: 0.04, at: 0.14 })
+  },
+  'race.settle': () => {
+    tone(131, 1.2, { type: 'triangle', vol: 0.06 })
+    tone(523, 0.9, { type: 'triangle', vol: 0.035, at: 0.1 })
+    tone(659, 0.9, { type: 'triangle', vol: 0.03, at: 0.2 })
+    tone(784, 1.0, { type: 'triangle', vol: 0.03, at: 0.3 })
+  },
+  // Crown Shrine's whiteout (docs/64 §4.3): the blizzard rolling in (a long wind rising), the eyes glowing in the
+  // crown tree, a bonfire catching (a crackle and a warm low note), the tree shaking its snow off, the blizzard
+  // lifting (the wind falling away into a bright major chord).
+  'whiteout.wind': () => {
+    hiss(2.2, { freq: 500, slide: 900, q: 1.4, vol: 0.06 })
+    hiss(2.0, { freq: 1400, slide: -600, q: 2, vol: 0.03, at: 0.3 })
+  },
+  'whiteout.eyes': () => {
+    tone(1568, 0.12, { type: 'square', vol: 0.025 })
+    tone(1568, 0.12, { type: 'square', vol: 0.025, at: 0.16 })
+    tone(98, 0.6, { type: 'sawtooth', vol: 0.04, at: 0.1 })
+  },
+  'whiteout.fire': () => {
+    for (let i = 0; i < 6; i++) hiss(0.04, { freq: 2600 - i * 180, vol: 0.05, at: i * 0.07 + (i % 2) * 0.02 })
+    tone(196, 0.9, { type: 'triangle', vol: 0.035, at: 0.1 })
+    tone(294, 0.7, { type: 'triangle', vol: 0.025, at: 0.3 })
+  },
+  'whiteout.shake': () => {
+    hiss(0.9, { freq: 320, type: 'lowpass', vol: 0.1 })
+    tone(60, 0.6, { type: 'sawtooth', vol: 0.05, slide: -20 })
+  },
+  'whiteout.lift': () => {
+    hiss(1.4, { freq: 900, slide: -700, vol: 0.05 })
+    tone(523, 0.3, { type: 'triangle', vol: 0.035, at: 0.6 })
+    tone(659, 0.3, { type: 'triangle', vol: 0.035, at: 0.72 })
+    tone(784, 0.7, { type: 'triangle', vol: 0.04, at: 0.84 })
+  },
+  // Tracks in the Snow (docs/64 §4.1): the winter wind (a soft high hiss swelling), a leap (a quick rising whistle), a
+  // bush rustling (two short bursts of noise, as branches), the snow falling (a long hush), Stantler found (a bright
+  // two-note bell, a sleigh's) and Stantler bolting (hooves: three quick low taps).
+  'tracks.wind': () => {
+    hiss(1.6, { freq: 2400, type: 'highpass', vol: 0.025 })
+    hiss(1.2, { freq: 700, slide: 300, vol: 0.02, at: 0.5 })
+  },
+  'tracks.leap': () => tone(440, 0.3, { type: 'triangle', vol: 0.035, slide: 520 }),
+  'tracks.rustle': () => {
+    hiss(0.12, { freq: 3200, vol: 0.06 })
+    hiss(0.14, { freq: 2600, vol: 0.05, at: 0.13 })
+  },
+  'tracks.snow': () => hiss(1.4, { freq: 5200, type: 'highpass', vol: 0.03 }),
+  'tracks.found': () => {
+    tone(1319, 0.12, { type: 'triangle', vol: 0.04 })
+    tone(1760, 0.3, { type: 'triangle', vol: 0.04, at: 0.1 })
+  },
+  'tracks.bolt': () => {
+    for (const at of [0, 0.08, 0.16]) tone(140, 0.05, { type: 'square', vol: 0.04, at, slide: -40 })
   },
   // The Underground (docs/34): a pickaxe's clink on rock (lower and heavier the bigger the roll), the wall rumbling
   // down, and a little chime when something is dug out whole.

@@ -4,8 +4,11 @@ import {
   DEFAULT_CONFIG,
   EVENT_ACCESS,
   VERSUS_LEAGUE_DEFAULTS,
+  AREA_VERSUS_DEFAULTS,
+  FRIEND_BATTLES_DEFAULTS,
   eggSpecies,
   eggsPerWeek,
+  centerBoonRules,
   extremeRules,
   isDonationUrl,
   enabledRegions,
@@ -17,6 +20,7 @@ import {
   type DoubleBattlesConfig,
   type DonationConfig,
   type EventAccess,
+  type ExtremeCentersConfig,
   type ExtremeConfig,
   type GameConfig,
   type GeneralConfig,
@@ -29,6 +33,21 @@ import {
   INVITE_TIERS_MAX,
   inviteTiers,
   type InviteRewardsConfig,
+  type WelcomeBackConfig,
+  WELCOME_BACK_DAYS_MAX,
+  WELCOME_BACK_TIERS_MAX,
+  welcomeBackCooldown,
+  welcomeBackTiers,
+  type HiddenTalentsConfig,
+  familyOf,
+  familyTalent,
+  isTalentKey,
+  TALENT_KEYS,
+  talentTier,
+  marketShiny,
+  marketWeek,
+  normaliseMarketItem,
+  type FriendshipConfig,
 } from '@/engine'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
@@ -38,8 +57,13 @@ import { DataTable } from '../DataTable'
 import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
+import { LegendIntrosBox } from './LegendIntrosBox'
+import { ChampionIntrosBox } from './ChampionIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
+import { AreaVersusBox } from './AreaVersusBox'
+import { BetaTestersBox, FriendBattlesBox } from './FriendBattlesBox'
+import { VersusLeagueGroups } from './VersusLeagueGroups'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
   const rows = useAdmin((st) => st.rows.game_config)
@@ -206,7 +230,7 @@ function DonationBox() {
             onChange={(e) => set({ kofiUrl: e.target.value })}
           />
         </Field>
-        <Field label="Monthly goal" hint="The weekly #support-me post's target · 0 = none">
+        <Field label="Monthly goal" hint="The Saturday #support-me post's target · 0 = none">
           <NumInput min={0} value={cfg.monthlyGoal} onChange={(v) => set({ monthlyGoal: Math.max(0, v ?? 0) })} />
         </Field>
         <Field label="Currency" hint="Your Ko-fi page's, e.g. EUR">
@@ -216,6 +240,18 @@ function DonationBox() {
             value={cfg.currency}
             onChange={(e) => set({ currency: e.target.value.toUpperCase().replace(/[^A-Z]/g, '') })}
           />
+        </Field>
+        <Field label="Goal counts from" hint="What goes past a month's goal covers the next ones from here · empty = Ko-fi's first payment">
+          <input
+            className={inputCls}
+            type="month"
+            placeholder="2026-10"
+            value={cfg.startMonth}
+            onChange={(e) => set({ startMonth: e.target.value })}
+          />
+        </Field>
+        <Field label="Raised before tracking" hint="Ko-fi only reports payments made after its webhook was set up: add what came in before (counted in that first month)">
+          <NumInput min={0} value={cfg.raisedBefore} onChange={(v) => set({ raisedBefore: Math.max(0, v ?? 0) })} />
         </Field>
       </div>
       <label className="flex items-start gap-2 text-lg">
@@ -288,7 +324,7 @@ function ExtremeBox() {
   return (
     <Box
       title="Extreme mode" icon="skull"
-      hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends), with no Pokémon Centers."
+      hint="A second save, opened by a league of the main one: a world of its own (its own board, Versus and events; the same friends). Its Pokémon Centers: none, unless “Extreme Pokémon Centers” (below, its switch on the Switches tab) gives them a boon to pick instead of the heal, or “Pokémon Centers” here brings back the classic heal."
     >
       <div className="grid gap-3 sm:grid-cols-3">
         {check('centers', 'Pokémon Centers')}
@@ -323,6 +359,96 @@ function ExtremeBox() {
           playing: never.{!cfg.centers && ' No Pokémon Center is ever dealt.'}
         </p>
       )}
+    </Box>
+  )
+}
+
+/**
+ * Extreme mode's Pokémon Centers (docs/47): a boon to pick instead of the heal. The team heal is always on offer; the
+ * other kinds are drawn by these weights. Every number is read by the game's engine (engine/extremeCenters).
+ */
+function ExtremeCentersBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('extremeCenters')
+  const d = DEFAULT_CONFIG.extremeCenters
+  const r = (raw ?? {}) as Partial<ExtremeCentersConfig>
+  const cfg: ExtremeCentersConfig = {
+    ...d,
+    ...r,
+    heal: { ...d.heal, ...r.heal },
+    full: { ...d.full, ...r.full },
+    item: { ...d.item, ...r.item },
+    buff: { ...d.buff, ...r.buff },
+    donor: { ...d.donor, ...r.donor },
+    rocket: { ...d.rocket, ...r.rocket },
+  }
+  const set = (patch: Partial<ExtremeCentersConfig>) => setRaw({ ...cfg, ...patch })
+  const num = (value: number, put: (v: number) => void, min = 0, max?: number) => (
+    <NumInput min={min} max={max} value={value} onChange={(v) => put(Math.max(min, Math.min(max ?? Infinity, v ?? min)))} />
+  )
+  const odds = data ? centerBoonRules({ ...data, config: { ...data.config, extremeCenters: cfg } }).odds : null
+  return (
+    <Box
+      title="Extreme Pokémon Centers"
+      icon="heart"
+      hint="Extreme mode's Centers heal nobody: each offers boons to pick one from. A round opens with one, the deck's Center cards are boons too; a completed area has none, a secret area only its first. A round lost to a K.O. starts over at a Center that only swaps. With Extreme mode's “Pokémon Centers” ticked, Centers heal as in the main game and none of this applies; no Idle mode while it's on."
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Boons on offer" hint="the team heal included">
+          {num(cfg.offers, (v) => set({ offers: v }), 1, 6)}
+        </Field>
+        <Field label="Team heal (%)" hint="always on offer: everyone standing, team and Box">
+          {num(cfg.heal.percent, (v) => set({ heal: { percent: v } }), 0, 100)}
+        </Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-5">
+        <Field label="Full heal on one" hint={`weight · ${odds?.full ?? 0} % of draws`}>
+          {num(cfg.full.weight, (v) => set({ full: { weight: v } }))}
+        </Field>
+        <Field label="Healing item" hint={`weight · ${odds?.item ?? 0} %`}>
+          {num(cfg.item.weight, (v) => set({ item: { ...cfg.item, weight: v } }))}
+        </Field>
+        <Field label="Pokébuff" hint={`weight · ${odds?.buff ?? 0} %`}>
+          {num(cfg.buff.weight, (v) => set({ buff: { ...cfg.buff, weight: v } }))}
+        </Field>
+        <Field label="Generous donor" hint={`weight · ${odds?.donor ?? 0} %`}>
+          {num(cfg.donor.weight, (v) => set({ donor: { ...cfg.donor, weight: v } }))}
+        </Field>
+        <Field label="Rocket Trade" hint={`weight · ${odds?.rocket ?? 0} %`}>
+          {num(cfg.rocket.weight, (v) => set({ rocket: { ...cfg.rocket, weight: v } }))}
+        </Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Item: the potion" hint="weight; Potion, Super Potion from 3 badges, Hyper Potion from 6">
+          {num(cfg.item.potion, (v) => set({ item: { ...cfg.item, potion: v } }))}
+        </Field>
+        <Field label="Item: Revive" hint="weight">
+          {num(cfg.item.revive, (v) => set({ item: { ...cfg.item, revive: v } }))}
+        </Field>
+        <Field label="Item: Max Revive" hint="weight">
+          {num(cfg.item.maxRevive, (v) => set({ item: { ...cfg.item, maxRevive: v } }))}
+        </Field>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Pokébuff lasts (hours)" hint="real time; +1 die of one of its types">
+          {num(cfg.buff.hours, (v) => set({ buff: { ...cfg.buff, hours: v } }), 0)}
+        </Field>
+        <Field label="Pokébuff from badge" hint="never before this many badges in the region">
+          {num(cfg.buff.badges ?? 0, (v) => set({ buff: { ...cfg.buff, badges: v } }), 0, 18)}
+        </Field>
+        <Field label="Pokébuff dice cap" hint="never past this many dice">
+          {num(cfg.buff.maxDice, (v) => set({ buff: { ...cfg.buff, maxDice: v } }), 1, 12)}
+        </Field>
+        <Field label="Donor (× a trainer)" hint="× what an average trainer of the area pays">
+          {num(cfg.donor.trainers, (v) => set({ donor: { ...cfg.donor, trainers: v } }), 0)}
+        </Field>
+        <Field label="Rocket: levels higher" hint="the mystery Pokémon's level over the one given">
+          {num(cfg.rocket.levels, (v) => set({ rocket: { ...cfg.rocket, levels: v } }), 0, 20)}
+        </Field>
+        <Field label="Rocket: strength band (%)" hint="max HP × dice, same stage; else the 5 closest">
+          {num(cfg.rocket.band, (v) => set({ rocket: { ...cfg.rocket, band: v } }), 0, 100)}
+        </Field>
+      </div>
     </Box>
   )
 }
@@ -369,7 +495,8 @@ function DoubleBattlesBox() {
 }
 
 /**
- * Trades (docs/23): the numbers, the trade evolutions (a pair taken off evolves by level again)
+ * Trades (docs/23): the numbers (the board's picks among them, §2.1), the trade evolutions (a pair taken off evolves by
+ * level again)
  * and the species that can never be traded (the Ultra Beasts; legendaries and mythicals always are out).
  */
 function TradesBox() {
@@ -380,7 +507,18 @@ function TradesBox() {
   const [from, setFrom] = useState<number | null>(null)
   const [to, setTo] = useState<number | null>(null)
   const [out, setOut] = useState<number | null>(null)
-  const num = (k: 'maxListings' | 'listingDays' | 'tradesPerDay' | 'levelCap' | 'minBadges', min = 0, max?: number) => (
+  const num = (
+    k:
+      | 'maxListings'
+      | 'listingDays'
+      | 'tradesPerDay'
+      | 'levelCap'
+      | 'minBadges'
+      | 'boardPicks'
+      | 'boardRerolls',
+    min = 0,
+    max?: number,
+  ) => (
     <NumInput min={min} max={max} value={cfg[k]} onChange={(v) => set({ [k]: Math.max(min, Math.min(max ?? Infinity, v ?? min)) })} />
   )
   const name = (dex: number) => data?.species[dex]?.name ?? `#${dex}`
@@ -395,6 +533,10 @@ function TradesBox() {
         <Field label="Trades taken a day" hint="per player, UTC days">{num('tradesPerDay', 1, 100)}</Field>
         <Field label="Level cap" hint="traded Pokémon arrive at most at">{num('levelCap', 1, 100)}</Field>
         <Field label="Badges needed" hint="every region's counted">{num('minBadges', 0, 100)}</Field>
+        <Field label="Board picks" hint="listings picked for a player; a search shows all">
+          {num('boardPicks', 1, 20)}
+        </Field>
+        <Field label="New picks a day" hint="per player, UTC days">{num('boardRerolls', 0, 20)}</Field>
       </div>
       <div className="grid gap-2">
         <span className="text-lg">Evolve when traded (never by level)</span>
@@ -474,6 +616,89 @@ function TradesBox() {
 }
 
 /**
+ * Hidden talents (docs/51): the odds, and each family's talent. A family is every species joined to its lowest dex by
+ * an evolution or a form; its talent is the game's own (src/data/talents.json, `pnpm talents`) unless picked here.
+ * The switch is on the Switches tab.
+ */
+function HiddenTalentsBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('hiddenTalents')
+  const cfg: HiddenTalentsConfig = { ...DEFAULT_CONFIG.hiddenTalents, ...(raw ?? {}) }
+  const set = (patch: Partial<HiddenTalentsConfig>) => setRaw({ ...cfg, ...patch })
+  const [q, setQ] = useState('')
+  const families = useMemo(() => {
+    if (!data) return []
+    const seen = new Map<number, string[]>()
+    for (const s of data.speciesList) {
+      if (s.form) continue
+      const root = familyOf(data, s.dex)
+      seen.set(root, [...(seen.get(root) ?? []), s.name])
+    }
+    return [...seen.entries()].map(([root, names]) => ({ root, names }))
+  }, [data])
+  const needle = q.trim().toLowerCase()
+  const shown = families.filter((f) => !needle || f.names.some((n) => n.toLowerCase().includes(needle)) || String(f.root) === needle)
+  const pct = (v: number) => Math.round(v * 1000) / 10
+  return (
+    <Box
+      title="Hidden talents"
+      icon="talent"
+      hint="One talent per evolution family. A wild Pokémon (a ghost, an Egg, a fossil, a gift…) carries its family's talent at the odds below; catching it unlocks the talent for every Pokémon of that family the player owns in that region. Legendaries and mythicals always carry theirs, starter lines never do and always find it as they evolve; any other family still locked may find it on each evolution. Gym leaders', the Elite Four's and Champions' aces always have theirs. Super talents (gold) go to strong families, base ones (blue) to the others."
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Wild odds (%)" hint="a Pokémon met carries its talent">
+          <NumInput min={0} max={100} step={0.5} value={pct(cfg.wildChance)} onChange={(v) => set({ wildChance: Math.max(0, Math.min(100, v ?? 0)) / 100 })} />
+        </Field>
+        <Field label="Evolution odds (%)" hint="a locked family finds it as one evolves">
+          <NumInput min={0} max={100} step={1} value={pct(cfg.evolveChance)} onChange={(v) => set({ evolveChance: Math.max(0, Math.min(100, v ?? 0)) / 100 })} />
+        </Field>
+      </div>
+      <input className={cx(inputCls, 'mt-3')} placeholder="Find a family (a name or the lowest dex)" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="mt-2 max-h-[480px] overflow-y-auto">
+        <table className="w-full text-base">
+          <tbody>
+            {data &&
+              shown.slice(0, 200).map((f) => {
+                const own = cfg.families[String(f.root)]
+                const talent = familyTalent({ ...data, config: { ...data.config, hiddenTalents: cfg } }, f.root)
+                return (
+                  <tr key={f.root} className="border-b border-shadow">
+                    <td className="w-10 py-1">
+                      <SpriteImg dex={f.root} size={32} />
+                    </td>
+                    <td className="py-1">
+                      #{f.root} {f.names.join(' · ')}
+                    </td>
+                    <td className="w-16 py-1 text-muted">{talentTier(talent)}</td>
+                    <td className="w-48 py-1">
+                      <select
+                        className={inputCls}
+                        value={isTalentKey(own) ? own : ''}
+                        onChange={(e) => {
+                          const { [String(f.root)]: _old, ...rest } = cfg.families
+                          set({ families: e.target.value ? { ...rest, [String(f.root)]: e.target.value } : rest })
+                        }}
+                      >
+                        <option value="">{`game's: ${familyTalent({ ...data, config: { ...data.config, hiddenTalents: { ...cfg, families: {} } } }, f.root)}`}</option>
+                        {TALENT_KEYS.map((k) => (
+                          <option key={k} value={k}>
+                            {k} ({talentTier(k)})
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                )
+              })}
+          </tbody>
+        </table>
+        {shown.length > 200 && <p className="text-muted">{shown.length - 200} more: narrow the search.</p>}
+      </div>
+    </Box>
+  )
+}
+
+/**
  * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened, and the ₽ the last one pays.
  * The letters are noted on the device, so the game alone reads it.
  */
@@ -500,6 +725,121 @@ function UnownDexBox() {
 }
 
 /**
+ * Friendship streaks and the Friend Market (docs/60): what each tier of a streak pays a day, the day's cap, the
+ * market's weekly shelf and the shiny of the week. The server prices and pays from this same row (friendship_cfg()).
+ */
+function FriendshipBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('friendship')
+  const cfg: FriendshipConfig = { ...DEFAULT_CONFIG.friendship, ...(raw ?? {}) }
+  const set = (patch: Partial<FriendshipConfig>) => setRaw({ ...cfg, ...patch })
+  const n = (v: number | null | undefined, lo: number, hi: number, d: number) => Math.max(lo, Math.min(hi, Math.round(v ?? d)))
+  const week = marketWeek(new Date().toISOString().slice(0, 10))
+  const shinyNow = data ? marketShiny(week, { ...data, config: { ...data.config, friendship: cfg } }) : null
+  return (
+    <Box
+      title="Friendship & Friend Market"
+      icon="heart"
+      hint="Two friends who raid beside each other's team, trade together or make an Egg with the other's Pokémon keep a streak going (once per UTC day). Each new streak day pays both of them Heart Scales by its tier, up to the daily cap across every friend. A missed day starts the streak again. The coins buy from the Friend Market, whose limits and shiny reset every Monday 00:00 UTC."
+    >
+      <div className="grid gap-3">
+        <div className="grid gap-3 sm:grid-cols-5">
+          {cfg.tiers.map((tier, i) => (
+            <Field key={i} label={`Tier ${i + 1}: from day`} hint={`pays ${tier.coins} a day`}>
+              <div className="flex gap-1.5">
+                <NumInput
+                  className="w-16"
+                  min={1}
+                  value={tier.from}
+                  onChange={(v) => set({ tiers: cfg.tiers.map((x, j) => (j === i ? { ...x, from: n(v, 1, 9999, 1) } : x)) })}
+                />
+                <NumInput
+                  className="w-16"
+                  min={0}
+                  max={99}
+                  value={tier.coins}
+                  onChange={(v) => set({ tiers: cfg.tiers.map((x, j) => (j === i ? { ...x, coins: n(v, 0, 99, 0) } : x)) })}
+                />
+              </div>
+            </Field>
+          ))}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-5">
+          {cfg.tiers.map((tier, i) => (
+            <Field key={i} label={`Friend Ball ×, tier ${i + 1}`} hint={`hidden-talent odds × this from day ${tier.from}`}>
+              <NumInput
+                className="w-16"
+                min={1}
+                max={20}
+                value={cfg.ballBoost?.[i] ?? 1}
+                onChange={(v) => {
+                  const boosts = cfg.tiers.map((_, j) => cfg.ballBoost?.[j] ?? 1)
+                  boosts[i] = n(v, 1, 20, 1)
+                  set({ ballBoost: boosts })
+                }}
+              />
+            </Field>
+          ))}
+        </div>
+        <Field label="Daily cap" hint="coins a player can earn a UTC day, every friend together">
+          <NumInput className="w-24" min={0} value={cfg.dailyCap} onChange={(v) => set({ dailyCap: n(v, 0, 9999, 50) })} />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {cfg.market.map((m, i) => (
+            <Field key={m.key} label={data?.items[m.key]?.name ?? m.key} hint="price · weekly limit">
+              <div className="flex gap-1.5">
+                <NumInput
+                  className="w-20"
+                  min={1}
+                  value={m.price}
+                  onChange={(v) => set({ market: cfg.market.map((x, j) => (j === i ? normaliseMarketItem({ ...x, price: v ?? 1 }) : x)) })}
+                />
+                <NumInput
+                  className="w-16"
+                  min={1}
+                  max={99}
+                  value={m.limit}
+                  onChange={(v) => set({ market: cfg.market.map((x, j) => (j === i ? normaliseMarketItem({ ...x, limit: v ?? 1 }) : x)) })}
+                />
+              </div>
+            </Field>
+          ))}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="Shiny of the week: price">
+            <NumInput className="w-24" min={1} value={cfg.shiny.price} onChange={(v) => set({ shiny: { ...cfg.shiny, price: n(v, 1, 99999, 150) } })} />
+          </Field>
+          <Field label="Shiny of the week: level">
+            <NumInput className="w-20" min={1} max={100} value={cfg.shiny.level} onChange={(v) => set({ shiny: { ...cfg.shiny, level: n(v, 1, 100, 15) } })} />
+          </Field>
+          <Field
+            label="Shiny pool (Pokédex numbers, one a week in this order)"
+            hint={`this week: ${shinyNow ? `#${shinyNow} ${data?.species[shinyNow]?.name ?? ''}` : 'none'}`}
+          >
+            <input
+              aria-label="Shiny pool"
+              className={cx(inputCls, 'w-full')}
+              defaultValue={cfg.shiny.pool.join(', ')}
+              onBlur={(e) =>
+                set({
+                  shiny: {
+                    ...cfg.shiny,
+                    pool: e.target.value
+                      .split(/[^0-9]+/)
+                      .map(Number)
+                      .filter((d) => Number.isInteger(d) && d > 0 && (!data || data.species[d])),
+                  },
+                })
+              }
+            />
+          </Field>
+        </div>
+      </div>
+    </Box>
+  )
+}
+
+/**
  * The General upgrades (docs/25): the levels' numbers. Their switches (the tab, the Shiny Charm, and the Link Cable and
  * Bait that came with them) are on the Switches tab; the server reads the General one too, for the golden names.
  */
@@ -520,6 +860,9 @@ function GeneralBox() {
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Offline earnings count up to (hours)" hint="per absence, on the server's clock">
           <NumInput min={1} max={168} value={cfg.offlineMaxHours} onChange={(v) => set({ offlineMaxHours: Math.max(1, v ?? 24) })} />
+        </Field>
+        <Field label="Offline earnings at level 0 (₽ / hour)" hint="before any level is bought; 0 = nothing">
+          <NumInput min={0} value={cfg.offlineBase} onChange={(v) => set({ offlineBase: Math.max(0, v ?? 0) })} />
         </Field>
         <Field label="I am just rich (₽)" hint="one level: a golden name">
           <NumInput min={0} value={cfg.richCost} onChange={(v) => set({ richCost: Math.max(0, v ?? 0) })} />
@@ -730,6 +1073,94 @@ function InviteRewardsBox() {
 }
 
 /**
+ * Welcome-back gifts (docs/58): the cooldown and the tiers — each a number of days away and the gifts it gives (the
+ * same editor as a message's gifts). The server reads the same row (0103): on a return it writes the player a message
+ * from you with the highest tier's gifts, and only while the Gifts switch (Messages) is on for them too.
+ */
+function WelcomeBackBox() {
+  const data = useAdminData()
+  const [raw, setRaw] = useConfigRow('welcomeBack')
+  const cfg: WelcomeBackConfig = { ...DEFAULT_CONFIG.welcomeBack, ...(raw ?? {}) }
+  const set = (patch: Partial<WelcomeBackConfig>) => setRaw({ ...cfg, ...patch })
+  const tiers = Array.isArray(cfg.tiers) ? cfg.tiers : []
+  const setTier = (i: number, patch: Partial<WelcomeBackConfig['tiers'][number]>) =>
+    set({ tiers: tiers.map((t, j) => (j === i ? { ...t, ...patch } : t)) })
+  // What the server will read: in order, each number of days once, only tiers whose every gift is readable.
+  const seen = welcomeBackTiers(cfg)
+  const nextDays = Math.min(WELCOME_BACK_DAYS_MAX, Math.max(0, ...tiers.map((t) => Number(t.minDays) || 0)) + 7)
+  const clampDays = (v: number | null) => Math.max(1, Math.min(WELCOME_BACK_DAYS_MAX, Math.round(v ?? 1)))
+  return (
+    <Box
+      title="Welcome back" icon="gift"
+      hint="A player back after days away (the days the server saw them play: back the next day = 1) finds a message from you with the gifts of the highest tier reached, opened like any message's gifts, at most once per cooldown. Never for a new player. The server checks the switch, and needs the Gifts switch (Messages) on for the player too."
+    >
+      <Field
+        label="Cooldown (days)"
+        hint={`at most one welcome-back gift per player every this many days (1–${WELCOME_BACK_DAYS_MAX})`}
+      >
+        <NumInput
+          className="w-24"
+          value={cfg.cooldownDays}
+          min={1}
+          max={WELCOME_BACK_DAYS_MAX}
+          onChange={(v) => set({ cooldownDays: clampDays(v) })}
+        />
+      </Field>
+      <ol className="m-0 flex list-none flex-col gap-2 p-0">
+        {tiers.map((t, i) => (
+          <li key={i} className="flex flex-col gap-2 border-2 border-shadow p-2">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Days away, at least" hint={`1–${WELCOME_BACK_DAYS_MAX}`}>
+                <NumInput
+                  className="w-24"
+                  value={t.minDays}
+                  min={1}
+                  max={WELCOME_BACK_DAYS_MAX}
+                  onChange={(v) => setTier(i, { minDays: clampDays(v) })}
+                />
+              </Field>
+              <PixelButton size="sm" variant="ghost" onClick={() => set({ tiers: tiers.filter((_, j) => j !== i) })}>
+                Remove tier
+              </PixelButton>
+            </div>
+            {data && (
+              <GiftEditor
+                data={data}
+                gifts={t.gifts ?? []}
+                onChange={(gifts) => setTier(i, { gifts })}
+                hint="in your message when they come back"
+              />
+            )}
+          </li>
+        ))}
+      </ol>
+      <div className="flex flex-wrap items-center gap-3">
+        <PixelButton
+          size="sm"
+          disabled={tiers.length >= WELCOME_BACK_TIERS_MAX}
+          onClick={() => set({ tiers: [...tiers, { minDays: nextDays, gifts: [] }] })}
+        >
+          Add a tier
+        </PixelButton>
+        <span className="text-base text-muted">
+          {WELCOME_BACK_TIERS_MAX} tiers at most. Only the highest tier reached is given. A tier without a gift, or a
+          number of days already used, is left out.
+        </span>
+      </div>
+      {data && (
+        <p className="text-lg">
+          Players get:{' '}
+          {seen.length
+            ? seen.map((t) => `${t.minDays}+ days → ${t.gifts.map((g) => giftName(data, g)).join(' + ')}`).join(' · ')
+            : 'nothing (no tier).'}{' '}
+          · one every {welcomeBackCooldown(cfg)} days at most.
+        </p>
+      )}
+    </Box>
+  )
+}
+
+/**
  * Pokémon Day Care, one for every region: when it opens, how fast residents train, the friend slots, the two Egg
  * checks, Egg now and what Eggs hatch into.
  */
@@ -793,7 +1224,7 @@ function DayCareBox() {
         {week('breed').toFixed(1)} Eggs a week (Ditto pairs: {week('ditto').toFixed(1)}).
       </p>
       <div className="grid gap-3 sm:grid-cols-4">
-        <Field label="Unowned weight" hint="× odds of a species not in the Pokédex (owned = 1)">
+        <Field label="Unowned weight" hint="× odds of a line, or a pool species, not in the Pokédex (owned = 1)">
           {num('unownedWeight', 0)}
         </Field>
         <Field label="Hatch: rank" hint="the n-th lowest level owned">
@@ -804,7 +1235,9 @@ function DayCareBox() {
       </div>
       <div className="grid gap-2">
         <p className="text-base text-muted">
-          Eggs hatch into the first form of a line that evolves, starters excluded, and only from the region they are
+          An Egg hatches the first form of one parent’s line (Ditto passes none on), from the regions the player
+          has discovered, into the Box they pick. An Egg no parent passes a line on to (the free first one, Ditto
+          × Ditto) hatches the first form of a line that evolves, starters excluded, from the region it is
           hatched in:
         </p>
         {pools.map(({ region, pool }) => (
@@ -954,6 +1387,7 @@ function GameSettings() {
   const data = useAdminData()
   const [encounterMode, setEncounterMode] = useConfigRow('encounterMode')
   const [hpMultiplier, setHpMultiplier] = useConfigRow('hpMultiplier')
+  const [speedPerLevel, setSpeedPerLevel] = useConfigRow('speedPerLevel')
   const [goldMultiplier, setGold] = useConfigRow('goldMultiplier')
   const [xpCurve, setXpCurve] = useConfigRow('xpCurve')
   const [share, setShare] = useConfigRow('xpShareMode')
@@ -975,6 +1409,7 @@ function GameSettings() {
   const [showRound, setShowRound] = useConfigRow('showRoundGauge')
   const [showAhead, setShowAhead] = useConfigRow('showRoundPreview')
   const [shiny, setShiny] = useConfigRow('shinyChance')
+  const [fossilShiny, setFossilShiny] = useConfigRow('fossilShinyChance')
   const [cloudSync, setCloudSync] = useConfigRow('cloudSyncMinutes')
   const [maxFriends, setMaxFriends] = useConfigRow('maxFriends')
   const [fph, setFph] = useState(80)
@@ -993,6 +1428,9 @@ function GameSettings() {
           <Field label="goldMultiplier" hint="× trainer gold — the economy knob">
             <NumInput step={0.1} value={goldMultiplier} onChange={(v) => setGold(v ?? 1)} />
           </Field>
+          <Field label="speedPerLevel" hint="Speed = the species' base Speed stat + this × level: who acts first">
+            <NumInput step={0.5} value={speedPerLevel} min={0} onChange={(v) => setSpeedPerLevel(Math.max(0, v ?? 1))} />
+          </Field>
         </div>
       </Box>
 
@@ -1009,6 +1447,9 @@ function GameSettings() {
           </Field>
           <Field label="shinyChance" hint={`chance a wild Pokémon is shiny (only its sprites change) · 0.01 = 1 in 100${Number(shiny) > 0 ? ` · now 1 in ${Math.round(1 / Number(shiny))}` : ' · now off'}`}>
             <NumInput step={0.005} value={shiny} min={0} max={1} onChange={(v) => setShiny(Math.max(0, Math.min(1, v ?? 0)))} />
+          </Field>
+          <Field label="fossilShinyChance" hint={`chance a fossil revives shiny, wherever it was found · its own odds: the Shiny Charm and Shiny Parade don't change them · 0.1 = 1 in 10${Number(fossilShiny) > 0 ? ` · now 1 in ${Math.round(1 / Number(fossilShiny))}` : ' · now off'}`}>
+            <NumInput step={0.01} value={fossilShiny} min={0} max={1} onChange={(v) => setFossilShiny(Math.max(0, Math.min(1, v ?? 0)))} />
           </Field>
           <label className="flex items-center gap-2 text-lg" title="Players can't FLEE / AVOID an encounter or RUN from a battle (overrides skipPolicy)">
             <input type="checkbox" checked={!!noEscape} onChange={(e) => setNoEscape(e.target.checked)} /> noEscape
@@ -1136,14 +1577,21 @@ const TABS = [
   { id: 'dayCare', label: 'Day Care', icon: 'heal' },
   { id: 'extreme', label: 'Extreme mode', icon: 'skull' },
   { id: 'doubles', label: 'Double battles', icon: 'vs' },
+  { id: 'flavours', label: 'Region flavours', icon: 'weatherRain' },
   { id: 'trades', label: 'Trades', icon: 'trade' },
   { id: 'versus', label: 'Versus league', icon: 'trophy' },
+  { id: 'areaVersus', label: 'Real-player battles', icon: 'user' },
+  { id: 'friendBattles', label: 'Friend Battles', icon: 'vs' },
   { id: 'general', label: 'General upgrades', icon: 'navUpgrades' },
   { id: 'powers', label: 'Battle powers', icon: 'up' },
   { id: 'invites', label: 'Invite rewards', icon: 'gift' },
+  { id: 'friendship', label: 'Friendship', icon: 'heart' },
+  { id: 'welcomeBack', label: 'Welcome back', icon: 'gift' },
   { id: 'push', label: 'Push', icon: 'bell' },
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
+  { id: 'talents', label: 'Hidden talents', icon: 'talent' },
+  { id: 'intros', label: 'Intros', icon: 'sparkle' },
   { id: 'support', label: 'Support & Discord', icon: 'heart' },
   { id: 'rows', label: 'All rows', icon: 'wrench' },
 ] as const satisfies readonly { id: string; label: string; icon: IconName }[]
@@ -1162,6 +1610,8 @@ interface Feature {
   row: keyof GameConfig
   get: (row: Row) => unknown
   put: (row: Row, access: EventAccess) => Row
+  /** Its server functions read access_open (docs/65 §3): "On for beta testers" is offered. */
+  beta?: boolean
 }
 
 const D = DEFAULT_CONFIG as unknown as Record<keyof GameConfig, Row>
@@ -1206,12 +1656,31 @@ const FEATURES: Feature[] = [
   own('Idle mode', 'idleMode'),
   own('Trainer looks', 'looks'),
   bare('League heal', 'leagueHeal'),
+  own('Legendary intros', 'legendCinema', 'intros'),
+  own('Champion intros', 'championCinema', 'intros'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
+  // The side quests (docs/61).
+  bare('Pokémon posing as items', 'disguises'),
+  own('Safari Zones', 'safari'),
+  bare('Rivals on the road', 'rivals'),
+  bare('Gift Pokémon', 'giftMoments'),
+  // The region flavours (docs/62): each one's numbers and content stay the game's own unless the row says otherwise.
+  own("Hoenn's weather", 'hoennWeather', 'flavours'),
+  own("Galar's weather of the day", 'galarWeather', 'flavours'),
+  own('Kalos hordes', 'hordes', 'flavours'),
+  own('Alola island trials', 'trials', 'flavours'),
+  own('Paldea Titans', 'titans', 'flavours'),
   own('Unown Pokédex', 'unownDex', 'unown'),
+  own('Hidden talents', 'hiddenTalents', 'talents'),
+  bare('Outfits', 'outfits'),
   own('Extreme mode', 'extreme', 'extreme'),
+  own('Extreme Pokémon Centers', 'extremeCenters', 'extreme'),
   own('Double battles', 'doubleBattles', 'doubles'),
   own('Trades', 'trade', 'trades'),
   own('Versus league', 'versusLeague', 'versus', VERSUS_LEAGUE_DEFAULTS as unknown as Row),
+  field('Versus global board', 'versusLeague', 'globalAccess', 'versus'),
+  own('Real-player battles', 'areaVersus', 'areaVersus', AREA_VERSUS_DEFAULTS as unknown as Row),
+  { ...own('Friend Battles', 'friendBattles', 'friendBattles', FRIEND_BATTLES_DEFAULTS as unknown as Row), beta: true },
   own('Game Corner', 'slotMachine', 'gameCorner'),
   own('General upgrades', 'general', 'general'),
   field('Shiny Charm', 'general', 'charmAccess', 'general'),
@@ -1221,6 +1690,8 @@ const FEATURES: Feature[] = [
   inPart('Gigantamax', 'gigantamax', 'boost', 'powers'),
   own('Z-Moves', 'zMove', 'powers'),
   own('Friend invite rewards', 'inviteRewards', 'invites'),
+  own('Friendship & Friend Market', 'friendship', 'friendship'),
+  own('Welcome back', 'welcomeBack', 'welcomeBack'),
   own('Push notifications', 'push', 'push'),
 ]
 
@@ -1250,6 +1721,7 @@ function FeatureRow({ feature, open }: { feature: Feature; open: (tab: TabId) =>
           value={access}
           onChange={(a) => setRaw(feature.put(row, a) as unknown as GameConfig[typeof feature.row])}
           label={`${feature.name}: who has it`}
+          beta={feature.beta}
         />
       </td>
     </tr>
@@ -1262,7 +1734,7 @@ function SwitchesTable({ open }: { open: (tab: TabId) => void }) {
   return (
     <Box
       title="Feature switches" icon="gear"
-      hint="Off: nowhere in the game. On for admin: only you, signed in, to try it first. On for everyone: open. A name opens its numbers. Save, then Publish."
+      hint="Off: nowhere in the game. On for admin: only you, signed in, to try it first. On for beta testers (where offered): you and the Beta testers list below. On for everyone: open. A name opens its numbers. Save, then Publish."
     >
       <div className="grid gap-x-6 lg:grid-cols-2">
         {[FEATURES.slice(0, half), FEATURES.slice(half)].map((list, i) => (
@@ -1283,6 +1755,91 @@ function SwitchesTable({ open }: { open: (tab: TabId) => void }) {
  * Admin → Config: sub-tabs at the top, the feature switches first, then one tab per feature with its numbers. The tab
  * is in the address (?tab=trades), so a reload stays on it.
  */
+/**
+ * The region flavours' numbers (docs/62): Galar's weather pool shift, the hordes', the Totems' and the Titans'. Each
+ * area's weather and each trial are the game's own content (All rows edits them as JSON); only what's set here is
+ * written, so a row keeps following the game's own numbers otherwise.
+ */
+function RegionFlavoursBox() {
+  const [galarRaw, setGalar] = useConfigRow('galarWeather')
+  const [hordeRaw, setHordes] = useConfigRow('hordes')
+  const [trialRaw, setTrials] = useConfigRow('trials')
+  const [titanRaw, setTitans] = useConfigRow('titans')
+  const galar = { ...DEFAULT_CONFIG.galarWeather, ...galarRaw }
+  const hordes = { ...DEFAULT_CONFIG.hordes, ...hordeRaw }
+  const trials = { ...DEFAULT_CONFIG.trials, ...trialRaw }
+  const titans = { ...DEFAULT_CONFIG.titans, ...titanRaw }
+  // Only the numbers go into the row: the areas and the trials stay the game's (deep-merged at load).
+  const num = (v: number | null, d: number, min = 0) => Math.max(min, v ?? d)
+  return (
+    <div className="grid items-start gap-4 xl:grid-cols-2">
+      <Box
+        title="Galar's weather of the day"
+        icon="weatherRain"
+        hint="Each Wild Area area rolls its weather once a UTC day (the same for everyone). Its types' wild Pokémon weigh × this. Hoenn's weather is fixed per area."
+      >
+        <Field label="× the weather's types" hint="1 = no shift">
+          <NumInput min={1} step={0.5} value={galar.poolTimes ?? 2} onChange={(v) => setGalar({ ...galarRaw, access: galar.access, poolTimes: num(v, 2, 1) } as typeof galar)} />
+        </Field>
+      </Box>
+      <Box title="Kalos hordes" icon="horde" hint="A wild card becomes a horde: five of a species, fought two at a time, one throw at the end.">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="% of wild cards">
+            <NumInput min={0} max={100} value={hordes.chance} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, chance: num(v, 4) })} />
+          </Field>
+          <Field label="At most a round">
+            <NumInput min={0} value={hordes.perArea} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, perArea: num(v, 1) })} />
+          </Field>
+          <Field label="How many">
+            <NumInput min={2} max={8} value={hordes.size} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, size: num(v, 5, 2) })} />
+          </Field>
+          <Field label="Levels down">
+            <NumInput min={0} value={hordes.levelDrop} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, levelDrop: num(v, 3) })} />
+          </Field>
+          <Field label="% mixed">
+            <NumInput min={0} max={100} value={hordes.mixedChance} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, mixedChance: num(v, 10) })} />
+          </Field>
+          <Field label="Rarest left out" hint="pool weight up to">
+            <NumInput min={0} value={hordes.minWeight} onChange={(v) => setHordes({ ...hordes, ...hordeRaw, minWeight: num(v, 2) })} />
+          </Field>
+        </div>
+      </Box>
+      <Box title="Alola island trials" icon="sparkle" hint="The Totem instead of the captain's battle: its aura and the allies it calls.">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="× HP">
+            <NumInput min={1} step={0.5} value={trials.hpTimes} onChange={(v) => setTrials({ ...trialRaw, access: trials.access, hpTimes: num(v, 2, 1) } as typeof trials)} />
+          </Field>
+          <Field label="Extra dice">
+            <NumInput min={0} max={3} value={trials.extraDice} onChange={(v) => setTrials({ ...trialRaw, access: trials.access, extraDice: num(v, 1) } as typeof trials)} />
+          </Field>
+          <Field label="Allies called">
+            <NumInput min={0} max={4} value={trials.calls} onChange={(v) => setTrials({ ...trialRaw, access: trials.access, calls: num(v, 2) } as typeof trials)} />
+          </Field>
+        </div>
+      </Box>
+      <Box title="Paldea Titans" icon="crown" hint="The second phase after the Herba Mystica, Dondozo's with Tatsugiri in its mouth, and what a Titan leaves.">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="× HP">
+            <NumInput min={1} step={0.5} value={titans.hpTimes} onChange={(v) => setTitans({ ...titans, ...titanRaw, hpTimes: num(v, 2, 1) })} />
+          </Field>
+          <Field label="Extra dice">
+            <NumInput min={0} max={3} value={titans.extraDice} onChange={(v) => setTitans({ ...titans, ...titanRaw, extraDice: num(v, 1) })} />
+          </Field>
+          <Field label="₽ left">
+            <NumInput min={0} step={100} value={titans.gold} onChange={(v) => setTitans({ ...titans, ...titanRaw, gold: num(v, 1000) })} />
+          </Field>
+          <Field label="Commander × HP">
+            <NumInput min={1} step={0.5} value={titans.commanderHpTimes} onChange={(v) => setTitans({ ...titans, ...titanRaw, commanderHpTimes: num(v, 2, 1) })} />
+          </Field>
+          <Field label="Commander dice">
+            <NumInput min={0} max={3} value={titans.commanderExtraDice} onChange={(v) => setTitans({ ...titans, ...titanRaw, commanderExtraDice: num(v, 2) })} />
+          </Field>
+        </div>
+      </Box>
+    </div>
+  )
+}
+
 export function ConfigSection() {
   const [version] = useConfigRow('configVersion')
   const [params, setParams] = useSearchParams()
@@ -1315,6 +1872,7 @@ export function ConfigSection() {
         ))}
       </nav>
       {tab === 'switches' && <SwitchesTable open={open} />}
+      {tab === 'switches' && <BetaTestersBox />}
       {tab === 'game' && <GameSettings />}
       {tab === 'odds' && (
         <div className="grid gap-4 xl:grid-cols-2">
@@ -1334,16 +1892,34 @@ export function ConfigSection() {
         </div>
       )}
       {tab === 'dayCare' && <DayCareBox />}
-      {tab === 'extreme' && <ExtremeBox />}
+      {tab === 'extreme' && (
+        <div className="grid items-start gap-4 xl:grid-cols-2">
+          <ExtremeBox />
+          <ExtremeCentersBox />
+        </div>
+      )}
       {tab === 'doubles' && <DoubleBattlesBox />}
+      {tab === 'flavours' && <RegionFlavoursBox />}
       {tab === 'trades' && <TradesBox />}
-      {tab === 'versus' && <VersusLeagueBox />}
+      {tab === 'versus' && (
+        <div className="grid items-start gap-4">
+          <VersusLeagueBox />
+          <VersusLeagueGroups />
+        </div>
+      )}
+      {tab === 'areaVersus' && <AreaVersusBox />}
+      {tab === 'friendBattles' && <FriendBattlesBox />}
       {tab === 'general' && <GeneralBox />}
       {tab === 'powers' && <BattlePowersBox />}
       {tab === 'invites' && <InviteRewardsBox />}
+      {tab === 'friendship' && <FriendshipBox />}
+      {tab === 'welcomeBack' && <WelcomeBackBox />}
       {tab === 'push' && <PushBox />}
       {tab === 'gameCorner' && <SlotMachineBox />}
       {tab === 'unown' && <UnownDexBox />}
+      {tab === 'talents' && <HiddenTalentsBox />}
+      {tab === 'intros' && <LegendIntrosBox />}
+      {tab === 'intros' && <ChampionIntrosBox />}
       {tab === 'support' && (
         <div className="grid gap-4 xl:grid-cols-2">
           <DonationBox />

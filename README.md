@@ -248,7 +248,7 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   it also moves the leaderboard onto small *player cards*, written once per cloud push, and retires the leaderboard
   cache, its rebuild and its pg_cron job (0026, 0031, 0032), which were most of the database's work.
 - **Day Care v2** — one Day Care for every region (it no longer resets with a region and shows the same in each),
-  open from 20 species caught across every region's Pokédex. Two of your Pokémon train there to Lv.100 (+1 XP every
+  open from 10 species caught across every region's Pokédex. Two of your Pokémon train there to Lv.100 (+1 XP every
   10 min, no other cap); a Pokémon taken back goes to its own region's Box. Up to four Pokémon from friends' Day Cares
   visit (they stay theirs: nothing changes for the friend). Eggs are bred from the real Egg groups (Showdown data,
   `pnpm egg-groups`): every 12 h each of yours checks everyone there and a compatible pair leaves an Egg; Ditto pairs
@@ -264,5 +264,9 @@ supabase/    migrations/0001_init.sql, seed.sql (generated)
   and Settings → Connected accounts links both to one account. CONNECT offers the choice only once Discord is switched
   on in Supabase (the game reads Auth's public settings, kept a day); until then it goes straight to Google as before.
   Setup in [docs/17](docs/17-DISCORD-SIGN-IN.md) and `/setup` step 7; no environment variable.
+- **Anti-cheat** — an edited save stays in its own game: the server checks everything that reaches other players
+  (trades, boards, Versus, raids, area versus), a ban reaches all of it, and Admin → Analytics → Suspicious saves lists
+  the saves that look edited. See [docs/63](docs/63-ANTI-CHEAT.md); needs `supabase/migrations/0114_anti_cheat.sql`,
+  after 0108.
 - `allowVoluntarySwitch`, `enemyUpgradeLevel`, `goldMultiplier`, `forcedCenterWhenHurt` and `scaleLevelSpread` are
   `game_config` keys (the spec was silent on these).

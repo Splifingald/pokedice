@@ -9,6 +9,7 @@
 // XP; no upgrades (dice and combos follow each Pokémon's level, both sides); booster types (× damage, both sides, always
 // shown); its own Mart; a shiny mythical at the end. No event reaches inside, and the Day Care, Versus and the region
 // chain are the main game's.
+import { rollTalentFor } from './talents'
 import type { UpgradeLevels } from './damage'
 import { bossCaught, isRaidBoss } from './encounters'
 import { eventOpenTo } from './events'
@@ -75,6 +76,17 @@ export function worldFor(save: SaveData, data: GameData, now: number | null): Sm
 /** The player finished this world early (docs/21 §11): it's over for them, as if it had ended. */
 export const worldFinished = (save: Pick<SaveData, 'events'>, id: string): boolean =>
   !!save.events?.worldDone?.includes(id)
+
+/**
+ * Two copies of one save, one replacing the other (the cloud sync, another tab): a world finished in either stays
+ * finished, so it can't be started again from scratch. The same save back when there's nothing to add.
+ */
+export function keepWorldsDone(save: SaveData, other: SaveData | null | undefined): SaveData {
+  const mine = save.events?.worldDone ?? []
+  const add = (other?.events?.worldDone ?? []).filter((id) => !mine.includes(id))
+  if (!add.length) return save
+  return { ...save, events: { ...save.events, worldDone: [...mine, ...add].slice(-20) } }
+}
 
 // ------------------------------------------------------------------ the world a save holds
 
@@ -226,7 +238,8 @@ export interface WorldCompletion {
 
 /**
  * The world's areas (secret ones included) and Pokédex, for the save holding it. An area is done once cleared, or once
- * its special run is won (the portal run's and the nightmare's areas are only their raid afterwards, never "cleared").
+ * its special run is won (the portal run's and the nightmare's areas are only their raid afterwards, never "cleared";
+ * Tracks in the Snow's glade closes once its shiny Stantler is caught).
  */
 export function worldCompletion(save: SaveData, data: GameData, world: SmallWorld): WorldCompletion {
   const live = regionOf(save) === world.regionId
@@ -237,7 +250,16 @@ export function worldCompletion(save: SaveData, data: GameData, world: SmallWorl
   const areas = data.areas.filter((a) => (a.regionId ?? KANTO) === world.regionId)
   const done = areas.filter((a) => {
     const p = progress[a.id]
-    return !!(p?.cleared || p?.portal?.won || p?.nightmare?.won)
+    // The race's area (docs/64 §4.4) once one of its legends is won; Crown Shrine's whiteout won (docs/64 §4.3): its
+    // boss caught, the shrine closed for good; Moonlit Glade's Stantler caught (§4.1).
+    return !!(
+      p?.cleared ||
+      p?.portal?.won ||
+      p?.nightmare?.won ||
+      p?.timeRace?.won?.length ||
+      p?.whiteout?.won ||
+      p?.tracks?.won
+    )
   }).length
   const species = [...regionSpecies(data, world.regionId)].filter((d) => !!data.species[d])
   const dex = species.filter((d) => caught.has(d)).length
@@ -532,6 +554,8 @@ export function catchWorldMythical(
   }
   const inst = createInstance(dex, caught.level, data, newId(), now)
   inst.shiny = true
+  // A mythical always carries its hidden talent (docs/51).
+  if (rollTalentFor(data, dex, inst.id)) inst.talent = true
   const home = mythicalHome(data, dex)
   const sent = home === world.regionId ? null : addToRegion(noted, data, home, inst)
   if (sent) return { save: sent.save, events: [{ kind: 'world_mythical', dex, level: caught.level, region: home, waiting: false }] }
@@ -562,6 +586,7 @@ export function releaseWorldPending(
     }
     const inst = createInstance(p.dex, p.level, data, newId(), now)
     if (p.shiny) inst.shiny = true
+    if (rollTalentFor(data, p.dex, inst.id)) inst.talent = true
     const res = addToRegion(next, data, home, inst)
     if (!res) {
       still.push(p)

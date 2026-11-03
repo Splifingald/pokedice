@@ -13,6 +13,7 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { comboExampleText, comboName, statusEffects } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { HowToPlay } from '@/screens/help/HowToPlay'
+import { FeatureRulesList } from '@/components/FeatureRulesList'
 import { cx } from '@/theme/util'
 
 function StatusTable() {
@@ -269,6 +270,8 @@ export function HelpContent({ columns = false }: { columns?: boolean }) {
         </h2>
         <RulesAccordion rules={rules} />
       </section>
+      {/* Every feature's rules, now that none opens by itself (the user's ask, 2026-11-02). */}
+      <FeatureRulesList />
     </div>
   )
 }

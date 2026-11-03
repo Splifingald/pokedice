@@ -1,6 +1,6 @@
 // Home's green GO TO: the furthest area of the region's main chain the player can play, when they stand elsewhere.
 import { describe, expect, it } from 'vitest'
-import { emptyProgress, latestOpenArea, linearAreas, newSave, regionOf, type SaveData } from '@/engine'
+import { areaStarted, emptyProgress, latestOpenArea, linearAreas, newSave, regionOf, type SaveData } from '@/engine'
 import { data, newId } from './fixtures'
 
 const fresh = () => newSave(7, data, 123, newId)
@@ -34,5 +34,24 @@ describe('latestOpenArea', () => {
   it('is nothing once every area of the chain is cleared', () => {
     const save = { ...cleared(fresh(), chain.length), currentAreaId: chain[0]!.id }
     expect(latestOpenArea(save, data)).toBeNull()
+  })
+})
+
+describe('areaStarted', () => {
+  const area = chain[3]!.id
+  const at = (p: Partial<ReturnType<typeof emptyProgress>>): SaveData => ({
+    ...fresh(),
+    areaProgress: { [area]: { ...emptyProgress(), ...p } },
+  })
+
+  it('is false for an area never entered, or only entered', () => {
+    expect(areaStarted(fresh(), area)).toBe(false)
+    expect(areaStarted(at({}), area)).toBe(false)
+  })
+
+  it('is true once an encounter was met there, a round done or a gym leader beaten', () => {
+    expect(areaStarted(at({ round: 1, drawn: ['wild'] }), area)).toBe(true)
+    expect(areaStarted(at({ roundsDone: 1 }), area)).toBe(true)
+    expect(areaStarted(at({ gymsDefeated: ['brock'] }), area)).toBe(true)
   })
 })

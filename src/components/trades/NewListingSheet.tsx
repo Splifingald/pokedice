@@ -31,6 +31,8 @@ import { Sheet } from '../Sheet'
 import { MiniSprite } from '../SpriteImg'
 import type { Shared } from './ShareListing'
 import { ShinyStar, useBlockText, useTradeErrorText } from './TradeBits'
+import { InstTalentGem, useTalentsOn } from '../Talent'
+import { Toggle } from '../Toggle'
 
 /** The species grid shows this many at first, then more on demand: a phone draws a few hundred tiles slowly. */
 const GRID_PAGE = 90
@@ -82,6 +84,9 @@ function Draft({
   const [monSort, setMonSort] = useState<'level' | 'dex'>('level')
   const [kind, setKind] = useState<Kind>('species')
   const [want, setWant] = useState<number | null>(null)
+  // A species asked "with its hidden talent" (docs/51), while talents are on.
+  const [withTalent, setWithTalent] = useState(false)
+  const talents = useTalentsOn()
   const [q, setQ] = useState('')
   const [own, setOwn] = useState<Own>('not')
   const [reg, setReg] = useState<RegionId | 'all'>('all')
@@ -108,6 +113,7 @@ function Draft({
           <>
             {name(picked.inst.dex)}
             {picked.inst.shiny && <ShinyStar />}
+            <InstTalentGem inst={picked.inst} />
             <LevelTag level={picked.inst.level} />
           </>
         }
@@ -190,9 +196,10 @@ function Draft({
                   <span className="font-pixel-sm text-[16px] leading-none text-muted">
                     {lv(m.inst.level)}
                   </span>
-                  {m.inst.shiny && (
-                    <span className="absolute right-1 top-1">
-                      <ShinyStar />
+                  {(m.inst.shiny || (talents && m.inst.talent)) && (
+                    <span className="absolute right-1 top-1 flex gap-0.5">
+                      {m.inst.shiny && <ShinyStar />}
+                      <InstTalentGem inst={m.inst} />
                     </span>
                   )}
                   {m.inTeam && (
@@ -214,6 +221,15 @@ function Draft({
     )
   }
 
+  const talentToggle =
+    talents && kind === 'species' && want != null ? (
+      <Toggle
+        label={t('ui.talent.trade.with')}
+        hint={t('ui.talent.trade.withHint')}
+        on={withTalent}
+        onChange={setWithTalent}
+      />
+    ) : null
   // ---------------------------------------------------------------- 2. in exchange
   let grid = null
   if (kind === 'species' && want != null)
@@ -349,7 +365,8 @@ function Draft({
   const submit = async () => {
     if (!picked || !ready || busy || full) return
     setBusy(true)
-    const w: TradeWant = kind === 'species' ? { kind, dex: want! } : { kind }
+    const w: TradeWant =
+      kind === 'species' ? { kind, dex: want!, ...(talents && withTalent && { talent: true as const }) } : { kind }
     try {
       const listing = await post(picked.inst.id, w, vis)
       pushToast(t('ui.trades.new.posted', { name: name(picked.inst.dex) }), 'good')
@@ -359,6 +376,7 @@ function Draft({
         dex: picked.inst.dex,
         level: picked.inst.level,
         shiny: !!picked.inst.shiny,
+        talent: !!picked.inst.talent,
         want: w,
         visibility: vis,
       })
@@ -409,7 +427,10 @@ function Draft({
             className="overflow-x-auto"
           />
           {kind === 'species' ? (
-            grid
+            <>
+              {grid}
+              {talentToggle}
+            </>
           ) : (
             <p className="copy m-0 text-[17px] text-muted">
               {t(kind === 'notOwned' ? 'ui.trades.new.notOwnedNote' : 'ui.trades.new.anyNote')}

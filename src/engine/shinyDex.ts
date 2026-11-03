@@ -4,7 +4,9 @@ import { inWorldRegion, leagueDone, regionOf } from './regions'
 import type { GameData, PokemonInstance, RegionId, SaveData } from './types'
 
 /** The page is there: a real region (not a small world), and its league beaten. */
-export const shinyDexOpen = (save: SaveData, data: GameData): boolean => !inWorldRegion(save, data) && leagueDone(save, data)
+// Never in Extreme mode, where no Pokémon is shiny (docs/48).
+export const shinyDexOpen = (save: SaveData, data: GameData): boolean =>
+  save.mode !== 'extreme' && !inWorldRegion(save, data) && leagueDone(save, data)
 
 /** Its rules, once: at the first league beaten. */
 export const shinyDexRulesDue = (save: SaveData, data: GameData): boolean =>

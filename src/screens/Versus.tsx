@@ -4,10 +4,10 @@
 // PC puts the opponents (or the team being picked) on the left, your team and the board beside them.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  cloneForVersus,
   versusClosest,
   versusEdge,
   VERSUS_LEVEL,
+  versusSeedLevels,
   randomSeed,
   sameEvent,
   simulateVersus,
@@ -42,6 +42,7 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { speciesTypes } from '@/components/TypeMatchups'
 import { TypeSelect } from '@/components/TypeSelect'
 import { avatarOf } from '@/lib/avatars'
+import { useSlotOrder } from '@/lib/useDragSwap'
 import { useSnapToMe } from '@/lib/useSnapToMe'
 import { getLang, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -515,15 +516,16 @@ export function TeamEditor({
   const [picks, setPicks] = useState<string[]>(() => me?.ids ?? [])
   const [saving, setSaving] = useState(false)
   const [q, setQ] = useState('')
-  const [sort, setSort] = useState<'dex' | 'az'>('dex')
+  // Highest level first: past Lv.50 a Pokémon fights with the dice and rerolls of its own level.
+  const [sort, setSort] = useState<'level' | 'dex' | 'az'>('level')
   const [type, setType] = useState<PokeType | 'all'>('all')
   // Every region's Box: the slots can show any of them.
   const candidates = useMemo(() => versusCandidates(save, data), [save, data])
   // A pick that has left the Box (released, or sent to the Day Care) is dropped.
   const valid = picks.filter((id) => candidates.some((c) => c.inst.id === id))
   const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
-  // The list: each species once (its shiny apart), by National Dex number or by name. Everyone is Lv.50 here, so
-  // levels would only add noise. The search and the type narrow it; picks they hide stay picked.
+  // The list: each species once (its shiny apart, its highest level), by level, National Dex number or name. The search
+  // and the type narrow it; picks they hide stay picked.
   const choices = versusChoices(save, data, valid)
   const types = POKE_TYPES.filter((ty) => choices.some((c) => speciesTypes(data, c.inst.dex).includes(ty)))
   const collator = new Intl.Collator(getLang())
@@ -536,17 +538,26 @@ export function TeamEditor({
     )
     .sort(
       (a, b) =>
+        (sort === 'level' ? b.inst.level - a.inst.level : 0) ||
         (sort === 'az' ? collator.compare(name(a.inst.dex), name(b.inst.dex)) : 0) ||
         a.inst.dex - b.inst.dex ||
         Number(!!a.inst.shiny) - Number(!!b.inst.shiny),
     )
-  // The picks are the team already saved: nothing to save.
-  const isSaved = !!me?.ids && me.ids.length === valid.length && me.ids.every((id, i) => valid[i] === id)
+  // The picks are the team already saved, at the levels saved: nothing to save. A Pokémon that has levelled up since
+  // (or a team saved while Versus capped the levels, before 0090) can be saved again for its new dice.
+  const levelOf = (id: string) => candidates.find((c) => c.inst.id === id)?.inst.level
+  const isSaved =
+    !!me?.ids &&
+    me.ids.length === valid.length &&
+    me.ids.every((id, i) => valid[i] === id && me.team[i]?.level === levelOf(id))
 
-  const toggle = (id: string) =>
+  const order = useSlotOrder(valid, setPicks)
+  const toggle = (id: string) => {
+    order.release()
     setPicks((cur) =>
       cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= VERSUS_TEAM_SIZE ? cur : [...cur, id],
     )
+  }
 
   const submit = async () => {
     if (valid.length !== VERSUS_TEAM_SIZE || saving) return
@@ -572,6 +583,9 @@ export function TeamEditor({
     <>
       <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.versus.pickHint')}</p>
       {!me && <p className="m-0 text-[18px] text-muted">{t('ui.versus.noTeam')}</p>}
+      {valid.length > 1 && (
+        <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.team.slotsTip')}</p>
+      )}
       <ol className="m-0 grid list-none grid-cols-3 gap-1.5 p-0" aria-label={t('ui.versus.yourTeam')}>
         {Array.from({ length: VERSUS_TEAM_SIZE }, (_, i) => {
           const c = candidates.find((x) => x.inst.id === valid[i])
@@ -591,20 +605,33 @@ export function TeamEditor({
               </li>
             )
           const name = data.species[c.inst.dex]?.name ?? t('ui.common.pokemon')
-          const clone = cloneForVersus(c.inst)
+          const fights = versusSeedLevels(c.inst.level).level
           return (
-            <li
-              key={i}
-              className="relative grid min-h-[118px] justify-items-center gap-0.5 bg-paper px-1 pb-2 pt-[18px] text-center shadow-card"
-            >
-              {n}
-              <SpriteImg dex={c.inst.dex} size={64} shiny={c.inst.shiny} />
-              <b className="max-w-full truncate text-[17px] font-normal leading-none">{name}</b>
-              <small className="font-pixel-sm text-[16px] text-muted">
-                {c.inst.level > clone.level
-                  ? `${t('ui.common.level.short', { n: c.inst.level })} → ${clone.level}`
-                  : t('ui.common.level.short', { n: clone.level })}
-              </small>
+            <li key={i} className={cx('relative', order.lifted === i && 'z-10')}>
+              {/* Drag it onto another slot, or tap it then the other: the two swap places. */}
+              <button
+                type="button"
+                {...order.handlers(i)}
+                onClick={() => order.tap(i)}
+                aria-pressed={order.held === i}
+                aria-label={t('ui.team.slotN', { n: i + 1, name })}
+                title={t('ui.team.slotsTip')}
+                className={cx(
+                  'relative grid h-full min-h-[118px] w-full cursor-grab touch-pan-y select-none justify-items-center gap-0.5 px-1 pb-2 pt-[18px] text-center',
+                  order.held === i ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-card',
+                  order.lifted === i && 'cursor-grabbing',
+                  order.over === i && 'outline-dashed outline-[3px] outline-offset-2 outline-danger',
+                )}
+              >
+                {n}
+                <SpriteImg dex={c.inst.dex} size={64} shiny={c.inst.shiny} />
+                <b className="max-w-full truncate text-[17px] font-normal leading-none">{name}</b>
+                <small className="font-pixel-sm text-[16px] text-muted">
+                  {c.inst.level > fights
+                    ? `${t('ui.common.level.short', { n: c.inst.level })} → ${fights}`
+                    : t('ui.common.level.short', { n: fights })}
+                </small>
+              </button>
             </li>
           )
         })}
@@ -624,6 +651,7 @@ export function TeamEditor({
           value={sort}
           onChange={setSort}
           options={[
+            { id: 'level', label: t('ui.team.sortLevel') },
             { id: 'dex', label: t('ui.team.sortDex') },
             { id: 'az', label: t('ui.versus.sortAz') },
           ]}
@@ -635,16 +663,16 @@ export function TeamEditor({
       )}
       <ul className="m-0 grid list-none gap-1.5 p-0 sm:grid-cols-2">
         {shown.map(({ inst: p }) => {
-          const order = valid.indexOf(p.id)
+          const place = valid.indexOf(p.id)
           return (
             <li key={p.id}>
               <button
                 type="button"
-                aria-pressed={order >= 0}
+                aria-pressed={place >= 0}
                 onClick={() => toggle(p.id)}
                 className={cx(
                   'flex min-h-[52px] w-full items-center gap-2 py-1.5 pl-1.5 pr-2.5 text-left',
-                  order >= 0 ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-card',
+                  place >= 0 ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-card',
                 )}
               >
                 <MiniSprite dex={p.dex} size={40} className="-my-1" />
@@ -653,15 +681,19 @@ export function TeamEditor({
                     <b className="truncate text-[18px] font-normal">{name(p.dex)}</b>
                     {p.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
                   </span>
-                  <span className="flex gap-1">
+                  <span className="flex items-center gap-1">
                     {speciesTypes(data, p.dex).map((ty) => (
                       <TypeBadge key={ty} type={ty} size="sm" />
                     ))}
+                    {/* Its own level: the dice and rerolls it brings. */}
+                    <small className="ml-0.5 font-pixel-sm text-[16px] leading-none text-muted">
+                      {t('ui.common.level.short', { n: p.level })}
+                    </small>
                   </span>
                 </span>
-                {order >= 0 && (
+                {place >= 0 && (
                   <span className="grid h-7 w-7 light-scope shrink-0 place-items-center bg-night text-[18px] leading-none text-gold-light">
-                    {order + 1}
+                    {place + 1}
                   </span>
                 )}
               </button>

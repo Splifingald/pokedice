@@ -1,14 +1,29 @@
 // Kitchen sink (dev only): the battle powers (docs/35) — the plates of a Mega with its turns left, a Mega of the older
-// rules and a Gigantamax; Z-MOVE with each type's hint (and disabled); the Mart's Mega Gems open (held, affordable, too
-// dear), shut until the League, and with nothing for the region; each power's rules, the first time and from INFO.
+// rules and a Gigantamax; Z-MOVE with each type's hint (and disabled); a dual-type's pick of its Z-Move's type (super
+// effective / neutral, resisted / neutral, no effect / neutral); the Mart's Mega Gems open (held, affordable, too dear),
+// shut until the League, and with nothing for the region; each power's rules, the first time and from INFO.
 import { useMemo, useState } from 'react'
-import { gemItems, makeBattler, zEffectOf, type GemShelfRow, type PokeType, type PowerKind } from '@/engine'
+import {
+  createBattle,
+  createRng,
+  gemItems,
+  makeBattler,
+  rollAll,
+  uniformLevels,
+  zEffectOf,
+  zMovePreview,
+  zTypeChoices,
+  type GameData,
+  type GemShelfRow,
+  type PokeType,
+  type PowerKind,
+} from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { PowerInfo, PowerRulesModal } from '@/components/PowersRules'
 import { zMoveText } from '@/i18n/text'
 import { typeName } from '@/lib/format'
 import { useGame } from '@/store/game'
-import { ZMoveButton } from '../battle/BattlePanel'
+import { ZMoveButton, ZTypePicker, type ZTypeOption } from '../battle/BattlePanel'
 import { FoePlate, OwnPlate } from '../battle/Plates'
 import { GemShelfView } from '../Shop'
 
@@ -26,6 +41,34 @@ const Z_SAMPLES: (PokeType | null)[] = [
   'steel',
   'dragon',
   null,
+]
+
+/** A dual-type's Z-Move types against this foe, from a real battle and a set roll: what the engine would offer. */
+function zPick(dex: number, foe: number, data: GameData): { name: string; options: ZTypeOption[] } {
+  const { state } = createBattle(
+    {
+      kind: 'trainer',
+      team: [{ uid: 'p0', dex, level: 50, hp: 9999 }],
+      enemy: { dex: foe, level: 50 },
+      playerLevels: uniformLevels(1),
+      enemyLevels: uniformLevels(1),
+      zAllowed: true,
+    },
+    data,
+  )
+  const a = state.player[0]!
+  const s = { ...state, phase: 'player_reroll' as const, dice: rollAll(a.dice, data, createRng(dex)) }
+  const options = zTypeChoices(s, data).map((type) => {
+    const { effect, result } = zMovePreview(s, data, type)
+    return { type, hint: zMoveText(effect, typeName(type), data), result }
+  })
+  return { name: a.name, options }
+}
+
+const Z_PICKS: [string, number, number][] = [
+  ['Gyarados vs Charizard: super effective / neutral', 130, 6],
+  ['Venusaur vs Charizard: resisted / neutral', 3, 6],
+  ['Garchomp vs Pidgeot: no effect / neutral', 445, 18],
 ]
 
 export function PowersBits() {
@@ -54,6 +97,10 @@ export function PowersBits() {
       },
     }
   }, [data])
+  const picks = useMemo(
+    () => Z_PICKS.map(([label, dex, foe]) => ({ label, ...zPick(dex, foe, data) })),
+    [data],
+  )
   const rows = useMemo<GemShelfRow[]>(
     () =>
       gemItems(data)
@@ -99,6 +146,14 @@ export function PowersBits() {
       <p className="m-0 font-pixel-sm text-[16px] text-muted">
         {Z_SAMPLES.map((ty) => zMoveText(zEffectOf(ty), ty ? typeName(ty) : null, data)).join(' · ')}
       </p>
+      <div className="grid gap-3 md:grid-cols-3">
+        {picks.map((p) => (
+          <div key={p.label} className="pixel-panel grid gap-2 p-2">
+            <span className="font-pixel-sm text-[16px] text-muted">{p.label}</span>
+            <ZTypePicker name={p.name} options={p.options} onPick={() => {}} />
+          </div>
+        ))}
+      </div>
       <div className="grid gap-3">
         <GemShelfView rows={rows} gold={1500} onBuy={() => true} />
         <GemShelfView rows={rows} gold={200} onBuy={() => false} />

@@ -106,6 +106,8 @@ function AreaRow({
   // An area whose legendary is a progression raid (docs/24) says RAID; one with a boss to fight, LEGEND.
   const raid = raidBosses(area, data).length > 0
   const legend = !raid && (area.legendaryBoss ?? []).length > 0
+  // A roadblock (docs/61 §2) gets its own chip: it isn't a legendary.
+  const roadblock = legend && (area.legendaryBoss ?? []).every((b) => b.roadblock)
   const parade = useParadeLabel(area)
   return (
     <li className="relative">
@@ -135,7 +137,7 @@ function AreaRow({
           <span className="absolute left-0.5 top-0.5 flex flex-wrap gap-0.5">
             {st === 'new' && <Chip tone="gold">{t('ui.common.new')}</Chip>}
             {area.gyms.length > 0 && <Chip tone="dark">{t('ui.home.gymTag')}</Chip>}
-            {legend && <Chip tone="gold">{t('ui.home.legendTag')}</Chip>}
+            {legend && <Chip tone="gold">{t(roadblock ? 'ui.enc.roadblockTag' : 'ui.home.legendTag')}</Chip>}
             {raid && <Chip tone="gold">{t('ui.raid.progress.tag')}</Chip>}
           </span>
         </span>

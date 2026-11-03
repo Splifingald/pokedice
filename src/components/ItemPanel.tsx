@@ -8,7 +8,10 @@ import {
   linkEvolution,
   monName,
   stoneEvolution,
+  talentCandyFits,
+  talentsOn,
   usableIn,
+  whiteoutBagShut,
   type GameData,
   type PokemonInstance,
   type SaveData,
@@ -63,6 +66,8 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
   const whyNot = (key: string): string | null => {
     const fx = data.items[key]?.effect
     if (inst.revivesAt != null) return t('ui.sheet.itemReviving')
+    // The whiteout (docs/64 §4.3): the bag opens only at a bonfire.
+    if (save && whiteoutBagShut(save, data)) return t('ui.whiteout.noBag')
     if ((fx?.kind === 'heal' || fx?.kind === 'revive') && save && !healItemsOn(save, data)) return t('ui.extreme.noItems')
     if (fx?.kind === 'stone' || fx?.kind === 'link') {
       // A stone whose only branch is a later generation's does nothing yet, so it must not offer to be used.
@@ -76,6 +81,9 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
           ? t('ui.sheet.itemFull')
           : null
     if (fx?.kind === 'level') return inst.level < data.config.maxLevel ? null : t('ui.sheet.itemMaxLevel')
+    // The Talent Candy (docs/51): only while its talent isn't revealed yet.
+    if (fx?.kind === 'talent')
+      return save && talentCandyFits(save, data, inst) ? null : talentsOn(data) ? t('ui.sheet.itemTalentKnown') : t('ui.sheet.itemNoEffect')
     return t('ui.sheet.itemNoEffect')
   }
   /** What it would do to this Pokémon: a stone names what it evolves into. */
@@ -107,7 +115,8 @@ export function ItemPanel({ inst, onUsed }: { inst: PokemonInstance; onUsed?: ()
                     return setEvolving({ ...r.evolved, item: kind === 'stone' || kind === 'link' ? k : null })
                   }
                   const after = useGame.getState().save?.box.find((p) => p.id === inst.id)
-                  if (after && data.items[k]?.effect.kind !== 'level')
+                  const kind = data.items[k]?.effect.kind
+                  if (after && kind !== 'level' && kind !== 'talent')
                     pushToast(
                       t('ui.sheet.itemHealed', {
                         name,

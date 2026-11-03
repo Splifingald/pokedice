@@ -9,6 +9,8 @@ import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
 import { useT } from '@/i18n/react'
 import { cx } from '@/theme/util'
+import { TalentGem } from '@/components/Talent'
+import { ShieldTag } from '@/components/pvp/ShieldTag'
 
 function FormTag({ b }: { b: Battler }) {
   const { t } = useT()
@@ -57,6 +59,7 @@ export function FoePlate({
   party,
   onClick,
   open,
+  shield,
 }: {
   b: Battler
   hp: number
@@ -64,6 +67,8 @@ export function FoePlate({
   party?: { count: number; index: number } | null
   onClick?: () => void
   open?: boolean
+  /** The Bonus Shield on this side (Friend Battles, docs/65): struck out once used. */
+  shield?: { used?: boolean } | null
 }) {
   const { t } = useT()
   return (
@@ -80,11 +85,13 @@ export function FoePlate({
       <span className="flex min-w-0 items-center gap-1.5">
         <b className="min-w-0 truncate text-[20px] font-normal leading-none">{b.name}</b>
         {b.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
+        {b.talent && <TalentGem talent={b.talent} />}
         <span className="shrink-0 font-pixel-sm text-[16px] leading-none">
           {t('ui.common.level.short', { n: b.level })}
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-1">
           <FormTag b={b} />
+          {shield && <ShieldTag used={!!shield.used} />}
           {party && party.count > 1 && (
             <span
               className="flex gap-[3px]"
@@ -125,11 +132,13 @@ export function OwnPlate({
   hp,
   onClick,
   open,
+  shield,
 }: {
   b: Battler
   hp: number
   onClick?: () => void
   open?: boolean
+  shield?: { used?: boolean } | null
 }) {
   const { t } = useT()
   return (
@@ -150,6 +159,7 @@ export function OwnPlate({
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-1">
           <FormTag b={b} />
+          {shield && <ShieldTag used={!!shield.used} />}
         </span>
       </span>
       <HpBar hp={hp} max={b.maxHp} compact height={8} />

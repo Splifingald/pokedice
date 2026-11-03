@@ -95,6 +95,20 @@ export function rebattleProgress(save: SaveData, regionId: string): RebattleProg
   return save.events?.rebattle?.[regionId] ?? { done: 0, step: 0, paid: [] }
 }
 
+/**
+ * Two copies of one save, one replacing the other (the cloud sync, another tab): a rebattle tier cleared in either
+ * stays cleared. Each region keeps the copy's progress that cleared more tiers (a tie keeps this save's own). The same
+ * save back when there's nothing to add.
+ */
+export function keepRebattleTiers(save: SaveData, other: SaveData | null | undefined): SaveData {
+  const theirs = Object.entries(other?.events?.rebattle ?? {}).filter(
+    ([region, p]) => p.done > rebattleProgress(save, region).done,
+  )
+  if (!theirs.length) return save
+  const rebattle = { ...save.events?.rebattle, ...Object.fromEntries(theirs) }
+  return { ...save, events: { ...save.events, rebattle } }
+}
+
 /** The tier being fought: the first not cleared yet, or the last one again once every tier is. */
 export function currentTier(save: SaveData, data: GameData, regionId: string): number {
   return Math.min(rebattleProgress(save, regionId).done, rebattleTiers(data).length - 1)

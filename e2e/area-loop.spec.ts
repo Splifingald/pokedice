@@ -211,6 +211,31 @@ test('PC: the stage on top, the Bag open at its left, the team at its right, the
   expect(m.scroll).toBeLessThanOrEqual(0)
 })
 
+test("PC: the send-out's lead is picked with a click in the team's column", async ({ page }) => {
+  // A player's feedback (2026-10-30): on a PC only 1–6 changed the lead, a click did nothing.
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await boot(page, threeTeam())
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
+  const team = page.getByRole('region', { name: 'Switch Pokémon' })
+  await expect(team.getByRole('button', { pressed: true })).toContainText('Bulbasaur')
+  // The panel keeps the three cards above GO! (the user's call, 2026-10-31), the pick shared with the column.
+  const card = (name: string) =>
+    page.getByRole('listitem').filter({ has: page.getByRole('button', { name: `${name} info` }) })
+  for (const name of ['Bulbasaur', 'Charmander', 'Squirtle']) await expect(card(name)).toBeVisible()
+  await expect(card('Bulbasaur').getByRole('button', { pressed: true })).toBeVisible()
+  await card('Charmander').getByRole('button', { pressed: false }).first().click()
+  await expect(team.getByRole('button', { pressed: true })).toContainText('Charmander')
+  await team.getByRole('button', { name: /^Squirtle,/ }).click()
+  await expect(team.getByRole('button', { pressed: true })).toContainText('Squirtle')
+  await expect(card('Squirtle').getByRole('button', { pressed: true })).toBeVisible()
+  const go = (await page.getByRole('button', { name: 'Send out Squirtle' }).boundingBox())!
+  expect((await card('Squirtle').boundingBox())!.y).toBeLessThan(go.y)
+  await page.getByRole('button', { name: 'Send out Squirtle' }).click()
+  await expect(page.getByRole('button', { name: 'ATTACK', exact: true })).toBeEnabled({ timeout: 20_000 })
+  await expect(team.getByRole('button', { name: /^Squirtle, .*in battle$/ })).toBeVisible()
+})
+
 test("PC: an item's Pokémon and the switch are picked in the team's column", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await boot(page, threeTeam())

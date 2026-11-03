@@ -11,7 +11,7 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
 | Question | Answer |
 |---|---|
 | Where | The regions ticked in admin (Hoenn → Paldea by default). |
-| Wild | 10 % of the wild encounters there come as a pair (admin number). |
+| Wild | 10 % of the wild encounters there come as a pair (admin number), only when two of the team can fight (2026-10-31): a team of one, or with one left standing, meets one wild Pokémon. |
 | Trainers | Trainers flagged **Duo** in admin (Twins, Young Couples, Interviewers…) with 2 or more Pokémon, always. A first pass flagged the ones whose look is a pair, and real-game pairs were added from Hoenn on (§4). |
 | Gym leaders | Never, except **Tate & Liza** (Hoenn's 7th badge), always. |
 | Elite Four, Champions, legendaries, raids, Versus, Elite Rebattle | Never. |
@@ -23,7 +23,7 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
 | Items | You pick which of yours (as in one-on-one). |
 | Ditto | Copies the dice of the Pokémon it aims at. |
 | One of yours K.O. | A free replacement from the bench, your pick; with none left, the other fights on alone (1 v 2). |
-| Only one able at the start | It fights both, 1 v 2. |
+| Only one able at the start | Against a duo trainer, it fights both, 1 v 2. Never against a wild pair (2026-10-31): none is drawn, and one drawn before the team lost its second able one (put in the box or the day care while the card waited) is fought alone, the first of the two. |
 | XP | Each K.O. gives its full XP to **both** of yours out when it fell. |
 | Catching | After a wild pair, a throw at each one, one after the other. The first K.O.'d waits worn out on its side until the other falls (2026-10-19); the two throws follow each other, and each "Add to team?" is asked on the rewards screen afterwards. |
 | Money | Trainers pay per K.O. as before (gyms × the gym multiplier). |
@@ -38,8 +38,10 @@ front, the others smaller behind. You pick which foe your Pokémon attacks; foes
   card rolls `wildChance` and, on a hit, a second wild Pokémon from the area's pool (`rollWild`, the new-Pokémon pity
   included; a roamer instead means no pair), stored as `partner`; a duo trainer or Tate & Liza get `double: true`. It
   touches nothing (the rng included) while the switch is off, the region isn't ticked, in Extreme mode, a small world,
-  an area with a special mode or an Elite Rebattle fight. The store calls it when a card is drawn (`rollNext`) and when
-  a gym is challenged, so the preview says so.
+  an area with a special mode or an Elite Rebattle fight, nor a wild card while fewer than two of the team are able
+  (**`pairAble(save)`**). The store calls it when a card is drawn (`rollNext`) and when a gym is challenged, so the
+  preview says so. **`fitWildPair(encounter, save)`** drops a drawn pair's partner once the team has fewer than two
+  able: the preview shows that (`Area`) and `engage` fights it.
 - **`engine/battle.ts`**: `createBattle({ …, double: { foes, leadUids, plans } })` makes a `BattleState` with
   `double: DoubleState` (every foe, the slots out on each side, the round's queue, the K.O.s with yours that were out).
   `activeIndex` and `enemy` are **the pair in front** — whose turn it is and its target — so every one-on-one rule
@@ -102,11 +104,11 @@ exists), the `doubleBattles` row (Off, Hoenn → Paldea, 10 %) and `configVersio
 ## 7. Tests
 
 `tests/engine/double-battle.test.ts` (the field, the order, targeting, random foe targets, replacements, 1 v 2, the
-win and its K.O.s, auto to the end on 30 seeds, when a battle is double, the XP for both), `tests/battle-aim.test.ts`
+win and its K.O.s, auto to the end on 30 seeds, when a battle is double, no wild pair with one able, the XP for both), `tests/battle-aim.test.ts`
 (a new target keeps the tray),
 `tests/double-catch.test.ts` (the worn-out K.O., the throws back to back, the questions in turn, a pair of one
 species),
 `tests/double-battles-content.test.ts`, `tests/double-battles-sql.test.ts`, `e2e/double-battles.spec.ts` (a wild pair
 from the preview to the rewards at phone size, both throws before the rewards, a full team's two questions (one, and one copy kept, for a pair of one
 species), the switch
-off, the kitchen sink).
+off, a team of one, the kitchen sink).

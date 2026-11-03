@@ -99,6 +99,9 @@ test.describe('on a phone', () => {
     await expect(sheet.getByText('Speed', { exact: true })).toBeHidden()
     await sheet.locator('summary', { hasText: 'Stats' }).click()
     await expect(sheet.getByText('Speed', { exact: true })).toBeVisible()
+    // Speed is the species' base Speed plus the level (docs/52): Pikachu's 90 at Lv.21.
+    await expect(sheet.getByText('90 + Lv.21', { exact: true })).toBeVisible()
+    await expect(sheet.getByText('111', { exact: true })).toBeVisible()
     await expect(sheet.getByRole('button', { name: 'Use an item' })).toBeVisible()
     expect(await smallControls(page)).toEqual([])
     expect(await serious(page)).toEqual([])
@@ -205,6 +208,8 @@ test.describe('on a PC', () => {
   test('at a Pokémon Center the full team’s swap is one tap on who leaves', async ({ page }) => {
     await boot(page)
     await page.goto('/team')
+    // window.__pd comes with store/run's own import, after the first paint (src/main.tsx): wait for it.
+    await page.waitForFunction(() => '__pd' in window)
     await page.evaluate(() => {
       const pd = (window as unknown as { __pd: { useGame: { setState: (f: (s: { run: object }) => object) => void } } })
         .__pd

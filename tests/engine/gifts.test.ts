@@ -7,12 +7,10 @@ import {
   DEFAULT_CONFIG,
   GIFT_LATEST,
   giftLanding,
-  giftRulesDue,
   giftsOf,
   giftsOn,
   giftsWait,
   latestRegion,
-  markGiftRulesSeen,
   newRegionBlock,
   newSave,
   parseGifts,
@@ -91,6 +89,17 @@ describe('reading the server’s gifts', () => {
     ])
     expect(parseGifts(null)).toEqual([])
     expect(parseGifts({ kind: 'item' })).toEqual([])
+  })
+
+  it('reads Heart Scales from 1 to 9,999', () => {
+    expect(
+      parseGifts([
+        { kind: 'heartScales', amount: 20, region: 'latest' },
+        { kind: 'heartScales', amount: 0, region: 'latest' },
+        { kind: 'heartScales', amount: 10_000, region: 'latest' },
+        { kind: 'heartScales', amount: 20 },
+      ]),
+    ).toEqual([{ kind: 'heartScales', amount: 20, region: 'latest' }])
   })
 })
 
@@ -214,10 +223,28 @@ describe('opening a message’s gifts', () => {
   })
 })
 
-describe('the rules', () => {
-  it('open once before the first gift, and only while gifts are on', () => {
-    expect(giftRulesDue(kanto(), data)).toBe(true)
-    expect(giftRulesDue(markGiftRulesSeen(kanto()), data)).toBe(false)
-    expect(giftRulesDue(kanto(), makeData())).toBe(false)
+describe('Heart Scales on a message (docs/60)', () => {
+  const scales = (amount: number): Gift => ({ kind: 'heartScales', amount, region: GIFT_LATEST })
+  const fship = makeData({
+    gifts: { access: 'all' },
+    friendship: { ...DEFAULT_CONFIG.friendship, access: 'all' },
+  })
+
+  it('show among what arrived, in their place, and leave the save as it was (the server paid them)', () => {
+    const s = kanto()
+    const res = applyGifts(s, fship, 20, [candy(1), scales(25)], NOW, newId)!
+    expect(res.landed.map((l) => [l.gift.kind, !!l.scales])).toEqual([
+      ['item', false],
+      ['heartScales', true],
+    ])
+    expect(res.save.gold).toBe(s.gold)
+    expect(giftsOf(res.save).done).toEqual([20])
+  })
+
+  it('stay hidden while Friendship is off for the player', () => {
+    const res = applyGifts(kanto(), data, 21, [scales(25)], NOW, newId)!
+    expect(res.landed).toEqual([])
+    expect(giftsOf(res.save).done).toEqual([21])
   })
 })
+

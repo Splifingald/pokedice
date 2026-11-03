@@ -2,7 +2,7 @@
 // from the server (each comes once), put in the save by the engine's rules (engine/gifts.ts), pushed to the cloud for a
 // signed-in player, and their opening plays full screen (GiftMoment) with what arrived and where it went.
 import { create } from 'zustand'
-import { applyGifts, giftRulesDue, giftsWait, markGiftRulesSeen, type GiftLanded } from '@/engine'
+import { applyGifts, giftsWait, type GiftLanded } from '@/engine'
 import { t } from '@/i18n'
 import { claimGifts, useInbox } from '@/lib/feedback'
 import { mutateSave, pushToast, useGame } from './game'
@@ -12,15 +12,20 @@ import { pushSaveNow, syncSettled } from './sync'
 interface GiftsState {
   /** The opening on screen: everything that arrived, in order; null when none plays. */
   opening: GiftLanded[] | null
-  /** Whose gift it is: the developer's (a message), or invite rewards (docs/15 §25), which reuse the same opening. */
-  source: 'message' | 'invite'
+  /**
+   * Whose gift it is: the developer's (a message), or invite rewards (docs/15 §25) and a gift calendar's door
+   * (docs/55), which reuse the same opening.
+   */
+  source: GiftSource
+  /** A calendar's door: its day, for the opening's first line. */
+  day?: number
   /** Asking the server: the button waits. */
   busy: boolean
-  /** The first gift's rules are showing (docs/15 §20): these messages' gifts open on Let's go!. */
-  rulesFor: number[] | null
 }
 
-export const useGiftMoment = create<GiftsState>(() => ({ opening: null, source: 'message', busy: false, rulesFor: null }))
+export type GiftSource = 'message' | 'invite' | 'calendar' | 'market'
+
+export const useGiftMoment = create<GiftsState>(() => ({ opening: null, source: 'message', busy: false }))
 
 /**
  * Gifts can be opened here and now: the save is in the main game outside a small world, the switch is on, and a
@@ -52,6 +57,10 @@ export async function openGifts(ids: number[]): Promise<void> {
       useGiftMoment.setState({ opening: landed, source: 'message' })
       void pushSaveNow().catch(() => {})
     }
+    // Heart Scales went to the wallet on the server: the Friends page and the market show the new count. Imported
+    // late, as the friendship store imports this one.
+    if (landed.some((l) => l.scales))
+      void import('./friendship').then((m) => m.loadFriendship(true)).catch(() => {})
   } catch (err) {
     console.warn('[gifts] not opened:', err instanceof Error ? err.message : err)
     useInbox.getState().putOff(ids)
@@ -61,28 +70,10 @@ export async function openGifts(ids: number[]): Promise<void> {
   }
 }
 
-/** The player asked for these gifts (closed their message, or OPEN IT in My messages): the rules first, the first time. */
+/** The player asked for these gifts (closed their message, or OPEN IT in My messages): they open straight away. */
 export function requestGifts(ids: number[]): void {
-  const { save, data } = useGame.getState()
-  if (!ids.length || !save || !canOpenGifts()) return
-  if (giftRulesDue(save, data)) useGiftMoment.setState({ rulesFor: ids })
-  else void openGifts(ids)
-}
-
-/** The rules pop-up's Let's go!: seen, and the gifts open. */
-export function giftRulesGo(): void {
-  const ids = useGiftMoment.getState().rulesFor ?? []
-  mutateSave(markGiftRulesSeen)
-  useGiftMoment.setState({ rulesFor: null })
+  if (!ids.length || !useGame.getState().save || !canOpenGifts()) return
   void openGifts(ids)
-}
-
-/** Its Later: seen too; the gifts wait in My messages (and pop up again next time the game opens). */
-export function giftRulesLater(): void {
-  const ids = useGiftMoment.getState().rulesFor ?? []
-  mutateSave(markGiftRulesSeen)
-  useInbox.getState().putOff(ids)
-  useGiftMoment.setState({ rulesFor: null })
 }
 
 export const closeGiftMoment = () => useGiftMoment.setState({ opening: null })

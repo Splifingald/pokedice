@@ -24,7 +24,16 @@ const PLACE_TEXT: Record<Exclude<TeamSwapPlace, 'closed'>, { hint: string; back:
  * with the way back there; elsewhere a small line says it waits for a Pokémon Center. A player at a Center changes
  * the team here as before 2.5, the Team's search and filters included (the user's call, 2026-10-29).
  */
-export function TeamSwapsNote({ at, onBack }: { at: TeamSwapPlace; onBack: () => void }) {
+export function TeamSwapsNote({
+  at,
+  text: own,
+  onBack,
+}: {
+  at: TeamSwapPlace
+  /** A way in's own words (string keys), in place of the place's usual ones. */
+  text?: { hint: string; back: string }
+  onBack: () => void
+}) {
   const { t } = useT()
   if (at === 'closed')
     return (
@@ -33,7 +42,7 @@ export function TeamSwapsNote({ at, onBack }: { at: TeamSwapPlace; onBack: () =>
         {t('ui.team.centersOnly')}
       </p>
     )
-  const text = PLACE_TEXT[at]
+  const text = own ?? PLACE_TEXT[at]
   return (
     <div className="pixel-dialogue flex flex-col gap-2.5 px-3 py-2.5 sm:flex-row sm:items-center">
       <p className="m-0 flex flex-1 items-center gap-3 text-[20px] leading-[1.15]">

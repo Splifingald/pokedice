@@ -11,6 +11,7 @@ import type { Rng } from './rng'
 import type { RunEvent } from './run'
 import {
   TRICK_TIERS,
+  type LureTheme,
   type Area,
   type GameData,
   type SaveData,
@@ -158,7 +159,11 @@ export interface TrickState {
   dex: number
   level: number
   tier: TrickTier
+  /** The Safari's look and numbers (docs/61 §4); absent = Trick or Treat's. */
+  theme?: LureTheme
   shiny?: boolean
+  /** It carries its family's hidden talent (docs/51). */
+  talent?: boolean
   /** The gauge, 0–100. */
   gauge: number
   treats: number
@@ -185,15 +190,19 @@ export function startTrick(
     level: number
     tier: TrickTier
     shiny?: boolean
+    talent?: boolean
   },
   cfg?: TrickOrTreatConfig,
   rng?: Rng,
+  theme?: LureTheme,
 ): TrickState {
   return {
     dex: enc.dex,
     level: enc.level,
     tier: enc.tier,
+    ...(theme === 'safari' && { theme }),
     ...(enc.shiny && { shiny: true }),
+    ...(enc.talent && { talent: true }),
     // Somewhere in the first section, at random (the user's call, 2026-10-15): each ghost starts a little different.
     gauge: cfg && rng ? trickStartAt(cfg, enc.tier, rng) : 0,
     treats: 0,
@@ -349,11 +358,11 @@ export function applyTrickCatch(
   now: number,
   newId: () => string,
 ): TrickCatch {
-  const target = catchTarget(save, state.dex, state.level, 'wild', data, !!state.shiny)
+  const target = catchTarget(save, state.dex, state.level, 'wild', data, !!state.shiny, save.currentAreaId, !!state.talent)
   if (!target) return { save, events: [], placed: 'merged', isNew: false }
   const res = applyCatch(
     save,
-    { dex: state.dex, level: state.level, shiny: state.shiny },
+    { dex: state.dex, level: state.level, shiny: state.shiny, talent: state.talent },
     target,
     data,
     now,
@@ -363,6 +372,8 @@ export function applyTrickCatch(
   const isNew = caught?.kind === 'caught' && !!caught.isNew
   if (target.mode === 'replace')
     return { save: res.save, events: res.events, placed: 'replaced', isNew, replacedLevel: target.level }
+  // A weaker one caught for its talent (docs/51): it merges into yours, which learns the talent.
+  if (target.mode === 'learn') return { save: res.save, events: res.events, placed: 'merged', isNew: false }
   return {
     save: res.save,
     events: res.events,

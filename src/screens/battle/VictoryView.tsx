@@ -1,22 +1,26 @@
 // Result screens: victory (XP, level-ups, milestones, gold, catch, then evolutions), wipe and stalemate.
 import { BottomDock } from '@/components/BottomDock'
-import { AutoButton } from '@/components/AutoButton'
+import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
 import { AnimatePresence, motion } from 'framer-motion'
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   getInstance,
   isUnownLetter,
   latestOpenArea,
   portalLock,
+  timeRaceLock,
   instanceStats,
   progressOf,
   rebattleEncounter,
   rebattleLineup,
   teamOf,
   wipeHeals,
+  type AreaFoe,
   type DieType,
   type Milestone,
   type RunEvent,
+  roadblockOf,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { feelSound, type FeelSound } from '@/audio/feel'
@@ -25,6 +29,7 @@ import { EvolutionQueue, type EvolutionShow } from '@/components/Evolution'
 import { useCountUp } from '@/components/GoldPill'
 import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
+import { HoofIcon, STANTLER } from '@/components/Tracks'
 import { LeadPicker, defaultLead } from '@/components/LeadPicker'
 import { ForfeitButton } from '@/components/ForfeitButton'
 import { speciesTypes } from '@/components/TypeMatchups'
@@ -32,11 +37,13 @@ import { HpBar } from '@/components/HpBar'
 import { useXpFill, XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { TrainerSprite } from '@/components/TrainerArt'
+import { DuelResult } from '@/components/AreaVersus'
 import { UnownLetterCard } from '@/components/UnownDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
+import { TypeBadge } from '@/components/TypeBadge'
 import { dexNo, milestoneText, money, typeName } from '@/lib/format'
-import { t } from '@/i18n'
+import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
@@ -61,6 +68,8 @@ import { leaveRebattle, startRebattle } from '@/store/rebattle'
 import { Medal, tierName } from '@/screens/events/RebattlePage'
 import { cx, shade, typeColor } from '@/theme/util'
 import { WorldMythicalCard } from '@/screens/events/world'
+import { TalentAfterWinCard, TalentFoundCard, talentName } from '@/components/Talent'
+import { skinKey, skinOfArea } from '@/components/portalSkin'
 
 /** How long NEXT fills before it goes by itself, with Auto on. */
 const ADVANCE_MS = 1800
@@ -492,6 +501,36 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
         case 'league_healed':
           extras.push({ key: k, sound: 'heal', node: <LeagueHealedCard /> })
           return
+        // Hidden talents (docs/51): a family's talent unlocked, and what one did after the win.
+        case 'talent':
+          extras.push({ key: k, sound: 'catch', node: <TalentFoundCard uid={e.uid} dex={e.dex} talent={e.talent} how={e.how} /> })
+          return
+        case 'regenerator': {
+          const dex = save?.box.find((p) => p.id === e.uid)?.dex ?? 0
+          extras.push({
+            key: k,
+            sound: 'heal',
+            node: <TalentAfterWinCard uid={e.uid} dex={dex} line={(name) => t('ui.talent.medic', { name, n: e.amount })} />,
+          })
+          return
+        }
+        case 'talent_gold':
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <TalentAfterWinCard
+                uid={e.uid}
+                dex={e.dex}
+                talent={e.talent}
+                line={(name) => t('ui.talent.goldCard', { name, talent: talentName(e.talent), n: e.amount })}
+              />
+            ),
+          })
+          return
+        // Pickup's find (docs/51) is shown on its own step after the card (FindView), as any find.
+        case 'pickup':
+          return
         case 'rebattle_cleared':
           extras.push({
             key: k,
@@ -542,6 +581,50 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             ),
           })
           return
+        case 'time_race_fight':
+          // A fight of the race of time and space won in time (docs/64 §4.4): the next comes, or a fork, or the win.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#0b0f2e] p-2 text-center text-white shadow-[inset_0_3px_0_#a8c8ff,0_0_0_2px_#24304f]">
+                <PixelIcon name="clock" size={22} />
+                <span className="text-xl leading-tight">
+                  {e.fight >= e.total
+                    ? t('ui.timeRace.lastFightWon')
+                    : t('ui.timeRace.fightWon', { n: e.fight, total: e.total })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        case 'whiteout_wave':
+          // A wave of the whiteout cleared (docs/64 §4.3): a bonfire comes next.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#16264a] p-2 text-center text-[#eef6ff] shadow-[inset_0_3px_0_#e6f1fa,0_0_0_2px_#060b18]">
+                <PixelIcon name="burn" size={22} />
+                <span className="text-xl leading-tight">
+                  {t('ui.whiteout.waveWon', { n: e.wave, total: e.waves })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        case 'tracks_round':
+          // A round of Tracks in the Snow cleared (docs/64 §4.1): Stantler found and down; the next glade waits.
+          extras.push({
+            key: k,
+            node: (
+              <div className="light-scope flex items-center justify-center gap-2 bg-[#0b1530] p-2 text-center text-[#f4f8ff] shadow-[inset_0_3px_0_#f3efd6,0_0_0_2px_#24304f]">
+                <HoofIcon size={22} />
+                <span className="text-xl leading-tight">
+                  {t('ui.tracks.roundWon', { n: e.round, total: e.total, name: data.species[STANTLER]?.name ?? '' })}
+                </span>
+              </div>
+            ),
+          })
+          return
         case 'nightmare_gift': {
           // The item a round left in the bag (docs/30), once for good.
           const item = data.items[e.key]
@@ -553,6 +636,38 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
                 {item && <ItemSprite item={item} size={32} />}
                 <span className="text-xl leading-tight">
                   {t('ui.nightmare.gotGift', { item: `${item?.name ?? e.key}${e.qty > 1 ? ` ×${e.qty}` : ''}` })}
+                </span>
+              </div>
+            ),
+          })
+          return
+        }
+        case 'z_crystal': {
+          // A Z-Crystal won (docs/62 §6): Z-Moves of its type.
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-z-crystal={e.type}>
+                <TypeBadge type={e.type} size="sm" />
+                <span className="text-xl leading-tight">{t('ui.zCrystal.got', { type: typeName(e.type) })}</span>
+              </div>
+            ),
+          })
+          return
+        }
+        case 'titan_reward': {
+          // A Titan beaten (docs/62 §7): what it left, a Herba Mystica's worth.
+          const what = e.items.map((i) => `${data.items[i.key]?.name ?? i.key}${i.qty > 1 ? ` ×${i.qty}` : ''}`)
+          const first = e.items[0] ? data.items[e.items[0].key] : undefined
+          extras.push({
+            key: k,
+            sound: 'gold',
+            node: (
+              <div className="flex items-center justify-center gap-2 bg-gold-pale p-2 text-center shadow-ring" data-titan-reward>
+                {first && <ItemSprite item={first} size={32} />}
+                <span className="text-xl leading-tight">
+                  {t('ui.titan.left', { name: data.species[e.dex]?.name ?? '', items: joinList(what) })}
                 </span>
               </div>
             ),
@@ -770,6 +885,7 @@ const AUTO_CARD_MS = 1600
  */
 export function VictoryView() {
   const { t } = useT()
+  const navigate = useNavigate()
   const run = useGame((s) => s.run)
   const battle = useGame((s) => s.battle)
   const data = useGame((s) => s.data)
@@ -837,14 +953,18 @@ export function VictoryView() {
   useEffect(() => {
     if (closes) setShown(Number.MAX_SAFE_INTEGER)
   }, [closes])
+  // Between a trainer's Pokémon the card stays long enough to pick who faces the next one (a player's feedback,
+  // 2026-10-29), and a Pokémon tapped holds it for the player's NEXT.
+  const picking = hasNext && !!nextMon
+  const pickWait = picking && lead == null
   useEffect(() => {
-    if (!closes || !allShown || then) return
-    const timer = setTimeout(() => closeRef.current(), AUTO_CARD_MS)
+    if (!closes || !allShown || then || (picking && lead != null)) return
+    const timer = setTimeout(() => closeRef.current(), picking ? PILOT_PICK_MS : AUTO_CARD_MS)
     return () => clearTimeout(timer)
-  }, [closes, allShown, then])
+  }, [closes, allShown, then, picking, lead])
 
-  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone.
-  const locked = useGame((s) => !!portalLock(s.save, s.data))
+  // Inside a portal run (docs/28) there is no way Home: CONTINUE alone. Nor in a try of the race (docs/64 §4.4).
+  const locked = useGame((s) => !!portalLock(s.save, s.data) || !!timeRaceLock(s.save, s.data))
 
   // After a fight: NEXT waits for the player, unless Auto is on (Settings, or AUTO beside NEXT): then it fills and goes.
   const sendNext = go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))
@@ -863,10 +983,11 @@ export function VictoryView() {
   // team's choice to be made), nor when the area was cleared (the way on is the next area), nor in a rebattle.
   // A new species, or a small world's mythical gone home (its finale): the card is looked at, so it waits for NEXT.
   const caughtNew = run.events.some((e) => (e.kind === 'caught' && e.isNew) || e.kind === 'world_mythical')
-  const autoNext = !closes && !run.rebattle && !nextArea && !caughtNew
+  // A real player's fight over (docs/54): the card waits, its friend request is the player's to send.
+  const autoNext = !closes && !run.rebattle && !nextArea && !caughtNew && !run.duel
   // Only while auto-mode or Idle mode plays the area (the user's call, 2026-10-27: otherwise NEXT waits for a tap).
   const autoOn = useAutoLevel() !== 'off'
-  const countdown = autoOn && autoNext && allShown && !run.pendingCatchId && !then
+  const countdown = autoOn && autoNext && allShown && !run.pendingCatchId && !then && !(picking && lead != null)
   // Each piece of the recap scrolls into view as it comes (a level-up, the Pokédex entry…), then a full team's choice
   // or the trainer's next Pokémon: the player never scrolls to follow the card (the user's call, 2026-10-26). The
   // scroll margin keeps it clear of the buttons pinned at the foot.
@@ -885,19 +1006,23 @@ export function VictoryView() {
   }, [choosing, run.pendingCatchId, behavior])
   const nextRef = useRef<() => void>(() => {})
   nextRef.current = hasNext && nextMon ? sendNext : onwards
+  // The trainer's next Pokémon: the same time to pick as under the autopilot, whatever the pace.
+  const advance = picking ? PILOT_PICK_MS : ADVANCE_MS * pace
   useEffect(() => {
     if (!countdown) return
-    const timer = setTimeout(() => nextRef.current(), ADVANCE_MS * pace)
+    const timer = setTimeout(() => nextRef.current(), advance)
     return () => clearTimeout(timer)
-  }, [countdown, pace])
+  }, [countdown, advance])
   if (then) return <EvolutionQueue items={evolutions} onDone={then} />
-  const fill = countdown && (
+  // NEXT's gauge: its countdown, or the autopilot's wait before the trainer's next Pokémon.
+  const filling = countdown || (closes && allShown && !then && pickWait)
+  const fill = filling && (
     <span aria-hidden className="absolute inset-x-0 bottom-0 h-[5px] bg-black/20">
       <motion.span
         className="block h-full bg-gold-light"
         initial={{ width: 0 }}
         animate={{ width: '100%' }}
-        transition={{ duration: (ADVANCE_MS * pace) / 1000, ease: 'linear' }}
+        transition={{ duration: (countdown ? advance : PILOT_PICK_MS) / 1000, ease: 'linear' }}
       />
     </span>
   )
@@ -913,11 +1038,18 @@ export function VictoryView() {
     <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
-      {/* BACK: the area's page between encounters (its HOME, the team); NEXT: the next encounter. */}
+      {/* HOME: back Home (the user's call, 2026-11-02: no stop on the area's page first); NEXT: the next encounter. */}
       <div className={locked ? 'grid' : 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5'}>
         {!locked && (
-          <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={go(() => continueAfterVictory())}>
-            ◂ {t('ui.common.back')}
+          <PixelButton
+            size="lg"
+            className="whitespace-nowrap px-2"
+            onClick={go(() => {
+              continueAfterVictory()
+              navigate('/home')
+            })}
+          >
+            {t('ui.nav.home')}
           </PixelButton>
         )}
         <PixelButton
@@ -941,7 +1073,10 @@ export function VictoryView() {
     </div>
   )
 
-  const title = t(battle?.state.kind === 'boss' ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
+  // A roadblock boss (docs/61 §2) is a plain victory: it isn't a legendary.
+  const bossFoe = battle?.state.kind === 'boss' ? battle.state.enemy : null
+  const roadblock = !!bossFoe && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), bossFoe.baseDex ?? bossFoe.dex)
+  const title = t(battle?.state.kind === 'boss' && !roadblock ? 'ui.victory.legendaryVictory' : 'ui.victory.victory')
   return (
     <Overlay footer={footer} label={title}>
       {/* The battle's live region says the fight is won (the line under the stage gives way to the card). */}
@@ -966,7 +1101,11 @@ export function VictoryView() {
             </motion.div>
             <span className="text-2xl leading-none">{t('ui.common.level.short', { n: nextMon.level })}</span>
           </div>
-          {/* The one that fought is picked to begin with; a tap picks another, NEXT sends the one picked. */}
+          {/* The one that fought is picked to begin with; a tap picks another, NEXT sends the one picked. On auto it goes
+              by itself unless a Pokémon is tapped. */}
+          {filling && pickWait && (
+            <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.idle.pickLead')}</p>
+          )}
           <LeadPicker
             value={lead ?? stillIn ?? null}
             onChange={setLead}
@@ -1000,6 +1139,11 @@ export function VictoryView() {
       {allShown && run.pendingCatchId && (
         <div ref={follow} className="scroll-mb-[160px]">
           <TeamChoice />
+        </div>
+      )}
+      {allShown && run.duel && (
+        <div className="mt-3">
+          <DuelResult outcome={run.duel.outcome} foe={run.duel.foe} follow />
         </div>
       )}
     </Overlay>
@@ -1101,6 +1245,13 @@ function AreaWipe() {
   const portalLost = useGame((s) => s.run.portalLost)
   // A wipe that woke the player from the nightmare (docs/30): its rounds start again from the first.
   const nightmareLost = useGame((s) => s.run.nightmareLost)
+  // A try of the race of time and space ended (docs/64 §4.4): the clock or a full K.O., back to the start.
+  const raceLost = useGame((s) => s.run.raceLost)
+  const timeUp = raceLost?.reason === 'time'
+  // A wipe in the whiteout (docs/64 §4.3): back to wave 1.
+  const whiteoutLost = useGame((s) => s.run.whiteoutLost)
+  // A wipe in Tracks in the Snow's glade (docs/64 §4.1): back at its edge, its cleared rounds kept.
+  const tracksWiped = useGame((s) => !!s.run.tracksWiped)
   return (
     <Overlay
       label={t('ui.wipe.title')}
@@ -1110,14 +1261,33 @@ function AreaWipe() {
         </AutoButton>
       }
     >
-      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">{t('ui.wipe.title')}</h2>
+      <h2 className="mb-2 text-center text-[32px] font-normal leading-none" aria-live="polite">
+        {timeUp ? t('ui.timeRace.timeUpTitle') : t('ui.wipe.title')}
+      </h2>
       {/* The rework: what a wipe costs is said only where it differs from the usual (a portal, the nightmare, Extreme). */}
-      <p className="copy mb-3 text-lg" hidden={portalLost == null && nightmareLost == null && !!save && wipeHeals(save, data)}>
+      <p
+        className="copy mb-3 text-lg"
+        hidden={
+          portalLost == null &&
+          nightmareLost == null &&
+          whiteoutLost == null &&
+          !raceLost &&
+          !tracksWiped &&
+          !!save &&
+          wipeHeals(save, data)
+        }
+      >
         {/* Extreme mode heals nobody after a lost round: the fainted ones rest (docs/22). */}
-        {portalLost != null
-          ? t('ui.portal.wipeBody', { n: portalLost })
+        {raceLost
+          ? t(timeUp ? 'ui.timeRace.timeUpBody' : 'ui.timeRace.wipeBody', { n: raceLost.fights, total: raceLost.total })
+          : portalLost != null
+          ? t(skinKey(skinOfArea(area, data), 'ui.portal.wipeBody'), { n: portalLost })
           : nightmareLost != null
           ? t('ui.nightmare.wipeBody', { n: nightmareLost })
+          : whiteoutLost != null
+          ? t('ui.whiteout.wipeBody', { n: whiteoutLost })
+          : tracksWiped
+          ? t('ui.tracks.wipeBody')
           : save && !wipeHeals(save, data)
           ? t('ui.wipe.bodyExtreme', {
               area: area?.name ?? '',
@@ -1130,8 +1300,42 @@ function AreaWipe() {
   )
 }
 
+/**
+ * Lost to a real player's team (docs/54): no wipe, the team healed, the round goes on. The defeat's jingle, who won,
+ * the friend request, and CONTINUE to the next encounter.
+ */
+function DuelLostView({ foe }: { foe: AreaFoe }) {
+  const { t } = useT()
+  useFeelOnce('defeat.jingle')
+  return (
+    <Overlay
+      label={t('ui.areaVersus.lostTitle')}
+      footer={
+        <AutoButton
+          paused="byDialogs"
+          variant="primary"
+          size="lg"
+          className="w-full"
+          onClick={() => {
+            afterStalemate()
+          }}
+        >
+          {t('ui.common.continue')}
+        </AutoButton>
+      }
+    >
+      <h2 className="mb-3 text-center text-[32px] font-normal leading-none" aria-live="polite">
+        {t('ui.areaVersus.lostTitle')}
+      </h2>
+      <DuelResult outcome="lost" foe={foe} follow />
+    </Overlay>
+  )
+}
+
 export function StalemateView() {
   const { t } = useT()
+  const duel = useGame((s) => s.run.duel)
+  if (duel) return <DuelLostView foe={duel.foe} />
   return (
     <Overlay
       label={t('ui.stalemate.title')}

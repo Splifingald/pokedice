@@ -1,0 +1,126 @@
+/*
+ * The gift calendar (docs/55; docs/15 §40): its doors. A shut door is art (a navy door, a gold ribbon and bow), the
+ * same in Daybreak and Dusk; today's is gold and its gift wobbles; yesterday's has a red ring (last chance); an opened
+ * one shows what it held; a missed one is hatched. Motion in steps; calm (the OS setting) stills it.
+ */
+.cal-door {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1.08;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Shut: a navy door tied with a gold ribbon (a band and its bow, drawn with flat fills), the day on a cream tag. */
+.cal-door.shut {
+  background:
+    linear-gradient(
+      90deg,
+      transparent calc(50% - 4px),
+      #ffbe2e calc(50% - 4px) calc(50% + 4px),
+      transparent 0
+    ),
+    linear-gradient(transparent calc(50% - 4px), #ffbe2e calc(50% - 4px) calc(50% + 4px), transparent 0),
+    #2f4f8f;
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 0 -4px 0 #1d2747;
+}
+.cal-door .cal-tag {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  padding: 2px 4px 3px;
+  background: #fff6dc;
+  color: #24304f;
+  box-shadow: inset 0 0 0 2px #24304f;
+}
+
+/* Today's: gold, its gift wobbling, a light passing over it now and then. */
+.cal-door.today {
+  background: #ffbe2e;
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 0 0 0 4px #fff6dc,
+    inset 0 -6px 0 #e08e00;
+}
+.cal-door.today::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / 0.55) 40% 52%, transparent 52%);
+  transform: translateX(-100%);
+  animation: cal-sheen 2.8s steps(7) infinite;
+  pointer-events: none;
+}
+@keyframes cal-sheen {
+  0%,
+  55% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Yesterday's, still open: cream, a red ring (it closes tonight). */
+.cal-door.late {
+  background: #fff6dc;
+  box-shadow:
+    inset 0 0 0 2px #24304f,
+    inset 0 0 0 5px #f2553f,
+    inset 0 -7px 0 #c4382a;
+}
+
+.cal-door.today,
+.cal-door.late {
+  cursor: pointer;
+}
+.cal-door.today:active,
+.cal-door.late:active,
+.cal-door.today[data-down],
+.cal-door.late[data-down] {
+  transform: translateY(2px);
+}
+.cal-door:focus-visible {
+  outline: 3px solid rgb(var(--c-ink));
+  outline-offset: 2px;
+}
+
+/* Opened: what it held, on paper, a check in the corner. */
+.cal-door.opened {
+  background: rgb(var(--c-paper));
+  box-shadow:
+    inset 0 0 0 2px rgb(var(--c-edge)),
+    inset 0 -4px 0 rgb(var(--c-lip));
+}
+
+/* Missed: hatched, what it held faded. */
+.cal-door.missed .cal-what {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+/* The day's number in a corner (opened, missed, today's, yesterday's). */
+.cal-day {
+  position: absolute;
+  left: 5px;
+  top: 3px;
+  z-index: 1;
+  font-size: 16px;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-door.today::after {
+    animation: none;
+    display: none;
+  }
+}
+html.reduce-motion .cal-door.today::after {
+  animation: none;
+  display: none;
+}

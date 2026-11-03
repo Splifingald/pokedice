@@ -9,6 +9,7 @@ import { MiniSprite } from '@/components/SpriteImg'
 import { StatusIcons } from '@/components/StatusIcons'
 import { useT } from '@/i18n/react'
 import { cx } from '@/theme/util'
+import { TalentGem } from '@/components/Talent'
 
 function FormTag({ b }: { b: Battler }) {
   const { t } = useT()
@@ -50,6 +51,7 @@ export function MiniPlate({
         <span className="flex items-center gap-1">
           <span className="font-pixel-sm text-[16px] leading-none">{level}</span>
           {b.shiny && <PixelIcon name="star" size={10} title={t('ui.mon.shiny')} className="shrink-0" />}
+          {b.talent && <TalentGem talent={b.talent} size={10} />}
           <StatusIcons status={b.status} />
           <span className="ml-auto shrink-0">
             <FormTag b={b} />

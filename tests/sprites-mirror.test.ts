@@ -15,7 +15,10 @@ import {
   unownShowdownId,
   type ShowdownEntry,
 } from '@/lib/showdown'
-import { mirrorFiles } from '../scripts/sprites-mirror'
+import { existsSync } from 'node:fs'
+import { OUTFITS } from '@/engine/outfits'
+import { OUTFIT_SPRITES, outfitSprite } from '@/lib/outfitSprites'
+import { customFiles, mirrorFiles } from '../scripts/sprites-mirror'
 
 const entries = Object.values(showdown as unknown as Record<string, ShowdownEntry>)
 
@@ -52,5 +55,45 @@ describe('the sprite copy', () => {
     expect([...Object.values(ANI_DIRS), ...Object.values(GEN5_DIRS)].every((d) => d.startsWith('gen5'))).toBe(
       true,
     )
+  })
+
+  it('holds our own sprites, every view of each, read from disk rather than Showdown', () => {
+    const own = customFiles()
+    expect(own.map((f) => f.path)).toContain('sprites/gen5ani/pikachu-santa.gif')
+    const ids = new Set(
+      own.map((f) =>
+        f.path
+          .split('/')
+          .pop()!
+          .replace(/\.\w+$/, ''),
+      ),
+    )
+    for (const id of ids) {
+      // The game asks for all four views of a sprite: a missing one would cost a failed request.
+      for (const view of SHOWDOWN_VIEWS)
+        expect(paths.has(pathOf(showdownSpriteUrl(id, view, 'a'))), `${id} ${view}`).toBe(true)
+    }
+    for (const f of own) {
+      expect(paths.has(f.path), f.path).toBe(true)
+      expect(existsSync(f.cache), f.cache).toBe(true)
+    }
+  })
+
+  it('has every outfit sprite the game can ask for (docs/59), with its measures; never asked of Showdown itself', () => {
+    for (const [key, o] of Object.entries(OUTFITS))
+      for (const [dex, id] of Object.entries(o.sprites)) {
+        const e = OUTFIT_SPRITES[id]
+        expect(e, `${key} on ${dex}`).toBeDefined()
+        expect(e!.id).toBe(id)
+        SHOWDOWN_VIEWS.forEach((view, v) => {
+          if (e!.v[v] === 'a' || e!.v[v] === 'g')
+            expect(
+              paths.has(pathOf(showdownSpriteUrl(id, view, e!.v[v] as 'a' | 'g'))),
+              `${id} ${view}`,
+            ).toBe(true)
+        })
+        // These tests build without VITE_SPRITES_HOST: the game reads Showdown, which has none of our own drawings.
+        if (o.own) expect(outfitSprite(key, Number(dex))).toBeNull()
+      }
   })
 })

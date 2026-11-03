@@ -54,6 +54,22 @@ const FEEL_SOUNDS = {
     hiss(0.22, { freq: 900, vol: 0.06, slide: 1400 })
     tone(147, 0.12, { type: 'triangle', vol: 0.07, slide: 60, at: 0.04 })
   },
+  /**
+   * A real player's card (docs/54), on its intro's beats: the bands rushing in, the trainers' whoosh, the boom as VS
+   * lands (0.57 s), then a rival's rising sting.
+   */
+  'versus.intro': () => {
+    hiss(0.16, { freq: 1100, vol: 0.06, slide: 1800 })
+    hiss(0.14, { freq: 1600, vol: 0.05, slide: 1400, at: 0.22 })
+    hiss(0.22, { freq: 300, vol: 0.14, slide: -180, at: 0.57 })
+    tone(82, 0.32, { type: 'square', vol: 0.07, slide: -30, at: 0.57 })
+    tune([[392, 0.68, 0.07], [523, 0.75, 0.07], [659, 0.82, 0.07], [784, 0.89, 0.07], [988, 0.98, 0.26]], 'square', 0.05)
+  },
+  /** A friend request sent after a real player's fight (docs/54): the letter's whoosh up, then two bright twinkles. */
+  'friend.send': () => {
+    tone(660, 0.2, { type: 'triangle', vol: 0.05, slide: 900 })
+    tune([[1319, 0.16, 0.06], [1760, 0.22, 0.12]], 'square', 0.035)
+  },
   /** A find lands on the stage (docs/43): a quick rising sparkle. */
   'find.item': () => tune([[988, 0, 0.05], [1319, 0.05, 0.05], [1760, 0.1, 0.12]], 'square', 0.04),
   /** It falls: a short rising whistle, then the thud of its landing (`die.landHeavy`'s weight, lighter). */

@@ -10,6 +10,7 @@ import {
   type RolledDie,
   type Side,
   type StatusKind,
+  type TalentKey,
 } from '@/engine'
 import { t } from '@/i18n'
 import { chancePercent, comboName, typeName } from '@/lib/format'
@@ -18,6 +19,8 @@ import { hasOwnCry, playCry } from '@/audio/cries'
 import { feelSound } from '@/audio/feel'
 import { sfx, type SfxName } from '@/audio/sfx'
 import type { BattleSlice } from '@/store/game'
+import { talentLogText } from '@/components/Talent'
+import { plateKey, plateType } from '@/components/portalSkin'
 
 export interface Fx {
   cursor: number
@@ -54,6 +57,11 @@ export interface Fx {
   cry: { id: number; dex: number } | null
   /** Pokémon away after a Flying, Ground or Water Z-Move (docs/35): the stage doesn't draw them until they strike. */
   away?: Record<string, 'fly' | 'dig' | 'dive'>
+  /**
+   * A hidden talent at work (docs/51): its plaque slides in on its owner's side, its gem bursts on the Pokémon.
+   * `entry`: one that works on its own, said as it first acts (its text on the plaque).
+   */
+  talent?: { id: number; side: Side; uid: string; key: TalentKey; name: string; entry?: boolean } | null
 }
 
 /** What the battle stage plays for a log entry (src/fx timelines). */
@@ -61,7 +69,7 @@ export interface Scene {
   id: number
   /** The log entry it belongs to. */
   cursor: number
-  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash' | 'zmove' | 'zstrike' | 'zaway'
+  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash' | 'plate' | 'zmove' | 'zstrike' | 'zaway'
   /** A Z-Move's going away, or the strike's coming back (docs/35). */
   how?: 'fly' | 'dig' | 'dive'
   /** Who acts: the attacker, or the Pokémon whose form changes. */
@@ -107,6 +115,12 @@ export function finalBlow() {
 export interface AnimatorContext {
   kind: BattleState['kind']
   trainerName: string | null
+  /** The boss is a roadblock (docs/61 §2): said as a wild Pokémon, not a legendary. */
+  roadblock?: boolean
+  /** A rival's set meeting (docs/61 §5.2): the fight opens with their line. */
+  rival?: boolean
+  /** A region flavour's fight (docs/62): a Kalos horde, an island trial (the Totem's), a Titan's. */
+  flavour?: 'horde' | 'trial' | 'titan' | null
   /**
    * The foe goes to the catch throw once it's K.O.'d (wild or legendary, and a catch on offer). A double battle asks per
    * foe: a wild pair's first K.O. waits, worn out on its spot, for the other's (docs/33).
@@ -158,6 +172,7 @@ function initFx(b: BattleSlice): Fx {
     chip: null,
     cry: null,
     away: {},
+    talent: null,
   }
 }
 
@@ -173,7 +188,7 @@ export function caughtUpFx(b: BattleSlice, ctx: AnimatorContext): Fx {
     const applied = step.apply(f)
     f = step.land ? step.land(applied, false) : applied
   }
-  return { ...f, cursor: b.log.length, pop: null, banner: null, shake: null, flash: null, status: null, fly: null, scene: null, cry: null }
+  return { ...f, cursor: b.log.length, pop: null, banner: null, shake: null, flash: null, status: null, fly: null, scene: null, cry: null, talent: null }
 }
 
 export interface Step {
@@ -213,9 +228,15 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         const [lead = '', lead2] = names(e.double.own)
         const go = lead2 ? t('ui.log.goPair', { a: lead, b: lead2 }) : t('ui.log.goName', { name: lead })
         const text =
-          ctx.kind === 'wild'
-            ? t('ui.log.startWildPair', { foe, foe2, go })
-            : t('ui.log.startTrainerPair', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe, foe2, go })
+          ctx.flavour === 'horde'
+            ? t('ui.log.startHorde', { foe, go })
+            : ctx.flavour === 'trial'
+              ? t('ui.log.startTotem', { foe, go })
+              : ctx.flavour === 'titan'
+                ? t('ui.log.startTitan', { foe, go })
+                : ctx.kind === 'wild'
+                  ? t('ui.log.startWildPair', { foe, foe2, go })
+                  : t('ui.log.startTrainerPair', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe, foe2, go })
         return { delay: 1300, apply: (f) => ({ ...f, message: text }) }
       }
       const lead = activeBattler(st).name
@@ -223,8 +244,12 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         ctx.kind === 'wild'
           ? t('ui.log.startWild', { foe: st.enemy.name, lead })
           : ctx.kind === 'boss'
-            ? t('ui.log.startBoss', { foe: st.enemy.name, lead })
-            : t('ui.log.startTrainer', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe: st.enemy.name, lead })
+            ? t(ctx.roadblock ? 'ui.log.startWild' : 'ui.log.startBoss', { foe: st.enemy.name, lead })
+            : t(ctx.rival ? 'ui.log.startRival' : 'ui.log.startTrainer', {
+                trainer: ctx.trainerName ?? t('ui.log.theTrainer'),
+                foe: st.enemy.name,
+                lead,
+              })
       return { delay: 1100, apply: (f) => ({ ...f, message: text }) }
     }
     case 'turn':
@@ -334,6 +359,37 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           status: { id: nextId(), target: e.target, status: e.status },
         }),
       }
+    case 'talent':
+      return {
+        // Long enough to read the plaque; one that only says what works on its own reads its line too. Mirror waits
+        // for its die to land.
+        delay: e.entry ? 1300 : e.dice ? 1500 : 1050,
+        sound: 'talent',
+        apply: (f) => ({
+          ...f,
+          // Mirror: the roll stays, and only its lowest die is thrown again, landing on the highest's face.
+          ...(e.dice &&
+            e.index != null && {
+              tray: {
+                side: e.side,
+                dice: e.dice,
+                keys: e.dice.map((_, i) => (i === e.index ? `m${nextId()}-${i}` : (f.tray?.keys[i] ?? `k-${i}`))),
+              },
+            }),
+          message: talentLogText(e.name ?? nameOf(e.uid), e, e.ally ? nameOf(e.ally) : undefined),
+          talent: { id: nextId(), side: e.side, uid: e.uid, key: e.talent, name: e.name ?? nameOf(e.uid), ...(e.entry && { entry: true }) },
+          ...(e.hpAfter != null && {
+            hp: { ...f.hp, [e.uid]: e.hpAfter },
+            pop: { id: nextId(), target: e.side, amount: e.amount ?? 0, tone: 'heal' as const },
+          }),
+          // Rough Skin (docs/51): the attacker it hurt back.
+          ...(e.hurt && {
+            hp: { ...f.hp, [e.hurt.uid]: e.hurt.hpAfter },
+            pop: { id: nextId(), target: e.hurt.side, amount: e.hurt.amount, tone: 'normal' as const },
+            shake: { id: nextId(), power: 2 },
+          }),
+        }),
+      }
     case 'status_resisted':
       return {
         delay: 850,
@@ -361,6 +417,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           pop: { id: nextId(), target: e.target, amount: e.amount, tone: 'normal' },
         }),
       }
+
     case 'stunned':
       return {
         delay: 1000,
@@ -385,7 +442,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           apply: (f) => ({
             ...f,
             message: t('ui.catch.wornOut', {
-              who: t(ctx.kind === 'boss' ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
+              who: t(ctx.kind === 'boss' && !ctx.roadblock ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
               name: nameOf(e.uid),
             }),
             wornOut: { ...f.wornOut, [e.uid]: true },
@@ -418,8 +475,51 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           // It takes the spot of the first one K.O.'d.
           field: f.field && { ...f.field, foes: takeSpot(f.field.foes, e.uid, (u) => !!f.fainted[u]) },
           fainted: { ...f.fainted, [e.uid]: false },
-          message: t('ui.log.foeSentOut', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), name: nameOf(e.uid) }),
+          // A horde's next one comes on its own; a called ally or a Titan's return was said by the entry before.
+          message:
+            ctx.flavour === 'horde'
+              ? t('ui.log.hordeNext', { name: nameOf(e.uid) })
+              : ctx.flavour === 'trial' || ctx.flavour === 'titan'
+                ? f.message
+                : t('ui.log.foeSentOut', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), name: nameOf(e.uid) }),
           tray: null,
+        }),
+      }
+    case 'sos':
+      return {
+        delay: 1100,
+        apply: (f) => ({ ...f, message: t('ui.log.sos', { name: nameOf(e.from), ally: nameOf(e.uid) }), tray: null }),
+      }
+    case 'titan_rise':
+      return {
+        delay: 1700,
+        sound: 'faint',
+        apply: (f) => ({
+          ...f,
+          message: t(e.commander ? 'ui.log.titanCommander' : 'ui.log.titanRise', { name: nameOf(e.uid) }),
+          shake: { id: nextId(), power: 3 },
+          tray: null,
+        }),
+      }
+    case 'foe_fled':
+      return {
+        delay: 900,
+        apply: (f) => ({
+          ...f,
+          message: t('ui.log.allyFled', { name: nameOf(e.uid) }),
+          fainted: { ...f.fainted, [e.uid]: true },
+          tray: null,
+        }),
+      }
+    case 'weather_tick':
+      return {
+        delay: 850,
+        sound: 'hit',
+        apply: (f) => ({
+          ...f,
+          message: t(`ui.raid.x.tick.${e.weather === 'snow' ? 'snow' : 'sand'}`, { name: nameOf(e.targetUid) }),
+          hp: { ...f.hp, [e.targetUid]: e.hpAfter },
+          pop: { id: nextId(), target: e.target, amount: e.amount, tone: 'normal' },
         }),
       }
     case 'switch':
@@ -470,7 +570,13 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
                     form: t(`ui.raid.form.${e.toDex}`),
                     type: typeName(e.die ?? 'normal'),
                   })
-                : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
+                : e.reason === 'plate'
+                  ? t('ui.raid.log.plate', {
+                      name: nameOf(e.uid),
+                      plate: t(plateKey(plateType(e.dice))),
+                      type: typeName(plateType(e.dice)),
+                    })
+                  : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
       // Your Pokémon's new die, said under the dice until its next roll.
       const gained =
         e.side === 'player' && !e.revert && e.die && (e.reason === 'mega' || e.reason === 'gmax')
@@ -492,9 +598,15 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       const unleash = e.reason === 'unleash'
       const cryDex = unleash || (e.reason === 'mega' && !e.revert && hasOwnCry(e.toDex)) ? e.toDex : null
       const cry = (f: Fx) => (cryDex ? { id: nextId(), dex: cryDex } : f.cry)
+      // A raid's Arceus taking its bar's Plate (docs/64 §4.5): its own short scene and word.
+      const plate = e.reason === 'plate'
       // The raid's word over the stage, like BREAK!.
       const banner = (f: Fx) =>
-        unleash ? { id: nextId(), text: t('ui.raid.unleash'), tone: 'super' as const } : f.banner
+        unleash
+          ? { id: nextId(), text: t('ui.raid.unleash'), tone: 'super' as const }
+          : plate
+            ? { id: nextId(), text: t('ui.raid.plateBanner'), tone: 'super' as const }
+            : f.banner
       // A timed Mega changing back (the gem rules) has no scene of its own: the flash, like a form going back.
       const scene: Step['scene'] =
         e.reason === 'mega' && e.revert
@@ -505,7 +617,9 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
             ? { kind: e.revert ? 'gmaxEnd' : 'gmax', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
             : unleash
               ? { kind: 'unleash', side: e.side, fromDex: e.fromDex, toDex: e.toDex, type: e.die }
-              : undefined
+              : plate
+                ? { kind: 'plate', side: e.side, fromDex: e.fromDex, toDex: e.toDex, type: plateType(e.dice) }
+                : undefined
       const formed = (f: Fx) => ({ ...f.dex, [e.uid]: e.toDex })
       // Dice gained mid-turn land in your hand: only they tumble, the others keep their keys (and stay still).
       const hand = e.hand
@@ -555,6 +669,16 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           ...f,
           message: t(`ui.log.zDodge.${e.how}`, { name: nameOf(e.uid) }),
           banner: { id: nextId(), text: t('ui.log.missBanner'), tone: 'immune' },
+        }),
+      }
+    case 'shield':
+      // The Bonus Shield (docs/65) cuts the hit that follows: said first, as a talent's pop-up is.
+      return {
+        delay: 900,
+        apply: (f) => ({
+          ...f,
+          message: t('ui.log.shield', { name: nameOf(e.uid), before: e.before, after: e.after }),
+          banner: { id: nextId(), text: t('ui.log.shieldBanner'), tone: 'info' },
         }),
       }
     case 'cleansed':

@@ -2,6 +2,7 @@
 // listings and decides who got there first; each player's game applies its own half of a trade, here. Everything a
 // trade decides — the level a Pokémon arrives at, where it lands, how it's kept, a trade evolution — is worked out by
 // these functions; the screens only show their results.
+import { familyUnlocked, idRng, talentOnEvolve, talentsOn } from './talents'
 import { isLegendary } from './breeding'
 import { everyRegionBox, type BoxedMon } from './daycare'
 import { eventOpenTo } from './events'
@@ -10,6 +11,7 @@ import { isReviving } from './fossils'
 import { regionBestLevel, worldHomers } from './homecoming'
 import { badgesHeld } from './liveEvents'
 import { cleanNickname } from './nickname'
+import { cleanOutfit, outfitAllowsEvolution } from './outfits'
 import { createInstance, evolve, instanceMaxHp, isTradeEvolution, tradeEvolutionOf } from './progression'
 import {
   getRegion,
@@ -34,6 +36,7 @@ import type {
   TradeLogEntry,
   TradeOut,
   TradeOutcome,
+  TradePicks,
   TradeVisibility,
   TradeWant,
   TradesSave,
@@ -305,15 +308,15 @@ export function snapshotHas(snap: Pick<TradeSnapshot, 'has' | 'forms'>, dex: num
 }
 
 /**
- * Does this Pokémon answer the want? A species: that one, shiny or not. Any I don't own: one the poster doesn't have in
+ * Does this Pokémon answer the want? A species: that one, shiny or not (carrying its hidden talent when the want says). Any I don't own: one the poster doesn't have in
  * the Box it would land in, or a shiny when they have no shiny of it. Anything: anything.
  */
 export function wantMatches(
   want: TradeWant,
-  mon: { dex: number; shiny?: boolean },
+  mon: { dex: number; shiny?: boolean; talent?: boolean },
   poster: TradeSnapshot,
 ): boolean {
-  if (want.kind === 'species') return mon.dex === want.dex
+  if (want.kind === 'species') return mon.dex === want.dex && (!want.talent || !!mon.talent)
   if (want.kind === 'notOwned')
     return !snapshotHas(poster, mon.dex) || (!!mon.shiny && !poster.shiny.includes(mon.dex))
   return true
@@ -446,8 +449,9 @@ export function placeInBox(save: SaveData, data: GameData, region: RegionId, ins
   const here = landing(save, data, region)
   const b = here === regionOf(save) ? save : save.parked![here]!
   const withDex = (dex: readonly number[], d: number) => (dex.includes(d) ? [...dex] : [...dex, d])
-  const plain = b.box.filter((p) => p.dex === inst.dex && !p.shiny && !isReviving(p))
-  if (inst.shiny || !plain.length) {
+  // A shiny or an outfit (docs/59) is a Pokémon of its own, on either side.
+  const plain = b.box.filter((p) => p.dex === inst.dex && !p.shiny && !p.outfit && !isReviving(p))
+  if (inst.shiny || inst.outfit || !plain.length) {
     const join = b.team.length < data.config.maxTeamSize
     const next = withBlock(save, here, (x) => ({
       box: [...x.box, inst],
@@ -457,7 +461,12 @@ export function placeInBox(save: SaveData, data: GameData, region: RegionId, ins
     return { save: next, outcome: inst.shiny ? 'shiny' : 'new', instId: inst.id, region: here }
   }
   const weakest = [...plain].sort((a, c) => a.level - c.level)[0]!
-  if (weakest.level >= inst.level) return { save, outcome: 'merged', instId: null, region: here }
+  if (weakest.level >= inst.level) {
+    // Its hidden talent passes to yours (docs/51), and so to the family once the save settles (`syncTalents`).
+    if (!inst.talent || weakest.talent) return { save, outcome: 'merged', instId: null, region: here }
+    const passed = withBlock(save, here, (x) => ({ ...x, box: x.box.map((p) => (p.id === weakest.id ? { ...p, talent: true } : p)) }))
+    return { save: passed, outcome: 'merged', instId: null, region: here }
+  }
   // The one arriving is the one you now have: its nickname comes with it; without one, yours stays.
   const upgraded: PokemonInstance = {
     ...weakest,
@@ -465,6 +474,7 @@ export function placeInBox(save: SaveData, data: GameData, region: RegionId, ins
     xp: 0,
     caughtAt: inst.caughtAt,
     ...(inst.nickname && { nickname: inst.nickname }),
+    ...(inst.talent && { talent: true }),
   }
   upgraded.currentHp = instanceMaxHp(upgraded, data)
   const next = withBlock(save, here, (x) => ({
@@ -534,7 +544,7 @@ export function tradeLandings(save: SaveData, data: GameData, dex: number): Regi
 /** The level of your weakest plain copy of a species in a region's Box, or null when you have none. */
 function mineIn(save: SaveData, region: RegionId, dex: number): number | null {
   const block = region === regionOf(save) ? save : save.parked?.[region]
-  const plain = (block?.box ?? []).filter((p) => p.dex === dex && !p.shiny && !isReviving(p))
+  const plain = (block?.box ?? []).filter((p) => p.dex === dex && !p.shiny && !p.outfit && !isReviving(p))
   return plain.length ? Math.min(...plain.map((p) => p.level)) : null
 }
 
@@ -580,7 +590,7 @@ function landTraded(
 export function receiveTrade(
   save: SaveData,
   data: GameData,
-  mon: { dex: number; shiny?: boolean; nickname?: string },
+  mon: { dex: number; shiny?: boolean; nickname?: string; talent?: boolean; outfit?: string },
   givenLevel: number,
   now: number,
   newId: () => string,
@@ -590,11 +600,21 @@ export function receiveTrade(
   const home = homeRegionOf(data, mon.dex) ?? regionOf(save)
   let inst = createInstance(mon.dex, arrival.level, data, newId(), now)
   if (mon.shiny) inst.shiny = true
+  // A traded Pokémon keeps its hidden talent (docs/51).
+  if (mon.talent === true) inst.talent = true
   const nickname = cleanNickname(mon.nickname)
   if (nickname) inst.nickname = nickname
+  // Its outfit goes with it (docs/59), and holds back a trade evolution that doesn't wear it.
+  const outfit = cleanOutfit(mon.outfit, mon.dex)
+  if (outfit) inst.outfit = outfit
   const to = tradeEvolutionOf(data, mon.dex)
-  const evolvedTo = to != null && speciesAllowedIn(data, home)(to) ? to : null
+  const evolvedTo = to != null && speciesAllowedIn(data, home)(to) && outfitAllowsEvolution(inst, to) ? to : null
   if (evolvedTo != null) inst = evolve(inst, evolvedTo, data)
+  // Evolving on the trade, a family still locked may find its hidden talent (docs/51): drawn from the arrival's id.
+  if (evolvedTo != null && !inst.talent && !familyUnlocked(save, data, evolvedTo, home)) {
+    const found = talentOnEvolve(save, data, [{ kind: 'evolve', uid: inst.id, toDex: evolvedTo }], idRng(inst.id), home)
+    if (found.found.length) inst.talent = true
+  }
   inst.currentHp = instanceMaxHp(inst, data)
   const landings = tradeLandings(save, data, inst.dex)
   const base = { dex: mon.dex, arrival, evolvedTo, landings, inst }
@@ -727,10 +747,10 @@ export function missesTrades(older: SaveData, current: SaveData): boolean {
   return (c.log ?? []).some((l) => !known.has(l.id))
 }
 
-/** What the Done list and the scene keep of a Pokémon beyond its species and level: shiny, and its nickname. */
-function extras(m: PokemonInstance): { shiny?: true; nickname?: string } {
+/** What the Done list and the scene keep of a Pokémon beyond its species and level: shiny, its nickname, its talent. */
+function extras(m: PokemonInstance): { shiny?: true; nickname?: string; talent?: true } {
   const nickname = cleanNickname(m.nickname)
-  return { ...(m.shiny && { shiny: true }), ...(nickname && { nickname }) }
+  return { ...(m.shiny && { shiny: true }), ...(nickname && { nickname }), ...(m.talent && { talent: true }) }
 }
 
 /** What the server says a taken trade was: the listed Pokémon, the one given for it, who took it. */
@@ -1017,6 +1037,163 @@ export function previewLandings(
   return first.received.landings.length > 1
     ? first.received.landings.map((r) => previewTake(save, data, listed, given, r))
     : [first]
+}
+
+// ---------------------------------------------------------------- the board's picks (§2.1)
+
+/**
+ * What a listing on the board is worth to this save, best first: `new`, it brings a Pokémon you don't have in the Box
+ * it would land in, or a shiny when you have no shiny of it (as "Any I don't own" counts it; a trade evolution counts
+ * as what it becomes); `talent`, it carries the hidden talent its family hasn't unlocked in that region; `other`, one
+ * you can take all the same; `blocked`, one you can't (its region not started, nothing of yours it wants, your own).
+ * The day's cap doesn't block a pick: tomorrow it can be taken, and its row says so meanwhile.
+ */
+export type PickTier = 'new' | 'talent' | 'other' | 'blocked'
+
+const TIERS: PickTier[] = ['new', 'talent', 'other', 'blocked']
+
+/** A listing, as far as the picks read it (the board's rows are these and more). */
+export interface PickListing {
+  id: string
+  dex: number
+  shiny: boolean
+  talent: boolean
+  isMe: boolean
+  isFriend: boolean
+  endsAt: number
+  want: TradeWant
+  poster: TradeSnapshot
+}
+
+export interface RankedPick<L extends PickListing = PickListing> {
+  listing: L
+  tier: PickTier
+  /** Shown before a NEW PICKS today: it comes after every listing not shown yet. */
+  seen: boolean
+}
+
+function pickTier(
+  save: SaveData,
+  data: GameData,
+  l: PickListing,
+  owned: { has: Set<number>; shiny: Set<number> },
+  now: number,
+): PickTier {
+  if (l.isMe) return 'blocked'
+  const why = takeBlock(save, data, l, now)
+  if (why === 'region' || why === 'no_match') return 'blocked'
+  const home = homeRegionOf(data, l.dex)
+  const to = tradeEvolutionOf(data, l.dex)
+  const gets = to != null && home && speciesAllowedIn(data, home)(to) ? to : l.dex
+  if (!owned.has.has(gets) || (l.shiny && !owned.shiny.has(gets))) return 'new'
+  if (l.talent && talentsOn(data) && home && !familyUnlocked(save, data, gets, home)) return 'talent'
+  return 'other'
+}
+
+const utcDay = (now: number) => Math.floor(now / DAY_MS)
+
+/** Today's NEW PICKS used and the listings shown before them (least recently first); a new UTC day starts afresh. */
+export function picksToday(save: SaveData, now: number): Pick<TradePicks, 'rerolls' | 'skip'> {
+  const p = tradesOf(save).picks
+  return p && p.day === utcDay(now) ? p : { rerolls: 0, skip: [] }
+}
+
+/** NEW PICKS left today (the admin's number a day). */
+export const picksLeft = (save: SaveData, data: GameData, now: number): number =>
+  Math.max(0, tradeCfg(data).boardRerolls - picksToday(save, now).rerolls)
+
+/**
+ * Every listing ranked for this save: those not shown before a NEW PICKS today first, best tier first, then friends'
+ * first, then ending soonest; the ones shown before after them, the one shown longest ago first, so each NEW PICKS
+ * brings the listings seen least.
+ */
+export function rankPicks<L extends PickListing>(
+  save: SaveData,
+  data: GameData,
+  listings: L[],
+  now: number,
+): RankedPick<L>[] {
+  const owned = ownedForTrades(save, data)
+  const order = new Map(picksToday(save, now).skip.map((id, i) => [id, i]))
+  return listings
+    .map((listing) => ({
+      listing,
+      tier: pickTier(save, data, listing, owned, now),
+      seen: order.has(listing.id),
+    }))
+    .sort(
+      (a, b) =>
+        Number(a.seen) - Number(b.seen) ||
+        (order.get(a.listing.id) ?? 0) - (order.get(b.listing.id) ?? 0) ||
+        TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier) ||
+        Number(b.listing.isFriend) - Number(a.listing.isFriend) ||
+        a.listing.endsAt - b.listing.endsAt ||
+        (a.listing.id < b.listing.id ? -1 : a.listing.id > b.listing.id ? 1 : 0),
+    )
+}
+
+/**
+ * The board's picks: the first `boardPicks` listings you can take, in `rankPicks`' order. `more`: there are others
+ * you can take, so a NEW PICKS would show something else.
+ */
+export function boardPicks<L extends PickListing>(
+  save: SaveData,
+  data: GameData,
+  listings: L[],
+  now: number,
+): { picks: RankedPick<L>[]; more: boolean } {
+  const can = rankPicks(save, data, listings, now).filter((r) => r.tier !== 'blocked')
+  const n = Math.max(1, tradeCfg(data).boardPicks)
+  return { picks: can.slice(0, n), more: can.length > n }
+}
+
+const SKIP_KEPT = 100
+
+/**
+ * NEW PICKS: the listings shown go to the back of the line until tomorrow, and one of the day's NEW PICKS is used.
+ * Null when none is left.
+ */
+export function rerollPicks(save: SaveData, data: GameData, shown: string[], now: number): SaveData | null {
+  if (picksLeft(save, data, now) < 1) return null
+  const today = picksToday(save, now)
+  const skip = [...today.skip.filter((id) => !shown.includes(id)), ...shown].slice(-SKIP_KEPT)
+  return {
+    ...save,
+    trades: { ...tradesOf(save), picks: { day: utcDay(now), rerolls: today.rerolls + 1, skip } },
+  }
+}
+
+/**
+ * What the server ranks the board's candidates by (`trade_picks`, migration 0108), so a crowded board still finds the
+ * ones worth showing: what you own (the snapshot a listing keeps), every species you could give, and the species whose
+ * family's hidden talent you've unlocked in their home region (null while talents are off). The game ranks the
+ * candidates it sends back exactly (`rankPicks`).
+ */
+export interface PicksAsk extends TradeSnapshot {
+  offer: Pick<TradeSnapshot, 'has' | 'forms'>
+  talented: Pick<TradeSnapshot, 'has' | 'forms'> | null
+}
+
+export function picksAsk(save: SaveData, data: GameData): PicksAsk {
+  const offer = tradeChoices(save, data)
+    .filter((at) => !tradeBlocked(save, data, at))
+    .map((at) => at.inst.dex)
+  const regions = new Set(tradeRegions(save, data))
+  const talented = talentsOn(data)
+    ? data.speciesList
+        .filter((s) => {
+          const home = homeRegionOf(data, s.dex)
+          return (
+            !!home && regions.has(home) && !untradable(data, s.dex) && familyUnlocked(save, data, s.dex, home)
+          )
+        })
+        .map((s) => s.dex)
+    : null
+  return {
+    ...tradeSnapshot(save, data),
+    offer: encodeDexSet(offer),
+    talented: talented && encodeDexSet(talented),
+  }
 }
 
 /**

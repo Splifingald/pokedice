@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   centerHeal,
+  crackEgg,
+  eggLine,
+  eggLines,
+  hatchChoices,
+  hatchlingRegions,
   createInstance,
   createRng,
   dayCareLevelProgress,
@@ -78,14 +83,15 @@ describe('Day Care', () => {
     expect(isDayCareOpen({ ...s, pokedex: Array.from({ length: cfg.unlockPokedex }, (_, i) => i + 1) }, data)).toBe(true)
   })
 
-  it('counts distinct species across every region: 12 in Kanto and 8 others in Johto open it', () => {
+  it('counts distinct species across every region: 6 in Kanto and 4 others in Johto open it', () => {
+    expect(cfg.unlockPokedex).toBe(10)
     const s = newSave(4, data, 0, newId)
-    const kanto = { ...s, pokedex: Array.from({ length: 12 }, (_, i) => i + 1) }
+    const kanto = { ...s, pokedex: Array.from({ length: 6 }, (_, i) => i + 1) }
     const both = startRegion(kanto, johto, newRegionBlock(johto, 152, data, 0, newId, createInstance))
     const at = (pokedex: number[]) => ({ ...both, pokedex })
-    // 7 new ones and one Kanto species again: 19 distinct, still shut.
-    expect(isDayCareOpen(at([152, 153, 154, 155, 156, 157, 158, 1]), data)).toBe(false)
-    expect(isDayCareOpen(at([152, 153, 154, 155, 156, 157, 158, 159]), data)).toBe(true)
+    // 3 new ones and one Kanto species again: 9 distinct, still shut.
+    expect(isDayCareOpen(at([152, 153, 154, 1]), data)).toBe(false)
+    expect(isDayCareOpen(at([152, 153, 154, 155]), data)).toBe(true)
   })
 
   it('sends the player there once when it opens: due until the first visit, never for saves that used it', () => {
@@ -406,6 +412,112 @@ describe('Hatching', () => {
     const bred = hatchEgg({ ...s, dayCare: care({ eggClaimed: false, egg: { at: 0 } }) }, data, createRng(1), 0, newId)!
     expect(bred.gift).toBe(false)
     expect(dayCareOf(bred.save).eggClaimed).toBe(false)
+  })
+})
+
+describe('Bred Eggs', () => {
+  const bred = (s: SaveData, a: number, b: number): SaveData => ({
+    ...s,
+    dayCare: care({ egg: { at: 0, parents: [{ dex: a }, { dex: b }] } }),
+  })
+  const DITTO = 132
+  const kantoOnly = () => withMons([30, 30, 30])
+  /** Kanto played, Johto started and parked: its Box holds Cyndaquil at its starter level. */
+  const kantoAndJohto = () =>
+    switchRegion(startRegion(kantoOnly(), johto, newRegionBlock(johto, 155, data, 0, newId, createInstance)), 'kanto')
+  const roll = (s: SaveData, n = 200) => {
+    const rng = createRng(7)
+    return new Set(Array.from({ length: n }, () => hatchEgg(s, data, rng, 0, newId)!.inst.dex))
+  }
+
+  it("passes on the first form of a parent's line, babies and starters included", () => {
+    const s = kantoOnly()
+    expect(eggLine(s, data, 6)).toBe(4) // Charizard → Charmander
+    expect(eggLine(s, data, 128)).toBe(128) // Tauros never evolves: Tauros
+    expect(eggLine(s, data, 26)).toBe(25) // Raichu → Pikachu: Pichu is Johto's, not discovered
+    expect(eggLine(kantoAndJohto(), data, 26)).toBe(172) // …and Pichu once Johto is
+    expect(eggLine(kantoAndJohto(), data, 143)).toBe(143) // Munchlax waits for Sinnoh
+  })
+
+  it('never hatches a species from a region not discovered yet', () => {
+    expect(eggLine(kantoAndJohto(), data, 254)).toBeNull() // a friend's Sceptile before Hoenn
+    expect(eggLine(kantoOnly(), data, 10103)).toBeNull() // Alolan Vulpix before Alola
+    expect(eggLine(kantoOnly(), data, 10100)).toBe(25) // Alolan Raichu's line has Pikachu in Kanto
+  })
+
+  it("hatches one of its parents' lines, never Ditto's", () => {
+    expect(roll(bred(kantoOnly(), 6, DITTO))).toEqual(new Set([4]))
+    expect(roll(bred(kantoOnly(), 17, 21))).toEqual(new Set([16, 21])) // Pidgeotto × Spearow
+  })
+
+  it('favours a line missing from every Pokédex it could go to', () => {
+    const s = bred({ ...kantoOnly(), pokedex: [16] }, 16, 19)
+    expect(eggLines(s, data)).toEqual([
+      { dex: 16, weight: 1 },
+      { dex: 19, weight: cfg.unownedWeight },
+    ])
+    // Two parents of one line count once.
+    expect(eggLines(bred(kantoOnly(), 16, 18), data)).toHaveLength(1)
+  })
+
+  it('hatches from the random pool when no parent passes a line on', () => {
+    const pool = new Set(eggSpecies(data, 'kanto').map((p) => p.dex))
+    for (const dex of roll(bred(kantoOnly(), DITTO, DITTO))) expect(pool.has(dex)).toBe(true)
+    for (const dex of roll(bred(kantoAndJohto(), DITTO, 254))) expect(pool.has(dex)).toBe(true)
+  })
+
+  it('hatches either Nidoran from either line', () => {
+    expect(roll(bred(kantoOnly(), 31, DITTO))).toEqual(new Set([29, 32]))
+  })
+
+  it("goes to the one Box that can take it, a parked region's when it is the only one", () => {
+    const s = bred(kantoAndJohto(), 25, DITTO)
+    expect(hatchlingRegions(s, data, 172)).toEqual(['johto'])
+    const h = hatchEgg(s, data, createRng(1), 0, newId)!
+    expect(h).toMatchObject({ region: 'johto', live: false, joinedTeam: false, regions: ['johto'] })
+    expect(h.inst.dex).toBe(172)
+    expect(h.save.box).toEqual(s.box)
+    expect(h.save.team).toEqual(s.team)
+    expect(h.save.parked!.johto!.box.at(-1)!.id).toBe(h.inst.id)
+    expect(h.save.parked!.johto!.pokedex).toContain(172)
+    expect(h.save.pokedex).not.toContain(172)
+    expect(h.isNew).toBe(true)
+  })
+
+  it("offers every discovered region whose Pokédex lists it, each with that Box's level and keep", () => {
+    // A strong Eevee in Kanto: a new one is only worth keeping in Johto.
+    const base = kantoAndJohto()
+    const s = bred({ ...base, box: [...base.box, createInstance(133, 60, data, 'eevee', 0)] }, 133, DITTO)
+    const cracked = crackEgg(s, data, shinyRng(3, false))!
+    const choices = hatchChoices(cracked, data, 0)
+    expect(choices.map((c) => c.region)).toEqual(['kanto', 'johto'])
+    const [kanto, inJohto] = choices
+    expect(kanto).toMatchObject({ live: true, kept: false, strongest: 60, gold: cfg.notKeptGold })
+    expect(inJohto).toMatchObject({ live: false, kept: true, isNew: true, gold: 0 })
+    expect(kanto!.inst.level).toBe(hatchLevel(cracked, data, 'kanto'))
+    expect(inJohto!.inst.level).toBe(hatchLevel(cracked, data, 'johto'))
+    expect(hatchLevel(cracked, data, 'johto')).not.toBe(hatchLevel(cracked, data, 'kanto'))
+    // The pick: into Johto's Box.
+    const h = hatchEgg(cracked, data, createRng(99), 0, newId, null, 'johto')!
+    expect(h.save.parked!.johto!.box.some((p) => p.id === h.inst.id)).toBe(true)
+    expect(dayCareOf(h.save).egg).toBeUndefined()
+    // A region that can't take it: refused.
+    expect(hatchEgg(cracked, data, createRng(99), 0, newId, null, 'hoenn')).toBeNull()
+  })
+
+  it('rolls what the Egg holds once: a cracked Egg hatches the same, through a save round-trip too', () => {
+    const s = bred(kantoOnly(), 17, 21)
+    const cracked = crackEgg(s, data, createRng(5))!
+    const held = dayCareOf(cracked).egg!.hatchling!
+    expect(crackEgg(cracked, data, createRng(6))).toBe(cracked)
+    const back = parseSave(JSON.parse(JSON.stringify(cracked)))
+    expect(back.ok && dayCareOf(back.save).egg?.hatchling).toEqual(held)
+    for (let seed = 0; seed < 20; seed++) {
+      const h = hatchEgg(cracked, data, shinyRng(seed, true), 0, newId)!
+      expect(h.inst.dex).toBe(held.dex)
+      expect(h.shiny).toBe(!!held.shiny)
+    }
+    expect(hatchChoices(s, data, 0)).toEqual([])
   })
 })
 

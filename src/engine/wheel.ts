@@ -3,6 +3,7 @@
 // of the time (the admin's numbers, scaled to 100 % if they don't add up), plus the jackpot's slice: Porygon, then a
 // shiny Porygon once Porygon is caught, then a Master Ball once that's caught, each at its own fixed chance. The draw
 // is the device's, as the Underground's walls are: the tickets, the purse and the prize all live in the save.
+import { rollTalentFor } from './talents'
 import { applyCatch, catchTarget } from './catching'
 import { inWorldRegion } from './regions'
 import type { Rng } from './rng'
@@ -201,8 +202,10 @@ export function payWheelPrize(save: SaveData, data: GameData, now: number, newId
   if (r.kind === 'gold') return { ...cleared, gold: save.gold + Math.max(0, Math.round(r.amount)) }
   if (r.kind === 'pokemon') {
     const level = Math.max(1, Math.round(r.level))
-    const target = catchTarget(cleared, r.dex, level, 'wild', data, !!r.shiny)
-    return target ? applyCatch(cleared, { dex: r.dex, level, shiny: !!r.shiny }, target, data, now, newId).save : cleared
+    // Its family's hidden talent, at the wild odds (docs/51), drawn from the prize's moment so a reload rolls the same.
+    const talent = rollTalentFor(data, r.dex, `wheel-${r.dex}-${level}-${save.updatedAt}`)
+    const target = catchTarget(cleared, r.dex, level, 'wild', data, !!r.shiny, cleared.currentAreaId, talent)
+    return target ? applyCatch(cleared, { dex: r.dex, level, shiny: !!r.shiny, talent }, target, data, now, newId).save : cleared
   }
   if (!data.items[r.key]) return cleared
   const qty = Math.max(1, Math.round(r.qty))

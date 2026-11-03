@@ -1,0 +1,28 @@
+/* The region flavours (docs/62, docs/15 §44): a Totem's and a Titan's aura on the stage, a horde's pips. */
+
+/* The aura: a warm glow round the sprite, pulsing slowly; still at Motion level 0 and for reduced motion. */
+.foe-aura-totem img,
+.foe-aura-totem canvas {
+  filter: drop-shadow(0 0 2px #ffbe2e) drop-shadow(0 0 5px #ff9a85);
+  animation: foe-aura 1.8s ease-in-out infinite;
+}
+.foe-aura-titan img,
+.foe-aura-titan canvas {
+  filter: drop-shadow(0 0 2px #ffe7a8) drop-shadow(0 0 7px #e08e00);
+  animation: foe-aura 1.4s ease-in-out infinite;
+}
+@keyframes foe-aura {
+  50% {
+    filter: drop-shadow(0 0 3px #ffbe2e) drop-shadow(0 0 9px #f2553f);
+  }
+}
+html.reduce-motion .foe-aura-totem img,
+html.reduce-motion .foe-aura-titan img {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .foe-aura-totem img,
+  .foe-aura-titan img {
+    animation: none;
+  }
+}

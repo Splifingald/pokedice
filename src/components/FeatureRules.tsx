@@ -41,6 +41,11 @@ export function useDayCareRules(): RuleRow[] {
       }),
     },
     {
+      icon: 'dex',
+      title: t('ui.rules.dc.hatch.title'),
+      text: t('ui.rules.dc.hatch.text', { ditto: data.species[132]?.name ?? 'Ditto' }),
+    },
+    {
       icon: 'friends',
       title: t('ui.rules.dc.friends.title'),
       text: t('ui.rules.dc.friends.text', { n: cfg.friendSlots }),

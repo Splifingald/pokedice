@@ -12,6 +12,7 @@ import {
 import itemSheet from '@/assets/item-icons.png'
 import itemAtlas from '@/data/item-atlas.json'
 import { artBox } from '@/lib/showdown'
+import { outfitSprite } from '@/lib/outfitSprites'
 import { isShowdownUrl, PATIENCE_MS, showdownMissed } from '@/lib/showdownReach'
 import type { SyntheticEvent } from 'react'
 import { cached, canvas, clamp, type Canvas, type G } from './pixel'
@@ -35,9 +36,9 @@ export interface StageSprite {
 }
 
 /** A Pokémon's sprite for a stage: the front (a foe, Home) or the back (yours in battle). */
-export function stageSprite(dex: number, back: boolean, shiny: boolean): StageSprite {
+export function stageSprite(dex: number, back: boolean, shiny: boolean, outfit?: string | null): StageSprite {
   const local = spriteUrlFor(dex, back ? 'back' : 'front', shiny)
-  const sd = showdownView(dex, back, shiny)
+  const sd = showdownView(dex, back, shiny, outfit)
   if (sd) {
     const [x0, y0, x1, y1] = artBox(sd.box)
     const artW = x1 - x0 + 1
@@ -104,9 +105,9 @@ export function placeSprite(s: StageSprite, x: number, y: number) {
 const frames = new Map<string, Canvas>()
 const loading = new Map<string, Promise<string>>()
 
-/** A sprite's key on the canvas: species, view and shininess. */
-export const spriteKey = (dex: number, back: boolean, shiny = false) =>
-  `${dex}${back ? 'b' : 'f'}${shiny ? 's' : ''}`
+/** A sprite's key on the canvas: species, view, shininess and outfit (docs/59), the one it can show. */
+export const spriteKey = (dex: number, back: boolean, shiny = false, outfit?: string | null) =>
+  `${dex}${back ? 'b' : 'f'}${shiny ? 's' : ''}${outfitSprite(outfit, dex) ? `-${outfit}` : ''}`
 
 function crop(img: HTMLImageElement, s: StageSprite, fromFallback: boolean): Canvas {
   // The fallback is the local 64px sprite, whose box is in its own metrics: use its whole image, scaled.
@@ -125,12 +126,12 @@ function crop(img: HTMLImageElement, s: StageSprite, fromFallback: boolean): Can
 }
 
 /** Load one view of a Pokémon for the canvas; resolves to its key (also when it fails: it then draws nothing). */
-export function loadSprite(dex: number, back: boolean, shiny = false): Promise<string> {
-  const key = spriteKey(dex, back, shiny)
+export function loadSprite(dex: number, back: boolean, shiny = false, outfit?: string | null): Promise<string> {
+  const key = spriteKey(dex, back, shiny, outfit)
   if (frames.has(key)) return Promise.resolve(key)
   let p = loading.get(key)
   if (p) return p
-  const s = stageSprite(dex, back, shiny)
+  const s = stageSprite(dex, back, shiny, outfit)
   p = new Promise<string>((res) => {
     const img = new Image()
     let fallback = false
@@ -162,6 +163,57 @@ export function loadSprite(dex: number, back: boolean, shiny = false): Promise<s
     img.onerror = next
     img.src = s.url
     wait = window.setTimeout(stall, s.fallback ? PATIENCE_MS : SPRITE_PATIENCE_MS)
+  })
+  loading.set(key, p)
+  return p
+}
+
+/** A picture's key on the canvas (a trainer's, for a champion's entrance: docs/56). */
+export const pictureKey = (url: string) => `pic|${url}`
+
+/**
+ * Load any picture by URL for the canvas, cropped to what it draws (a trainer's 80×80 has empty margins), so it stands
+ * on its feet like a Pokémon's sprite; resolves to its key (also when it fails: it then draws nothing).
+ */
+export function loadPicture(url: string): Promise<string> {
+  const key = pictureKey(url)
+  if (frames.has(key)) return Promise.resolve(key)
+  let p = loading.get(key)
+  if (p) return p
+  p = new Promise<string>((res) => {
+    const img = new Image()
+    img.onload = () => {
+      const full = canvas(img.naturalWidth, img.naturalHeight)
+      full.g.drawImage(img, 0, 0)
+      let box = { x0: 0, y0: 0, x1: full.width, y1: full.height }
+      try {
+        const px = full.g.getImageData(0, 0, full.width, full.height).data
+        let x0 = full.width
+        let y0 = full.height
+        let x1 = 0
+        let y1 = 0
+        for (let y = 0; y < full.height; y++)
+          for (let x = 0; x < full.width; x++)
+            if (px[(y * full.width + x) * 4 + 3]! > 8) {
+              x0 = Math.min(x0, x)
+              y0 = Math.min(y0, y)
+              x1 = Math.max(x1, x + 1)
+              y1 = Math.max(y1, y + 1)
+            }
+        if (x1 > x0) box = { x0, y0, x1, y1 }
+      } catch {
+        // A picture from elsewhere can't be read back: drawn whole.
+      }
+      const c = canvas(box.x1 - box.x0, box.y1 - box.y0)
+      c.g.drawImage(full, -box.x0, -box.y0)
+      frames.set(key, c)
+      res(key)
+    }
+    img.onerror = () => {
+      loading.delete(key)
+      res(key)
+    }
+    img.src = url
   })
   loading.set(key, p)
   return p

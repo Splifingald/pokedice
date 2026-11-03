@@ -138,7 +138,9 @@ async function versusServer(page: Page, opts: { forgets?: boolean } = {}) {
     const body = route.request().postDataJSON() as { ids: string[] }
     teams.push(body)
     const version = (mine?.version ?? 0) + 1
-    if (!opts.forgets) mine = entry('Sam', { is_me: true, ids: body.ids, version, team: [mon(3), mon(6), mon(9)] })
+    // At each Pokémon's own level, as the server keeps it (0090).
+    const team = body.ids.map((id) => ({ vn: mon(3, 55), cz: mon(6, 72), bl: mon(9, 50) })[id] ?? mon(129))
+    if (!opts.forgets) mine = entry('Sam', { is_me: true, ids: body.ids, version, team })
     return route.fulfill({ status: 200, contentType: 'application/json', body: String(version) })
   })
   return teams
@@ -154,19 +156,40 @@ test('set your team: three picks in fight order, saved from the cloud save, and 
   await expect(page.getByText('Set your team first')).toBeVisible()
   await page.getByRole('tab', { name: 'My team' }).click()
   await expect(page.getByText('No team yet.')).toBeVisible()
-  await page.getByRole('button', { name: /Venusaur/ }).click()
-  await page.getByRole('button', { name: /Charizard/ }).click()
-  await page.getByRole('button', { name: /Blastoise/ }).click()
-  // Every region's Box can send a Pokémon (Blastoise waits in Johto's). Everyone fights at Lv.50, so a row shows the
-  // types, not a level.
-  await expect(page.getByRole('button', { name: /Charizard/ })).toContainText('Fire')
-  await expect(page.getByRole('button', { name: /Charizard/ })).not.toContainText('Lv.')
+  // A row of the list (a slot's name starts with its place).
+  const row = (name: string) => page.getByRole('button', { name: new RegExp(`^${name}`) })
+  // Highest level first: past Lv.50 a Pokémon keeps its own level's dice and rerolls.
+  await expect(page.locator('ul > li > button[aria-pressed]').first()).toContainText('Charizard')
+  await row('Venusaur').click()
+  await row('Charizard').click()
+  await row('Blastoise').click()
+  // Every region's Box can send a Pokémon (Blastoise waits in Johto's). A row shows its types and its level; a slot,
+  // the level it fights at.
+  await expect(row('Charizard')).toContainText('Fire')
+  await expect(row('Charizard')).toContainText('Lv.72')
+  await expect(page.getByRole('button', { name: 'Place 2: Charizard' })).toContainText('Lv.72 → 50')
+  // The slots swap: a tap on one then the other…
+  await page.getByRole('button', { name: 'Place 1: Venusaur' }).click()
+  await expect(page.getByRole('button', { name: 'Place 1: Venusaur' })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Place 3: Blastoise' }).click()
+  await expect(page.getByRole('button', { name: 'Place 1: Blastoise' })).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('button', { name: 'Place 3: Venusaur' })).toBeVisible()
+  // …or one dragged onto the other.
+  const from = (await page.getByRole('button', { name: 'Place 1: Blastoise' }).boundingBox())!
+  const to = (await page.getByRole('button', { name: 'Place 3: Venusaur' }).boundingBox())!
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(from.x + from.width / 2 + 20, from.y + from.height / 2, { steps: 4 })
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 })
+  await page.mouse.up()
+  await expect(page.getByRole('button', { name: 'Place 1: Venusaur' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Place 3: Blastoise' })).toBeVisible()
   // The type filter and A–Z narrow and reorder the list; the picks stay picked.
   await page.getByRole('combobox', { name: 'Filter by type' }).selectOption('water')
-  await expect(page.locator('button[aria-pressed]')).toHaveCount(1)
+  await expect(page.locator('ul > li > button[aria-pressed]')).toHaveCount(1)
   await page.getByRole('combobox', { name: 'Filter by type' }).selectOption('all')
   await page.getByRole('radio', { name: 'A–Z' }).click()
-  await expect(page.locator('button[aria-pressed]').first()).toContainText('Blastoise')
+  await expect(page.locator('ul > li > button[aria-pressed]').first()).toContainText('Blastoise')
   await page.getByRole('button', { name: 'SAVE TEAM' }).click()
 
   await expect(page.getByText('Team saved!')).toBeVisible()
@@ -176,7 +199,7 @@ test('set your team: three picks in fight order, saved from the cloud save, and 
   expect(calls.filter((c) => c.startsWith('POST /rest/v1/saves')).length).toBeGreaterThan(0)
   // The picks stay, the button says the team is saved, and the team shows at the top.
   await expect(page.getByRole('button', { name: 'TEAM SAVED', exact: true })).toBeDisabled()
-  await expect(page.getByRole('button', { name: /Venusaur/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(row('Venusaur')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('No team yet.')).toHaveCount(0)
 
   // Back later: the saved team is still picked, and the opponents can be fought.
@@ -184,11 +207,10 @@ test('set your team: three picks in fight order, saved from the cloud save, and 
   await expect(page.getByRole('button', { name: 'Fight Blue' })).toBeEnabled()
   await page.getByRole('tab', { name: 'My team' }).click()
   await expect(page.getByRole('button', { name: 'TEAM SAVED', exact: true })).toBeDisabled()
-  for (const name of ['Venusaur', 'Charizard', 'Blastoise'])
-    await expect(page.getByRole('button', { name: new RegExp(name) })).toHaveAttribute('aria-pressed', 'true')
+  for (const name of ['Venusaur', 'Charizard', 'Blastoise']) await expect(row(name)).toHaveAttribute('aria-pressed', 'true')
 
   // Changing a pick makes it savable again.
-  await page.getByRole('button', { name: /Blastoise/ }).click()
+  await row('Blastoise').click()
   await expect(page.getByRole('button', { name: 'SAVE TEAM' })).toBeDisabled()
 })
 
@@ -218,7 +240,8 @@ test("a team the server doesn't show back is not called saved", async ({ page })
   await signedIn(page, readySave())
   await page.goto('/versus')
   await page.getByRole('tab', { name: 'My team' }).click()
-  for (const name of ['Venusaur', 'Charizard', 'Blastoise']) await page.getByRole('button', { name: new RegExp(name) }).click()
+  for (const name of ['Venusaur', 'Charizard', 'Blastoise'])
+    await page.getByRole('button', { name: new RegExp(`^${name}`) }).click()
   await page.getByRole('button', { name: 'SAVE TEAM' }).click()
   await expect(page.getByText(/the server doesn't show it back/)).toBeVisible()
   await expect(page.getByText('Team saved!')).toHaveCount(0)

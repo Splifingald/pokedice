@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  addFossil,
   applyFieldItem,
   createInstance,
+  DEFAULT_CONFIG,
   createRng,
   depositError,
   gainXp,
@@ -15,9 +17,11 @@ import {
   shopStock,
   swapIntoTeam,
   xpToNext,
+  wildShinyChance,
+  type GameData,
   type SaveData,
 } from '@/engine'
-import { data, newId } from '../fixtures'
+import { data, makeData, newId } from '../fixtures'
 
 const fresh = () => newSave(4, data, 0, newId)
 const withMon = (s: SaveData, dex: number, level: number, id = 'mon'): SaveData => ({
@@ -100,5 +104,41 @@ describe('fossils', () => {
     expect(mon.revivesAt).toBeUndefined()
     expect(r.save.pokedex).toContain(138)
     expect(swapIntoTeam(r.save, 'fossil', null, data).team).toContain('fossil')
+  })
+})
+
+describe('shiny fossils', () => {
+  const day = 24 * 3_600_000
+  const ids = Array.from({ length: 4000 }, (_, i) => `fossil-${i}`)
+  const revived = (d: GameData, id: string, s: SaveData = fresh()) =>
+    reviveFossils(addFossil(s, d.items['helix-fossil']!, d, 0, id), d, day).revived[0]!
+  const shinyShare = (d: GameData, s?: SaveData) => ids.filter((id) => revived(d, id, s).shiny).length / ids.length
+
+  it('revive shiny 1 in 10 by default, the roll fixed from the find', () => {
+    expect(DEFAULT_CONFIG.fossilShinyChance).toBe(0.1)
+    const share = shinyShare(data)
+    expect(share).toBeGreaterThan(0.08)
+    expect(share).toBeLessThan(0.12)
+    // Reloading before the revived save is written rolls nothing again: the Pokémon's id decides.
+    for (const id of ids.slice(0, 100)) expect(revived(data, id).shiny).toBe(revived(data, id).shiny)
+    // Still reviving, it isn't shiny yet.
+    expect(addFossil(fresh(), data.items['helix-fossil']!, data, 0, 'x').box.at(-1)!.shiny).toBeUndefined()
+  })
+
+  it("follow the admin's odds: never at 0, always at 1", () => {
+    expect(shinyShare(makeData({ fossilShinyChance: 0 }))).toBe(0)
+    expect(shinyShare(makeData({ fossilShinyChance: 1 }))).toBe(1)
+  })
+
+  it("aren't touched by the Shiny Charm", () => {
+    const charmed = makeData({ shinyChance: 0.001, general: { ...DEFAULT_CONFIG.general, access: 'all', charmAccess: 'all' } })
+    const maxed: SaveData = { ...fresh(), general: { charm: 10 } }
+    expect(wildShinyChance(maxed, charmed)).toBeGreaterThan(0.001)
+    expect(shinyShare(charmed, maxed)).toBe(shinyShare(charmed))
+  })
+
+  it('never in Extreme mode', () => {
+    const extreme: SaveData = { ...fresh(), mode: 'extreme' }
+    expect(shinyShare(makeData({ fossilShinyChance: 1 }), extreme)).toBe(0)
   })
 })

@@ -308,7 +308,13 @@ export function UndergroundScreen() {
               </UgNote>
             )}
           </Section>
-          {details && <UgNote className="px-1">{t('ui.ug.fossilsNote')}</UgNote>}
+          {details && (
+            <UgNote className="px-1">
+              {data.config.fossilShinyChance > 0
+                ? t('ui.ug.fossilsNoteShiny', { odds: Math.round(1 / data.config.fossilShinyChance) })
+                : t('ui.ug.fossilsNote')}
+            </UgNote>
+          )}
           {details && <UgNote className="px-1">{t('ui.ug.endNote')}</UgNote>}
           <UgRulesModal open={info} onClose={() => setInfo(false)} data={data} />
         </>

@@ -8,7 +8,7 @@ import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
 import { Toggle } from '@/components/Toggle'
 import type { DieType, PokeType, StatusKind } from '@/engine/types'
 import { hitPower, type HitPower } from '@/engine/hitPower'
-import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
+import { loadItemSprite, loadPicture, loadSprite, spriteKey } from '@/fx/sprites'
 import { H, Stage, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { shinyTimeline } from '@/fx/timelines/shiny'
@@ -21,8 +21,12 @@ import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelin
 import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { legendLook, legendTimeline } from '@/fx/timelines/legend'
 import { breachTimeline, closeTimeline, victoryTimeline, wildGlitchTimeline } from '@/fx/timelines/portal'
+import { altarLitTimeline, descentTimeline, plateTimeline, stairwayTimeline } from '@/fx/timelines/plates'
 import { legendRaidEntranceTimeline } from '@/fx/timelines/legendRaid'
 import { LEGEND_RAID_SCENES } from '@/fx/timelines/legendRaidScenes'
+import { BOSS_CINEMAS, RAID_CINEMAS } from '@/fx/timelines/cinema'
+import { CHAMPION_CINEMAS } from '@/fx/timelines/cinema/champions'
+import { sampleParams } from '@/fx/timelines/cinema/champion'
 import { raidEntranceTimeline } from '@/fx/timelines/portalRaid'
 import {
   nightmareIntroTimeline,
@@ -30,10 +34,20 @@ import {
   nightmareWakeTimeline,
 } from '@/fx/timelines/nightmare'
 import { nightRaidEntranceTimeline } from '@/fx/timelines/nightmareRaid'
+import { raceIntroTimeline, raceWinTimeline } from '@/fx/timelines/timeRace'
+import { bonfireTimeline, whiteoutIntroTimeline, whiteoutOutroTimeline } from '@/fx/timelines/whiteout'
+import {
+  gladeGridBackdrop,
+  tracksIntroTimeline,
+  tracksOutroTimeline,
+  tracksSnowfallTimeline,
+} from '@/fx/timelines/tracks'
+import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
 import { artUrl } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
 import { giftTimeline } from '@/fx/timelines/gift'
+import { presentTimeline } from '@/fx/timelines/present'
 import { labColors, starterTimeline } from '@/fx/timelines/starter'
 
 interface Preset {
@@ -89,8 +103,12 @@ const STONE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/
 const CANDY = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png'
 /** Distortion World's picture (Haunted Hollow), cracked open by the breach. */
 const RIFT = artUrl('a123')
+/** The Hall of Origin's picture (Snowglobe Valley, docs/64). */
+const HALL = artUrl('a130')
 // Newmoon Island's picture (docs/30): what the nightmare's intro sinks into the night.
 const NEWMOON = artUrl('a127')
+// Spear Pillar's picture (docs/64 §4.4): what the race's intro darkens into its night.
+const PILLAR = artUrl('lair-summit')
 
 const attack = (
   name: string,
@@ -320,6 +338,41 @@ const PRESETS: Preset[] = [
         ground: 126,
       }),
   },
+  // The Gift card (docs/64 §4.0, §4.2): the present at the stage's centre, no background of its own (the area's picture
+  // shows through in the game).
+  {
+    name: 'Gift card: the present lands (level 1)',
+    sprites: [],
+    make: (o) => presentTimeline({ mode: 'appear', level: 1, short: o.short }),
+  },
+  {
+    name: 'Gift card: MAKE IT BIGGER, it holds (3 → 4)',
+    sprites: [],
+    make: (o) => presentTimeline({ mode: 'grow', level: 3, to: 4, short: o.short }),
+  },
+  {
+    name: 'Gift card: it breaks, a wild Snorunt jumps out',
+    sprites: [[361, false]],
+    make: (o) => presentTimeline({ mode: 'break', level: 4, mon: foe(361), short: o.short }),
+  },
+  {
+    name: 'Gift card: OPEN (level 5, three Rare Candies)',
+    sprites: [],
+    item: CANDY,
+    make: (o) =>
+      presentTimeline({ mode: 'open', level: 5, contents: [{ kind: 'item', key: `item|${CANDY}` }], short: o.short }),
+  },
+  {
+    name: "Delibird's present grows (silver, 4 → 5)",
+    sprites: [],
+    make: (o) => presentTimeline({ mode: 'grow', level: 4, to: 5, look: 'silver', short: o.short }),
+  },
+  {
+    name: "Delibird's present bursts: shiny Delibird",
+    sprites: [[225, false, true]],
+    make: (o) =>
+      presentTimeline({ mode: 'burst', level: 5, look: 'silver', mon: spriteKey(225, false, true), shiny: true, short: o.short }),
+  },
   ...ATTACKS.map(([name, atk, def, type, status]) => attack(name, atk, def, type, status)),
   legend(150, 'Mewtwo', 'psychic'),
   legend(144, 'Articuno', 'ice'),
@@ -368,12 +421,75 @@ const PRESETS: Preset[] = [
     sprites: [[487, false, true]],
     make: (o) => raidEntranceTimeline({ mon: spriteKey(487, false, true), short: o.short }),
   },
+  // The Stairway of Plates (docs/64 §4.5): the same run in light, in the Hall of Origin.
+  {
+    name: 'Stairway of Plates: the way in (drawn field)',
+    sprites: [],
+    make: (o) => stairwayTimeline({ title: 'Stairway of Plates', short: o.short }),
+  },
+  {
+    name: "Stairway of Plates: the way in (the Hall of Origin's picture)",
+    sprites: [],
+    item: HALL,
+    make: (o) => stairwayTimeline({ title: 'Stairway of Plates', picture: `item|${HALL}`, short: o.short }),
+  },
+  {
+    name: 'Stairway of Plates: an altar lit (a blessing picked)',
+    sprites: [],
+    make: (o) => altarLitTimeline({ plate: 'fire', short: o.short }),
+  },
+  {
+    name: 'Stairway of Plates: the victory (shiny Arceus down the stairs, the Judgment)',
+    sprites: [[493, false, true]],
+    make: (o) =>
+      descentTimeline({
+        mon: spriteKey(493, false, true),
+        name: 'Arceus',
+        subs: ['SHINY', 'Lv.90'],
+        short: o.short,
+      }),
+  },
   // The raid overhaul's legendary entrances (docs/40): one per scene, the raid intro's words being the page's.
   ...Object.entries(LEGEND_RAID_SCENES).map(
     ([dex, scene]): Preset => ({
       name: `Raid entrance: #${dex} (${scene.omen}, ${scene.weather})`,
       sprites: [[Number(dex), false]],
       make: (o) => legendRaidEntranceTimeline({ scene, mon: spriteKey(Number(dex), false), short: o.short }),
+    }),
+  ),
+  // The legends' own cinematics (docs/53): the raids' (their words are the raid intro's), the bosses' with their card.
+  ...Object.entries(RAID_CINEMAS).map(
+    ([dex, c]): Preset => ({
+      name: `Cinematic: #${dex}'s raid entrance`,
+      sprites: [[Number(dex), false], ...(c.sprites ?? []).map(([d, sh]): [number, boolean, boolean] => [d, false, sh])],
+      make: (o) => c.make({ mon: foe(Number(dex)), short: o.short }),
+    }),
+  ),
+  ...Object.entries(BOSS_CINEMAS).map(
+    ([dex, c]): Preset => ({
+      name: `Cinematic: #${dex}'s boss entrance`,
+      sprites: [
+        [6, true],
+        [Number(dex), false],
+      ],
+      make: () =>
+        c.makeBattle({
+          own: own(6),
+          foe: foe(Number(dex)),
+          look: legendLook(Number(dex), 'psychic'),
+          name: `#${dex}`,
+          level: 'LV65',
+          types: 'PSYCHIC',
+        }),
+    }),
+  ),
+  // The champions' own cinematics (docs/56): each with its sample picture, team and card.
+  ...Object.values(CHAMPION_CINEMAS).map(
+    (c): Preset => ({
+      name: `Cinematic: ${c.sample.name}'s entrance`,
+      sprites: [[6, true], ...[c.sample.lead, c.sample.ace, ...c.extras].map((d): [number, boolean] => [d, false])],
+      load: () => loadPicture(c.sample.trainer),
+      make: () => c.makeBattle(sampleParams(c.sample)),
     }),
   ),
   // Darkrai's nightmare (docs/30): the intro, the strike after a round, the waking, the raid's entrance.
@@ -427,6 +543,104 @@ const PRESETS: Preset[] = [
     name: "Nightmare: Darkrai's raid entrance (out of the smoke, before the moon)",
     sprites: [[491, false, true]],
     make: (o) => nightRaidEntranceTimeline({ mon: spriteKey(491, false, true), short: o.short }),
+  },
+  // The race of time and space (docs/64 §4.4): the intro (clock and rift), the wins (Dialga's, Palkia's).
+  {
+    name: 'Race of time and space: the intro (drawn pillars)',
+    sprites: [],
+    make: (o) => raceIntroTimeline({ short: o.short }),
+  },
+  {
+    name: "Race of time and space: the intro (Spear Pillar's picture)",
+    sprites: [],
+    item: PILLAR,
+    make: (o) => raceIntroTimeline({ picture: `item|${PILLAR}`, short: o.short }),
+  },
+  {
+    name: 'Race of time and space: the win (shiny Dialga, time settles)',
+    sprites: [[483, false, true]],
+    make: (o) =>
+      raceWinTimeline({ mon: spriteKey(483, false, true), side: 'time', name: 'Dialga', subs: ['SHINY', 'Lv.70'], short: o.short }),
+  },
+  {
+    name: 'Race of time and space: the win (shiny Palkia, space settles)',
+    sprites: [[484, false, true]],
+    make: (o) =>
+      raceWinTimeline({ mon: spriteKey(484, false, true), side: 'space', name: 'Palkia', subs: ['SHINY', 'Lv.70'], short: o.short }),
+  },
+  // Crown Shrine's whiteout (docs/64 §4.3): the way in, the bonfire between waves, the end. (Abomasnow's entrance is
+  // with the bosses' cinematics.)
+  {
+    name: 'Whiteout: the way in (the blizzard rolls in, eyes in the crown tree)',
+    sprites: [],
+    make: (o) => whiteoutIntroTimeline({ title: 'Whiteout', short: o.short }),
+  },
+  {
+    name: 'Whiteout: the bonfire (three round the fire)',
+    sprites: [
+      [181, false],
+      [508, false],
+      [733, false],
+    ],
+    make: (o) =>
+      bonfireTimeline({ team: [181, 508, 733].map((d) => spriteKey(d, false)), w: 240, h: 160, short: o.short }),
+  },
+  {
+    name: 'Whiteout: the bonfire (six round the fire)',
+    sprites: [181, 508, 733, 460, 362, 614].map((d): [number, boolean] => [d, false]),
+    make: (o) =>
+      bonfireTimeline({
+        team: [181, 508, 733, 460, 362, 614].map((d) => spriteKey(d, false)),
+        w: 240,
+        h: 160,
+        short: o.short,
+      }),
+  },
+  {
+    name: 'Whiteout: the end (the blizzard lifts, shiny Abomasnow in the sun)',
+    sprites: [[460, false, true]],
+    make: (o) => whiteoutOutroTimeline({ title: 'The blizzard lifts', mon: spriteKey(460, false, true), short: o.short }),
+  },
+  // Tracks in the Snow (docs/64 §4.1): the way in, the snow falling over the glade, the shiny Stantler's entrance, the
+  // outro.
+  {
+    name: 'Tracks in the Snow: the way in (a reindeer leaps across the moon)',
+    sprites: [[234, false]],
+    make: (o) => tracksIntroTimeline({ title: 'Tracks in the Snow', mon: spriteKey(234, false), short: o.short }),
+  },
+  {
+    name: 'Tracks in the Snow: the snow falling over the glade (an overlay)',
+    sprites: [],
+    // Over a stand-in of the glade's grid (the page's bushes), so the overlay shows as it does there.
+    make: (o) => {
+      const tl = tracksSnowfallTimeline({ short: o.short })
+      const draw: typeof tl.draw = (g, s, t) => {
+        g.drawImage(gladeGridBackdrop(W, H), 0, 0)
+        tl.draw(g, s, t)
+      }
+      return { ...tl, draw }
+    },
+  },
+  {
+    name: "Tracks in the Snow: the shiny Stantler's entrance (it rears up under the moon)",
+    sprites: [
+      [6, true],
+      [234, false, true],
+    ],
+    make: () =>
+      stantlerCinema.makeBattle({
+        own: own(6),
+        foe: spriteKey(234, false, true),
+        look: legendLook(234, 'normal'),
+        name: 'Stantler',
+        level: 'LV30',
+        types: 'NORMAL',
+      }),
+  },
+  {
+    name: 'Tracks in the Snow: the outro (fresh snow over the prints)',
+    sprites: [[234, false, true]],
+    make: (o) => tracksOutroTimeline({ mon: spriteKey(234, false, true), title: 'Stantler', short: o.short }),
   },
   {
     name: 'Evolution (Charmeleon)',
@@ -598,6 +812,25 @@ const PRESETS: Preset[] = [
         from: spriteKey(487, false, true),
         to: spriteKey(10007, false, true),
         die: 'dragon',
+        short: o.short,
+      }),
+  },
+  {
+    // The Hall of Origin's raid (docs/64 §4.5): a bar breaks, Arceus takes the next one's Plate (20005: its Ice form).
+    name: "A raid's bar: Arceus takes the Icicle Plate",
+    sprites: [
+      [150, true],
+      [493, false, true],
+      [20005, false, true],
+    ],
+    make: (o) =>
+      plateTimeline({
+        own: own(150),
+        foe: spriteKey(493, false, true),
+        side: 'foe',
+        from: spriteKey(493, false, true),
+        to: spriteKey(20005, false, true),
+        die: 'ice',
         short: o.short,
       }),
   },

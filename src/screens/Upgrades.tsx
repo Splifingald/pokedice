@@ -447,7 +447,7 @@ export function UpgradesPanel() {
               ? pct(luckAt(data, l))
               : t('ui.general.none')
             : id === 'offline'
-              ? l > 0
+              ? offlineAt(data, l) > 0
                 ? rate(offlineAt(data, l))
                 : t('ui.general.none')
               : id === 'charm'
