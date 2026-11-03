@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { teamOf, type PokemonInstance, type PokeType } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
@@ -22,6 +22,7 @@ export function LeadPicker({
   go = false,
   members,
   fight = false,
+  under,
 }: {
   value: string | null
   onChange: (uid: string) => void
@@ -38,6 +39,8 @@ export function LeadPicker({
   members?: PokemonInstance[]
   /** In a fight (its send-out, a switch, the next one after a K.O.): INFO shows the one as it fights, a sheet to read only. */
   fight?: boolean
+  /** More on each card, above its INFO (between a trainer's Pokémon: what it just earned, the XP strip's in one row). */
+  under?: (p: PokemonInstance) => ReactNode
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)
@@ -78,6 +81,7 @@ export function LeadPicker({
                 pressed={selected}
                 onOpen={() => pick(p.id)}
               >
+                {under?.(p)}
                 <PixelButton
                   size="sm"
                   className="w-full px-1"
@@ -90,6 +94,7 @@ export function LeadPicker({
             )
           return (
             <PokeCard key={p.id} inst={p} foe={foe} selected={selected}>
+              {under?.(p)}
               <PixelButton
                 size="sm"
                 className="w-full px-1"
