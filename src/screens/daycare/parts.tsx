@@ -6,6 +6,7 @@ import type { Hatch, RegionId } from '@/engine'
 import { Chip } from '@/components/Chip'
 import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
+import { XpGauge } from '@/components/HpBar'
 import { PixelButton } from '@/components/PixelButton'
 import { LandingPick } from '@/components/trades/TradeBits'
 import { MiniSprite, showdownView, SpriteImg } from '@/components/SpriteImg'
@@ -210,12 +211,7 @@ export function MatesLine({ lead, mates }: { lead?: string; mates?: ReactNode })
 /** The XP bar to the next level; `line` says it in words, for screen readers (the card shows the bar alone). */
 export function XpBar({ k, line }: { k: number; line: string }) {
   return (
-    <span className="relative block h-2 bg-line shadow-ring-thin" role="img" aria-label={line}>
-      <i
-        className="absolute inset-y-px left-px block bg-[#5b8def]"
-        style={{ width: `calc(${Math.min(1, k) * 100}% - 2px)` }}
-      />
-    </span>
+    <XpGauge pct={k} role="img" aria-label={line} />
   )
 }
 

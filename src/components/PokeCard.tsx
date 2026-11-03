@@ -5,7 +5,7 @@ import { useGame } from '@/store/game'
 import { useDetails, useTypeHints } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { BuffTag, KoTag } from './Extreme'
-import { HpBar } from './HpBar'
+import { HpBar, XpGauge } from './HpBar'
 import { PixelIcon } from './icons'
 import { EggSprite } from './EggSprite'
 import { ItemSprite } from './ItemSprite'
@@ -152,9 +152,7 @@ export function PokeCard({
         </div>
       )}
       {xp && !reviving && (
-        <span className="-mt-0.5 block h-1 w-full bg-line" aria-hidden>
-          <i className="block h-full bg-type-water" style={{ width: `${xpPct * 100}%` }} />
-        </span>
+        <XpGauge pct={xpPct} className="w-full" aria-hidden />
       )}
     </>
   )
