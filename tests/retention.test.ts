@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { churnByArea, churnByStarter, type ChurnRaw } from '@/analytics/churn'
-import { retentionByDay, retentionOn, type Cohorts } from '@/analytics/retention'
+import { cohortsOf, retentionByDay, retentionOn, type Cohorts } from '@/analytics/retention'
 import type { Area, Region, Species } from '@/engine/types'
 
 // Local-time dates: day n of September 2026 at hour h.
@@ -106,6 +106,40 @@ describe('retentionOn, days 3, 7 and 30', () => {
     expect(all[1]).toEqual(retentionOn(cohorts, 1, at(1, 0), null, NOW))
     // August's first days are out of the frame: nobody's day 30 is over in it yet.
     expect(all[30]).toEqual({ cohort: 0, returned: 0, rate: null, pending: 4 + 6 + 5 + 3, pendingCohorts: 4 })
+  })
+})
+
+describe('cohortsOf: all, logged in, not logged in', () => {
+  // [new, back on day 1, day 3, day 7, day 30, then the guests' own five] (migration 0135).
+  const split: Cohorts = {
+    '2026-09-10': [10, 6, 4, 3, 2, 4, 1, 1, 0, 0],
+    '2026-09-12': [3, 1, 0, 0, 0, 3, 1, 0, 0, 0],
+  }
+
+  it('keeps the first five for everyone, the last five for the guests, and the difference for the logged in', () => {
+    expect(cohortsOf(split, 'all')).toEqual({ '2026-09-10': [10, 6, 4, 3, 2], '2026-09-12': [3, 1, 0, 0, 0] })
+    expect(cohortsOf(split, 'guests')).toEqual({
+      '2026-09-10': [4, 1, 1, 0, 0],
+      '2026-09-12': [3, 1, 0, 0, 0],
+    })
+    expect(cohortsOf(split, 'logged_in')).toEqual({
+      '2026-09-10': [6, 5, 3, 3, 2],
+      '2026-09-12': [0, 0, 0, 0, 0],
+    })
+  })
+
+  it('feeds the rates as before', () => {
+    const r = retentionOn(cohortsOf(split, 'logged_in')!, 1, null, null, NOW)
+    expect(r).toMatchObject({ cohort: 6, returned: 5 })
+  })
+
+  it('has nothing to split before migration 0135, but still everyone', () => {
+    const old: Cohorts = { '2026-09-10': [10, 6, 4, 3, 2] }
+    expect(cohortsOf(old, 'all')).toEqual(old)
+    expect(cohortsOf(old, 'guests')).toBeNull()
+    expect(cohortsOf(old, 'logged_in')).toBeNull()
+    // No first day at all: nothing to tell apart, nothing missing.
+    expect(cohortsOf({}, 'guests')).toEqual({})
   })
 })
 
