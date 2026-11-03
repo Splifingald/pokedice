@@ -861,7 +861,9 @@ each at most 340 px (docs/42 §3). The history is More details' button at the pa
   cleared the area and opened the story's way forward (`latestOpenArea`), with **Home** the quiet white button beside
   it. With the game-feel pass (docs/38 §4) the card has its jingles, the XP bars fill in steps and the coins fly to
   the top bar. Between a trainer's Pokémon, the card shows the trainer and the
-  sprite of the one about to come out. Versus ends on its own card in the panel: Victory / Defeat and Back to
+  sprite of the one about to come out, then **the team once**: the pick cards carry what each earned under them, above
+  INFO (`CardXp`: XP bar, +XP, level-up and milestone chips), no XP strip below (2026-11-03); a team of one keeps the
+  strip. Versus ends on its own card in the panel: Victory / Defeat and Back to
   Versus — once a fight is done, it's done (no rematch).
 - **Versus** plays on auto, to its end: no skip.
 - **The stage draws the forms the log has reached** (`Fx.dex`), not the state's: a Gigantamax still attacks as
