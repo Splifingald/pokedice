@@ -1,6 +1,7 @@
 // Admin → Analytics → Players per hour (the user's ask, 2026-10-11): the database is asked only when the button is
 // pressed, and the answer shows as one bar per hour of the last 24, with every hour in the table under it. Then
-// retention on day 1, 3, 7 and 30 from the page's one request, and churn by starter and area on demand (docs/57).
+// retention on day 1, 3, 7 and 30 from the page's one request, and churn by starter and area on demand (docs/57). All
+// of it for every player, the logged-in ones or the ones not logged in (the user's ask, 2026-11-02).
 import { expect, test, type Page } from '@playwright/test'
 import { fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY } from './helpers'
 
@@ -60,9 +61,15 @@ const localDay = (n: number) => {
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
 }
 
-async function openAnalytics(page: Page, rpc: Record<string, unknown>) {
+async function openAnalytics(page: Page, rpc: Record<string, unknown>, players: unknown[] = []) {
   await page.setViewportSize({ width: 1280, height: 1000 })
   const calls = await mockSupabase(page, { rpc })
+  // After mockSupabase's catch-all, so this one answers first.
+  await page.route('**/rest/v1/players?**', (route) => {
+    const url = new URL(route.request().url())
+    calls.push(`${route.request().method()} ${url.pathname}${url.search}`)
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(players) })
+  })
   await page.addInitScript(
     ([key, session, save]) => {
       localStorage.setItem(key!, session!)
@@ -184,6 +191,90 @@ test('Churn by starter and area: fetched on demand, in game order', async ({ pag
   await expect(panel.getByText('18 still active', { exact: true })).toBeVisible()
   await expect(panel.getByText('4 churned with no known area', { exact: true })).toBeVisible()
   expect(calls.filter((c) => c.includes('/rpc/analytics_churn'))).toHaveLength(1)
+})
+
+test('All, Logged in, Not logged in: every panel counts the players picked', async ({ page }) => {
+  test.setTimeout(120_000)
+  const hourMs = 3_600_000
+  const last = Math.floor(Date.now() / hourMs) * hourMs
+  const asked: Record<string, unknown>[] = []
+  const player = (id: string, name: string, user: boolean) => ({
+    player: id,
+    user_id: user ? id : null,
+    device_id: 'dev',
+    name,
+    email: null,
+    first_day: localDay(-5),
+    last_day: localDay(-1),
+    days: 2,
+    last_area: null,
+    area: null,
+    badges: null,
+    team: null,
+  })
+  const calls = await openAnalytics(
+    page,
+    {
+      // Everyone's five, then the guests' own five (migration 0135): 4 new, 2 back on day 1, 1 of them a guest.
+      analytics_retention: { [localDay(-5)]: [4, 2, 1, 0, 0, 1, 0, 0, 0, 0] },
+      analytics_hourly: {
+        hours: Array.from({ length: 24 }, (_, i) => [new Date(last - (23 - i) * hourMs).toISOString(), 5, 2]),
+        total: 10,
+        guests: 4,
+        since: new Date(last - 7 * 24 * hourMs).toISOString(),
+      },
+      analytics_churn: (body: Record<string, unknown>) => {
+        asked.push(body)
+        return {
+          today: localDay(0),
+          cutoff: localDay(-3),
+          areas: {},
+          unknown: [1, 2],
+          starters: {},
+          noStarter: [1, 2],
+        }
+      },
+    },
+    [player('00000000-0000-4000-8000-0000000000b1', 'ASH', true), player('device:d1', 'RED', false)],
+  )
+  const who = page.getByRole('group', { name: 'Players counted' })
+  await expect(who.getByRole('button', { name: 'All', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  const hero = page.getByRole('region', { name: 'Retention' })
+  const day1 = hero.getByRole('group', { name: 'Day 1', exact: true })
+  const list = page.getByRole('region', { name: 'Players', exact: true }).locator('tbody tr')
+  await expect(day1).toContainText('2 of 4 came back', { timeout: 30_000 })
+  await expect(list).toHaveCount(2)
+  const hourly = page.getByRole('region', { name: 'Players per hour' })
+  await hourly.getByRole('button', { name: 'Check' }).click()
+  await expect(hourly.getByText('10', { exact: true })).toBeVisible()
+  const churn = page.getByRole('region', { name: 'Churn', exact: true })
+  await churn.getByRole('button', { name: 'Fetch' }).click()
+  await expect(churn.getByText('1 churned', { exact: true })).toBeVisible()
+  // Everyone: the call the deployed database already answers.
+  expect(asked).toEqual([{ p_days: 3, p_since: localDay(-29) }])
+  const retentionCalls = () => calls.filter((c) => c.includes('/rpc/analytics_retention')).length
+  const before = retentionCalls()
+
+  await who.getByRole('button', { name: 'Logged in', exact: true }).click()
+  await expect(day1).toContainText('67%')
+  await expect(day1).toContainText('2 of 3 came back')
+  await expect(list).toHaveCount(1)
+  await expect(list.first()).toContainText('ASH')
+  await expect(hourly.getByText('6', { exact: true })).toBeVisible()
+  await expect(churn.getByText(/The settings changed: press Fetch to count again\./)).toBeVisible()
+
+  await who.getByRole('button', { name: 'Not logged in', exact: true }).click()
+  await expect(day1).toContainText('0 of 1 came back')
+  await expect(list).toHaveCount(1)
+  await expect(list.first()).toContainText('RED')
+  await expect(hourly.getByText('4', { exact: true })).toBeVisible()
+  await churn.getByRole('button', { name: 'Fetch' }).click()
+  await expect.poll(() => asked.length).toBe(2)
+  expect(asked[1]).toEqual({ p_days: 3, p_since: localDay(-29), p_who: 'guests' })
+  await expect(churn.getByText(/^Players not logged in only/)).toBeVisible()
+  // Retention and the hours switched with no new request; churn asked once more, on Fetch.
+  expect(retentionCalls()).toBe(before)
+  expect(calls.filter((c) => c.includes('/rpc/analytics_hourly'))).toHaveLength(1)
 })
 
 test('Suspicious saves: fetched on demand, the banned hidden, a row opens the player', async ({ page }) => {

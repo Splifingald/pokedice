@@ -21,6 +21,28 @@ players can do). The game sends nothing new: the hourly call it already makes ca
 - **One request** on page load, as before: `analytics_retention()` replaces `analytics_d1()` in the page.
   `analytics_d1` stays in the database, unchanged, for the build deployed before this one.
 
+### 1.1 All, Logged in, Not logged in (migration 0135)
+
+The user's ask (2026-11-02): a switch in the page's header, **All** (the default, each time the page opens),
+**Logged in**, **Not logged in**, that every panel follows: retention, players per hour, churn by starter and area, and
+the Players list (its "seen · new" counts too). Each panel names the players it counts under its title.
+
+- **Logged in** is a player keyed by their account, **not logged in** one keyed by their device (`device:<id>`), as
+  the database counts them. A guest who signs in is merged into their account (§2), so they count as logged in from
+  their first day as a guest; Not logged in is the guests who never signed in on that device. Their rates read lower
+  than a "guests at the time" cohort would: the guests who come back and sign in leave it.
+- **Retention**: switching costs no request. `analytics_retention()` sends, per first day, the guests' own five
+  numbers after everyone's five; the page takes the logged-in ones as all − guests (`cohortsOf`,
+  `src/analytics/retention.ts`).
+- **Players per hour**: no request either. Each hour already carried its guests; the answer now carries the guests'
+  total over the 24 hours (`guests`) next to `total`. The tooltip gives the guests under All only; the table keeps all
+  three columns.
+- **Churn**: its averages can't be split after the fact, so FETCH sends `p_who` (`logged_in` or `guests`; All sends
+  the two-argument call the deployed database already answers). Switching marks a result as stale, as a new frame
+  does, until FETCH.
+- **Before 0135 runs**: All works as before; under the other two, Retention and the hourly total say the migration is
+  needed, and churn's error names it.
+
 ## 2. A guest who signs in is one player
 
 `player_ping` keyed a signed-in player by their account and a guest by their device, so a guest who signed in got a
@@ -145,6 +167,15 @@ shows the longest played first: **Playtime** and **Hrs 7d**.
 - `analytics_playtime() → json`: `{since, total, rows: {player: [seconds, hours in the last 7 days]}}`, every player
   with seconds or a recent hour. Admin-only.
 
+`supabase/migrations/0135_analytics_logged_in.sql` (§1.1):
+
+- `analytics_retention()`, same signature: 10 numbers a first day, `[everyone's five, the guests' five]`. Each player's
+  four checks are worked out once and counted twice. The deployed build reads the first five only.
+- `analytics_hourly()`, same signature: adds `guests`, the different guests over the 24 hours.
+- `analytics_churn(p_days int, p_since date, p_who text) → json`: as 0129's, over `all`, `logged_in` or `guests`
+  (anything else: `bad who`). Admin-only. `analytics_churn(p_days int, p_since date default null)`, the deployed
+  build's call, stays and asks for `all`. An overload with no default on `p_who`: each call matches one function.
+
 ## 5. Setting it up
 
 1. Run the migration once in Supabase's SQL editor, **before** deploying the build (the new page calls
@@ -156,11 +187,14 @@ shows the longest played first: **Playtime** and **Hrs 7d**.
 3. Churn by starter: run migration 0129 (after 0102; any time, before or after the build that shows it):
    <https://github.com/Splifingald/pokedice/blob/ccr-b9616e2b-7ntj2b/supabase/migrations/0129_churn_by_starter.sql>.
    Version 2.9's file (`supabase/releases/2026-11-01-version-2-9.sql`) carries it too. Not in `supabase/seed.sql`.
-
 4. Playtime: run migration 0130 (after 0102), **before** deploying the build that sends the seconds (it calls the new
    overloads):
    <https://github.com/Splifingald/pokedice/blob/claude/zen-hamilton-5jn02d/supabase/migrations/0130_analytics_playtime.sql>.
    Version 2.9's file (`supabase/releases/2026-11-01-version-2-9.sql`) carries it too. Not in `supabase/seed.sql`.
+5. All, Logged in, Not logged in: run migration 0135 (after 0129; any time, before or after the build that shows the
+   switch: All works without it):
+   <https://github.com/Splifingald/pokedice/blob/version/2_9/supabase/migrations/0135_analytics_logged_in.sql>.
+   Version 2.9's file carries it too. Safe to run again. Not in `supabase/seed.sql`.
 
 ## 6. Tests
 
@@ -177,7 +211,13 @@ shows the longest played first: **Playtime** and **Hrs 7d**.
   starters (counts, the frame, admin-only).
 - `tests/analytics.test.ts` (`firstStarter`, the snapshot's `starter`) and `tests/retention.test.ts`
   (`churnByStarter`: the order, the shares, null before 0129).
-- `e2e/admin-analytics.spec.ts`: the four rates from one request per load, and churn fetched only on FETCH, the
+- `tests/analytics-who-sql.test.ts`: migration 0135 on PGlite: retention's guests after everyone, the hourly guests'
+  total, churn for all, the logged in or the guests (with the frame, the old two-argument call answering as `all`,
+  `bad who`, admin-only); safe to run again. `tests/retention.test.ts`: `cohortsOf` (all, all − guests, guests, null
+  before 0135).
+- `e2e/admin-analytics.spec.ts`: All by default; Logged in and Not logged in switch retention, the hourly count and
+  the Players list with no new request, mark churn stale and send `p_who` on FETCH. Also the four rates from one
+  request per load, and churn fetched only on FETCH, the
   starters in the order offered and the areas in game order, with the frame's first day sent.
 - `tests/playtime.test.ts`: what counts as played (hidden, idle, a long gap), the seconds waiting (whole seconds, what
   was counted during a call kept, a guest's to the account), the admin's format.
