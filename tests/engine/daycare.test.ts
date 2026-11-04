@@ -8,11 +8,13 @@ import {
   hatchlingRegions,
   createInstance,
   createRng,
+  dayCareCap,
   dayCareLevelProgress,
   dayCareOf,
   badgeCase,
   dayCareTutorialDue,
   dayCareXp,
+  friendMonLevel,
   depositError,
   depositPokemon,
   everyRegionBox,
@@ -138,13 +140,64 @@ describe('Day Care', () => {
     expect(residentNow(res, forever, data).level).toBe(data.config.maxLevel)
     expect(nextDayCareTick(res, forever, data)).toBeNull()
     expect(nextDayCareTick(resident(4, 100, 'y'), 0, data)).toBeNull()
-    expect(dayCareLevelProgress(res, forever, data)).toEqual({ level: 100, xp: 0, toNext: 0 })
+    expect(dayCareLevelProgress(res, forever, data)).toEqual({ level: 100, xp: 0, toNext: 0, held: false })
   })
 
   it('shows the way to the next level', () => {
     const res = resident(4, 10, 'x')
     const p = dayCareLevelProgress(res, cfg.tickMinutes * MIN, data)
-    expect(p).toEqual({ level: 10, xp: cfg.xpPerTick, toNext: xpToNext(10, data.config) })
+    expect(p).toEqual({ level: 10, xp: cfg.xpPerTick, toNext: xpToNext(10, data.config), held: false })
+  })
+
+  describe("held at its region's best", () => {
+    const forever = 10 ** 6 * MIN
+    const at = (box: number[], res: DayCareResident): SaveData => ({ ...withMons(box), dayCare: care({ residents: [res] }) })
+
+    it("grows to the best level in its region's Box and no further: a week away makes it no stronger", () => {
+      const res = resident(4, 10, 'x')
+      const s = at([20, 12], res)
+      const cap = dayCareCap(s, res, data)
+      expect(cap).toBe(20)
+      expect(residentNow(res, forever, data, cap)).toMatchObject({ level: 20, xp: 0 })
+      expect(nextDayCareTick(res, forever, data, cap)).toBeNull()
+      expect(dayCareLevelProgress(res, forever, data, cap)).toEqual({ level: 20, xp: 0, toNext: 0, held: true })
+      const back = withdrawPokemon(s, 'x', data, forever)!
+      expect(back.inst).toMatchObject({ level: 20, xp: 0 })
+      expect(back.levelsGained).toBe(10)
+      let need = -res.inst.xp
+      for (let l = 10; l < 20; l++) need += xpToNext(l, data.config)
+      expect(back.xpGained).toBe(need)
+    })
+
+    it('grows again once the team does', () => {
+      const res = resident(4, 10, 'x')
+      const weak = at([20, 12], res)
+      const strong = { ...weak, box: weak.box.map((p, i) => (i === 0 ? { ...p, level: 35 } : p)) }
+      expect(residentNow(res, forever, data, dayCareCap(strong, res, data)).level).toBe(35)
+    })
+
+    it('gains nothing when it came stronger than the rest, and keeps its level', () => {
+      const res = resident(4, 40, 'x')
+      const s = at([20, 12], res)
+      expect(dayCareCap(s, res, data)).toBe(40)
+      expect(withdrawPokemon(s, 'x', data, forever)!).toMatchObject({ xpGained: 0, levelsGained: 0 })
+    })
+
+    it("reads its own region's Box, not the one being played", () => {
+      const k = withMons([50, 12])
+      const j = startRegion(k, johto, newRegionBlock(johto, 152, data, 0, newId, createInstance))
+      const fromKanto = resident(4, 10, 'k')
+      const fromJohto = resident(152, 3, 'j', 0, 'johto')
+      expect(j.region).toBe('johto')
+      expect(dayCareCap(j, fromKanto, data)).toBe(50)
+      expect(dayCareCap(j, fromJohto, data)).toBe(Math.max(3, ...j.box.map((p) => p.level)))
+    })
+
+    it("holds a friend's Pokémon at the cap their card gives", () => {
+      const m = { inst: 'a', dex: 133, level: 30, xp: 0, since: 0 }
+      expect(friendMonLevel({ ...m, cap: 33 }, forever, data)).toBe(33)
+      expect(friendMonLevel(m, forever, data)).toBe(data.config.maxLevel)
+    })
   })
 
   it('levels up with Day Care XP but never evolves; it evolves on its next XP in battle', () => {
@@ -155,7 +208,8 @@ describe('Day Care', () => {
     expect(now.level).toBeGreaterThan(16)
     expect(now.dex).toBe(4)
 
-    const s = { ...withMons([14, 20]), dayCare: care({ residents: [res] }) }
+    // A team strong enough that its best never holds it back.
+    const s = { ...withMons([100, 20]), dayCare: care({ residents: [res] }) }
     const back = withdrawPokemon(s, 'x', data, later)!
     expect(back.inst.dex).toBe(4)
     expect(back.xpGained).toBe(dayCareXp(res, later, data))
@@ -256,8 +310,10 @@ describe('Too many residents (the Day Cares became one)', () => {
     const fitted = fitDayCare(full, data, now)
     expect(dayCareOf(fitted).residents.map((r) => r.inst.id)).toEqual(['old-k', 'old-j'])
     const home = fitted.parked!.kanto!.box.find((p) => p.id === 'new-k')!
-    expect(home.level).toBe(residentNow(rs[1]!, now, data).level)
+    // Held at Kanto's best (Lv.12), as at home.
+    expect(home.level).toBe(residentNow(rs[1]!, now, data, 12).level)
     expect(home.level).toBeGreaterThan(5)
+    expect(home.level).toBeLessThanOrEqual(12)
     expect(fitted.box.some((p) => p.id === 'new-j')).toBe(true)
     expect(fitted.team).not.toContain('new-j')
     expect(fitted.dayCareNotice).toEqual({ dex: [16, 163] })
@@ -573,8 +629,10 @@ describe('Day Care in the save file', () => {
     const now = 500 * cfg.tickMinutes * MIN
     const fitted = fitDayCare(r.save, data, now)
     expect(dayCareOf(fitted).residents.map((x) => x.inst.id)).toEqual(['j1', 'k1'])
-    expect(fitted.parked!.kanto!.box.find((p) => p.id === 'k2')!.level).toBeGreaterThan(8)
-    expect(fitted.box.find((p) => p.id === 'j2')!.level).toBeGreaterThan(8)
+    // Kanto's best is Lv.12: k2 grew to it. Johto's is its starter, below the Lv.8 j2 came at: it grew no more.
+    expect(fitted.parked!.kanto!.box.find((p) => p.id === 'k2')!.level).toBe(12)
+    expect(johto.starterLevel).toBeLessThan(8)
+    expect(fitted.box.find((p) => p.id === 'j2')!.level).toBe(8)
     expect(fitted.dayCareNotice).toEqual({ dex: [19, 163] })
   })
 

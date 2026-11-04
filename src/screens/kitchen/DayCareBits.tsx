@@ -106,6 +106,19 @@ export function DayCareBits() {
           <XpBar k={1} line="Lv.100: it can’t grow more" />
           <MatesLine lead="All but legendaries" />
         </SlotCard>
+        {/* Held at its region's best Pokémon: it grows again once the team does. */}
+        <SlotCard
+          band={SLOT_COLORS[1]}
+          head={yours(1)}
+          tag={<GainTag>+6 Lv</GainTag>}
+          dex={4}
+          name="Charmander"
+          level="Lv.32"
+          action={take}
+        >
+          <XpBar k={1} line="Lv.32: as high as your best in Kanto" />
+          <MatesLine lead="No partner here yet" />
+        </SlotCard>
         <EmptySlot title="Leave a Pokémon" onClick={noop} />
       </ul>
 

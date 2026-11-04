@@ -523,6 +523,8 @@ export interface FriendCareMonRow {
   xp: number
   since: number
   shiny: boolean
+  /** The level it grows to (dayCareCap: their best in its region), from migration 0142's cards; else none but Lv.100. */
+  cap?: number
 }
 
 /** A friend's Day Care, as friend_day_cares() reads it from their card. */
@@ -550,6 +552,7 @@ export function parseFriendDayCares(raw: unknown): FriendDayCareRow[] {
           xp: Math.max(0, Number(m?.xp) || 0),
           since: Number(m?.since) || 0,
           shiny: !!m?.shiny,
+          ...(Number(m?.cap) > 0 && { cap: Math.min(100, Math.floor(Number(m?.cap))) }),
         }))
         .filter((m: FriendCareMonRow) => m.dex > 0 && !!m.inst),
     }))
