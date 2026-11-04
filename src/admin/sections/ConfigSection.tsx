@@ -5,6 +5,7 @@ import {
   EVENT_ACCESS,
   VERSUS_LEAGUE_DEFAULTS,
   AREA_VERSUS_DEFAULTS,
+  RIVAL_MATCH_DEFAULTS,
   FRIEND_BATTLES_DEFAULTS,
   eggSpecies,
   eggsPerWeek,
@@ -62,6 +63,7 @@ import { ChampionIntrosBox } from './ChampionIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
 import { AreaVersusBox } from './AreaVersusBox'
+import { RivalMatchBox } from './RivalMatchBox'
 import { BetaTestersBox, FriendBattlesBox } from './FriendBattlesBox'
 import { VersusLeagueGroups } from './VersusLeagueGroups'
 
@@ -1577,6 +1579,7 @@ const TABS = [
   { id: 'dayCare', label: 'Day Care', icon: 'heal' },
   { id: 'extreme', label: 'Extreme mode', icon: 'skull' },
   { id: 'doubles', label: 'Double battles', icon: 'vs' },
+  { id: 'rivals', label: 'Rivals', icon: 'vs' },
   { id: 'flavours', label: 'Region flavours', icon: 'weatherRain' },
   { id: 'trades', label: 'Trades', icon: 'trade' },
   { id: 'versus', label: 'Versus league', icon: 'trophy' },
@@ -1664,6 +1667,7 @@ const FEATURES: Feature[] = [
   own('Safari Zones', 'safari'),
   bare('Rivals on the road', 'rivals'),
   bare('Rival lost: healed, area goes on', 'rivalLossHeal'),
+  own('Rival teams matched to the player', 'rivalMatch', 'rivals', RIVAL_MATCH_DEFAULTS as unknown as Row),
   bare('Gift Pokémon', 'giftMoments'),
   // The region flavours (docs/62): each one's numbers and content stay the game's own unless the row says otherwise.
   own("Hoenn's weather", 'hoennWeather', 'flavours'),
@@ -1901,6 +1905,7 @@ export function ConfigSection() {
         </div>
       )}
       {tab === 'doubles' && <DoubleBattlesBox />}
+      {tab === 'rivals' && <RivalMatchBox />}
       {tab === 'flavours' && <RegionFlavoursBox />}
       {tab === 'trades' && <TradesBox />}
       {tab === 'versus' && (

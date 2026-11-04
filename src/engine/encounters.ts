@@ -73,6 +73,8 @@ export type Encounter =
       player?: AreaFoe
       /** A rival's set meeting (docs/61 §5.2): met once it's won. */
       moment?: string
+      /** Its team was fitted to the player's (docs/61 §5.5): the rival's line says so. */
+      matched?: boolean
     }
   | {
       kind: 'gym'
