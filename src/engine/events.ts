@@ -23,6 +23,12 @@ export const eventOpenTo = (access: EventAccess | undefined, data: GameData): bo
   (access === 'admin' && !!data.viewer?.admin) ||
   (access === 'beta' && (!!data.viewer?.admin || !!data.viewer?.beta))
 
+/**
+ * Full screen (docs/66): the Settings switch, and full screen by default in a phone's installed app. Purely how the
+ * game fills the screen: nothing to learn, so no rules (docs/15 §20), and nothing the server acts on.
+ */
+export const fullScreenOn = (data: GameData): boolean => eventOpenTo(data.config.fullScreen?.access, data)
+
 /** The Game Corner's slot machine (its cards in area decks): off since 2026-10-25, the wheel gives Porygon instead. */
 export const gameCornerOn = (data: GameData): boolean => eventOpenTo(data.config.slotMachine?.access, data)
 

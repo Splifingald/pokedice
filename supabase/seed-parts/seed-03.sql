@@ -910,6 +910,15 @@ insert into game_config (key, value) values ('configVersion', '1'::jsonb) on con
 insert into game_config (key, value) values ('rivalLossHeal', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
+-- ↓ supabase/migrations/0141_full_screen.sql, inlined so this file stands alone.
+-- Full screen (docs/66): a Settings switch that fills the screen (no address bar, on a phone no status bar), on by
+-- default in a phone's installed app.
+-- 1. game_config `fullScreen`: the switch, Off (left alone when there). It only changes how the page fills the
+--    device's screen, so no server function acts for it and none reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('fullScreen', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
 insert into type_chart (attacking, defending, multiplier) values
   ('bug', 'dark', 2),
   ('bug', 'fairy', 0.5),

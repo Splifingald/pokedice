@@ -39,10 +39,19 @@ import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
 import { useRunIntent } from '@/store/extremeRuns'
+import { fullScreenOn } from '@/engine'
+import { keepFullScreen } from '@/lib/screenFill'
 
 /** A run chosen on the main save's Extreme page, carried out once this page plays the Extreme save (docs/48). */
 function RunIntent() {
   useRunIntent()
+  return null
+}
+
+/** Full screen (docs/66), while the admin has it on for this player: asked for on the next tap, kept after. */
+function FullScreen() {
+  const open = useGame((s) => fullScreenOn(s.data))
+  useEffect(() => keepFullScreen(open), [open])
   return null
 }
 
@@ -90,6 +99,7 @@ export function App() {
           {/* The tab's title per page, and the focus on its <h1> after a move (docs/15 §7). */}
           <PageMeta />
           <RunIntent />
+          <FullScreen />
           <Routes>
             <Route path="/" element={<Title />} />
             <Route path="/new" element={<NewGame />} />

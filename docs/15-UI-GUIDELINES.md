@@ -554,7 +554,9 @@ Players shouldn't have to make many requests:
   language is one dropdown, each option in its own script and `lang`. Disconnect is white (reversible); the one red is
   Delete. **Type hints** (`settings.typeHints`, `useTypeHints`) sit in the Game
   panel, the same switch as the type chart's: unset, they are on until the first badge (`badgesHeld`), and a choice
-  made in either place always wins. **Settings' rows have titles only** (the user's call, 2026-10-25): no description
+  made in either place always wins. **Full screen** (docs/66, behind its switch) sits in the Game panel under Theme:
+  the browser's own full screen, this device's choice (kept in the browser, not the save), on by default in a phone's
+  installed app, and not shown where the browser can't do it (an iPhone). **Settings' rows have titles only** (the user's call, 2026-10-25): no description
   line under a switch, a choice or a panel, so each title says what it does ("Multi EXP (whole team)", "Animation
   length", "Type matchup hints"); a row that would do nothing goes instead of explaining why (Battle music while Sound
   is off, Multi EXP while the config has no bench share). A rule or a "how" belongs to the panel's INFO.
@@ -1153,7 +1155,7 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   to tap (only that) in pixel steps (§8), then the hand comes. So does its **reroll lesson** (docs/46 §6), the same hand over
   the first fight's dice, REROLL and ATTACK.
 - **A purely visual change** (as the dice throws, docs/37, and the game-feel pass, haptics and battle music, docs/38,
-  were): the switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or
+  were; full screen, docs/66): the switch, but no rules pop-up and no INFO: it only changes how something already there looks, sounds or
   feels, so there is nothing to learn or do.
 - **A rework with a switch of its own** (the weekly Versus league, docs/44): Off, the feature is what it was. On, its
   page's rules card shows the new rules once more, under their own "seen" flag, to players who knew the feature, and

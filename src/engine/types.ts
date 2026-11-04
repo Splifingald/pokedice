@@ -1390,6 +1390,11 @@ export interface GameConfig {
    */
   rivalLossHeal: { access: EventAccess }
   /**
+   * Full screen (docs/66): the Settings switch that fills the screen, and full screen by default in a phone's installed
+   * app. Migration 0141 inserts the same row.
+   */
+  fullScreen: { access: EventAccess }
+  /**
    * Hidden talents (docs/51): the switch, the odds of a wild Pokémon carrying its talent and of a locked family finding
    * it on an evolution, and the admin's picks per family (by its lowest dex; the bundled ones otherwise). Migration
    * 0094 inserts the same row.

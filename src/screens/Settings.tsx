@@ -8,10 +8,11 @@ import { PushSettingsPanel } from '@/components/PushSettings'
 import { PixelButton } from '@/components/PixelButton'
 import { Seg } from '@/components/Segmented'
 import { Toggle } from '@/components/Toggle'
-import { donationEnabled, extremeOpen, isExtreme } from '@/engine'
+import { donationEnabled, extremeOpen, fullScreenOn, isExtreme } from '@/engine'
 import { LANG_LABELS, LANGS, type Lang } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { fullScreenSupported, setFullScreen, useFullScreenChoice } from '@/lib/screenFill'
 import { pushToast, setSettings, useGame } from '@/store/game'
 import { deleteSave } from '@/store/run'
 import { useIsAdmin, useLockReason, useNavLock, useTypeHints } from '@/store/hooks'
@@ -153,6 +154,7 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
             className="min-w-[13rem]"
           />
         </div>
+        <FullScreenToggle />
         {/* On until the first badge unless the player chose (docs/38 U1b); the type chart holds the same switch. */}
         <Toggle
           label={t('ui.settings.typeHints')}
@@ -257,6 +259,18 @@ function SettingsContent({ over = false, shut }: { over?: boolean; shut?: string
       <SupportModal open={donating} onClose={() => setDonating(false)} />
     </div>
   )
+}
+
+/**
+ * Full screen (docs/66): this device's own choice, on by default in a phone's installed app. Shown where the admin has
+ * it on and the browser can do it (an iPhone can't).
+ */
+function FullScreenToggle() {
+  const { t } = useT()
+  const open = useGame((s) => fullScreenOn(s.data))
+  const on = useFullScreenChoice()
+  if (!open || !fullScreenSupported()) return null
+  return <Toggle label={t('ui.settings.fullScreen')} on={on} onChange={setFullScreen} />
 }
 
 /** What the one Delete can take: the save in play, the Extreme save (docs/22), or everything. */
