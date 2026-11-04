@@ -266,9 +266,10 @@ export interface BattleSlice {
   sendLater?: boolean
   /**
    * A trainer's next Pokémon, sent out straight into the fight view (the user's call, 2026-11-04): no entrance, no
-   * swipe; yours that fought is still out, and the line says who was sent out, not the trainer's opening again.
+   * swipe, and the line says who was sent out, not the trainer's opening again. 'stay': yours that fought is still out
+   * (the send-out step offers to change it); 'go': another goes out.
    */
-  next?: boolean
+  next?: 'stay' | 'go'
 }
 
 /** The ways in: Supabase Auth providers the game offers (docs/17). */

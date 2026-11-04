@@ -837,7 +837,7 @@ each at most 340 px (docs/42 §3). The history is More details' button at the pa
 - **Capture Luck** (docs/25): a wild Pokémon that broke free may stay: the message says it broke free but didn't run
   away, the stage shows it back on its platform, and the panel's button is THROW AGAIN (back to the ball picker, "Snorlax
   is still here! Pick a ball and throw again."). Once per encounter; never a legendary or a raid.
-- **Who goes out** (the encounter preview's `LeadPicker`, and the send-out step when yours fell with a trainer's): "Send out:" and a card per
+- **Who goes out** (the encounter preview's `LeadPicker`, and the send-out step before each of a trainer's Pokémon): "Send out:" and a card per
   team member, its mini and level, then its **whole name** on a line of its own (a size smaller on a phone when long,
   wrapping rather than "Bulba…"), types, HP, SWITCH and INFO. The one picked is ringed in gold and its button says
   ✓ SENT OUT, **white**: the red is FIGHT's. A team of one has nothing to pick: no "Send out" at all (docs/38 U5c).
@@ -862,9 +862,11 @@ each at most 340 px (docs/42 §3). The history is More details' button at the pa
   cleared the area and opened the story's way forward (`latestOpenArea`), with **Home** the quiet white button beside
   it. With the game-feel pass (docs/38 §4) the card has its jingles, the XP bars fill in steps and the coins fly to
   the top bar. **No card between a trainer's Pokémon** (2026-11-04): a beat after the K.O. has played, the next one
-  is sent out straight into the fight view (`sendNextFoe`, `battle.next`: no swipe, no entrance; yours that fought
-  stays out, its line only "Lass sent out Abra!", never the trainer's or a rival's opening again). Yours K.O.'d with it:
-  the send-out step picks who goes. An evolution the K.O. brought plays first. The fight's one card comes after the
+  is sent out straight into the fight view (`sendNextFoe`, `battle.next`: no swipe, no entrance), then **the send-out
+  step**, the new foe in view: yours that fought stays out and picked (GO! keeps it in; a tap on another sends that
+  one instead), K.O.'d the first able picked; on auto GO! goes by itself after `PILOT_PICK_MS`, as at a trainer's start.
+  The line is only "Lass sent out Abra!" (and "Go! Pikachu!" when another went), never the trainer's or a rival's
+  opening again. An evolution the K.O. brought plays first. The fight's one card comes after the
   last: every K.O.'s XP, level-ups and milestones, and **the ₽ paid only then, all at once** (the engine holds them,
   `OwedGold`: lost or given up before the end, none is paid). Versus ends on its own card in the panel: Victory / Defeat and Back to
   Versus — once a fight is done, it's done (no rematch).

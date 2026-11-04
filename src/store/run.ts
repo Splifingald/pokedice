@@ -1082,7 +1082,7 @@ export function sendOutLead(uid: string) {
     const enc = run.encounter
     if (uid === lead || !run.trainer || (enc?.kind !== 'trainer' && enc?.kind !== 'gym')) return
     startBattle('trainer', enc.team[run.trainer.index]!, uid)
-    useGame.setState((s) => (s.battle ? { battle: { ...s.battle, next: true, sendLater: true } } : {}))
+    useGame.setState((s) => (s.battle ? { battle: { ...s.battle, next: 'go', sendLater: true } } : {}))
     return
   }
   if (uid === lead) return commitEngage()
@@ -1851,7 +1851,8 @@ export function trainerHasNext(): boolean {
 
 /**
  * A trainer's next Pokémon, sent out straight into the fight view (the user's call, 2026-11-04: no result card between
- * them). Yours that fought stays out (or `leadUid`); K.O.'d, the send-out step picks who goes, the foe out already.
+ * them). Then the send-out step, the foe out already: yours that fought stays out and picked unless another is tapped
+ * (the user's call, the same day); K.O.'d, the first able is picked. One able: it goes, no pick.
  */
 export function sendNextFoe(leadUid?: string) {
   const { run, battle, save, data, settings } = useGame.getState()
@@ -1859,13 +1860,15 @@ export function sendNextFoe(leadUid?: string) {
   if (!save || run.pendingCatchId || !run.trainer || (enc?.kind !== 'trainer' && enc?.kind !== 'gym') || !trainerHasNext()) return
   const fought = battle?.state.player[battle.state.activeIndex]
   const able = teamOf(save).filter((p) => p.currentHp > 0)
-  const lead = (leadUid && able.find((p) => p.id === leadUid)?.id) ?? (fought && fought.hp > 0 ? fought.uid : undefined)
+  const kept = fought && fought.hp > 0 ? fought.uid : undefined
+  const lead = (leadUid && able.find((p) => p.id === leadUid)?.id) ?? kept ?? able[0]?.id
   const auto = autoLevel(save, data, settings, run) !== 'off'
-  const pick = !lead && able.length > 1 && (!auto || autoOffersLead(enc.kind))
+  const pick = able.length > 1 && (!auto || autoOffersLead(enc.kind))
   const index = run.trainer.index + 1
   setRun({ trainer: { ...run.trainer, index }, events: [], pickLead: pick })
-  startBattle('trainer', enc.team[index]!, lead ?? able[0]?.id)
-  useGame.setState((s) => (s.battle ? { battle: { ...s.battle, next: true } } : {}))
+  startBattle('trainer', enc.team[index]!, lead)
+  const next = lead && lead === kept ? 'stay' : 'go'
+  useGame.setState((s) => (s.battle ? { battle: { ...s.battle, next } } : {}))
 }
 
 /** Leave the victory screen: next trainer Pokémon (with a freely chosen lead) or back to the area. */

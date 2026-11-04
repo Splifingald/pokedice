@@ -111,7 +111,7 @@ describe('the send-out step', () => {
     expect(battle!.id).toBe(before.id)
   })
 
-  it("a trainer's next Pokémon comes straight into the fight; the ₽ and the rewards wait for the last one", () => {
+  it("a trainer's next Pokémon comes straight into the fight, the pick yours; the ₽ and the rewards wait for the last one", () => {
     gymArea()
     setForceNext('gym')
     rollNext()
@@ -132,16 +132,29 @@ describe('the send-out step', () => {
     ;({ run, battle } = useGame.getState())
     expect(run.phase).toBe('battle')
     expect(run.trainer!.index).toBe(1)
-    expect(battle!.next).toBe(true)
+    // The send-out step either way: yours that fought still out and picked, another tapped goes instead.
+    expect(run.pickLead).toBe(true)
     if (fought.hp > 0) {
-      // Yours that fought is still out: no pick.
-      expect(run.pickLead).toBe(false)
+      expect(battle!.next).toBe('stay')
       expect(battle!.state.player[battle!.state.activeIndex]!.uid).toBe(fought.uid)
+      const other = teamOf(useGame.getState().save!).find((p) => p.currentHp > 0 && p.id !== fought.uid)!.id
+      const id = battle!.id
+      sendOutLead(other)
+      ;({ run, battle } = useGame.getState())
+      expect(battle!.id).not.toBe(id)
+      expect(battle!.next).toBe('go')
+      expect(battle!.state.player[battle!.state.activeIndex]!.uid).toBe(other)
+      // Still their second Pokémon, nothing settled again.
+      expect(run.trainer!.index).toBe(1)
     } else sendOutLead(teamOf(useGame.getState().save!).find((p) => p.currentHp > 0)!.id)
     for (let i = 1; i < enc.team.length; i++) {
       playBattle()
       if (useGame.getState().run.phase !== 'victory') break
-      if (i < enc.team.length - 1) sendNextFoe()
+      if (i < enc.team.length - 1) {
+        sendNextFoe()
+        const b = useGame.getState().battle!
+        sendOutLead(b.state.player[b.state.activeIndex]!.uid)
+      }
     }
     ;({ run } = useGame.getState())
     expect(run.phase).toBe('victory')

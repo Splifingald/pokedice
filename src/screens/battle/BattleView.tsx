@@ -398,7 +398,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const resumed = !!battle.resumed
   // Another lead picked at the send-out step: the same fight again, its foe out already (no entrance twice).
   const swapped = !!battle.sendLater
-  // A trainer's next Pokémon (sendNextFoe): the same fight going on, no entrance; yours that fought is still out.
+  // A trainer's next Pokémon (sendNextFoe): the same fight going on, no entrance; yours that fought still out
+  // ('stay'), the send-out step offering to change it.
   const next = !!battle.next
   const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off' && !resumed && !swapped)
   const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed && !swapped && !next)
@@ -410,7 +411,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       : undefined
   const [champIntro, setChampIntro] = useState(trainerIntro && !!champion)
   const [foeOut, setFoeOut] = useState(!bossIntro && !trainerIntro)
-  const stayed = next && !swapped && !run.pickLead
+  const stayed = battle.next === 'stay'
   const [ownOut, setOwnOut] = useState(quick || resumed || stayed)
   // The send-out step (the rework): the foe is out, yours waits for the player's pick; the fight starts once it's out.
   // Until then nothing moves, on auto either (a trainer's send-out waits on auto too: engine autoOffersLead).
@@ -452,7 +453,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       roadblock: st.kind === 'boss' && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), st.enemy.baseDex ?? st.enemy.dex),
       rival: enc?.kind === 'trainer' && !!enc.moment,
       // A trainer's next Pokémon: the line says who was sent out (and yours, if another went), not the opening again.
-      next: next ? (stayed ? 'stay' : 'go') : undefined,
+      next: battle.next,
       flavour,
       catchable,
       itemName: (k) => data.items[k]?.name ?? k,
