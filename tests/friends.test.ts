@@ -173,8 +173,8 @@ describe("friends' Day Cares (0034)", () => {
         name: 'Lea',
         avatar: 'not-a-look',
         day_care: [
-          { inst: 'a', dex: 133, level: 24, xp: 3, since: 1000, shiny: true },
-          { inst: 'b', dex: '135', level: 300 },
+          { inst: 'a', dex: 133, level: 24, xp: 3, since: 1000, shiny: true, cap: 31 },
+          { inst: 'b', dex: '135', level: 300, cap: null },
           { inst: '', dex: 1 },
           { dex: 0, inst: 'c' },
         ],
@@ -186,7 +186,8 @@ describe("friends' Day Cares (0034)", () => {
     expect(rows[0]!.owner).toBe('u1')
     expect(rows[0]!.name).toBe('Lea')
     expect(rows[0]!.mons).toEqual([
-      { inst: 'a', dex: 133, level: 24, xp: 3, since: 1000, shiny: true },
+      { inst: 'a', dex: 133, level: 24, xp: 3, since: 1000, shiny: true, cap: 31 },
+      // No cap (an empty Box, or a card from before 0138): only the level cap.
       { inst: 'b', dex: 135, level: 100, xp: 0, since: 0, shiny: false },
     ])
     expect(parseFriendDayCares(null)).toEqual([])

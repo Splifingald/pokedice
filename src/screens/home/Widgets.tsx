@@ -4,6 +4,7 @@ import {
   comingUp,
   regionOf,
   regionOfArea,
+  dayCareCap,
   dayCareLevelProgress,
   dayCareOf,
   isDayCareOpen,
@@ -137,7 +138,7 @@ function DayCareWidget() {
     )
   const rows = dc.residents.map((r) => ({
     r,
-    p: dayCareLevelProgress(r, now, data),
+    p: dayCareLevelProgress(r, now, data, dayCareCap(save, r, data)),
     name: data.species[r.inst.dex]?.name ?? t('ui.common.pokemon'),
   }))
   const free = Math.max(0, cfg.slots - rows.length)

@@ -99,7 +99,7 @@ export const markDayCareVisited = (save: SaveData): SaveData =>
 
 const tickMs = (data: GameData) => Math.max(1, data.config.dayCare.tickMinutes) * MINUTE
 
-/** XP earned so far this stay: xpPerTick for each full tick since drop-off. Lv.100 is the only cap (residentNow). */
+/** XP earned so far this stay: xpPerTick for each full tick since drop-off, before any cap (dayCareGain). */
 export function dayCareXp(res: Pick<DayCareResident, 'since'> & { inst?: DayCareResident['inst'] }, now: number, data: GameData): number {
   const ticks = Math.floor(Math.max(0, now - res.since) / tickMs(data))
   // Daycare Darling (docs/51): more XP for every tick.
@@ -107,29 +107,75 @@ export function dayCareXp(res: Pick<DayCareResident, 'since'> & { inst?: DayCare
   return Math.floor(ticks * Math.max(0, data.config.dayCare.xpPerTick) * darling)
 }
 
-/** The resident as it stands now: its Day Care XP applied as levels (never an evolution). */
-export function residentNow(res: Pick<DayCareResident, 'inst' | 'since'>, now: number, data: GameData): PokemonInstance {
-  // No evolution means no random branch: the rng is never read.
-  return gainXp(res.inst, dayCareXp(res, now, data), data, createRng(0), { evolve: false }).inst
+/**
+ * The level a resident grows to and no further: the strongest Pokémon in its own region's Box (the Day Care left out,
+ * a region gone falling back to the live one, as `sendHome` does). So a week away never brings back a Pokémon above
+ * the team it trains for; as that team grows, the cap follows. Never under the level it came with, never over the
+ * level cap. An empty Box (nothing to compare with) leaves only the level cap.
+ */
+export function dayCareCap(save: SaveData, res: Pick<DayCareResident, 'inst' | 'region'>, data: GameData): number {
+  const here = regionOf(save)
+  const region = res.region ?? here
+  const box = region === here ? save.box : (save.parked?.[region]?.box ?? save.box)
+  const best = box.reduce((top, p) => Math.max(top, p.level), 0) || data.config.maxLevel
+  return Math.min(data.config.maxLevel, Math.max(res.inst.level, best))
 }
 
-/** Ms until the next XP tick; null once it is at the level cap (or the Day Care gives no XP). */
-export function nextDayCareTick(res: DayCareResident, now: number, data: GameData): number | null {
+/** XP still needed to stand at `level` with an empty bar. */
+function xpToReach(inst: PokemonInstance, level: number, data: GameData): number {
+  let need = -inst.xp
+  for (let l = inst.level; l < level; l++) need += xpToNext(l, data.config)
+  return Math.max(0, need)
+}
+
+/** The XP that counts this stay: what it earned, but none past `cap` (dayCareCap; Lv.100 when not given). */
+export function dayCareGain(
+  res: Pick<DayCareResident, 'inst' | 'since'>,
+  now: number,
+  data: GameData,
+  cap = data.config.maxLevel,
+): number {
+  return Math.min(dayCareXp(res, now, data), xpToReach(res.inst, Math.min(cap, data.config.maxLevel), data))
+}
+
+/** The resident as it stands now: its Day Care XP applied as levels up to `cap` (never an evolution). */
+export function residentNow(
+  res: Pick<DayCareResident, 'inst' | 'since'>,
+  now: number,
+  data: GameData,
+  cap = data.config.maxLevel,
+): PokemonInstance {
+  // No evolution means no random branch: the rng is never read.
+  return gainXp(res.inst, dayCareGain(res, now, data, cap), data, createRng(0), { evolve: false }).inst
+}
+
+/** Ms until the next XP tick; null once it is at its cap (or the Day Care gives no XP). */
+export function nextDayCareTick(res: DayCareResident, now: number, data: GameData, cap = data.config.maxLevel): number | null {
   if (data.config.dayCare.xpPerTick <= 0) return null
-  if (residentNow(res, now, data).level >= data.config.maxLevel) return null
+  if (residentNow(res, now, data, cap).level >= Math.min(cap, data.config.maxLevel)) return null
   const t = tickMs(data)
   return t - (Math.max(0, now - res.since) % t)
 }
 
-/** Where a resident stands on the way to its next level: the bar under it. `toNext` is 0 at the level cap. */
+/**
+ * Where a resident stands on the way to its next level: the bar under it. `toNext` is 0 at its cap; `held` says the
+ * cap is its region's best Pokémon rather than the level cap (it grows again once the team does).
+ */
 export function dayCareLevelProgress(
   res: DayCareResident,
   now: number,
   data: GameData,
-): { level: number; xp: number; toNext: number } {
-  const grown = residentNow(res, now, data)
-  const capped = grown.level >= data.config.maxLevel
-  return { level: grown.level, xp: capped ? 0 : grown.xp, toNext: capped ? 0 : xpToNext(grown.level, data.config) }
+  cap = data.config.maxLevel,
+): { level: number; xp: number; toNext: number; held: boolean } {
+  const top = Math.min(cap, data.config.maxLevel)
+  const grown = residentNow(res, now, data, top)
+  const capped = grown.level >= top
+  return {
+    level: grown.level,
+    xp: capped ? 0 : grown.xp,
+    toNext: capped ? 0 : xpToNext(grown.level, data.config),
+    held: capped && grown.level < data.config.maxLevel,
+  }
 }
 
 // ---------------------------------------------------------------- your Pokémon
@@ -227,12 +273,13 @@ function keepHpPercent(before: PokemonInstance, after: PokemonInstance, data: Ga
  */
 function sendHome(save: SaveData, res: DayCareResident, data: GameData, now: number, team: boolean): Pickup {
   const dc = dayCareOf(save)
-  const grown = residentNow(res, now, data)
+  const cap = dayCareCap(save, res, data)
+  const grown = residentNow(res, now, data, cap)
   // The Day Care is no Pokémon Center: it comes home with its HP %, still K.O. (and resting, in Extreme mode) if it
   // was. A Pokémon Center heals it while it stays (centerHeal).
   const inst = keepHpPercent(res.inst, grown, data)
   const rest: DayCareState = { ...dc, residents: dc.residents.filter((r) => r.inst.id !== res.inst.id) }
-  const base = { inst, xpGained: dayCareXp(res, now, data), levelsGained: inst.level - res.inst.level }
+  const base = { inst, xpGained: dayCareGain(res, now, data, cap), levelsGained: inst.level - res.inst.level }
   const here = regionOf(save)
   const block = res.region && res.region !== here ? save.parked?.[res.region] : undefined
   if (block) {
@@ -308,6 +355,8 @@ export interface FriendCareMon {
   xp: number
   since: number
   shiny?: boolean
+  /** Their cap (dayCareCap), from their card; missing on cards written before it (then Lv.100). */
+  cap?: number
 }
 
 /** A friend's Day Care, as the server reads it from their card (friend_day_cares(), migration 0034). */
@@ -316,10 +365,10 @@ export interface FriendDayCare {
   mons: FriendCareMon[]
 }
 
-/** A friend's resident's level now: the same rule as yours, from their card's level, XP and drop-off time. */
+/** A friend's resident's level now: the same rule as yours, from their card's level, XP, drop-off time and cap. */
 export function friendMonLevel(m: FriendCareMon, now: number, data: GameData): number {
   const inst: PokemonInstance = { id: m.inst, dex: m.dex, level: m.level, xp: m.xp, currentHp: 0, caughtAt: 0 }
-  return data.species[m.dex] ? residentNow({ inst, since: m.since }, now, data).level : m.level
+  return data.species[m.dex] ? residentNow({ inst, since: m.since }, now, data, m.cap).level : m.level
 }
 
 /**

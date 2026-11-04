@@ -9,6 +9,7 @@ import {
   careMembers,
   clockDueAt,
   compatible,
+  dayCareCap,
   dayCareLevelProgress,
   dayCareOf,
   dayCareTutorialDue,
@@ -30,6 +31,7 @@ import {
   type DepositError,
   type Hatch,
   regionName,
+  regionOf,
   outfitOf,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
@@ -118,12 +120,15 @@ function MineCard({ res, slot, now, onTake }: { res: DayCareResident; slot: numb
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
   const nameOf = useNameOf()
-  const p = dayCareLevelProgress(res, now, data)
+  const p = dayCareLevelProgress(res, now, data, dayCareCap(save, res, data))
   const name = nameOf(res.inst)
   const lv = (n: number) => t('ui.common.level.short', { n })
+  // Held at its region's best: said, so the player knows training the team lets it grow again.
   const line = p.toNext
     ? t('ui.dayCare.toNext', { next: lv(p.level + 1), from: lv(res.inst.level) })
-    : t('ui.dayCare.maxed', { level: lv(p.level) })
+    : p.held
+      ? t('ui.dayCare.heldAtBest', { level: lv(p.level), region: regionName(data, res.region ?? regionOf(save)) })
+      : t('ui.dayCare.maxed', { level: lv(p.level) })
   const gained = p.level - res.inst.level
   const mates = matesOf(save, data, res.inst.id)
   // Daycare Darling and Flame Body (docs/51) work here: said on its card.
@@ -310,7 +315,6 @@ function LeaveSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       sub={t('ui.dayCare.depositHint', {
         xp: cfg.xpPerTick,
         minutes: cfg.tickMinutes,
-        max: t('ui.common.level.short', { n: data.config.maxLevel }),
       })}
       head={
         <div className="grid gap-2">

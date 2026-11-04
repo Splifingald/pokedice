@@ -19,7 +19,6 @@ export function useDayCareRules(): RuleRow[] {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const cfg = data.config.dayCare
-  const lv = (n: number) => t('ui.common.level.short', { n })
   return [
     {
       icon: 'heart',
@@ -28,7 +27,6 @@ export function useDayCareRules(): RuleRow[] {
         slots: cfg.slots,
         xp: cfg.xpPerTick,
         minutes: cfg.tickMinutes,
-        max: lv(data.config.maxLevel),
       }),
     },
     {

@@ -19,7 +19,7 @@ commit message.
 | Where | One Day Care **per region**: `dayCare` lives in the region block and is parked with it (`liveBlock`/`withBlock` in `src/engine/regions.ts`) | **One Day Care for every region.** It doesn't reset when a region opens, and the same one shows in every region |
 | Opens | 20 species in the live region's Pokédex | 10 species caught (20 until 2026-10-31, migration 0104), counted **across every region**; once open, open for good |
 | Your Pokémon | 2 slots | 2 slots |
-| XP | +1 every 10 min, **200 XP cap per stay**, READY when full | +1 every 10 min, **no cap but Lv.100** |
+| XP | +1 every 10 min, **200 XP cap per stay**, READY when full | +1 every 10 min, ~~no cap but Lv.100~~ since 2026-11-04 **up to the best level in its region's Box** (Lv.100 at most) |
 | Friends | — | **4 friend slots**: invite a Pokémon that is sitting in a friend's Day Care. It visits; nothing changes for the friend |
 | Eggs | Free once, then bought for ₽50 | **Bred.** Every 12 h each of your Pokémon checks everyone at the Day Care; a compatible pair leaves an Egg. **Ditto pairs with everyone but legendaries, on a slower check: every 24 h.** The 12 h start once a compatible pair is here, and start over when no pair is left. The free first Egg stays; the ₽50 Egg goes |
 | Egg now | — | **Skip the wait for ₽200:** the next check runs now, a pair leaves an Egg, and it hatches right away |
@@ -135,7 +135,31 @@ The rules, in this order (as `compatible()` in `daycare.js`):
 So **a legendary never pairs with anyone.** 92 of the 94 are Undiscovered (rule 2). Manaphy and Phione are Water 1 /
 Fairy but genderless (rule 3), and rule 1 refuses them to Ditto.
 
-### XP: Lv.100 is the only cap
+### XP: held at its region's best (since 2026-11-04)
+
+Leaving a Pokémon for a week made it stronger than anything the player had trained: it now stops at the level of the
+**strongest Pokémon in its own region's Box** (team included, the Day Care left out).
+
+- `dayCareCap(save, res, data)`: that best level, never under the level it came with (one stronger than the rest
+  gains nothing and keeps its level), never over `maxLevel`. Its region is `res.region` (a region gone reads the live
+  Box, as `sendHome` does); an empty Box leaves only `maxLevel`.
+- The cap is read **now**, not at drop-off: as the team grows, so does the cap, and a resident held back catches up
+  with the ticks it earned (never past the team's best). `dayCareXp` stays the XP earned; `dayCareGain` is the part
+  that counts (none past the cap), and `residentNow`, `nextDayCareTick` and `dayCareLevelProgress` take the cap
+  (default `maxLevel`). `sendHome` (Take back, `fitDayCare`) applies it, so `xpGained` is the XP that counted.
+- The card says it: "Lv.32: as high as your best in Kanto" (`ui.dayCare.heldAtBest`, `held` from
+  `dayCareLevelProgress`), a full bar. The rules card and the leave picker say "up to the level of your best Pokémon
+  in its region".
+- Friends' Pokémon: the server writes each resident's cap on the card (`day_care[].cap`, migration 0138);
+  `friendMonLevel` holds the visitor at it. A card from before 0138 has none: Lv.100, as before.
+- No admin switch: it replaced the old rule (a balance fix, like D10).
+
+**Setting it up:** run
+[`0138_day_care_cap.sql`](https://github.com/Splifingald/pokedice/blob/ccr-3680ce24-mofux5/supabase/migrations/0138_day_care_cap.sql)
+in the Supabase SQL editor (`supabase/seed.sql` carries it too). Until then the rule works for your own Pokémon;
+friends' visitors just show uncapped levels.
+
+### XP: Lv.100 is the only cap (until 2026-11-04)
 
 - `dayCareXp` loses `maxXp`: `ticks × xpPerTick`, uncapped.
 - `residentNow` already stops at `config.maxLevel` through `gainXp`.
@@ -449,13 +473,14 @@ Laid out like Home, with no CONTINUE and no Areas button. The name shows **once*
      - "Next Egg check", "in 7 h 14" in large type, "3 pairs can leave one" (or "No pair can make an Egg yet");
      - a gold **EGG NOW** button with the coin and "₽200";
      - disabled without a pair; short of gold, the price turns red and a tap says "Need ₽80 more".
-3. **Your Pokémon · 2/2**: "They gain 1 XP every 10 min, even while you're away, all the way to Lv.100." **Two
+3. **Your Pokémon · 2/2**: "They gain 1 XP every 10 min, even while you're away, all the way to Lv.100" (since
+   2026-11-04: to the level of your best Pokémon in its region). **Two
    columns**, one card per slot:
    - a 4 px band across the top in the slot's colour: pink `#ff5a7a` for the first, blue `#5b8def` for the second;
    - the head: that colour's heart, "Yours", and a green tag with the levels gained here ("+2 Lv", or "New");
    - the animated sprite on a pale tile;
    - the name and Lv, an XP bar to the next level, "To Lv.25 · came at Lv.22" (at Lv.100: "Lv.100: it can't grow
-     more");
+     more"; held at its region's best: "Lv.32: as high as your best in Kanto");
    - "Pairs with" and the partners' names ("Pairs with all but legendaries" for a Ditto, "No partner here yet");
    - **Take back** at the bottom, so both cards' buttons line up.
 
@@ -611,3 +636,4 @@ Each ends green: `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm e2e`. Add a READM
 | D11 | Egg now | ₽200, hatches at once, restarts the clock it skipped (it buys the check early, not an extra one) |
 | D12 | Legendaries | Never pair with anyone (follows from D2 and the Egg groups) |
 | D13 | A hatchling you don't keep | The Day Care couple gives ₽10 (`notKeptGold`, admin): whenever it isn't kept, at its level or under your copy's |
+| D14 | How high a resident grows | Since 2026-11-04: to the best level in its region's Box, read at the time (it follows the team), never past Lv.100. No admin switch: it replaced "no cap but Lv.100" |
