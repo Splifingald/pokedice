@@ -301,7 +301,7 @@ test("left alone, a trainer's send-out on auto sends the first able Pokémon aft
   const go = page.getByRole('button', { name: 'Send out Charizard' })
   await expect(page.getByText('On auto, the fight goes on by itself.', { exact: false })).toBeVisible({ timeout: 15_000 })
   await expect(go).toBeVisible()
-  // GO! goes by itself 4 s later; the same line comes back on the result card, before the trainer's next Pokémon.
+  // GO! goes by itself 4 s later; the trainer's Pokémon follow one another in the fight, then the one card.
   await expect(go).toBeHidden({ timeout: 8000 })
   await expect(page.getByRole('region', { name: 'VICTORY!' })).toBeVisible({ timeout: 15_000 })
 })

@@ -1,6 +1,6 @@
 // Result screens: victory (XP, level-ups, milestones, gold, catch, then evolutions), wipe and stalemate.
 import { BottomDock } from '@/components/BottomDock'
-import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
+import { AutoButton } from '@/components/AutoButton'
 import { AnimatePresence, motion } from 'framer-motion'
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -30,13 +30,9 @@ import { useCountUp } from '@/components/GoldPill'
 import { Chip, NewTag } from '@/components/Chip'
 import { PixelIcon } from '@/components/icons'
 import { HoofIcon, STANTLER } from '@/components/Tracks'
-import { LeadPicker, defaultLead } from '@/components/LeadPicker'
-import { ForfeitButton } from '@/components/ForfeitButton'
-import { speciesTypes } from '@/components/TypeMatchups'
 import { HpBar } from '@/components/HpBar'
 import { useXpFill, XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
-import { TrainerSprite } from '@/components/TrainerArt'
 import { DuelResult } from '@/components/AreaVersus'
 import { UnownLetterCard } from '@/components/UnownDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
@@ -62,7 +58,6 @@ import {
   continueExploring,
   exploreFirstArea,
   resolveCatch,
-  trainerHasNext,
 } from '@/store/run'
 import { leaveRebattle, startRebattle } from '@/store/rebattle'
 import { Medal, tierName } from '@/screens/events/RebattlePage'
@@ -808,8 +803,7 @@ function MonRow({ m }: { m: MonRecap }) {
  * The team's XP in one strip (docs/42), a column each, side by side: the sprite, its level, the bar filling, the XP won.
  * A level-up turns its column gold, the level green, the sprite hops and the confetti flies as the bar rolls over; a
  * milestone or an evolution to come is a chip under it. Each column comes as the recap reaches it, in its own place,
- * so nothing reflows. With More details, a row each instead (MonRow): names, figures, Multi XP. Between a trainer's
- * Pokémon, neither: the pick cards carry it (CardXp).
+ * so nothing reflows. With More details, a row each instead (MonRow): names, figures, Multi XP.
  */
 export function TeamXpStrip({ mons, shown }: { mons: MonRecap[]; shown: number }) {
   return (
@@ -876,65 +870,6 @@ function MonColumn({ m }: { m: MonRecap }) {
   )
 }
 
-/**
- * Between a trainer's Pokémon the team shows once (the user's call, 2026-11-03: the pick cards and the XP strip under
- * them were the same three twice): what each one earned goes on its pick card, above INFO — the bar filling, the XP
- * won, a level-up (green, confetti as it rolls over) and its milestones. Until the recap reaches it, its room is kept
- * (`live` false: drawn unseen), so the cards never jump.
- */
-export function CardXp({ m, live }: { m: MonRecap; live: boolean }) {
-  const { t } = useT()
-  const data = useGame((s) => s.data)
-  const inst = useGame((s) => (s.save ? getInstance(s.save, m.uid) : undefined))
-  const details = useDetails()
-  const [rolls, setRolls] = useState(0)
-  // Nothing to fill until it shows: the fill starts as it comes, as the strip's column does.
-  const fill = useXpFill(inst, live ? m.from : null, () => setRolls((n) => n + 1))
-  const species = data.species[m.dex]
-  if (!species) return null
-  const leveled = m.toLevel != null
-  // Still filling toward its level-up: the celebration waits for the roll (its room kept).
-  const waiting = !!fill && rolls === 0
-  const chips: ReactNode[] = []
-  if (leveled)
-    chips.push(
-      <span
-        key="lv"
-        className="relative inline-flex items-center gap-0.5 bg-hp-green px-1 py-0.5 text-base leading-none text-ink shadow-ring"
-      >
-        <PixelIcon name="up" size={12} />
-        {t('ui.common.level.short', { n: m.toLevel ?? 0 })}
-        {live && !waiting && <Confetti key={rolls} />}
-      </span>,
-    )
-  m.milestones
-    .filter((ms) => ms.effect !== 'EVOLVE')
-    .forEach((ms, i) => chips.push(<MilestoneChip key={`m${i}`} m={ms} type1={species.type1} />))
-  if (m.evolvesTo != null)
-    chips.push(
-      <span key="evo" className="bg-ink px-1 py-0.5 text-sm leading-none text-panel">
-        {t('ui.victory.evolvingInto', { name: data.species[m.evolvesTo]?.name ?? t('ui.common.unknown') })}
-      </span>,
-    )
-  return (
-    <div
-      className={cx('flex flex-col gap-1', !live && 'invisible')}
-      aria-hidden={!live || undefined}
-      role="group"
-      aria-label={`${t('ui.victory.xpGain', { amount: m.xp })}${leveled ? `, ${t('ui.victory.levelUp', { level: m.toLevel ?? 0 })}` : ''}`}
-    >
-      {inst && <XpBar inst={inst} className="w-full" shown={fill} numbers={details} />}
-      <span className="text-center text-base leading-none text-muted">
-        {t('ui.victory.xpGain', { amount: m.xp })}
-        {details && m.shared && <span className="text-sm">{t('ui.victory.multi')}</span>}
-      </span>
-      {chips.length > 0 && (
-        <div className={cx('flex flex-wrap justify-center gap-1', leveled && waiting && 'invisible')}>{chips}</div>
-      )}
-    </div>
-  )
-}
-
 /** How long the autopilot leaves a result card up before closing it (docs/36). */
 const AUTO_CARD_MS = 1600
 
@@ -953,11 +888,10 @@ export function VictoryView() {
   const details = useDetails()
   const { mons, extras, evolutions } = useRecap(run.events)
   const pace = usePace()
-  // The win's jingle as the card rises (docs/38 F5a), once the fight is over: not between a trainer's Pokémon.
-  useFeelOnce('win.jingle', !trainerHasNext())
+  // The win's jingle as the card rises (docs/38 F5a): a trainer's fight has its card only once it is over.
+  useFeelOnce('win.jingle', true)
   const total = mons.length + extras.length
   const [shown, setShown] = useState(reduced ? Number.MAX_SAFE_INTEGER : 1)
-  const [lead, setLead] = useState<string | null>(null)
   // The action picked on the recap waits for the evolutions to play.
   const [then, setThen] = useState<(() => void) | null>(null)
   const allShown = shown >= total
@@ -986,17 +920,6 @@ export function VictoryView() {
     else action()
   }
 
-  // Between a trainer's Pokémon, the one that just fought stays selected unless the player picks another.
-  const fought = battle ? battle.state.player[battle.state.activeIndex] : undefined
-  const stillIn = fought && fought.hp > 0 ? fought.uid : undefined
-  const hasNext = trainerHasNext()
-  const enc = run.encounter
-  const nextMon =
-    hasNext && (enc?.kind === 'trainer' || enc?.kind === 'gym') && run.trainer ? enc.team[run.trainer.index + 1] : null
-  // Between a trainer's Pokémon the pick cards carry what each earned (CardXp): the team in one row, not twice. A team
-  // of one has no pick (LeadPicker draws nothing): its XP keeps the strip.
-  const teamSize = useGame((s) => (s.save ? teamOf(s.save).length : 0))
-  const merged = !run.pendingCatchId && hasNext && !!nextMon && teamSize > 1
   // This fight cleared the area and opened the story's way forward (the furthest open area of the region's chain, as
   // Home's CONTINUE offers it): GO TO it is the card's one way on, in CONTINUE's place (docs/15 §6).
   const clearedTo = run.events.flatMap((e) => (e.kind === 'area_cleared' && e.nextAreaId ? [e.nextAreaId] : []))[0]
@@ -1011,27 +934,20 @@ export function VictoryView() {
   const closeRef = useRef<() => void>(() => {})
   closeRef.current = () => {
     while (useGame.getState().run.pendingCatchId) resolveCatch(null)
-    if (hasNext && nextMon) go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))()
-    else go(() => continueAfterVictory())()
+    go(() => continueAfterVictory())()
   }
   useEffect(() => {
     if (closes) setShown(Number.MAX_SAFE_INTEGER)
   }, [closes])
-  // Between a trainer's Pokémon the card stays long enough to pick who faces the next one (a player's feedback,
-  // 2026-10-29), and a Pokémon tapped holds it for the player's NEXT.
-  const picking = hasNext && !!nextMon
-  const pickWait = picking && lead == null
   useEffect(() => {
-    if (!closes || !allShown || then || (picking && lead != null)) return
-    const timer = setTimeout(() => closeRef.current(), picking ? PILOT_PICK_MS : AUTO_CARD_MS)
+    if (!closes || !allShown || then) return
+    const timer = setTimeout(() => closeRef.current(), AUTO_CARD_MS)
     return () => clearTimeout(timer)
-  }, [closes, allShown, then, picking, lead])
+  }, [closes, allShown, then])
 
   // Inside a portal run (docs/28) there is no way Home: CONTINUE alone. Nor in a try of the race (docs/64 §4.4).
   const locked = useGame((s) => !!portalLock(s.save, s.data) || !!timeRaceLock(s.save, s.data))
 
-  // After a fight: NEXT waits for the player, unless Auto is on (Settings, or AUTO beside NEXT): then it fills and goes.
-  const sendNext = go(() => continueAfterVictory(lead ?? stillIn ?? defaultLead()))
   // The way on to the next area goes straight into its first encounter (the rework: no stop on its page first).
   const onwards = nextArea
     ? go(() => {
@@ -1051,9 +967,9 @@ export function VictoryView() {
   const autoNext = !closes && !run.rebattle && !nextArea && !caughtNew && !run.duel
   // Only while auto-mode or Idle mode plays the area (the user's call, 2026-10-27: otherwise NEXT waits for a tap).
   const autoOn = useAutoLevel() !== 'off'
-  const countdown = autoOn && autoNext && allShown && !run.pendingCatchId && !then && !(picking && lead != null)
-  // Each piece of the recap scrolls into view as it comes (a level-up, the Pokédex entry…), then a full team's choice
-  // or the trainer's next Pokémon: the player never scrolls to follow the card (the user's call, 2026-10-26). The
+  const countdown = autoOn && autoNext && allShown && !run.pendingCatchId && !then
+  // Each piece of the recap scrolls into view as it comes (a level-up, the Pokédex entry…), then a full team's choice:
+  // the player never scrolls to follow the card (the user's call, 2026-10-26). The
   // scroll margin keeps it clear of the buttons pinned at the foot.
   const list = useRef<HTMLDivElement>(null)
   const follow = useRef<HTMLDivElement>(null)
@@ -1064,41 +980,31 @@ export function VictoryView() {
     last.style.scrollMarginBottom = '160px'
     last.scrollIntoView({ block: 'nearest', behavior })
   }, [shown, behavior])
-  const choosing = allShown && (!!run.pendingCatchId || (hasNext && !!nextMon))
+  const choosing = allShown && !!run.pendingCatchId
   useEffect(() => {
     if (choosing) follow.current?.scrollIntoView({ block: 'nearest', behavior })
   }, [choosing, run.pendingCatchId, behavior])
   const nextRef = useRef<() => void>(() => {})
-  nextRef.current = hasNext && nextMon ? sendNext : onwards
-  // The trainer's next Pokémon: the same time to pick as under the autopilot, whatever the pace.
-  const advance = picking ? PILOT_PICK_MS : ADVANCE_MS * pace
+  nextRef.current = onwards
+  const advance = ADVANCE_MS * pace
   useEffect(() => {
     if (!countdown) return
     const timer = setTimeout(() => nextRef.current(), advance)
     return () => clearTimeout(timer)
   }, [countdown, advance])
   if (then) return <EvolutionQueue items={evolutions} onDone={then} />
-  // NEXT's gauge: its countdown, or the autopilot's wait before the trainer's next Pokémon.
-  const filling = countdown || (closes && allShown && !then && pickWait)
-  const fill = filling && (
+  // NEXT's gauge: its countdown.
+  const fill = countdown && (
     <span aria-hidden className="absolute inset-x-0 bottom-0 h-[5px] bg-black/20">
       <motion.span
         className="block h-full bg-gold-light"
         initial={{ width: 0 }}
         animate={{ width: '100%' }}
-        transition={{ duration: (countdown ? advance : PILOT_PICK_MS) / 1000, ease: 'linear' }}
+        transition={{ duration: advance / 1000, ease: 'linear' }}
       />
     </span>
   )
-  const footer = hasNext && nextMon ? (
-    // The send-out's row (docs/43 §5.3): NEXT sends the one picked; giving up is the flag at its side.
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2.5">
-      <PixelButton variant="primary" size="lg" className="relative w-full overflow-hidden" onClick={sendNext}>
-        {t('ui.victory.next')} ▸{fill}
-      </PixelButton>
-      <ForfeitButton flag />
-    </div>
-  ) : run.rebattle ? (
+  const footer = run.rebattle ? (
     <RebattleNext go={go} />
   ) : (
     <div className="flex flex-col gap-2">
@@ -1147,50 +1053,9 @@ export function VictoryView() {
       <p className="sr-only" role="status">
         {title}
       </p>
-      {/* Between a trainer's Pokémon, who's next and the pick come first (the rework: the action on top), from the start
-          when the cards carry the XP. */}
-      {(allShown || merged) && !run.pendingCatchId && hasNext && nextMon && (
-        <div ref={follow} className="mb-3 flex scroll-mb-[160px] flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <motion.div className="shrink-0" initial={reduced ? false : { x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-              <TrainerSprite src={enc?.kind === 'trainer' || enc?.kind === 'gym' ? enc.spriteUrl : null} size={72} />
-            </motion.div>
-            {/* Who's coming, as well as said: the sprite next to the line. */}
-            <motion.div
-              className="shrink-0"
-              initial={reduced ? false : { scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: reduced ? 0 : 0.25 }}
-            >
-              <SpriteImg dex={nextMon.dex} size={64} shiny={!!nextMon.shiny} />
-            </motion.div>
-            <span className="text-2xl leading-none">{t('ui.common.level.short', { n: nextMon.level })}</span>
-          </div>
-          {/* The one that fought is picked to begin with; a tap picks another, NEXT sends the one picked. On auto it goes
-              by itself unless a Pokémon is tapped. */}
-          {filling && pickWait && (
-            <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.idle.pickLead')}</p>
-          )}
-          <LeadPicker
-            value={lead ?? stillIn ?? null}
-            onChange={setLead}
-            foe={speciesTypes(data, nextMon.dex)}
-            go
-            fight
-            under={
-              merged
-                ? (p) => {
-                    const i = mons.findIndex((m) => m.uid === p.id)
-                    return i < 0 ? null : <CardXp m={mons[i]!} live={i < shown} />
-                  }
-                : undefined
-            }
-          />
-        </div>
-      )}
       <div ref={list} className="flex flex-col gap-2">
         <AnimatePresence initial={!reduced}>
-          {merged ? null : details ? (
+          {details ? (
             mons.slice(0, shown).map((m) => (
               <motion.div key={m.uid} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
                 <MonRow m={m} />

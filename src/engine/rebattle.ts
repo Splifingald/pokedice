@@ -10,7 +10,7 @@ import { wipeHeals } from './extreme'
 import { earnedGold, type LiveSet } from './liveEvents'
 import { regionOf } from './regions'
 import { asSeenBy, playerSideOf } from './rival'
-import { awardBattleXp, getArea, type RunEvent } from './run'
+import { awardBattleXp, getArea, type OwedGold, type RunEvent } from './run'
 import { instanceMaxHp } from './progression'
 import type { Rng } from './rng'
 import { dealTrainerItems } from './trainerItems'
@@ -186,6 +186,8 @@ export interface RebattleKO {
   last: boolean
   enemyLevel: number
   fighterUid: string
+  /** The ₽ of this trainer's Pokémon before this one, held back: paid (and marked paid) with the last K.O. */
+  owed?: OwedGold
 }
 
 /**
@@ -199,20 +201,26 @@ export function applyRebattleKO(
   data: GameData,
   rng: Rng,
   live: LiveSet = null,
-): { save: SaveData; events: RunEvent[] } {
+): { save: SaveData; events: RunEvent[]; owed?: OwedGold } {
   const league = leagueArea(data, ko.regionId)
   const events: RunEvent[] = []
   let next = league ? awardBattleXp(save, ko.enemyLevel, ko.fighterUid, getArea(data, league.id), false, data, rng, events) : save
   const prog = rebattleProgress(next, ko.regionId)
   const key = paidKey(ko.tier, ko.trainerId, ko.index)
   let paid = prog.paid
-  if (!paid.includes(key)) {
+  // Paid with the trainer's last Pokémon (the user's call, 2026-11-04), those before it adding up till then; a loss
+  // before it pays none of them, and none is marked paid.
+  let owed: OwedGold = ko.owed ?? { amount: 0, bonus: 0, keys: [] }
+  if (!paid.includes(key) && !owed.keys?.includes(key)) {
     const { amount, bonus } = earnedGold(rebattleGold(data, ko.regionId, ko.tier, ko.enemyLevel), live)
-    paid = [...paid, key]
-    if (amount > 0) {
-      next = { ...next, gold: next.gold + amount }
-      events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
-    }
+    owed = { amount: owed.amount + amount, bonus: owed.bonus + bonus, keys: [...(owed.keys ?? []), key] }
+  }
+  if (!ko.last) return { save: withRebattle(next, ko.regionId, prog), events, owed }
+  paid = [...paid, ...(owed.keys ?? []).filter((k) => !paid.includes(k))]
+  if (owed.amount > 0) {
+    next = { ...next, gold: next.gold + owed.amount }
+    const { amount, bonus } = owed
+    events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
   }
   let { done, step } = prog
   if (ko.last) {

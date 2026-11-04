@@ -135,3 +135,17 @@ describe('the pace and the K.O.', () => {
     expect(sounds.cries).toEqual([[130, { rate: 0.75 }]])
   })
 })
+
+describe("a trainer's next Pokémon", () => {
+  const open = { kind: 'start' } as LogEntry
+  const line = (o: Partial<AnimatorContext>) => {
+    const f = step(open, { ...st, activeIndex: 0 } as BattleState, ctx({ kind: 'trainer', trainerName: 'Silver', ...o }))
+    return (f.apply({ message: '' } as Parameters<typeof f.apply>[0]) as { message: string }).message
+  }
+
+  it("says who was sent out, not the rival's opening again", () => {
+    expect(line({ rival: true })).toContain('There you are')
+    expect(line({ rival: true, next: 'stay' })).toBe('Silver sent out Gyarados!')
+    expect(line({ rival: true, next: 'go' })).toBe('Silver sent out Gyarados! Go! Pikachu!')
+  })
+})

@@ -139,7 +139,7 @@ async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean
 
 /** The League area is cleared, so its fights can play themselves (auto mode): only the rewards' buttons to press. */
 const AUTO = JSON.stringify({ ...JSON.parse(FAST), autoMode: true })
-// Between a trainer's Pokémon the result's Next ▸ sends the next one (the rework; NEXT BATTLE before).
+// A trainer's next Pokémon comes into the fight by itself (2026-11-04); Next ▸ closes a result card.
 const FIGHT_ON = ['GOT IT', 'SKIP ▸▸', 'NEXT BATTLE', 'Next ▸']
 
 /** The Kanto League won, and a team for the rebattle: three Lv.100s with every upgrade (`level` 5: a team to lose). */

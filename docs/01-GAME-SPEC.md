@@ -306,7 +306,7 @@ Articuno, Zapdos, Moltres, Mewtwo and Mew are **not** in wild pools. Each is att
 
 ### 5.1 Pokédollars (₽)
 
-- **Trainers pay Pokédollars:** `₽ = Σ levels of the trainer's Pokémon you defeated` × `goldMultiplier` (gym battles × `gymGoldMultiplier` too). Item finds can also turn up Pokédollars (§5.4). Internally the save field and config keys keep the name `gold`.
+- **Trainers pay Pokédollars:** `₽ = Σ levels of the trainer's Pokémon you defeated` × `goldMultiplier` (gym battles × `gymGoldMultiplier` too), **paid once their last Pokémon falls** (2026-11-04): a fight lost or given up before that pays none. Item finds can also turn up Pokédollars (§5.4). Internally the save field and config keys keep the name `gold`.
 - Wild fights, catches and legendary bosses pay none.
 - Replaying a cleared area applies its `backtrackMultiplier` (**default 0.5**) to both Pokédollars and XP.
 
