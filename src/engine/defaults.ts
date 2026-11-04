@@ -455,6 +455,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   // same row.
   leagueHeal: { access: 'off' },
   rivalLossHeal: { access: 'off' },
+  // A rival's team matched to the player (docs/61 §5.5): Off; its choices' defaults in engine/rivalMatch.ts. Migration
+  // 0137 inserts the same row.
+  rivalMatch: { access: 'off' },
   // Hidden talents (docs/51): off until the admin switches them on. Migration 0094 inserts the same row.
   hiddenTalents: { access: 'off', wildChance: 0.05, evolveChance: 0.3, families: {} },
   // The legends' own cinematics (docs/53): off until the admin switches it on. Migration 0098 inserts the same row.

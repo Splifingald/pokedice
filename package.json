@@ -44,6 +44,7 @@
     "app-icons": "tsx scripts/app-icons.ts",
     "og-image": "node design/og-image/render.mjs",
     "sim": "tsx scripts/sim.ts",
+    "load-test": "tsx scripts/load-test.ts",
     "balance": "tsx scripts/balance.ts",
     "area-versus-balance": "tsx scripts/area-versus-balance.ts",
     "area-versus-money": "tsx scripts/area-versus-money.ts",

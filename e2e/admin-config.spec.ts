@@ -74,11 +74,11 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature (41 with the Versus global board, the hidden talents, the legendary intros, real-player
+  // One row per feature (42 with the Versus global board, the hidden talents, the legendary intros, real-player
   // battles, the champion intros, welcome back, the outfits, friendship, 2.9's four side quests and five region
-  // flavours, Friend Battles, 2.9.1's rival loss and real-player level match): its name and its switch, nothing else;
-  // energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(41)
+  // flavours, Friend Battles, 2.9.1's rival loss and real-player level match, the rival teams matched): its name and
+  // its switch, nothing else; energy and the retired switches are gone.
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(42)
   // "On for beta testers" only where the server reads it (docs/65 §3): Friend Battles, not the others.
   const battles = page.getByRole('radiogroup', { name: 'Friend Battles: who has it' })
   await expect(battles.getByRole('radio', { name: 'On for beta testers' })).toBeVisible()
@@ -86,8 +86,9 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     page.getByRole('radiogroup', { name: 'Outfits: who has it' }).getByRole('radio', { name: 'On for beta testers' }),
   ).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Beta testers' })).toBeVisible()
-  for (const name of ['Safari Zones', 'Rivals on the road', "Hoenn's weather", 'Paldea Titans'])
+  for (const name of ['Safari Zones', 'Rivals on the road', 'Rival teams matched to the player', "Hoenn's weather"])
     await expect(page.getByRole('radiogroup', { name: `${name}: who has it` })).toBeVisible()
+  await expect(page.getByRole('radiogroup', { name: 'Paldea Titans: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Outfits: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Welcome back: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Friendship & Friend Market: who has it' })).toBeVisible()
@@ -148,6 +149,29 @@ test('Welcome back (docs/58): its switch, then its tab with the cooldown and the
   // A tier is edited with the gifts' own editor.
   await expect(page.getByText(/in your message when they come back/)).toHaveCount(3)
   await page.screenshot({ path: 'test-results/admin-config-welcome-back.png', fullPage: true })
+})
+
+test('Rival teams matched (docs/61 §5.5): its switch Off, then its tab with both choices', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await admin(page)
+  await page.goto('/admin/config')
+  const sw = page.getByRole('radiogroup', { name: 'Rival teams matched to the player: who has it' })
+  await expect(sw).toBeVisible({ timeout: 30_000 })
+  await expect(sw.getByRole('radio', { name: 'Off' })).toHaveAttribute('aria-checked', 'true')
+  await page.getByRole('button', { name: 'Rival teams matched to the player', exact: true }).click()
+  await expect(page).toHaveURL(/tab=rivals/)
+  // Never stronger (the default): only the team above the player's best + 1 comes down.
+  await expect(page.getByRole('radio', { name: /^Never stronger/ })).toBeChecked()
+  await expect(page.getByRole('radio', { name: /^By level/ })).toBeChecked()
+  await expect(page.getByText('player at 14 / 11 / 9 → 15 / 14 / 13')).toBeVisible()
+  await expect(page.getByText('player at 26 / 25 / 24 → 20 / 18 / 17')).toBeVisible()
+  // Always level: up too.
+  await page.getByRole('radio', { name: /^Always level/ }).check()
+  await expect(page.getByText('player at 26 / 25 / 24 → 27 / 24 / 23')).toBeVisible()
+  await page.getByRole('radio', { name: /^No further than the player/ }).check()
+  await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
+  await page.screenshot({ path: 'test-results/admin-config-rivals.png', fullPage: true })
 })
 
 /** A member of a league group as versus_league_admin_board (0086) answers. */
