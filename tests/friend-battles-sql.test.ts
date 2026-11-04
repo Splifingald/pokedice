@@ -16,6 +16,7 @@ const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const FILE = '0131_friend_battles.sql'
 const TICKETS = '0132_battle_tickets.sql'
 const LEVELS = '0133_friend_battle_levels.sql'
+const SWITCH = '0137_friend_battle_switch.sql'
 const ADMIN = 'gregoire.ftn@gmail.com'
 
 const U = {
@@ -175,12 +176,14 @@ beforeAll(async () => {
     FILE,
     TICKETS,
     LEVELS,
+    SWITCH,
   ])
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql(FILE))
   await db.exec(sql(TICKETS))
   await db.exec(sql(LEVELS))
+  await db.exec(sql(SWITCH))
   await db.exec(`insert into auth.users (id) values ${Object.values(U).map((u) => `('${u}')`).join(',')}`)
   for (const u of Object.values(U))
     await db.query(
@@ -508,3 +511,28 @@ describe('Lv.50 or Lv.100 (0133)', () => {
   })
 })
 
+describe('switching and the quarter shield (0137)', () => {
+  it('takes a switch to one of the mover’s own Pokémon, and nothing else', async () => {
+    const m = await toBattle()
+    expect(await fails(U.ash, 'select pvp_move($1, 1, $2)', [m.id, '{"k":"switch","uid":"b1"}'])).toContain('pvp_bad_move')
+    expect(await fails(U.ash, 'select pvp_move($1, 1, $2)', [m.id, '{"k":"switch","uid":"a9x"}'])).toContain('pvp_bad_move')
+    expect(await fails(U.ash, 'select pvp_move($1, 1, $2)', [m.id, '{"k":"switch","uid":1}'])).toContain('pvp_bad_move')
+    await move(U.ash, m.id, 1, { k: 'switch', uid: 'a1', extra: 'dropped' })
+    await move(U.misty, m.id, 2, { k: 'switch', uid: 'b2' })
+    const s = await state(U.misty, m.id)
+    expect(s.moves.map((x) => x.move)).toEqual([
+      { k: 'switch', uid: 'a1' },
+      { k: 'switch', uid: 'b2' },
+    ])
+  })
+
+  it('the shield blocks a quarter: 50 becomes 75, another value set by the admin stays', async () => {
+    const cfg = (await db.query<{ c: { shield: number } }>(`select friend_battles_cfg() c`)).rows[0]!.c
+    expect(cfg.shield).toBe(75)
+    await db.query(`update game_config set value = jsonb_set(value, '{shield}', '60') where key = 'friendBattles'`)
+    await db.exec(sql(SWITCH))
+    const again = (await db.query<{ c: { shield: number } }>(`select friend_battles_cfg() c`)).rows[0]!.c
+    expect(again.shield).toBe(60)
+    await db.query(`update game_config set value = jsonb_set(value, '{shield}', '75') where key = 'friendBattles'`)
+  })
+})

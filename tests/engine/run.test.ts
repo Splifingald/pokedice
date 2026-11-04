@@ -246,6 +246,26 @@ describe('victory rewards', () => {
     expect(r.save.gold).toBe(7)
   })
 
+  it("a trainer's ₽ waits for their last Pokémon, then is paid all at once", () => {
+    const first = win(fresh(), { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 7, last: false })
+    expect(first.save.gold).toBe(0)
+    expect(first.events.some((e) => e.kind === 'gold')).toBe(false)
+    expect(first.owed).toEqual({ amount: 7, bonus: 0 })
+    const second = win(first.save, { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 5, last: false, owed: first.owed })
+    expect(second.owed).toEqual({ amount: 12, bonus: 0 })
+    const end = win(second.save, { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 3, last: true, owed: second.owed })
+    expect(end.save.gold).toBe(15)
+    expect(end.events.filter((e) => e.kind === 'gold')).toEqual([{ kind: 'gold', amount: 15 }])
+    expect(end.owed).toBeUndefined()
+  })
+
+  it("a set trainer's prize comes with their last Pokémon, any ₽ held back with it", () => {
+    const held = win(fresh(), { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 7, prize: 0, last: false, owed: { amount: 3, bonus: 0 } })
+    expect(held.owed).toEqual({ amount: 3, bonus: 0 })
+    const end = win(fresh(), { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 7, prize: 20, last: true, owed: held.owed })
+    expect(end.save.gold).toBe(23)
+  })
+
   it('backtracking into a cleared area halves gold and XP', () => {
     const s = { ...fresh(), areaProgress: { [FOREST.id]: { ...emptyProgress(), cleared: true, xp: 150 } } }
     const r = win(s, { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 8 })

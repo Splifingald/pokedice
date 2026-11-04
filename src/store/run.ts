@@ -167,6 +167,7 @@ import {
   type BattleKind,
   type ForceKind,
   type PlayerProfile,
+  type OwedGold,
   type RunEvent,
   type SaveData,
   type SpinResult,
@@ -228,6 +229,7 @@ import {
   safariDealable,
   safariOn,
   safariRoundDue,
+  safariCfg,
   safariRoundPrice,
   startSafariRound,
 } from '@/engine'
@@ -243,6 +245,7 @@ import { trickAllowed } from './trick'
 import { giftAllowed } from './giftCard'
 import { tracksAllowed } from './tracks'
 import { sideQuestAllowed, sideQuestCached, sideQuestKnown } from './sideQuests'
+import { askSafari, closeSafariAsk, useSafariAsk } from './safariAsk'
 import { weatherHere } from './flavours'
 import { t } from '@/i18n'
 
@@ -378,6 +381,8 @@ function onToNext() {
   const area = data.areas.find((a) => a.id === run.areaId)
   if (!area) return
   const own = [portalModeOf, nightmareModeOf, timeRaceModeOf, whiteoutModeOf, tracksModeOf].some((m) => m(area, data))
+  // A Safari's next round is never begun on the way (a player's report, 2026-11-03: round after round paid by itself):
+  // rollNext asks first, its pop-up over the area's page (the price, or that it's free; HOME beside it).
   if (!own) continueExploring()
 }
 
@@ -942,6 +947,20 @@ export function finishTracksOutro() {
 }
 
 /** Roll the next encounter and show its preview card. */
+/** The player said yes to the Safari round about to begin (its pop-up): the next rollNext begins it. */
+let safariYes = false
+
+/** The Safari pop-up's START / PAY: the round begins (paid if it costs), its first card dealt. */
+export function confirmSafariRound() {
+  const { run } = useGame.getState()
+  const ask = useSafariAsk.getState().ask
+  closeSafariAsk()
+  if (!ask || run.areaId !== ask.areaId) return
+  safariYes = true
+  rollNext()
+  safariYes = false
+}
+
 export function rollNext() {
   settleRound()
   const { save, data, run } = useGame.getState()
@@ -980,6 +999,15 @@ export function rollNext() {
   const forceKind = noneAble && !wipeCenter && !(safari && safariDealable(data, safari)) ? 'center' : run.forceNext
   if (safari && safariRoundDue(data, safari, progressOf(save, safari.id))) {
     const price = safariRoundPrice(data, safari, progressOf(save, safari.id))
+    // Never begun without the player's yes (a player's report, 2026-11-03): the pop-up says the price, or that it's
+    // free, with HOME beside it; its button comes back here (confirmSafariRound).
+    if (!safariYes) {
+      setRun({ phase: 'idle', encounter: null })
+      askSafari({ areaId: safari.id, price, next: Math.max(0, Math.round(Number(safariCfg(data).roundPrice) || 0)) })
+      return
+    }
+    safariYes = false
+    closeSafariAsk()
     const paid = startSafariRound(save, data, safari)
     if (!paid) {
       setRun({ phase: 'idle', encounter: null })
@@ -1048,6 +1076,15 @@ export function sendOutLead(uid: string) {
   const lead = battle?.state.player[battle.state.activeIndex]?.uid
   setRun({ pickLead: false })
   if (!battle) return
+  // A trainer's next Pokémon (sendNextFoe): the fight is engaged already; another lead restages only this one.
+  if (battle.next) {
+    const { run } = useGame.getState()
+    const enc = run.encounter
+    if (uid === lead || !run.trainer || (enc?.kind !== 'trainer' && enc?.kind !== 'gym')) return
+    startBattle('trainer', enc.team[run.trainer.index]!, uid)
+    useGame.setState((s) => (s.battle ? { battle: { ...s.battle, next: 'go', sendLater: true } } : {}))
+    return
+  }
   if (uid === lead) return commitEngage()
   engage(uid)
   useGame.setState((s) => (s.battle ? { battle: { ...s.battle, sendLater: true } } : {}))
@@ -1371,6 +1408,25 @@ export function dispatchBattle(e: BattleEvent) {
   if (phase === 'won' || phase === 'lost' || phase === 'fled') settleBattle(r.log.some((l) => l.kind === 'end' && l.reason === 'stalemate'))
 }
 
+/**
+ * A trainer's K.O. settled. Another Pokémon to come: its rewards are carried to the fight's one result card (its
+ * evolutions play now, between the two, so they aren't carried) and its ₽ held back (`owed`, the engine's: paid with
+ * the last K.O.). The last: the card shows the whole fight's.
+ */
+function trainerRewards(trainer: NonNullable<RunState['trainer']>, events: RunEvent[], gold: number, owed?: OwedGold) {
+  const next = trainerHasNext()
+  const carried = trainer.carried ?? []
+  return {
+    events: next ? events : [...carried, ...events],
+    trainer: {
+      ...trainer,
+      gold: trainer.gold + gold,
+      carried: next ? [...carried, ...events.filter((e) => e.kind !== 'evolve')] : [],
+      owed: next ? owed : undefined,
+    },
+  }
+}
+
 function settleBattle(stalemate: boolean) {
   const { battle, run, data } = useGame.getState()
   const save = useGame.getState().save
@@ -1394,6 +1450,7 @@ function settleBattle(stalemate: boolean) {
           last: run.trainer.index + 1 >= enc.team.length,
           enemyLevel: s.enemy.level,
           fighterUid: out.fighterUid,
+          owed: run.trainer.owed,
         },
         data,
         runRng,
@@ -1403,7 +1460,7 @@ function settleBattle(stalemate: boolean) {
       const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
       if (res.events.some((e) => e.kind === 'rebattle_cleared'))
         useRebattleMedal.setState({ medal: { regionId: run.rebattle.regionId, tier, gold } })
-      setRun({ phase: 'victory', events: res.events, pendingCatchId: null, catch: null, trainer: { ...run.trainer, gold: run.trainer.gold + gold } })
+      setRun({ phase: 'victory', pendingCatchId: null, catch: null, ...trainerRewards(run.trainer, res.events, gold, res.owed) })
       return
     }
     if (out.result === 'won') return
@@ -1433,6 +1490,7 @@ function settleBattle(stalemate: boolean) {
         ...((enc?.kind === 'trainer' || gym) && { last: !run.trainer || run.trainer.index + 1 >= enc.team.length }),
         // A real player's team pays more for each K.O. (docs/54).
         ...(isPlayerFoe(enc) && { goldMultiplier: foeGoldMultiplier(data) }),
+        owed: run.trainer?.owed,
       },
       data,
       runRng,
@@ -1498,7 +1556,6 @@ function settleBattle(stalemate: boolean) {
     const bonus = catchTalentBonus(data, getInstance(res.save, out.fighterUid))
     setRun({
       phase: target ? 'catch' : 'victory',
-      events,
       pendingCatchId: null,
       catch:
         target && kind
@@ -1506,7 +1563,7 @@ function settleBattle(stalemate: boolean) {
           : null,
       catchQueue: [],
       catchPending: [],
-      trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
+      ...(run.trainer ? trainerRewards(run.trainer, events, gold, res.owed) : { events, trainer: null }),
       duel,
     })
     return
@@ -1792,14 +1849,34 @@ export function trainerHasNext(): boolean {
   return !!save && teamOf(save).some((p) => p.currentHp > 0 && data.species[p.dex])
 }
 
+/**
+ * A trainer's next Pokémon, sent out straight into the fight view (the user's call, 2026-11-04: no result card between
+ * them). Then the send-out step, the foe out already: yours that fought stays out and picked unless another is tapped
+ * (the user's call, the same day); K.O.'d, the first able is picked. One able: it goes, no pick.
+ */
+export function sendNextFoe(leadUid?: string) {
+  const { run, battle, save, data, settings } = useGame.getState()
+  const enc = run.encounter
+  if (!save || run.pendingCatchId || !run.trainer || (enc?.kind !== 'trainer' && enc?.kind !== 'gym') || !trainerHasNext()) return
+  const fought = battle?.state.player[battle.state.activeIndex]
+  const able = teamOf(save).filter((p) => p.currentHp > 0)
+  const kept = fought && fought.hp > 0 ? fought.uid : undefined
+  const lead = (leadUid && able.find((p) => p.id === leadUid)?.id) ?? kept ?? able[0]?.id
+  const auto = autoLevel(save, data, settings, run) !== 'off'
+  const pick = able.length > 1 && (!auto || autoOffersLead(enc.kind))
+  const index = run.trainer.index + 1
+  setRun({ trainer: { ...run.trainer, index }, events: [], pickLead: pick })
+  startBattle('trainer', enc.team[index]!, lead)
+  const next = lead && lead === kept ? 'stay' : 'go'
+  useGame.setState((s) => (s.battle ? { battle: { ...s.battle, next } } : {}))
+}
+
 /** Leave the victory screen: next trainer Pokémon (with a freely chosen lead) or back to the area. */
 export function continueAfterVictory(leadUid?: string) {
   const { run } = useGame.getState()
   if (run.pendingCatchId) return
   if (trainerHasNext() && (run.encounter?.kind === 'trainer' || run.encounter?.kind === 'gym') && run.trainer) {
-    const index = run.trainer.index + 1
-    setRun({ trainer: { ...run.trainer, index }, events: [] })
-    startBattle('trainer', run.encounter.team[index]!, leadUid)
+    sendNextFoe(leadUid)
     return
   }
   if (run.trainer && run.trainer.gold > 0) pushToast(t('ui.toast.trainerBeaten', { gold: run.trainer.gold }), 'good')
@@ -2003,7 +2080,8 @@ function dealMoment(save: SaveData, areaId: string, noneAble: boolean): boolean 
   }
   const meeting = noneAble ? null : dueRival(save, area, progress, data)
   if (!meeting || !sideQuestKnown('rivals', rivalsOn(data))) return false
-  const encounter = rivalEncounter(meeting, data, playerSideOf(save))
+  // Fitted to the team the player brings while the match is on (docs/61 §5.5).
+  const encounter = rivalEncounter(meeting, data, playerSideOf(save), save)
   if (!encounter) return false
   setRun({ phase: 'preview', encounter, firstInArea: false, sprung: false })
   beginFight()
@@ -2166,6 +2244,14 @@ export function fleeTrick() {
   setRun({ trick: { ...tr, state, last: null } })
   leaveTrick()
   pushToast(t('ui.toast.gotAway'))
+}
+
+/** HOME on the result card: back on the trail, no card dealt; Home's CONTINUE goes on from there. */
+export function leaveTrickHome() {
+  const tr = useGame.getState().run.trick
+  if (tr && !tr.state.end) return
+  setRun({ trick: null })
+  backToArea()
 }
 
 /** Caught or fled: back on the trail and on to the next card (the round may be complete). */

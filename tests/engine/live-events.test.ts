@@ -196,7 +196,7 @@ describe('Cash Flow', () => {
     const champ = { ...s, areaProgress: { ...s.areaProgress, [league.id]: { ...emptyProgress(), cleared: true } } }
     const enc = rebattleEncounter(champ, data, 'kanto')
     if (enc?.kind !== 'gym') throw new Error('no rebattle fight')
-    const ko = { regionId: 'kanto', tier: 0, trainerId: enc.trainerId, index: 0, last: false, enemyLevel: enc.team[0]!.level, fighterUid: champ.team[0]! }
+    const ko = { regionId: 'kanto', tier: 0, trainerId: enc.trainerId, index: 0, last: true, enemyLevel: enc.team[0]!.level, fighterUid: champ.team[0]! }
     const plain = applyRebattleKO(champ, ko, data, createRng(1)).events.find((e) => e.kind === 'gold') as { amount: number }
     const more = applyRebattleKO(champ, ko, data, createRng(1), cash(1.5)).events.find((e) => e.kind === 'gold')
     expect(more).toEqual({ kind: 'gold', amount: Math.round(plain.amount * 1.5), bonus: Math.round(plain.amount * 1.5) - plain.amount })

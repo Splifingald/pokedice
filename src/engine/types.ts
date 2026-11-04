@@ -1390,6 +1390,11 @@ export interface GameConfig {
    */
   rivalLossHeal: { access: EventAccess }
   /**
+   * A rival's team matched to the player (docs/61 §5.5): the switch, how the levels follow and how the species follow.
+   * Migration 0137 inserts the same row; a missing field keeps the game's default (engine/rivalMatch.ts).
+   */
+  rivalMatch?: Partial<RivalMatchConfig>
+  /**
    * Hidden talents (docs/51): the switch, the odds of a wild Pokémon carrying its talent and of a locked family finding
    * it on an evolution, and the admin's picks per family (by its lowest dex; the bundled ones otherwise). Migration
    * 0094 inserts the same row.
@@ -1671,6 +1676,19 @@ export interface GiftMoment extends MomentPoint {
   /** An Egg's own shiny odds (the Odd Egg's); absent = the wild odds. */
   shinyChance?: number
   price?: number
+}
+
+/** How a rival's levels follow the player's team (docs/61 §5.5): see `matchLevels`. */
+export type RivalLevelMode = 'asWritten' | 'cap' | 'mirror' | 'pairs'
+/** How a rival's species follow (docs/61 §5.5): see `matchStages`. */
+export type RivalStageMode = 'asWritten' | 'byLevel' | 'player'
+
+export interface RivalMatchConfig {
+  access: EventAccess
+  levels: RivalLevelMode
+  /** Levels above the player's (below when negative), under `cap`, `mirror` and `pairs`. */
+  margin: number
+  stages: RivalStageMode
 }
 
 export interface RivalsConfig {

@@ -40,6 +40,7 @@ import {
   type GameData,
   type HomerArrival,
   type LogEntry,
+  type OwedGold,
   type RunEvent,
   type SaveData,
   type TrickPlaced,
@@ -159,7 +160,12 @@ export interface RunState {
   /** Skips spent on the encounter currently being rolled (skipPolicy 'once'). */
   skipsUsed: number
   /** Trainer gauntlet progress. */
-  trainer: { index: number; gold: number } | null
+  /**
+   * A trainer's fight under way: the Pokémon of theirs faced (`index`), the ₽ won so far, the rewards of the K.O.s
+   * before this one (`carried`), shown together on the fight's one result card at the end, and their ₽ held back till
+   * then (`owed`).
+   */
+  trainer: { index: number; gold: number; carried?: RunEvent[]; owed?: OwedGold } | null
   /** Rewards from the last K.O., for the victory screen. */
   events: RunEvent[]
   /** A catch waiting on the "Add to team?" decision. */
@@ -258,6 +264,12 @@ export interface BattleSlice {
   resumed?: boolean
   /** The same fight with another lead picked before anything happened: the foe is out already, no entrance again. */
   sendLater?: boolean
+  /**
+   * A trainer's next Pokémon, sent out straight into the fight view (the user's call, 2026-11-04): no entrance, no
+   * swipe, and the line says who was sent out, not the trainer's opening again. 'stay': yours that fought is still out
+   * (the send-out step offers to change it); 'go': another goes out.
+   */
+  next?: 'stay' | 'go'
 }
 
 /** The ways in: Supabase Auth providers the game offers (docs/17). */

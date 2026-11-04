@@ -9,6 +9,8 @@ import { catchTimeline } from '@/fx/timelines/catch'
 import { treatTimeline } from '@/fx/timelines/trick'
 import { TrickRecapBody, TrickScreen, type TrickScreenProps } from '@/screens/area/TrickView'
 import { GiftStage, giftLine } from '@/screens/area/GiftView'
+import { SafariPayButton } from '@/screens/area/AreaIdle'
+import { SafariAskView } from '@/screens/area/SafariAsk'
 import { useGame } from '@/store/game'
 import { PixelButton } from '@/components/PixelButton'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -61,7 +63,9 @@ function useLoop(make: () => Omit<TrickOverlay, 'onEnd'>): TrickOverlay {
 
 /** The Safari's screen in its states: idle, the Bait, a throw, a run-off, and its card, recap and rules. */
 function SafariBits() {
+  const { t } = useT()
   const [rules, setRules] = useState(false)
+  const [ask, setAsk] = useState<{ price: number; gold: number } | null>(null)
   const foe = spriteKey(CHANSEY, false)
   const band = trickBand(DEFAULT_CONFIG.safari, 'veryRare')
   const baiting = useLoop(() => ({
@@ -128,6 +132,39 @@ function SafariBits() {
           <TrickRecapBody theme="safari" dex={CHANSEY} level={26} end="fled" />
         </div>
       </div>
+      {/* The area's page after a round's last card: a paid round waits for this tap, its price on CONTINUE. */}
+      <div className="grid w-full max-w-[360px] grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+        <PixelButton size="lg" className="px-2">
+          {t('ui.nav.home')}
+        </PixelButton>
+        <SafariPayButton price={100} onClick={() => {}} />
+      </div>
+      <div className="grid w-full max-w-[360px] grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+        <PixelButton size="lg" className="px-2">
+          {t('ui.nav.home')}
+        </PixelButton>
+        <SafariPayButton price={0} onClick={() => {}} />
+      </div>
+      {/* The round asked before it begins: free, paid, and paid with too few ₽. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <PixelButton size="sm" onClick={() => setAsk({ price: 0, gold: 50 })}>
+          Ask: the free round
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setAsk({ price: 100, gold: 2000 })}>
+          Ask: a paid round
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setAsk({ price: 100, gold: 40 })}>
+          Ask: not enough ₽
+        </PixelButton>
+      </div>
+      <SafariAskView
+        ask={ask && { areaId: 'kitchen', price: ask.price, next: 100 }}
+        gold={ask?.gold ?? 0}
+        areaName="Safari Zone"
+        onGo={() => setAsk(null)}
+        onHome={() => setAsk(null)}
+        onClose={() => setAsk(null)}
+      />
       <PixelButton size="sm" className="self-start" onClick={() => setRules(true)}>
         The Safari's rules
       </PixelButton>
@@ -174,6 +211,10 @@ function GiftBits() {
       </PixelButton>
       <p className="pixel-dialogue m-0 max-w-xl px-3 py-1.5 text-[18px] leading-[1.15]">
         {t('ui.log.startRival', { trainer: 'Silver', foe: 'Quilava', lead: 'Totodile' })}
+      </p>
+      {/* …and a rival whose team was matched to the player's (docs/61 §5.5). */}
+      <p className="pixel-dialogue m-0 max-w-xl px-3 py-1.5 text-[18px] leading-[1.15]">
+        {t('ui.log.startRivalMatched', { trainer: 'Silver', foe: 'Cyndaquil', lead: 'Totodile' })}
       </p>
       {/* A rival lost to, with its switch on (docs/61 §5.4): healed, or resting in Extreme mode. */}
       <div className="flex flex-wrap gap-4">

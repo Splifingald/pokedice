@@ -157,6 +157,14 @@ Safari Zone**: the old area's 23 wild Pokémon, a loot table of its own (new, so
   without ₽100 it waits, saying so. A paid round is the player's until its last card, even if they leave and come back
   (the deck is kept, as every area's is). The round gauge and the Map show the price. Read as "the first round free per
   area and per save"; a free round a day would be the same two numbers with a daily reset.
+- **Every round asked first** (a player's report, 2026-11-03: round after round paid by itself, and no way out): a
+  round about to begin, wherever it was asked for (Home's CONTINUE, the area's, a round's last card over), opens a
+  pop-up first (`SafariAskPopup`): the free round says so ("Your first round is free! After it, each round here costs
+  ₽100."), a paid one its price and the player's ₽ ("A new round costs ₽100 · You have ₽2,000."). **HOME** beside
+  **LET'S GO!** / **PAY ₽100**; PAY greyed out, saying why, without the ₽; Esc closes it where the player is. Nothing is
+  paid or dealt before that button. Mid-round, nothing is asked: the round is paid. The area's CONTINUE carries the
+  price (or "Free round") on a second line (`SafariPayButton`), as Home's does, and every Safari result card has
+  **HOME** beside CONTINUE, as a battle's has.
 - **Switch**: Off / On for admin / On for everyone (`game_config.safari.access`), checked by the server (`safari_open()`,
   as `trick_or_treat_open()`). Off: the Safari areas are still secret areas off the main road, and their cards are
   fought as wild Pokémon, as today, so no species is locked behind the switch.
@@ -200,7 +208,8 @@ Safari Zone**: the old area's 23 wild Pokémon, a loot table of its own (new, so
   opening (docs/46) stays as it is.
 - Once per save (`save.moments`). A **rival** comes only while its area isn't cleared (a Lv.9 rival is nothing to a
   Lv.50 team). A **gift** also comes on a later visit to a cleared area, so a save already past it gets it the next time
-  it's there. A rival lost to is a normal wipe, the moment waiting, unless the switch of §5.4 is on.
+  it's there. A rival lost to is a normal wipe, the moment waiting, unless the switch of §5.4 is on. Its team is as
+  written, unless the switch of §5.5 fits it to the player.
 - **Two switches**, Rivals and Gift Pokémon (Off / On for admin / On for everyone, server-checked). The developer's
   gifts (docs/15 §23) are another feature and keep their own.
 - **Rules**: explained where they happen (docs/15 §20): no rules card, no INFO.
@@ -308,6 +317,55 @@ to its start. Behind its own switch, `rivalLossHeal` (Off / On for admin / On fo
 - **Tests**: `tests/engine/rival-loss.test.ts` (the switch; healed, met, the round kept; a wipe without it; Extreme)
   and `tests/rival-loss-sql.test.ts` (migration 0136 on PGlite, inlined in `seed.sql`).
 
+### 5.5 A rival's team matched to the player
+
+The user's ask (2026-11-03): "adapt the rival team levels and Pokémon evolution stage to the player so it stays fair,
+with different adaptation options". The meetings' teams (§5.2) are written for a player on the game's own path; a
+player behind it met a wall, one ahead met nothing. Behind its own switch, `rivalMatch` (Off / On for admin / On for
+everyone), Off by default, with the admin's choices on its own tab (Admin → Config → **Rivals**).
+
+- **Rivals' set meetings only** (§5.2), as §5.4. A rival in a trainer pool, gyms and the League are as written.
+- **Against the team the player brings**, not the Box: it's the team that fights (a Lv.60 in the PC doesn't).
+- **The levels**, one of four (`levels`), with a **margin** (`margin`, −20 to 20, 1 by default: levels above the
+  player's, below with a negative one):
+
+  | Option | What it does | Rival written 20 / 18 / 17, player 14 / 11 / 9 | …player 26 / 25 / 24 |
+  |---|---|---|---|
+  | As written (`asWritten`) | the content's levels | 20 / 18 / 17 | 20 / 18 / 17 |
+  | **Never stronger** (`cap`, the default) | a team whose best stands above the player's best + margin is scaled down by one ratio, its best on that cap (the real-player level match's rule, docs/54 §9); a team within reach is as written | 15 / 14 / 13 | 20 / 18 / 17 |
+  | Always level (`mirror`) | the team scaled, up or down, so its best is the player's best + margin | 15 / 14 / 13 | 27 / 24 / 23 |
+  | Pokémon for Pokémon (`pairs`) | the rival's strongest at the player's strongest + margin, its second at the player's second…; extra ones at the player's weakest; the lead still leads | 15 / 12 / 10 | 27 / 26 / 25 |
+
+  Never under Lv.1 nor past the max level.
+- **The evolution stages**, one of three (`stages`):
+
+  | Option | What it does |
+  |---|---|
+  | As written (`asWritten`) | the content's species at any level (a Charizard brought down to Lv.12 can happen) |
+  | **By level** (`byLevel`, the default) | each follows its new level as one of the player's would: brought down, it goes back through the evolutions the new level undoes (a Lv.40 Charizard at 20 is a Charmeleon, at 10 a Charmander); raised, it evolves along each level evolution reached (a Charmander raised to 40 is a Charizard; a branching one takes its first, as the region allows it). Stones and trades have no level to go by: they stay. A level left as written leaves the species as written (a written Lv.12 Pikachu stays one: its Pichu evolving at 30 is never undone). |
+  | No further than the player's (`player`) | by level, then never further evolved than the player's most evolved team member, counting the forms before it in its line (Charmander 0, Charmeleon 1, Charizard 2; Pichu 0, Pikachu 1): a team of first forms meets first forms |
+
+- **What it changes**: only the team the rival brings (the prize follows the levels, as a trainer's does). Turning it
+  off brings back the written teams; saves hold nothing of it.
+- **The engine**: `engine/rivalMatch.ts`: `rivalMatchOn`, `rivalMatchConfig`, `matchLevels`, `stageForLevel`,
+  `matchStages`, `matchRivalTeam`; `rivalEncounter(m, data, side, save)` fits the team and marks the encounter
+  `matched` when anything changed.
+- **The screen**: explained where it happens (docs/15 §20, as the rivals'): a fitted rival's first line says so,
+  “There you are! I trained my team to match yours, so no excuses!” (`ui.log.startRivalMatched`, on `/kitchen-sink`
+  under side quests). No rules card, no INFO.
+
+  ![](61-side-quests/5-rival-matched.png)
+- **Admin**: Config → Switches → **Rival teams matched to the player**; its name opens the **Rivals** tab: the two
+  choices as radio buttons, each with what it does, the margin, and the example above worked out live.
+- **Setting it up**: run `supabase/migrations/0138_rival_match.sql` (the row, Off, at the default choices, and the
+  content version + 1; safe to run again; `supabase/seed.sql` carries it, inlined):
+  https://github.com/Splifingald/pokedice/blob/claude/rival-battle-difficulty-adapt-b8kmtq/supabase/migrations/0138_rival_match.sql
+  Then Admin → Config → **Rival teams matched to the player**: On for admin to try it, pick the options on its tab,
+  then On for everyone.
+- **Tests**: `tests/engine/rival-match.test.ts` (the switch; each level option; stages down, up, stones; the player's
+  cap; Blue on Nugget Bridge fitted) and `tests/rival-match-sql.test.ts` (migration 0138 on PGlite, inlined in
+  `seed.sql`); `e2e/admin-config.spec.ts` (the switch and the tab).
+
 ## 6. Switches and rules
 
 | Part | Switch | Rules |
@@ -318,6 +376,7 @@ to its start. Behind its own switch, `rivalLossHeal` (Off / On for admin / On fo
 | Safari | `safari` | a pop-up at the first Safari encounter, INFO on its screen |
 | Rivals | `rivals` | explained where it happens |
 | A rival lost to (§5.4) | `rivalLossHeal` | explained where it happens |
+| A rival's team matched (§5.5) | `rivalMatch` | explained where it happens (the rival's line) |
 | Gift Pokémon | `giftMoments` | explained where it happens |
 
 Every switch is Off by default and checked by the server too; every line is in `src/i18n/strings.csv` in the ten
@@ -379,6 +438,7 @@ Where it differs from the plan:
 | ![](61-side-quests/2-roadblock-home.png) Routes 12–15: a Pokémon blocks the way | ![](61-side-quests/2-roadblock-fight.png) Snorlax, a wild one's words |
 | ![](61-side-quests/3-disguise-find.png) A Poké Ball in the Power Plant | ![](61-side-quests/3-disguise-sprung.png) It springs out: Voltorb |
 | ![](61-side-quests/4-safari-home.png) The Safari's round on CONTINUE | ![](61-side-quests/4-safari-card.png) Its card |
+| ![](61-side-quests/4-safari-ask-free.png) The free round, said on entering | ![](61-side-quests/4-safari-ask.png) A paid round, asked first |
 | ![](61-side-quests/4-safari-rules.png) Its rules, once | ![](61-side-quests/4-safari-screen.png) Bait and Safari Balls |
 | ![](61-side-quests/5-gift-offer.png) A gift: Eevee in Celadon | ![](61-side-quests/5-gift-received.png) Taken |
 | ![](61-side-quests/5-gift-choice.png) Hitmonlee or Hitmonchan | ![](61-side-quests/5-gift-sale.png) The Magikarp salesman |

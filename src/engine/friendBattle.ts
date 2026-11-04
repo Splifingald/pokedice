@@ -42,7 +42,9 @@ export const FRIEND_BATTLES_DEFAULTS: FriendBattlesConfig = {
   order: 20,
   turn: 45,
   grace: 90,
-  shield: 50,
+  // % of the hit the first picker's team still takes from the opponent's first attack: 75, a quarter blocked (the
+  // user's call, 2026-11-03; it was half).
+  shield: 75,
   classic: true,
   draft: true,
   ticketDaily: 1,
@@ -133,14 +135,23 @@ export const coinFace = (first: PvpSide): 'heads' | 'tails' => (first === 'a' ? 
 
 // ---------------------------------------------------------------- the fight
 
-/** A player's move. `timeout`: the side whose turn it is ran out of time and attacks with the dice in hand. */
-export type PvpMove = { k: 'reroll'; mask: boolean[] } | { k: 'attack' } | { k: 'timeout' } | { k: 'forfeit' }
+/**
+ * A player's move. `timeout`: the side whose turn it is ran out of time and attacks with the dice in hand. `switch`:
+ * another of their able Pokémon comes in (its uid), and the turn is spent, as switching costs a turn in every fight.
+ */
+export type PvpMove =
+  | { k: 'reroll'; mask: boolean[] }
+  | { k: 'attack' }
+  | { k: 'switch'; uid: string }
+  | { k: 'timeout' }
+  | { k: 'forfeit' }
 
 /**
  * The match's log, in side a's view (a is "player", b is "enemy"): the battle's own entries, and `pvp_out` when a
- * side's next Pokémon comes out after a K.O. Each game turns it to its own side (`pvpLogFor`).
+ * side's Pokémon comes out: its next one after a K.O., or one it switched in (`switched`, the turn spent). Each game
+ * turns it to its own side (`pvpLogFor`). The engine's own `switch` entry names no side, so it never enters this log.
  */
-export type PvpEntry = LogEntry | { kind: 'pvp_out'; side: Side; uid: string }
+export type PvpEntry = LogEntry | { kind: 'pvp_out'; side: Side; uid: string; switched?: boolean }
 
 export interface PvpMatch {
   /** Both teams, in fight order, as the last turn left them (uids `a0`… and `b0`…). */
@@ -408,6 +419,21 @@ export function applyPvpMove(
     log.push(...fromActor(m, r.log))
     writeBack(m, s)
     m.step = s
+    return { match: m, log }
+  }
+  if (move.k === 'switch') {
+    // The engine's own voluntary switch (the Pokémon out goes back, the dice are dropped, the turn ends), refused as it
+    // refuses it anywhere: an unknown, fainted or already-out Pokémon changes nothing.
+    const r = reduce(step, { t: 'SWITCH', instanceId: String(move.uid) }, data, rng)
+    if (r.state === step || r.state.activeIndex === step.activeIndex) return { match, log: [] }
+    const entries: PvpEntry[] = r.log.map((e) =>
+      e.kind === 'switch' ? { kind: 'pvp_out', side: 'player', uid: e.uid, switched: true } : e,
+    )
+    log.push(...(m.actor === 'a' ? entries : entries.map(flipEntry)))
+    writeBack(m, r.state)
+    m.step = null
+    afterTurn(m, log)
+    runTurns(m, data, rng, log)
     return { match: m, log }
   }
   // ATTACK (or the time-out's attack): the turn resolves, then the turns that follow run until the next decision.

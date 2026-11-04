@@ -91,7 +91,20 @@ import { useDialogOpen } from '@/lib/useDialog'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, setSettings, useGame, type BattleSlice, type CatchThrow } from '@/store/game'
 import { autoStepNow, useAutoLevel } from '@/store/autopilot'
-import { answerBait, dispatchBattle, canSkipCurrent, fleeAtSendOut, notYet, passCatch, retryCatch, sendOutLead, throwBall } from '@/store/run'
+import {
+  answerBait,
+  dispatchBattle,
+  canSkipCurrent,
+  fleeAtSendOut,
+  notYet,
+  passCatch,
+  retryCatch,
+  sendNextFoe,
+  sendOutLead,
+  throwBall,
+  trainerHasNext,
+} from '@/store/run'
+import { EvolutionQueue } from '@/components/Evolution'
 import { LeadPicker } from '@/components/LeadPicker'
 import { ItemLessonGuide, RerollLessonGuide, type LessonStep } from '@/components/RerollLesson'
 import { finishItemLessonNow } from '@/store/actions'
@@ -210,6 +223,8 @@ function useWidth(ref: RefObject<HTMLElement>) {
 const TRAINER_INTRO_MS = 1100
 /** From the foe's arrival to yours popping out of its ball. */
 const SEND_OUT_MS = 900
+/** After a trainer's Pokémon falls, the beat before their next one is sent out (sendNextFoe). */
+const NEXT_FOE_MS = 700
 /** How long the dice wait in hand before your turn's throw (docs/38 F1d). */
 const ROLL_WAIT_MS = 250
 
@@ -278,13 +293,12 @@ export interface VersusReplay {
   onPlayed: () => void | (() => void)
   /** The result card, once the whole fight is over. */
   end?: ReactNode
-  /** Fought by the player (the weekly league): AUTO is their switch, off at the start. */
-  live?: { auto: boolean; onAuto: (on: boolean) => void }
   /**
-   * No switching on your turn (a Friend Battle, docs/65: the order was set before the fight): the team's step keeps
-   * only BACK and the flag, and the flag gives up through `onForfeit`.
+   * Fought by the player (the weekly league): AUTO is their switch, off at the start. Without `onAuto` (a Friend
+   * Battle, docs/65 §17: two people, each plays their own turns) there is no AUTO-MODE at all.
    */
-  noSwitch?: boolean
+  live?: { auto: boolean; onAuto?: (on: boolean) => void }
+  /** The flag gives up through this (a Friend Battle, docs/65: the server settles a forfeit), not the run's way. */
   onForfeit?: () => void
 }
 
@@ -384,8 +398,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const resumed = !!battle.resumed
   // Another lead picked at the send-out step: the same fight again, its foe out already (no entrance twice).
   const swapped = !!battle.sendLater
+  // A trainer's next Pokémon (sendNextFoe): the same fight going on, no entrance; yours that fought still out
+  // ('stay'), the send-out step offering to change it.
+  const next = !!battle.next
   const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off' && !resumed && !swapped)
-  const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed && !swapped)
+  const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed && !swapped && !next)
   // A League Champion's own entrance (docs/56) in place of the trainer stepping onto the field: when the switch is on
   // and its scene is made. It ends with the champion's lead thrown out; the send-out step follows as for any trainer.
   const champion =
@@ -394,7 +411,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       : undefined
   const [champIntro, setChampIntro] = useState(trainerIntro && !!champion)
   const [foeOut, setFoeOut] = useState(!bossIntro && !trainerIntro)
-  const [ownOut, setOwnOut] = useState(quick || resumed)
+  const stayed = battle.next === 'stay'
+  const [ownOut, setOwnOut] = useState(quick || resumed || stayed)
   // The send-out step (the rework): the foe is out, yours waits for the player's pick; the fight starts once it's out.
   // Until then nothing moves, on auto either (a trainer's send-out waits on auto too: engine autoOffersLead).
   const picking = !versus && !!run.pickLead
@@ -434,6 +452,9 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       // A roadblock boss (docs/61 §2) is spoken of as the wild Pokémon it is, not a legendary.
       roadblock: st.kind === 'boss' && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), st.enemy.baseDex ?? st.enemy.dex),
       rival: enc?.kind === 'trainer' && !!enc.moment,
+      rivalMatched: enc?.kind === 'trainer' && !!enc.moment && !!enc.matched,
+      // A trainer's next Pokémon: the line says who was sent out (and yours, if another went), not the opening again.
+      next: battle.next,
       flavour,
       catchable,
       itemName: (k) => data.items[k]?.name ?? k,
@@ -499,8 +520,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     // Once per Pokémon coming out: a form change later is the Mega's own cry, below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foeOut, st.enemy.uid])
+  // Yours that stayed out for a trainer's next Pokémon has cried already.
+  const [criedOwn] = useState(() => (stayed ? active.uid : null))
   useEffect(() => {
-    if (ownOut) playCry(active.dex, { wait: true })
+    if (ownOut && active.uid !== criedOwn) playCry(active.dex, { wait: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownOut, active.uid])
   useEffect(() => {
@@ -552,7 +575,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     })
   // Out on the field already: not one to switch in (a double battle has two out).
   const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
-  const switchTargets = versus?.noSwitch ? [] : st.player.filter((p) => p.hp > 0 && !onField(p))
+  const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
   // After a K.O. with one Pokémon left to come in, it comes in: nothing to choose (the user, 2026-10-27).
   const lastOne = forced && !auto && switchTargets.length === 1 ? switchTargets[0]!.uid : null
   useEffect(() => {
@@ -1065,11 +1088,24 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       })
 
   const over = !!versus && played && !!versus.end
-  const result = !versus && ready && (run.phase === 'victory' || run.phase === 'wipe' || run.phase === 'stalemate')
+  // A trainer's K.O. with another of theirs to come: no result card, the next one comes into the fight (sendNextFoe).
+  const chain = useGame((s) => !versus && ready && s.run.phase === 'victory' && trainerHasNext())
+  const result =
+    !versus && ready && !chain && (run.phase === 'victory' || run.phase === 'wipe' || run.phase === 'stalemate')
   // A real player's last Pokémon down (docs/54, the user's ask): their trainer steps back onto its spot for the result,
   // the K.O.'d Pokémon's plate gone.
   const trainerBack = result && run.phase === 'victory' && run.duel?.outcome === 'won' && !!trainerSprite
-  useBattleMusic(!over && !(ready && !versus && ['victory', 'wipe', 'stalemate'].includes(run.phase)))
+  useBattleMusic(!over && !(ready && !versus && !chain && ['victory', 'wipe', 'stalemate'].includes(run.phase)))
+  // A beat after the K.O. has played, the next one is sent out; an evolution the K.O. brought plays first.
+  const evolving = useMemo(
+    () => (chain ? run.events.flatMap((e) => (e.kind === 'evolve' ? [{ uid: e.uid, fromDex: e.fromDex, toDex: e.toDex }] : [])) : []),
+    [chain, run.events],
+  )
+  useEffect(() => {
+    if (!chain || evolving.length) return
+    const t = setTimeout(() => sendNextFoe(), quick ? 0 : NEXT_FOE_MS * pace)
+    return () => clearTimeout(t)
+  }, [chain, evolving.length, quick, pace])
   // The player's own prompt, waiting on the dice (useBattleAnimator's 'turn' line).
   const prompting = !catching && !switching && !(forced && !auto) && fx.message === t('ui.log.whatWillDo', { name: active.name })
   const message = catching
@@ -1097,7 +1133,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   }, [picking])
   // A cleared area's fight can be handed to auto-mode midway, as the area's switch would have from its start.
   // One switch, in the same place on or off (the user's call, 2026-10-27): no note and STOP while it plays.
-  const autoToggle = (autoOpen && !versus && !catching) || !!live
+  const autoToggle = (autoOpen && !versus && !catching) || !!live?.onAuto
   const extras =
     !terminal &&
     ((!auto && (megaOpts.length > 0 || gmaxOpts.length > 0 || zOpen || typeMenu || st.canRun)) || autoToggle)
@@ -1245,7 +1281,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     >
       {!versus && !run.rebattle && <RunRoundGauge strip className="absolute inset-x-0 top-0 z-30" />}
       {/* Each new fight opens on its own beat (docs/42); another lead picked is the same fight, already open. */}
-      {!versus && !swapped && <EncounterSwipe />}
+      {!versus && !swapped && !next && <EncounterSwipe />}
       <BattleStage
         own={active}
         foe={foeFront}
@@ -1438,6 +1474,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 'pixel-panel absolute inset-0 overflow-y-auto [&>*]:min-h-fit [&_[data-dock]]:sticky [&_[data-dock]]:bottom-0 [&_[data-dock]]:-mx-3 [&_[data-dock]]:bg-panel [&_[data-dock]]:px-3',
             )}
           >
+            {chain && evolving.length > 0 && <EvolutionQueue items={evolving} onDone={() => sendNextFoe()} />}
             {result ? (
               // The fight's end, under the scene rather than over it (the rework): no card rises.
               <InlineCard.Provider value={true}>
@@ -1600,7 +1637,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                         aria-pressed={auto}
                         onClick={() => {
                           setMenu(null)
-                          if (live) live.onAuto(!auto)
+                          if (live) live.onAuto?.(!auto)
                           else setSettings({ autoMode: !auto })
                         }}
                       >

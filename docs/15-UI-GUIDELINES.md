@@ -197,7 +197,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `PageLoading` | A page split out of the main bundle loading (`Lazy` in `App.tsx`) | A Poké Ball drawn in code wobbling in pixel steps (`steps()`), still under calm; "Loading…" for screen readers (`role="status"`) |
 | `SupportModal` / `SupportView` | SUPPORT ME (side menu, Settings), and once per region at its 5th badge | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on Ko-fi under the line saying Pokémon is a licence so the game is never for sale; a big OK |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
-| `TrickGauge` / `TrickStage` / `NeedDie` / `TrickScreen` / `TrickPlate` / `TrickRecap` / `TrickCard` / `TierChip` / `TrickSprite` / `TrickRulesModal` | Trick or Treat (§28) | The gauge: its value in numbers ("62/100") with what the last Treat or miss added (a gold "+18" that pops in; the added stretch flashes white twice once filled), its sections each in a colour of its own (red for a 6, the hardest, then orange, yellow, green and teal as it gets easier; lilac where no roll can) with a dark line between two, the flee zone striped night with a ghost, bright up to its value and as a pastel past it, the section it is in ringed in gold, the white post where it stands, and under each section the die a Trick Ball needs on a chip of the section's colour (`NeedDie`: the `Die` face with its "+", the face alone where a section is narrow; the current one ringed in gold), then Flees; a `meter`. The stage: the battle's (the area's picture as the battle cuts it, a night sky where there's none), the ghost at its centre floating in pixel steps (still when calm), its shadow, the timelines on top; at rest the ball on the ground (caught) or nobody (fled). The screen in every state (idle, after a Treat, a Treat and a throw playing, a miss, a flee, caught), the plate, the result card (caught: the battle's `CatchCard` with the Trick Ball, NEW, ✦ Shiny, where it went, a secret area; fled), the preview card, the rarity chip (a word, never colour alone), the two pictures, the rules |
+| `TrickGauge` / `TrickStage` / `NeedDie` / `TrickScreen` / `TrickPlate` / `TrickRecap` / `TrickCard` / `TierChip` / `TrickSprite` / `TrickRulesModal` / `SafariAskView` / `SafariPayButton` | Trick or Treat (§28) | The gauge: its value in numbers ("62/100") with what the last Treat or miss added (a gold "+18" that pops in; the added stretch flashes white twice once filled), its sections each in a colour of its own (red for a 6, the hardest, then orange, yellow, green and teal as it gets easier; lilac where no roll can) with a dark line between two, the flee zone striped night with a ghost, bright up to its value and as a pastel past it, the section it is in ringed in gold, the white post where it stands, and under each section the die a Trick Ball needs on a chip of the section's colour (`NeedDie`: the `Die` face with its "+", the face alone where a section is narrow; the current one ringed in gold), then Flees; a `meter`. The stage: the battle's (the area's picture as the battle cuts it, a night sky where there's none), the ghost at its centre floating in pixel steps (still when calm), its shadow, the timelines on top; at rest the ball on the ground (caught) or nobody (fled). The screen in every state (idle, after a Treat, a Treat and a throw playing, a miss, a flee, caught), the plate, the result card (caught: the battle's `CatchCard` with the Trick Ball, NEW, ✦ Shiny, where it went, a secret area; fled), the preview card, the rarity chip (a word, never colour alone), the two pictures, the rules; the Safari's round asked (free, paid, not enough ₽) and the area's CONTINUE with its price or free round |
 | `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
 | `PortalArt` / `PortalScene` / `PortalEntry` / `DistortionGauge` / `DistortionChoiceView` / `ExtraDie` / `ItemCycle` / `BoonConfirm` / `PortalCloseFx` / `RunBonuses` / `PortalVictoryView` / `GlitchSprite` / `DistortionFx` / `useUiGlitch` | Distortion World's portal run (§27) | The portal and the Distortion World on the pixel engine (turning; still); the breach (playing; held at its end, "Tap to continue ▼") and its pop-up over that end (TEAM / NOT NOW / READY!), back from TEAM (the pop-up at once), the pop-up on its own; the gauge of portals closed (fresh, under way, won); a distortion's boons (three, fewer), their icons (an extra die with its "+", a rare item turning through its items, still), a boon's confirm pop-up (BACK / CONFIRM); a portal closing; the run's bonuses (none, some); the victory (HEAL & START RAID over the green BACK TO THE WORLD); the screen's distortion; a distorted sprite at each motion level (full, short, off); the UI's glitch on a few pieces |
 | `PortalRaidBanner` / `PortalRaidCard` (`RaidCard portal`) / `RaidStageArt` / `DistortionGround` / `StageTear` / `RaidNpcPicker portal` / `BattleStage world="distortion"` | Giratina's area raid (§27) | The raid page in the violet night (`.dw-scope`): the portal banner with its plate, the card open and caught, the lock, START, the team; its NPC partners pop-up (the portal and Giratina distorted as its banner); the raid's stage (the Distortion World, Giratina distorted on its island) and a bar's tear. The entrance is on `/kitchen-sink/fx` |
@@ -837,7 +837,7 @@ each at most 340 px (docs/42 §3). The history is More details' button at the pa
 - **Capture Luck** (docs/25): a wild Pokémon that broke free may stay: the message says it broke free but didn't run
   away, the stage shows it back on its platform, and the panel's button is THROW AGAIN (back to the ball picker, "Snorlax
   is still here! Pick a ball and throw again."). Once per encounter; never a legendary or a raid.
-- **Who goes out** (the encounter preview's `LeadPicker`, and between a trainer's Pokémon): "Send out:" and a card per
+- **Who goes out** (the encounter preview's `LeadPicker`, and the send-out step before each of a trainer's Pokémon): "Send out:" and a card per
   team member, its mini and level, then its **whole name** on a line of its own (a size smaller on a phone when long,
   wrapping rather than "Bulba…"), types, HP, SWITCH and INFO. The one picked is ringed in gold and its button says
   ✓ SENT OUT, **white**: the red is FIGHT's. A team of one has nothing to pick: no "Send out" at all (docs/38 U5c).
@@ -861,10 +861,14 @@ each at most 340 px (docs/42 §3). The history is More details' button at the pa
   0. **One way forward**: CONTINUE (what Home's CONTINUE would start), or GO TO NEW AREA in its place when this fight
   cleared the area and opened the story's way forward (`latestOpenArea`), with **Home** the quiet white button beside
   it. With the game-feel pass (docs/38 §4) the card has its jingles, the XP bars fill in steps and the coins fly to
-  the top bar. Between a trainer's Pokémon, the card shows the trainer and the
-  sprite of the one about to come out, then **the team once**: the pick cards carry what each earned under them, above
-  INFO (`CardXp`: XP bar, +XP, level-up and milestone chips), no XP strip below (2026-11-03); a team of one keeps the
-  strip. Versus ends on its own card in the panel: Victory / Defeat and Back to
+  the top bar. **No card between a trainer's Pokémon** (2026-11-04): a beat after the K.O. has played, the next one
+  is sent out straight into the fight view (`sendNextFoe`, `battle.next`: no swipe, no entrance), then **the send-out
+  step**, the new foe in view: yours that fought stays out and picked (GO! keeps it in; a tap on another sends that
+  one instead), K.O.'d the first able picked; on auto GO! goes by itself after `PILOT_PICK_MS`, as at a trainer's start.
+  The line is only "Lass sent out Abra!" (and "Go! Pikachu!" when another went), never the trainer's or a rival's
+  opening again. An evolution the K.O. brought plays first. The fight's one card comes after the
+  last: every K.O.'s XP, level-ups and milestones, and **the ₽ paid only then, all at once** (the engine holds them,
+  `OwedGold`: lost or given up before the end, none is paid). Versus ends on its own card in the panel: Victory / Defeat and Back to
   Versus — once a fight is done, it's done (no rematch).
 - **Versus** plays on auto, to its end: no skip.
 - **The stage draws the forms the log has reached** (`Fx.dex`), not the state's: a Gigantamax still attacks as
@@ -1646,7 +1650,14 @@ and the battle's `catch.ts`; every state on `/kitchen-sink` (`TrickBits`), every
   - **The result card** rises over the panel as a battle's (`Overlay`): the title ("Gastly caught!" / "Gastly fled"),
     the catch as the battle's `CatchCard` (the Trick Ball rocking in, the ghost, Gotcha! and NEW, "was caught", where it
     went: the team, the Box, in place of a weaker copy, or into yours) or the ghost greyed with "It vanished into the
-    night", a secret area it opened (`SecretAreaCard`), then the round gauge and **CONTINUE** (back on the trail).
+    night", a secret area it opened (`SecretAreaCard`), then the round gauge and **HOME** beside **CONTINUE** (back on
+    the trail), in the battle card's `1fr / 2fr` row; CONTINUE alone inside a portal run or a race. A Safari's round
+    is asked before it begins (`SafariAskView`, a `Modal`, `max-w-sm`): the area's name as its title, a row with the
+    Safari Ball, the big line (the free round: "Your first round is free!"; a paid one: "A new round costs ₽100") and
+    under it the next rounds' price or the player's ₽; then **HOME** beside **LET'S GO!** / **PAY ₽100** (red) in the
+    `1fr / 1.4fr` row; PAY greyed out with "not enough Pokédollars" in red over the row. The area's CONTINUE carries the
+    price or "Free round" on a second line (`SafariPayButton`, as Home's CONTINUE). Every state on `/kitchen-sink`,
+    checked at 360 px in all ten languages (docs/61 §4.2).
 - **Motion** (§8), on the battle's stage with the game's pixel FX, never CSS tweens: a step plays as a timeline over the
   stage (`StageCanvas`), the page's sprite hidden meanwhile, as the battle's catch. **The Treat** (`treatTimeline`): the
   ghost perks up, the Treat flies from your side in an arc, a quarter turn at a time, trailing gold twinkles; the ghost
@@ -2554,7 +2565,8 @@ Switches' Beta testers list. The switch offers that 4th value only on a feature 
   gauge (`TimeGauge`, sky blue, red from 10 s) with its label.
 - **Mode tags** (`ModeTag`): CLASSIC in INFO's blue, DRAFT in gold. **The Bonus Shield** (`ShieldTag`): a small blue tag
   with a shield glyph, on the plate of the first picker's Pokémon in the fight and beside their name in the draft;
-  struck out on `shadow` once used. Its hit says "The Bonus Shield takes half: 38 → 19." with a SHIELD banner first.
+  struck out on `shadow` once used (it blocks a quarter of the hit, 2.9.2). Its hit says "The Bonus Shield softens the
+  hit: 38 → 29." with a SHIELD banner first.
 - **The coin**: a big pixel coin flips up and lands (14 steps of 100 ms; calm: landed at once), then the first picker's
   look ringed in gold, the headline and the shield's card; the draft opens 2.2 s later.
 - **The draft board**: the two rows of three slots (yours on top), the six picks' order strip (done: muted; now: red for
@@ -2563,9 +2575,11 @@ Switches' Beta testers list. The switch offers that 4th value only on a feature 
   {name} in a dock at the foot; their turn: a disabled "{name}'s turn". Their pick lands as a dialogue line for 2.6 s.
 - **The order** (Draft's, and Classic's "Ready to battle?"): their team (Draft: their three; Classic: three Poké Balls),
   ready or choosing; your three numbered, the lead's number red with a LEAD tag; tap two to swap; READY in the dock.
-- **The fight** is the battle screen (§14) with `versus.live` and `noSwitch`: your controls on your turn, the other's
-  dice shown as their moves arrive, AUTO-MODE as in the league, no Bag, no switching (the team's step keeps BACK and the
-  flag, which gives up the match). A chip at the top right says whose turn and the seconds left. The result card:
+- **The fight** is the battle screen (§14) with `versus.live`: your controls on your turn, the other's dice shown as
+  their moves arrive, **no AUTO-MODE** (each person plays their own turns; 2.9.2), no Bag. **Switching** as in every fight (docs/65 §17, 2.9.2): a pip,
+  the send-out's cards ("Switch (costs your turn)"), GO!; the flag in that step gives up the match. Their switch opens
+  the next battle on your screen, the one they sent in coming out; the dots on their plate count only K.O.s. A chip at
+  the top right says whose turn and the seconds left. The result card:
   VICTORY! / DEFEAT / DRAW, how many were left, the head to head, REMATCH (red) and BACK TO FRIENDS.
 - **The level** (docs/65 §16): the sheet's two cards under the modes (Lv.50 / Lv.100, each with its line), then the
   chips follow it. Elsewhere `LevelTag` beside `ModeTag`: Lv.100 in ink, Lv.50 plain (the banner, each step's head, the

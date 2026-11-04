@@ -500,6 +500,16 @@ export type RunEvent =
   /** A Titan beaten (docs/62 §7): what it left, its ₽ in the `gold` events' total. */
   | { kind: 'titan_reward'; dex: number; gold: number; items: { key: string; qty: number }[] }
 
+/**
+ * A trainer's ₽ held back until their last Pokémon falls (the user's call, 2026-11-04: paid at the end of the fight,
+ * not between their Pokémon). `bonus`: Cash Flow's part of it; `keys`: the rebattle's paid marks it settles.
+ */
+export interface OwedGold {
+  amount: number
+  bonus: number
+  keys?: string[]
+}
+
 export interface VictoryInput {
   areaId: string
   kind: 'wild' | 'trainer' | 'boss' | 'gym'
@@ -517,11 +527,15 @@ export interface VictoryInput {
   last?: boolean
   /** × this K.O.'s ₽, before the talents that add to it: a real player's team pays more (docs/54). */
   goldMultiplier?: number
+  /** The ₽ of this trainer's Pokémon before this one, held back: paid with the last K.O. (`last`). */
+  owed?: OwedGold
 }
 
 export interface VictoryResult {
   save: SaveData
   events: RunEvent[]
+  /** A trainer's K.O. before their last: its ₽ (and those before it), not paid yet. */
+  owed?: OwedGold
 }
 
 /**
@@ -602,6 +616,7 @@ export function applyVictory(
   const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
   const fighters = input.fighterUids?.length ? input.fighterUids : input.fighterUid
   let next = awardBattleXp(save, input.enemyLevel, fighters, area, progress.cleared, data, rng, events)
+  let owed: OwedGold | undefined
 
   // Gold — trainers only (gym leaders, the Elite Four and the Champion pay extra; a set trainer its prize, with its
   // last K.O.), more under Cash Flow
@@ -616,9 +631,23 @@ export function applyVictory(
         fighters,
         events,
       )
-    const { amount, bonus } = earnedGold(due, live)
-    next = { ...next, gold: next.gold + amount }
-    events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
+    const earned = earnedGold(due, live)
+    const amount = earned.amount + (input.owed?.amount ?? 0)
+    const bonus = earned.bonus + (input.owed?.bonus ?? 0)
+    // Before the trainer's last Pokémon, nothing is paid: it adds up, for the end of the fight.
+    if (input.last === false) owed = { amount, bonus }
+    else {
+      next = { ...next, gold: next.gold + amount }
+      events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
+    }
+  } else if (input.owed?.amount) {
+    // A set trainer's Pokémon before its prize pays nothing of its own; any ₽ held back waits on, or is paid now.
+    if (input.last === false) owed = input.owed
+    else {
+      next = { ...next, gold: next.gold + input.owed.amount }
+      const { amount, bonus } = input.owed
+      events.push(bonus ? { kind: 'gold', amount, bonus } : { kind: 'gold', amount })
+    }
   }
 
   // Boss
@@ -663,7 +692,7 @@ export function applyVictory(
 
   void now
   void newId
-  return { save: next, events }
+  return { save: next, events, ...(owed && { owed }) }
 }
 
 /**
