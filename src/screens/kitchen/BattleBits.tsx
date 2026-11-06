@@ -6,11 +6,16 @@ import {
   computeDamage,
   createRng,
   makeBattler,
+  POKE_TYPES,
   rollDie,
   statusesFromRoll,
+  type PokeType,
   type RolledDie,
 } from '@/engine'
 import { Toggle } from '@/components/Toggle'
+import { SortSelect } from '@/components/TypeSelect'
+import { gymPicture } from '@/fx/areaArt'
+import { typeName } from '@/lib/format'
 import { useGame, type CatchState, type CatchThrow } from '@/store/game'
 import { BagButton, DiceTray, Readout, KeyHints, TeamPips, type Preview } from '../battle/BattlePanel'
 import { BattleStage } from '../battle/BattleStage'
@@ -31,6 +36,12 @@ const SHORT: CatchThrow = {
   events: [],
   pendingCatchId: null,
 }
+// The stage behind the fight: the drawn one, or one of the 18 gym stages (docs/67).
+const STAGES: { id: PokeType | 'drawn'; label: string }[] = [
+  { id: 'drawn', label: 'Drawn background' },
+  ...POKE_TYPES.map((ty) => ({ id: ty, label: `${typeName(ty)} gym` })),
+]
+
 const CATCH_AFTER: [string, CatchThrow][] = [
   ['Short by 2, a Bait in the bag: asked', { ...SHORT, baitOffer: 'bait' }],
   ['The Bait thrown: +2, caught', { ...SHORT, bait: 2, total: 7, caught: true, baited: 'used' }],
@@ -44,6 +55,7 @@ export function BattleBits() {
   const [open, setOpen] = useState(false)
   const [fast, setFast] = useState(false)
   const [selected, setSelected] = useState<boolean[]>([false, false, true])
+  const [stage, setStage] = useState<PokeType | 'drawn'>('drawn')
   const { own, foe, team, dice } = useMemo(() => {
     const own = makeBattler({ uid: 'k-own', dex: 6, level: 36, hp: 80 }, data)
     const foe = { ...makeBattler({ uid: 'k-foe', dex: 130, level: 30, hp: 60 }, data), mega: false }
@@ -102,8 +114,10 @@ export function BattleBits() {
   }
   return (
     <>
+      <SortSelect value={stage} onChange={setStage} options={STAGES} label="Stage" className="w-full max-w-[400px]" />
       <div className="w-full max-w-[400px]">
         <BattleStage
+          art={stage === 'drawn' ? null : gymPicture(stage)}
           own={own}
           foe={foe}
           fx={fx}

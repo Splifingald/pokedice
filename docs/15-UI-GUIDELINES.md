@@ -519,6 +519,12 @@ Players shouldn't have to make many requests:
   - **Named in the admin**: every picture (and every battle scene) has a name and a few words on what it shows in
     `src/admin/pictureNames.ts`, which the admin's pickers list by group; `tests/admin-picture-names.test.ts` fails on
     a measured picture without one.
+  - **Gym stages** (docs/67): a gym battle (a leader, the Elite Four, a Champion, a trial) is fought on its type's
+    stage, `public/area-art/gym-<type>.png`, one per type: a whole 3:2 battle stage (400 × 268), not a scene to crop,
+    so it fills the stage (`stagePlacement`). Its horizon sits halfway down and its floor stays open where the zones
+    go. The type comes from the engine (`gymTypeOf`: the team's most shared type, a few leaders named). Not area
+    pictures: no line in `areaArtMap.ts` and no admin name; `tests/gym-stages.test.ts` checks every gym battle finds
+    one.
 - **Offline, say so**: when the device has no connection (`navigator.onLine` false, `useOnline` / `offlineOr` in
   `src/lib/online.ts`), what needs the server — Friends, Trades, the leaderboard, Versus, My messages, signing in and
   the cloud sync — says "You're offline. Check your connection." (`ui.common.offline`) where it would have said

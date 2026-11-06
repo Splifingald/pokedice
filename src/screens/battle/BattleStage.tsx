@@ -12,7 +12,7 @@ import { RaidStageArt, useStageDistortion } from '@/components/PortalFx'
 import { NightStageArt, useHaunt } from '@/components/NightmareFx'
 import { StageCanvas } from '@/components/StageCanvas'
 import { TrainerSprite } from '@/components/TrainerArt'
-import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
+import { stagePlacement, type AreaPicture } from '@/fx/areaArt'
 import { background, setArtUnderStage, zones } from '@/fx/scenes'
 import {
   loadSprite,
@@ -114,7 +114,7 @@ export function StageBackground({ art, zones = true }: { art: AreaPicture | null
   return (
     <>
       <Backdrop calm={calm || shown} />
-      {art && <AreaArt key={art.id} src={art.url} place={artPlacement(battleWindow(art))} onShown={() => setShown(true)} />}
+      {art && <AreaArt key={art.id} src={art.url} place={stagePlacement(art)} onShown={() => setShown(true)} />}
       {shown && zones && <Zones />}
     </>
   )
@@ -814,7 +814,7 @@ export function BattleStage({
         <AreaArt
           key={art.id}
           src={art.url}
-          place={artPlacement(battleWindow(art))}
+          place={stagePlacement(art)}
           onShown={() => setShownArt(art.id)}
         />
       )}
