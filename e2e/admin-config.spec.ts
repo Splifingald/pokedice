@@ -74,11 +74,19 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature (42 with the Versus global board, the hidden talents, the legendary intros, real-player
+  // One row per feature (47 with the Versus global board, the hidden talents, the legendary intros, real-player
   // battles, the champion intros, welcome back, the outfits, friendship, 2.9's four side quests and five region
-  // flavours, Friend Battles, 2.9.1's rival loss and real-player level match, the rival teams matched): its name and
-  // its switch, nothing else; energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(42)
+  // flavours, Friend Battles, 2.9.1's rival loss and real-player level match, the rival teams matched, 2.9.3's five
+  // players' suggestions): its name and its switch, nothing else; energy and the retired switches are gone.
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(47)
+  for (const name of [
+    'Raid favourites',
+    'Shiny tiles in the Box',
+    'PASS on an owned catch',
+    "Shiny star on an area's Pokémon",
+    'Auto-mode HEAL button',
+  ])
+    await expect(page.getByRole('radiogroup', { name: `${name}: who has it` })).toBeVisible()
   // "On for beta testers" only where the server reads it (docs/65 §3): Friend Battles, not the others.
   const battles = page.getByRole('radiogroup', { name: 'Friend Battles: who has it' })
   await expect(battles.getByRole('radio', { name: 'On for beta testers' })).toBeVisible()

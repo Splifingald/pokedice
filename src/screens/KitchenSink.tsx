@@ -82,6 +82,7 @@ import { TalentBits } from './kitchen/TalentBits'
 import { OutfitBits } from './kitchen/OutfitBits'
 import { AreaVersusBits } from './kitchen/AreaVersusBits'
 import { IdleBits } from './kitchen/IdleBits'
+import { SuggestionBits } from './kitchen/SuggestionBits'
 import { ShinyDexBits } from './kitchen/ShinyDexBits'
 import { UnownDexBits } from './kitchen/UnownDexBits'
 import { TutorialBits } from './kitchen/TutorialBits'
@@ -893,6 +894,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Idle mode and the play styles: the style cards (each picked, none), a new game's question, the area's switch (AUTO-MODE, Idle mode; off, on, the tip), the autopilot's note, rules (docs/36)">
         <IdleBits />
+      </Section>
+      <Section title="Players' suggestions: the favourite toggle and heart, shiny Box tiles, the area grid's shiny star, PASS on an owned catch, auto-mode's HEAL offer (docs/67)">
+        <SuggestionBits />
       </Section>
       <Section title="Dice throws: a tray at each motion level (full, short, the OS's calm drop, off), reroll of the picked dice only, slow motion, frozen mid-throw, the status faces, the foe's size, at rest (docs/37)">
         <DiceThrowBits />

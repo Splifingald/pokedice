@@ -51,8 +51,13 @@ import {
   legendCinemaOn,
   championCinemaOn,
   roadblockOf,
+  canPassCatch,
+  autoCureItem,
+  autoCureOn,
+  AUTO_CURE_MS,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
+import { AutoCureOffer } from '@/components/AutoCure'
 import { feelSound } from '@/audio/feel'
 import { sfx } from '@/audio/sfx'
 import { useBattleMusic } from '@/audio/useBattleMusic'
@@ -613,6 +618,12 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     }
   }, [handReady, held, quick, battle.log.length, dispatch])
 
+  // Auto-mode's HEAL (docs/67): stunned with its cure in the Bag, the turn waits a few seconds for a tap before it
+  // passes. `cureGone`: the log's length when the offer ran out, so that turn passes and the next stun asks again.
+  const cureKey = auto && stunned && !versus && autoCureOn(data) ? autoCureItem(st, data, save?.inventory) : null
+  const [cureGone, setCureGone] = useState(-1)
+  const cureHold = !!cureKey && cureGone !== battle.log.length
+
   // Auto-mode: every player move once the log has caught up. A reroll shows its selected dice for a moment first.
   const autoPhase =
     st.phase === 'player_roll' ||
@@ -620,7 +631,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     st.phase === 'player_stunned' ||
     st.phase === 'player_switch'
   useEffect(() => {
-    if (!auto || !ready || intro || held || !autoPhase) return
+    if (!auto || !ready || intro || held || !autoPhase || cureHold) return
     let inner: ReturnType<typeof setTimeout> | undefined
     const t = setTimeout(
       () => {
@@ -639,7 +650,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       clearTimeout(t)
       clearTimeout(inner)
     }
-  }, [auto, ready, intro, held, autoPhase, st.phase, data, quick, pace, battle.log.length, dispatch, live])
+  }, [auto, ready, intro, held, autoPhase, cureHold, st.phase, data, quick, pace, battle.log.length, dispatch, live])
 
   const usefulItems = ownedItems.filter(([k]) => st.player.some((p) => itemHelps(k, p)))
   const showSwitch = data.config.allowVoluntarySwitch
@@ -887,6 +898,10 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     return step?.do === 'keepBait' || step?.do === 'retry' ? step.do : null
   })
   const idlePick = idleCatch?.startsWith('throw:') ? idleCatch.slice(6) || null : undefined
+  // PASS (docs/67): a Pokémon already owned can be left without a throw; Idle passes by itself (above).
+  const passOffered = useGame(
+    (s) => !idleCatch && !!s.save && !!s.run.catch && canPassCatch(s.save, s.data, s.run.catch.dex, s.run.catch.shiny),
+  )
   const idleAct = useRef<() => void>(() => {})
   idleAct.current = () => {
     if (idleCatch === 'keepBait') onBait(false)
@@ -1147,6 +1162,15 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         <Chip tone="plain">{t('ui.battle.autoMode')}</Chip>
         {t('ui.battle.autoNote')}
       </p>
+    ) : cureKey && cureHold && data.items[cureKey] ? (
+      <AutoCureOffer
+        name={active.name}
+        item={data.items[cureKey]!}
+        ms={AUTO_CURE_MS}
+        hold={held}
+        onUse={() => dispatch({ t: 'USE_ITEM', key: cureKey, targetUid: active.uid })}
+        onTimeout={() => setCureGone(battle.log.length)}
+      />
     ) : null
   else if (stunned)
     actions = (
@@ -1496,6 +1520,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
                 revealed={revealed}
                 onBait={onBait}
                 onRetry={onRetry}
+                onPass={passOffered ? passCatch : undefined}
               />
             ) : over ? (
               <BottomDock>{actions}</BottomDock>

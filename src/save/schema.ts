@@ -488,6 +488,8 @@ export const saveSchema = z.object({
   // The shiny Pokédex (docs/39): each region's species owned shiny, and its rules seen.
   shinyDex: z.record(z.array(z.number().int().min(1)).max(3000)).optional(),
   shinyDexSeen: z.boolean().optional(),
+  // The Pokémon wearing the heart (docs/67): an odd list (an edited save) is dropped, never the save.
+  favourites: z.array(z.string().min(1).max(80)).max(600).optional().catch(undefined),
   // The Unown Pokédex (docs/41): each region's letters, the prizes paid, its rules seen.
   unownDex: z.record(z.array(z.string().max(1)).max(UNOWN_LETTERS.length)).optional(),
   unownDexPaid: z.array(z.string().max(40)).max(40).optional(),

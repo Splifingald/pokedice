@@ -77,6 +77,7 @@ export function CatchPanel({
   onRetry,
   docked = false,
   raid = false,
+  onPass,
 }: {
   c: Catch
   /** The ball Idle picked for this throw (docs/36; null: none): shown chosen, whatever was tapped. */
@@ -94,6 +95,11 @@ export function CatchPanel({
   docked?: boolean
   /** A raid's catch: the Raid Ball (docs/44) is offered too. */
   raid?: boolean
+  /**
+   * PASS (docs/67): set for a Pokémon already owned (`canPassCatch`), leaving it without a throw. With a choice to
+   * make, no button presses itself.
+   */
+  onPass?: () => void
 }) {
   const Dock = docked ? BottomDock : Plain
   const { t } = useT()
@@ -217,6 +223,12 @@ export function CatchPanel({
   // One ball or none in the bag, or a catch that can't miss: nothing to pick, the throw is the only way on, so it
   // loads and goes by itself (the rework).
   const single = sure || options.length === 1
+  const foeName = data.species[c.dex]?.name ?? t('ui.common.pokemon')
+  const pass = onPass && (
+    <PixelButton size="sm" className="shrink-0" title={t('ui.catch.passTitle', { name: foeName })} onClick={onPass}>
+      {t('ui.catch.pass')}
+    </PixelButton>
+  )
   return (
     <>
       {/* Each ball says its own chance: no formula line, no tip (the rework). */}
@@ -235,7 +247,17 @@ export function CatchPanel({
         </p>
       )}
       <Dock>
-        {single ? (
+        {single && pass ? (
+          // Owned already: the throw or PASS, the player's pick, so neither goes by itself.
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-stretch gap-2">
+            <PixelButton size="lg" title={t('ui.catch.passTitle', { name: foeName })} onClick={onPass}>
+              {t('ui.catch.pass')}
+            </PixelButton>
+            <PixelButton variant="primary" size="lg" onClick={() => onThrow(null)}>
+              {sure ? t('ui.catch.catch') : t('ui.catch.roll')}
+            </PixelButton>
+          </div>
+        ) : single ? (
           <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={() => onThrow(null)}>
             {sure ? t('ui.catch.catch') : t('ui.catch.roll')}
           </AutoButton>
@@ -243,7 +265,14 @@ export function CatchPanel({
           // A choice of balls (docs/42): each one is the throw, in the thumb's reach. No ball picked first and a
           // ROLL TO CATCH after it: the tap that chooses is the tap that throws.
           <div className="grid gap-1.5" role="group" aria-label={t('ui.catch.ballLegend')}>
-            <p className="m-0 text-center font-pixel-sm text-[16px] leading-none text-muted">{t('ui.catch.tapBall')}</p>
+            {pass ? (
+              <div className="flex items-center justify-between gap-2">
+                <p className="m-0 font-pixel-sm text-[16px] leading-none text-muted">{t('ui.catch.tapBall')}</p>
+                {pass}
+              </div>
+            ) : (
+              <p className="m-0 text-center font-pixel-sm text-[16px] leading-none text-muted">{t('ui.catch.tapBall')}</p>
+            )}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(64px,1fr))] gap-1.5">
               {options.map((o) => {
                 const item = o.key ? data.items[o.key] : null

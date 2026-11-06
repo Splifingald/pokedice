@@ -16,6 +16,7 @@ import {
 } from '@/engine'
 import { dexNo } from '@/lib/format'
 import { useT } from '@/i18n/react'
+import { FavouriteToggle } from '@/components/Favourite'
 import { evolveAtLevelCap, letHomerGo, reorderTeam } from '@/store/actions'
 import { pushToast, useGame } from '@/store/game'
 import { sendPokemonOn } from '@/store/regions'
@@ -231,7 +232,13 @@ function SheetStack({
               inst={inst}
               onOpenDex={openDex}
               beforeMatchups={instExtra?.(inst)}
-              top={<LevelCapEvolvePanel inst={inst} />}
+              top={
+                <>
+                  {/* The heart (docs/67): the raid team picker lists it first. */}
+                  <FavouriteToggle inst={inst} />
+                  <LevelCapEvolvePanel inst={inst} />
+                </>
+              }
             >
               <SendOnPanel inst={inst} onSent={onClose} />
             </PokemonSheet>

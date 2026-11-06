@@ -25,6 +25,7 @@ export function MonTile({
   icon,
   level,
   selected,
+  shiny,
 }: {
   dex: number
   name: ReactNode
@@ -43,6 +44,8 @@ export function MonTile({
   level?: ReactNode
   /** Shown beside the grid right now (said as the current one). */
   selected?: boolean
+  /** A shiny, on a gold ground (docs/67): the Box's menu icon is the plain one, so the star alone was easy to miss. */
+  shiny?: boolean
 }) {
   return (
     <button
@@ -53,7 +56,7 @@ export function MonTile({
       aria-current={selected || undefined}
       className={cx(
         'relative grid w-full justify-items-center gap-0.5 px-1 pb-[7px] pt-[3px] shadow-ring-line hover:shadow-ring',
-        missing || locked ? 'bg-well' : 'bg-paper',
+        missing || locked ? 'bg-well' : shiny ? 'bg-gold-pale' : 'bg-paper',
         level != null && 'pt-[14px]',
         selected && 'outline outline-[3px] outline-offset-1 outline-gold',
       )}

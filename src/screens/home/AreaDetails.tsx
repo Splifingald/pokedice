@@ -29,6 +29,8 @@ import {
   speciesTime,
   wildShare,
   type DayTime,
+  routeShiniesOn,
+  shinyDexOf,
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BadgeIcon } from '@/components/BadgeIcon'
@@ -282,6 +284,8 @@ export function DetailsBody({ area }: { area: Area }) {
   const locked = st === 'locked'
   const side = playerSideOf(save)
   const avg = teamAverageLevel(save)
+  // The species already in this region's shiny Pokédex (docs/67, Ceurana's ask): a star on their cards.
+  const shinyOwned = new Set(routeShiniesOn(data) ? shinyDexOf(save) : [])
 
   // The gym, or the League's battles.
   const gyms = gymsFor(area, data, side)
@@ -536,6 +540,15 @@ export function DetailsBody({ area }: { area: Area }) {
                         size={12}
                         title={t('ui.enc.caught')}
                         className="absolute right-1.5 top-1.5"
+                      />
+                    )}
+                    {/* Under the ball: a shiny of it is in the shiny Pokédex, so a hunt can skip it. */}
+                    {shinyOwned.has(m.dex) && (
+                      <PixelIcon
+                        name="star"
+                        size={12}
+                        title={t('ui.home.shinyOwned')}
+                        className="absolute right-1.5 top-[24px]"
                       />
                     )}
                     {m.time && (

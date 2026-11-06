@@ -16,6 +16,7 @@ import {
   type PokemonInstance,
   type PokeType,
   outfitOf,
+  shinyTilesOn,
 } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -52,6 +53,8 @@ export function TeamScreen() {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
+  // Shinies on a gold ground in the Box (docs/67).
+  const shinyTiles = shinyTilesOn(data)
   // Inside a Pokémon Center, or at a portal's way in (docs/28), the team can change (the engine says where): a
   // Pokémon's sheet then has the Center's moves at its foot.
   const swaps = useGame((s) => !!s.save && teamSwapsOpen(s.save, s.data, s.run))
@@ -234,6 +237,7 @@ export function TeamScreen() {
                   level={reviving ? undefined : level}
                   sub={reviving ? until : undefined}
                   selected={current === p.id}
+                  shiny={shinyTiles && p.shiny}
                   icon={reviving ? p.egg ? <EggSprite size={34} /> : <ItemSprite item={fossil} size={40} /> : undefined}
                   label={[
                     name(p),
@@ -276,6 +280,7 @@ export function TeamScreen() {
                   level={t('ui.common.level.short', { n: p.level })}
                   locked
                   selected={current === p.id}
+                  shiny={shinyTiles && p.shiny}
                   label={[
                     name(p),
                     p.nickname ? speciesName(p) : null,
