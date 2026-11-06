@@ -5,7 +5,7 @@ import { AnimatePresence, motion, steps } from 'framer-motion'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { flushSync } from 'react-dom'
 import { talentTier, type Battler, type Side } from '@/engine'
-import { AreaArt } from '@/components/AreaArt'
+import { AreaArt, artSeen } from '@/components/AreaArt'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { TIER_ICON } from '@/components/Talent'
 import { RaidStageArt, useStageDistortion } from '@/components/PortalFx'
@@ -109,7 +109,8 @@ function Backdrop({ calm }: { calm: boolean }) {
  */
 export function StageBackground({ art, zones = true }: { art: AreaPicture | null; zones?: boolean }) {
   const { calm } = useMotion()
-  const [shown, setShown] = useState(false)
+  // A picture seen before is there from the first frame (AreaArt): its zones and the still backdrop with it.
+  const [shown, setShown] = useState(() => !!art && artSeen(art.url))
   return (
     <>
       <Backdrop calm={calm || shown} />
@@ -765,7 +766,8 @@ export function BattleStage({
   })
   const artId = art?.id ?? null
   // Which picture has loaded and shows (the drawn background stands in until then).
-  const [shownArt, setShownArt] = useState<string | null>(null)
+  // A picture seen before (the previous fight's, a trainer's next Pokémon) shows from the first frame (AreaArt).
+  const [shownArt, setShownArt] = useState<string | null>(() => (art && artSeen(art.url) ? art.id : null))
   const artShown = !!artId && shownArt === artId
   // A move keeps both Pokémon animated on the page and moves them (`LiveSprite`); the canvas drew still copies, which
   // froze them at every attack (the user, 2026-10-27). Over a picture or a world only (the drawn background is the
