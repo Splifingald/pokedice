@@ -18,8 +18,8 @@ export class RaidIntro {
   readonly reveal: number
   private readonly run: Run
   private last = -1
-  /** The words' pixel size: 1 at 180 art pixels high, 2 for a full 1080p frame at ×4. */
-  private readonly u: number
+  /** The name's pixel size: 4 on a full 1080p frame (480 art pixels wide), 3 in a tile; the bars follow under it. */
+  private readonly s: number
 
   constructor(
     dex: number,
@@ -31,7 +31,7 @@ export class RaidIntro {
     this.reveal = cinema.reveal
     this.run = new Run(() => cinema.make({ mon: mon(dex), w, h }), { w, h })
     this.cv = canvas(w, h)
-    this.u = Math.max(1, Math.round(h / 180))
+    this.s = w >= 400 ? 4 : 3
   }
 
   /**
@@ -66,23 +66,22 @@ export class RaidIntro {
     const e = t - W.name / 1000
     if (e < 0) return
     const g = this.cv.g
-    const u = this.u
+    // At the game's proportions, a strip along the top: clear of the legend hovering under it.
     const p = Math.min(1, e / 0.2)
-    const s = Math.max(3 * u, Math.round((6 - 3 * ease.outBack(p, 1.6)) * u))
+    const s = Math.max(this.s, Math.round(this.s * 2 - this.s * ease.outBack(p, 1.6)))
     const nw = textWidth(this.name, s)
-    text(g, 'RAID BATTLE', this.w / 2 - textWidth('RAID BATTLE', u) / 2, 10 * u, '#ffbe2e', '#24304f', u)
-    text(g, this.name, this.w / 2 - nw / 2, 22 * u, '#fbfdff', '#24304f', s, '#c4382a')
-    const pitch = BAR_PITCH * u
+    text(g, 'RAID BATTLE', this.w / 2 - textWidth('RAID BATTLE', 1) / 2, 10, '#ffbe2e', '#24304f', 1)
+    text(g, this.name, this.w / 2 - nw / 2, 22, '#fbfdff', '#24304f', s, '#c4382a')
+    const y = 22 + 7 * this.s + 6
     for (let i = 0; i < BARS; i++) {
       const f = Math.max(0, Math.min(1, (t - W.bars / 1000 - i * 0.25) / 0.24))
-      const bx = this.w / 2 - (BARS * pitch - 4 * u) / 2 + i * pitch
-      const y = 49 * u
+      const bx = this.w / 2 - (BARS * BAR_PITCH - 4) / 2 + i * BAR_PITCH
       g.fillStyle = '#fbfdff'
-      g.fillRect(bx - u, y, pitch - 2 * u, 7 * u)
+      g.fillRect(bx - 1, y, BAR_PITCH - 2, 7)
       g.fillStyle = '#24304f'
-      g.fillRect(bx, y + u, pitch - 4 * u, 5 * u)
+      g.fillRect(bx, y + 1, BAR_PITCH - 4, 5)
       g.fillStyle = ['#34c97a', '#ffbe2e', '#ff5a4a'][i]!
-      g.fillRect(bx + u, y + 2 * u, Math.round((pitch - 6 * u) * f), 3 * u)
+      g.fillRect(bx + 1, y + 2, Math.round((BAR_PITCH - 6) * f), 3)
     }
   }
 }
