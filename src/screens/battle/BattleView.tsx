@@ -54,6 +54,7 @@ import {
   canPassCatch,
   autoCureItem,
   AUTO_CURE_MS,
+  gymTypeOf,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { AutoCureOffer } from '@/components/AutoCure'
@@ -73,7 +74,7 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { TypeMatchups } from '@/components/TypeMatchups'
 import { BattleDayTime } from '@/components/DayNight'
 import { BattleWeather, WeatherLayer } from '@/components/Weather'
-import { pictureOf, versusPicture } from '@/fx/areaArt'
+import { gymPicture, pictureOf, versusPicture } from '@/fx/areaArt'
 import { ballOfItem } from '@/fx/scenes'
 import { loadPicture, loadSprite, pictureKey, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
@@ -381,8 +382,13 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   // A Versus fight has nothing to do with the area the player may be standing in.
   const enc = versus ? null : run.encounter
-  // The area's picture is the battle's background; Versus is fought at the Pokémon League.
-  const art = useMemo(() => (versus ? versusPicture() : pictureOf(run.areaId)), [versus, run.areaId])
+  // The area's picture is the battle's background; Versus is fought at the Pokémon League; a gym battle (a leader,
+  // the Elite Four, a Champion, a trial) on its type's gym stage (docs/67).
+  const gymType = enc?.kind === 'gym' ? gymTypeOf(enc.name, enc.team, data) : null
+  const art = useMemo(
+    () => (versus ? versusPicture() : (gymPicture(gymType) ?? pictureOf(run.areaId))),
+    [versus, gymType, run.areaId],
+  )
   // Day and night (docs/32): in Johto, the stage's corner says which half of the day the fight is in.
   const dayTime = useAreaDayTime(versus ? null : run.areaId)
   const isTrainerFight = !!versus || enc?.kind === 'trainer' || enc?.kind === 'gym'

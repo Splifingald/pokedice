@@ -45,14 +45,15 @@ describe('area pictures (public/area-art)', () => {
     for (const id of Object.keys(ART_GEOMETRY)) expect(existsSync(file(id)), file(id)).toBe(true)
   })
 
-  it('keeps every picture at 400 px wide: square scenes, and the 3:2 lab', () => {
+  it('keeps every picture at 400 px wide: square scenes, and the 3:2 lab and gym stages', () => {
     const files = readdirSync(DIR).filter((f) => f.endsWith('.png'))
     expect(files.length).toBeGreaterThan(0)
     for (const f of files) {
       const id = f.replace(/\.png$/, '')
       const [w, h] = size(id)
       expect(w, f).toBe(ART_PX)
-      if (id === 'moment-lab') expect(Math.abs(h! / w! - 2 / 3), f).toBeLessThan(0.01)
+      // The lab and the gym stages (docs/67, measured in gym-stages.test.ts) are whole 3:2 stages.
+      if (id === 'moment-lab' || id.startsWith('gym-')) expect(Math.abs(h! / w! - 2 / 3), f).toBeLessThan(0.01)
       else {
         expect(h, f).toBe(ART_PX)
         expect(ART_GEOMETRY[id], `${f} is used by no area`).toBeTruthy()

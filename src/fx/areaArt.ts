@@ -4,6 +4,7 @@
 // zones drawn on top. Geometry is measured in the Home scene's 288 × 276 art pixels; on screen the picture keeps its
 // own 400 px resolution (nearest-neighbour), so thin lines survive. Areas without a picture keep their painted scene,
 // which is also what shows while a picture loads.
+import type { PokeType } from '@/engine'
 import { clamp } from './pixel'
 import { AREA_ART, ART_GEOMETRY } from './areaArtMap'
 
@@ -32,9 +33,21 @@ export interface ArtGeometry {
 export interface AreaPicture extends ArtGeometry {
   id: string
   url: string
+  /** A whole battle stage (3:2, 400 × 268), not a scene the battle crops: the picture fills the stage. */
+  stage?: boolean
 }
 
 export const artUrl = (id: string) => `/area-art/${id}.png`
+
+/**
+ * The stage a gym battle of this type is fought on (docs/67; the type from the engine's gymTypeOf): one picture per
+ * type, public/area-art/gym-<type>.png, a whole battle stage with its horizon halfway down, where the zones expect it.
+ * Null (no type): the area's picture.
+ */
+export function gymPicture(type: PokeType | null | undefined): AreaPicture | null {
+  if (!type) return null
+  return { id: `gym-${type}`, url: artUrl(`gym-${type}`), stage: true, horizon: null, walk: [0, 0, 0, 0] }
+}
 
 /** The professor's lab, the stage of picking a partner (240 × 160, drawn 400 px wide). */
 export const LAB_ART = artUrl('moment-lab')
@@ -85,6 +98,10 @@ export function artPlacement(win: { x: number; y: number; w: number; h: number }
 
 /** The whole Home scene. */
 export const homeWindow = () => ({ x: 0, y: 0, w: SCENE_W, h: SCENE_H })
+/** Where a picture goes on the battle stage: a whole-stage one (a gym's) fills it; an area's shows its battle window. */
+export const stagePlacement = (p: AreaPicture) =>
+  p.stage ? { left: '0%', top: '0%', width: '100%', height: '100%' } : artPlacement(battleWindow(p))
+
 /** The battle's 240 × 160. */
 export const battleWindow = (p: ArtGeometry) => ({
   x: (SCENE_W - BATTLE_W) / 2,
