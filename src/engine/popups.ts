@@ -9,13 +9,13 @@
 // nothing back.
 //
 // Home's notices (`homeNotices`, below; docs/43 §7) took what never needed a pop-up over Home: what asks nothing of the
-// player (Prof. Oak's leaderboard tip, his invite, Support me) and the opening of every feature with a page of its own
+// player (Prof. Oak's leaderboard tip, his invite) and the opening of every feature with a page of its own
 // (the Day Care, Versus, the special events, Trades, the shiny and Unown Pokédexes, the raid overhaul, the
 // Underground), whose rules are now a card at the top of that page (`RulesCard`).
 // Every "seen" flag stays where it was in the save.
 import { calendarRulesDue } from './calendar'
 import { dayCareTutorialDue, leaderboardTutorialDue } from './daycare'
-import { donationDue } from './donation'
+import { supportPopupDue, type SupportSession } from './donation'
 import { dayNightRulesDue } from './dayNight'
 import { eventUnlockDue } from './events'
 import { extremeRulesDue, isExtreme } from './extreme'
@@ -70,6 +70,11 @@ export interface PopupContext {
   inviteReward?: boolean
   /** Push notifications' question was asked by a page, and waits for its turn. */
   pushAsking?: boolean
+  /**
+   * Support me's clock (engine/donation): the player's sessions on this device, the device's time and local day. Absent,
+   * it never opens by itself.
+   */
+  support?: { session: SupportSession | null; now: number; today: string }
   /** The pop-up on screen now: it keeps its turn while it is still due, rather than give way to one that just came. */
   showing?: OneTimePopup | null
 }
@@ -138,6 +143,14 @@ const QUEUE = {
   },
   /** Push notifications' question, once a page has asked it. */
   push: { due: (_s, _d, c) => !!c.pushAsking },
+  /**
+   * Support me (engine/donation), on Home only: past the third session, 5 minutes into this one, a badge won, once a
+   * day. Last: it asks for nothing the game needs.
+   */
+  donation: {
+    due: (s, d, c) => !!c.support && supportPopupDue(s, d, c.support.session, c.support.now, c.support.today),
+    away: (p) => p !== '/home',
+  },
 } satisfies Record<string, Entry>
 
 /**
@@ -147,7 +160,6 @@ const QUEUE = {
 export type RetiredPopup =
   | 'dayCare'
   | 'leaderboard'
-  | 'donation'
   | 'event'
   | 'versus'
   | 'share'
@@ -194,7 +206,7 @@ export interface NoticeContext {
  * page's rules card is read: the feature's own "seen" flag), then what asks nothing of the player. The flags are the
  * pop-ups' own (`dayCare.visited`, `versusRulesSeen`, `events.seen`, `trades.rulesSeen`,
  * `shinyDexSeen`, `unownDexSeen`, `invites.rulesSeen`, `events.raidRulesSeen`, `underground.rulesSeen`,
- * `events.calendarRulesSeen`, `leaderboardVisited`, `donationSeen`, the invite's per-region mark on the device).
+ * `events.calendarRulesSeen`, `leaderboardVisited`, the invite's per-region mark on the device).
  */
 // The General upgrades and the invite rewards have no notice (the user's call, 2026-11-02): their rules card waits on
 // their page.
@@ -225,8 +237,8 @@ const NOTICES = {
   /** Prof. Oak's invite, at a region's 2nd badge (INVITE shares the link). */
   share: (s: SaveData, d: GameData, c: NoticeContext) =>
     !c.shareSeen && badgeCase(s, d).filter((b) => b.earned).length >= SHARE_PROMPT_BADGES,
-  /** Support me, once per region at its 5th badge (SUPPORT ME opens its three asks). */
-  donation: (s: SaveData, d: GameData) => donationDue(s, d),
+  // Support me left the notices for the queue again (the user's call, 2026-11-06): its own pop-up, on Home, 5 minutes
+  // into a session.
 } satisfies Record<string, (s: SaveData, d: GameData, c: NoticeContext) => boolean>
 
 export type HomeNotice = keyof typeof NOTICES

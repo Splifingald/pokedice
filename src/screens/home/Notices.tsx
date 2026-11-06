@@ -1,6 +1,6 @@
 // Home's notices (docs/43 §7): what used to open over Home as a one-time pop-up but asks nothing there, now a card in
 // the page above the sections. A feature with a page of its own opening ("Versus is open!", with the way to its page,
-// whose rules card explains it), Prof. Oak's leaderboard tip, Support me, his invite, and a new region on offer once
+// whose rules card explains it), Prof. Oak's leaderboard tip, his invite, and a new region on offer once
 // its own pop-up has been seen. One at a time, the first due (engine/popups.ts `homeNotices`): Home stays a place to
 // play, not a board of messages. A feature's ✕ puts its notice away for this visit only; its page's GOT IT for good.
 import { useId, useState } from 'react'
@@ -20,7 +20,6 @@ import { LeaderboardNotice } from '@/components/LeaderboardTutorial'
 import { NoticeCard } from '@/components/NoticeCard'
 import { PixelButton } from '@/components/PixelButton'
 import { useShareSeen } from '@/components/ShareTutorial'
-import { SupportNotice, useDonationReady } from '@/components/SupportModal'
 import { regionPicture } from '@/fx/regionArt'
 import { useGame } from '@/store/game'
 import { regionOnOffer } from '@/store/regions'
@@ -177,12 +176,11 @@ export function HomeNotices({ onRegionGo }: { onRegionGo: () => void }) {
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
   const now = useServerNow(30_000)
   const shareSeen = useShareSeen()
-  const donationReady = useDonationReady()
   const [, rerender] = useState(0)
   const inside = useInWorld().inside
   // Prof. Oak's invite waits on the friends list, not here (the user's call, 2026-10-27).
   const due = homeNotices(save, data, { shareSeen, signedIn, now }).filter(
-    (n) => n !== 'share' && !putAway.has(n) && (n !== 'donation' || donationReady),
+    (n) => n !== 'share' && !putAway.has(n),
   )
   // The region's own pop-up opens first, once (RegionBar); afterwards the offer waits here, at the top of the page.
   // Not inside a small world, where no other region is offered (docs/21).
@@ -204,7 +202,6 @@ export function HomeNotices({ onRegionGo }: { onRegionGo: () => void }) {
   const first = due[0]
   if (!first || !save) return null
   if (first === 'leaderboard') return <LeaderboardNotice />
-  if (first === 'donation') return <SupportNotice />
   const target = featureTarget(first, save, data, t)
   if (!target) return null
   return (
