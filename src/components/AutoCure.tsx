@@ -57,3 +57,28 @@ export function AutoCureOffer({
     </div>
   )
 }
+
+// Stunned (frozen, paralysed) with its cure in the Bag, by hand (the user's ask, 2026-11-06): the cure one tap away in
+// red, SKIP TURN beside it in white. The engine picks the item (`autoCureItem`); the Bag still holds the others.
+export function StunCureActions({
+  item,
+  onUse,
+  onPass,
+}: {
+  item: ItemDef
+  onUse: () => void
+  onPass: () => void
+}) {
+  const { t } = useT()
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
+      <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={onPass}>
+        {t('ui.battle.skipTurn')}
+      </PixelButton>
+      <PixelButton variant="primary" size="lg" className="whitespace-nowrap px-2" onClick={onUse}>
+        <ItemSprite item={item} size={24} />
+        {t('ui.battle.autoCure', { item: item.name })}
+      </PixelButton>
+    </div>
+  )
+}

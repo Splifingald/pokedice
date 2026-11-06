@@ -2,7 +2,7 @@
 // raid card's heart, Box tiles plain and shiny (and shiny picked), the area grid's shiny star, the catch panel's PASS,
 // and auto-mode's HEAL offer (running, held by a dialog).
 import { useState, type ReactNode } from 'react'
-import { AutoCureOffer } from '@/components/AutoCure'
+import { AutoCureOffer, StunCureActions } from '@/components/AutoCure'
 import { FavouriteHeart, FavouriteRow } from '@/components/Favourite'
 import { PixelIcon } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
@@ -118,6 +118,9 @@ export function SuggestionBits() {
           </Frame>
           <Frame name="AutoCureOffer · held by a dialog (no gauge)">
             <AutoCureOffer name="Pikachu" item={cure} ms={3000} hold onUse={() => {}} onTimeout={() => {}} />
+          </Frame>
+          <Frame name="StunCureActions · stunned by hand, its cure in the Bag: SKIP TURN and the cure">
+            <StunCureActions item={cure} onUse={() => {}} onPass={() => {}} />
           </Frame>
         </>
       )}

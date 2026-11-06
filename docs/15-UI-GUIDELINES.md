@@ -2612,6 +2612,8 @@ has a rules pop-up or INFO: each is explained where it happens, or only changes 
 - **Auto-mode's HEAL** (`components/AutoCure.tsx`): in the battle panel's actions, a `role="status"` line
   and a red `lg` "USE {item}" with the item's sprite and a 5 px gauge at its foot draining (the reverse of
   `AutoButton`'s filling: here the time runs out and the turn passes). A dialog over the fight holds it, gauge hidden.
+  By hand (`StunCureActions`), the same cure with no gauge: a white SKIP TURN and a red "USE {item}" side by side
+  (REROLL / ATTACK's grid), the cure the main action.
 
 **Area pictures on a new fight** (docs/67 §9): a picture already shown this session (`artSeen`) is there on the battle
 screen's first frame, decoded with it and with no fade, so a trainer's next Pokémon (a new fight, a new screen) never
