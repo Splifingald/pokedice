@@ -385,24 +385,34 @@ test('a region put off waits on Home as its picture: GO opens the lab, NOT NOW p
   await expect(page.getByRole('region', { name: 'Johto is available' })).toHaveCount(0)
 })
 
-test('Support me is a notice on Home at the 5th badge, never a pop-up; its flag keeps it away', async ({
-  page,
-}) => {
+test('Support me opens by itself on Home, 5 minutes into a session past the third, once a day', async ({ page }) => {
   const donation = { ...DEFAULT_CONFIG.donation, enabled: true, kofiUrl: 'https://ko-fi.com/example' }
-  await boot(page, withBadges(makeSave(4), 5), { donation })
+  await boot(page, withBadges(makeSave(4), 1), { donation })
+  // The 4th session on this device, started 6 minutes ago (once: a reload keeps what the game wrote).
+  await page.addInitScript(() => {
+    const now = Date.now()
+    const session = { count: 4, startedAt: now - 6 * 60_000, lastSeen: now, shownDay: null }
+    if (!localStorage.getItem('pokedice.supportSession')) {
+      localStorage.setItem('pokedice.supportSession', JSON.stringify(session))
+    }
+  })
+  // Not on another page.
+  await page.goto('/settings')
+  await expect(page.getByRole('heading', { name: 'Settings' }).first()).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Support me' })).toHaveCount(0)
   await page.goto('/home')
-  const notice = page.getByRole('region', { name: 'Support me' })
-  await expect(notice).toBeVisible()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
-  // SUPPORT ME opens the three asks; their OK counts as this region's showing.
-  await notice.getByRole('button', { name: 'SUPPORT ME', exact: true }).click()
   const asks = page.getByRole('dialog', { name: 'Support me' })
+  await expect(asks).toBeVisible()
+  // No card on Home any more.
+  await expect(page.getByRole('region', { name: 'Support me' })).toHaveCount(0)
   await asks.getByRole('button', { name: 'OK' }).click()
-  await expect(notice).toHaveCount(0)
+  await expect(asks).toHaveCount(0)
   await expect
-    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).donationSeen?.regions))
-    .toEqual(['kanto'])
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.supportSession')!).shownDay))
+    .toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  // Not again today.
   await page.reload()
   await expect(page.getByRole('button', { name: 'CONTINUE', exact: true })).toBeVisible()
-  await expect(notice).toHaveCount(0)
+  await page.waitForTimeout(1500)
+  await expect(asks).toHaveCount(0)
 })

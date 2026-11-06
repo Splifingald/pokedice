@@ -32,7 +32,6 @@ import {
   hatchChoices,
   hatchEgg,
   markDayCareVisited,
-  markDonationSeen,
   markEventsSeen as markEventsSeenIn,
   rushEgg,
   withdrawPokemon,
@@ -180,14 +179,6 @@ const DEPOSIT_REFUSED: Record<DepositError, string> = {
 /** The first visit ends Prof. Oak's leaderboard tutorial. */
 export function visitLeaderboard(): void {
   mutateSave((s) => (s.leaderboardVisited ? null : { ...s, leaderboardVisited: true }))
-}
-
-/** The donation pop-up was closed: it waits for the next region's 5th badge, or the admin's next reset. */
-export function closeDonation(): void {
-  mutateSave((s) => {
-    const next = markDonationSeen(s, useGame.getState().data)
-    return next === s ? null : next
-  })
 }
 
 /** An event's unlock pop-up was shown: every open event counts as seen (docs/18). */
