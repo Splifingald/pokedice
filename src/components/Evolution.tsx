@@ -1,16 +1,15 @@
 // The evolution cut-scene on the pixel stage (src/fx/timelines/moments.ts: silhouette, a flicker that speeds up,
 // rays, burst, reveal; a stone floats down first), and a full-screen queue that plays several in a row.
+import { AutoButton } from './AutoButton'
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { getInstance, instanceStats } from '@/engine'
-import { sfx } from '@/audio/sfx'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
 import { evolveTimeline } from '@/fx/timelines/moments'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { DiceSet } from './DiceSet'
-import { PixelButton } from './PixelButton'
 import { StageCanvas } from './StageCanvas'
 import { StatChip } from './StatChip'
 
@@ -63,8 +62,8 @@ export function EvolutionSequence({
   const stats = inst ? instanceStats(inst, data) : null
   const reveal = () => {
     if (done) return
+    // The timeline's own fanfare celebrates it: no jingle on top (docs/38 B6).
     setDone(true)
-    sfx('levelup')
     onDone?.()
   }
   return (
@@ -92,11 +91,21 @@ export function EvolutionSequence({
   )
 }
 
+/** How long an evolution's reveal stays up before its button moves on by itself (the autopilot's pace, docs/36). */
+const AUTO_EVOLVED_MS = 1800
+
 /**
- * Evolutions one after another, full screen: each plays, then CONTINUE moves to the next; after the last, `onDone`.
+ * Evolutions one after another, full screen: each plays, then CONTINUE (loading by itself, for everyone since the
+ * rework) moves to the next; after the last, `onDone`.
  * The button is always in view (bottom of the card).
  */
-export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDone: () => void }) {
+export function EvolutionQueue({
+  items,
+  onDone,
+}: {
+  items: EvolutionShow[]
+  onDone: () => void
+}) {
   const { t } = useT()
   const [i, setI] = useState(0)
   const [ready, setReady] = useState(false)
@@ -117,17 +126,20 @@ export function EvolutionQueue({ items, onDone }: { items: EvolutionShow[]; onDo
     >
       <div className="pixel-panel flex max-h-full w-full max-w-md flex-col gap-3 overflow-auto p-3">
         <EvolutionSequence key={`${cur.uid}-${i}`} {...cur} onDone={() => setReady(true)} />
-        <PixelButton
+        {/* Revealed, it loads and moves on by itself (the rework); until then a tap skips the animation. */}
+        <AutoButton
           variant="primary"
           size="lg"
           className="w-full"
+          hold={!ready}
+          ms={AUTO_EVOLVED_MS}
           onClick={() => {
             setReady(false)
             setI((n) => n + 1)
           }}
         >
           {ready ? t(i + 1 < items.length ? 'ui.evolution.next' : 'ui.common.continue') : t('ui.evolution.skip')}
-        </PixelButton>
+        </AutoButton>
       </div>
     </motion.div>,
     document.body,

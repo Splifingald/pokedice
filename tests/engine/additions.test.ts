@@ -24,16 +24,17 @@ describe('Grass Heal face', () => {
     expect(computeDamage([sdie('grass', 'heal')], ['grass'], [], uniformLevels(1), data).perDie[0]!.value).toBe(3)
   })
 
-  it('needs a pair of Heal faces, then heals the total value of the dice rolled', () => {
-    expect(statusesFromRoll([sdie('grass', 'heal'), die('grass', 6)], data)).toEqual([])
+  it('heals from a single face: the Heal faces only, never the other dice', () => {
+    expect(statusesFromRoll([sdie('grass', 'heal'), die('grass', 6)], data)).toEqual([{ status: 'heal', amount: 3 }])
     const roll = [sdie('grass', 'heal'), sdie('grass', 'heal'), die('base', 5)]
-    expect(statusesFromRoll(roll, data)).toEqual([{ status: 'heal', amount: 3 + 3 + 5 }])
+    expect(statusesFromRoll(roll, data)).toEqual([{ status: 'heal', amount: 6 }])
+    expect(statusesFromRoll([die('grass', 6)], data)).toEqual([])
   })
 
-  it('can heal by the Heal faces only (admin option)', () => {
-    const d = makeData({ status: { ...data.config.status, heal: { threshold: 2, amount: 'healFaces' } } })
-    const roll = [sdie('grass', 'heal', d), sdie('grass', 'heal', d), die('base', 5, d)]
-    expect(statusesFromRoll(roll, d)).toEqual([{ status: 'heal', amount: 6 }])
+  it("adds each Heal face's die upgrade (Grass Lv.3: +2 a face)", () => {
+    const roll = [sdie('grass', 'heal'), sdie('grass', 'heal'), die('grass', 6)]
+    expect(statusesFromRoll(roll, data, uniformLevels(3))).toEqual([{ status: 'heal', amount: (3 + 2) * 2 }])
+    expect(statusesFromRoll(roll, data, uniformLevels(1))).toEqual([{ status: 'heal', amount: 6 }])
   })
 
   it('heals the attacker on top of the damage, capped at max HP', () => {
@@ -59,9 +60,11 @@ describe('Grass Heal face', () => {
     expect(reduce(full, { t: 'ATTACK' }, data, createRng(1)).log.some((l) => l.kind === 'heal')).toBe(false)
   })
 
-  it('the AI always keeps a satisfied pair of Heal faces', () => {
+  it('the AI always keeps its Heal faces, even a single one', () => {
     const roll = [sdie('grass', 'heal'), sdie('grass', 'heal'), die('grass', 1), die('base', 1)]
     for (const keep of candidateKeepSets(roll, data)) expect(keep.slice(0, 2)).toEqual([true, true])
+    const one = [sdie('grass', 'heal'), die('grass', 1), die('base', 1)]
+    for (const keep of candidateKeepSets(one, data)) expect(keep[0]).toBe(true)
   })
 })
 
@@ -85,10 +88,12 @@ describe('Multi EXP', () => {
   it('gives team members who did not fight 30 % of the XP; the fighter keeps 100 %', () => {
     const r = win(teamOfThree())
     const xp = r.events.filter((e) => e.kind === 'xp')
+    // Each with where its XP bar starts on the result card: its level and XP before this award.
+    const from = { level: 5, xp: 0 }
     expect(xp).toEqual([
-      { kind: 'xp', uid: r.save.team[0], amount: 10 },
-      { kind: 'xp', uid: 'bench-a', amount: 3, shared: true },
-      { kind: 'xp', uid: 'bench-b', amount: 3, shared: true },
+      { kind: 'xp', uid: r.save.team[0], amount: 10, from },
+      { kind: 'xp', uid: 'bench-a', amount: 3, shared: true, from },
+      { kind: 'xp', uid: 'bench-b', amount: 3, shared: true, from },
     ])
   })
 
@@ -120,9 +125,9 @@ describe('Multi EXP', () => {
     const strong = { ...s, box: s.box.map((p) => (p.id === s.team[0] ? { ...p, level: 30 } : p.id === 'bench-b' ? { ...p, level: 25 } : p)) }
     const r = applyVictory(strong, { areaId: area.id, kind: 'wild', enemyDex: 16, enemyLevel: 20, fighterUid: s.team[0]! }, data, createRng(1), 1, newId)
     expect(r.events.filter((e) => e.kind === 'xp')).toEqual([
-      { kind: 'xp', uid: s.team[0], amount: 20 },
-      { kind: 'xp', uid: 'bench-a', amount: 20, shared: true }, // 25 levels behind: capped at 100 %
-      { kind: 'xp', uid: 'bench-b', amount: 11, shared: true }, // 5 behind: 55 %
+      { kind: 'xp', uid: s.team[0], amount: 20, from: { level: 30, xp: 0 } },
+      { kind: 'xp', uid: 'bench-a', amount: 20, shared: true, from: { level: 5, xp: 0 } }, // 25 levels behind: capped at 100 %
+      { kind: 'xp', uid: 'bench-b', amount: 11, shared: true, from: { level: 25, xp: 0 } }, // 5 behind: 55 %
     ])
   })
 

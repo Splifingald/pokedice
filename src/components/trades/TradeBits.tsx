@@ -17,15 +17,18 @@ import {
 import { useT } from '@/i18n/react'
 import { timeLeft } from '@/lib/format'
 import { useFriends } from '@/lib/friends'
+import { offlineOr } from '@/lib/online'
 import { tradeError, type TradeListing } from '@/lib/trades'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { Chip, NewTag, type ChipTone } from '../Chip'
 import { FriendTag } from '../friends/FriendBits'
 import { PixelIcon } from '../icons'
+import { PixelButton } from '../PixelButton'
 import type { RulesPicture } from '../RulesModal'
 import { MiniSprite } from '../SpriteImg'
 import { TrainerName } from '../TrainerName'
+import { DexTalentGem } from '../Talent'
 
 /** The rules pop-up's banner: trades happen at the Pokémon Center, as in the games' Cable Club. */
 export const TRADES_PICTURE: RulesPicture = { src: '/backgrounds/pokemon-center.png', focus: '50% 40%' }
@@ -80,6 +83,8 @@ export function WantTile({ want, big }: { want: TradeWant; big?: boolean }) {
     <span className={cx('flex min-w-0 items-center gap-1', big ? 'text-[20px]' : 'text-[16px]')}>
       <MiniSprite dex={want.dex} size={big ? 40 : 32} className={big ? '-my-1' : '-my-1.5'} />
       <b className="min-w-0 truncate font-normal leading-none">{words(want)}</b>
+      {/* "With its hidden talent" (docs/51). */}
+      {want.talent && <DexTalentGem dex={want.dex} />}
     </span>
   )
 }
@@ -106,7 +111,7 @@ export function TimeLeft({
   const hot = left < 6 * 3_600_000
   return (
     <span className={cx('flex items-center gap-2', className)}>
-      <span className="whitespace-nowrap font-pixel-sm text-[15px] text-muted">
+      <span className="whitespace-nowrap font-pixel-sm text-[16px] text-muted">
         {prefix ? t('ui.trades.endsIn', { time: timeLeft(left) }) : timeLeft(left)}
       </span>
       <span className="relative block h-1.5 min-w-[40px] flex-1 bg-line shadow-ring-line-thin" aria-hidden>
@@ -173,10 +178,10 @@ export function useMinWhy() {
   }
 }
 
-/** What the server (or the network) said no with, in a sentence. */
+/** What the server (or the network) said no with, in a sentence; "You're offline" when there's no connection. */
 export function useTradeErrorText() {
   const { t } = useT()
-  return (err: unknown) => t(`ui.trades.error.${tradeError(err)}`)
+  return (err: unknown) => offlineOr(t(`ui.trades.error.${tradeError(err)}`))
 }
 
 /** Why one of your Pokémon can't be listed or given: legendary, reviving, your last, the other side's region. */
@@ -267,12 +272,13 @@ export function ListingRow({
             <b className="flex min-w-0 items-center gap-1 text-[19px] font-normal leading-none">
               <span className="truncate">{name}</span>
               {l.shiny && <ShinyStar />}
+              {l.talent && <DexTalentGem dex={l.dex} />}
               {fresh && <NewTag className="shrink-0" />}
             </b>
-            <small className="flex min-w-0 items-center gap-1 font-pixel-sm text-[14px] leading-tight text-muted">
+            <small className="flex min-w-0 items-center gap-1 font-pixel-sm text-[16px] leading-tight text-muted">
               <RegionTag dex={l.dex} />
               {l.isMe ? (
-                <span className="shrink-0 bg-gold px-[5px] pb-px text-[13px] leading-tight text-ink">
+                <span className="shrink-0 bg-gold px-[5px] pb-px text-[16px] leading-tight text-ink">
                   {t('ui.trades.yoursTag')}
                 </span>
               ) : (
@@ -283,13 +289,13 @@ export function ListingRow({
           </span>
         </span>
         <span className="flex max-w-[42vw] items-center gap-1.5 sm:max-w-[240px]" aria-hidden>
-          <span className="font-pixel-sm text-[13px] text-muted">{t('ui.trades.for')}</span>
+          <span className="font-pixel-sm text-[16px] text-muted">{t('ui.trades.for')}</span>
           <WantTile want={l.want} />
         </span>
         {/* Why (or "You can trade") on the left, the time left on the right: the trainer's name keeps its room. */}
         <span
           aria-hidden
-          className="col-span-2 flex items-baseline gap-2 font-pixel-sm text-[14px] leading-tight"
+          className="col-span-2 flex items-baseline gap-2 font-pixel-sm text-[16px] leading-tight"
         >
           {!guest && !l.isMe && (
             <span className={cx('min-w-0 flex-1', ok ? 'text-good' : 'text-ink')}>
@@ -300,6 +306,43 @@ export function ListingRow({
         </span>
       </button>
     </li>
+  )
+}
+
+/**
+ * NEW PICKS under the board's picks (docs/23 §2.1): the day's left on it ("2/2 today"); greyed with a line when every
+ * listing you can take is already shown, and "New picks tomorrow" once the day's are used.
+ */
+export function NewPicksButton({
+  left,
+  max,
+  more,
+  busy,
+  onClick,
+}: {
+  /** NEW PICKS left today, of `max` a day. */
+  left: number
+  max: number
+  /** Other listings you can take than the ones shown. */
+  more: boolean
+  busy?: boolean
+  onClick: () => void
+}) {
+  const { t } = useT()
+  return (
+    <div className="grid gap-1.5">
+      <PixelButton size="sm" className="w-full" disabled={!left || !more || busy} onClick={onClick}>
+        <PixelIcon name="dice" size={16} />
+        {left
+          ? `${t('ui.trades.newPicks')} · ${t('ui.trades.today', { n: left, max })}`
+          : t('ui.trades.picksTomorrow')}
+      </PixelButton>
+      {!more && !!left && (
+        <p className="m-0 text-center font-pixel-sm text-[16px] leading-[1.15] text-muted">
+          {t('ui.trades.picksAll')}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -333,7 +376,8 @@ export function LandingPick({
   name: string
   /** The level it arrives at: the one it waits for where it's locked. */
   level: number
-  options: LandingOption[]
+  /** `level` on an option: it arrives at a level of its own there (a Day Care hatchling: docs/15), shown by its name. */
+  options: (LandingOption & { level?: number })[]
   value: RegionId | null
   onChange: (region: RegionId) => void
   disabled?: boolean
@@ -372,8 +416,15 @@ export function LandingPick({
               {on && <i className="block size-2 bg-ink" />}
             </span>
             <span className="grid min-w-0 flex-1 gap-0.5">
-              <b className="truncate text-[19px] font-normal leading-none">{regionName(data, o.region)}</b>
-              <small className="font-pixel-sm text-[14px] leading-tight text-muted">{line(o)}</small>
+              <span className="flex min-w-0 items-baseline gap-1.5">
+                <b className="truncate text-[19px] font-normal leading-none">{regionName(data, o.region)}</b>
+                {o.level != null && (
+                  <span className="shrink-0 font-pixel-sm text-[16px] leading-none text-muted">
+                    {lv(o.level)}
+                  </span>
+                )}
+              </span>
+              <small className="font-pixel-sm text-[16px] leading-tight text-muted">{line(o)}</small>
             </span>
             <span className="flex shrink-0 flex-col items-end gap-1">
               {o.outcome === 'locked' ? (

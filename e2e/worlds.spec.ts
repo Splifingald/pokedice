@@ -160,7 +160,7 @@ async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean
   for (const name of names) {
     const btn = page.getByRole('button', typeof name === 'string' ? { name, exact: true } : { name }).first()
     if ((await btn.isVisible().catch(() => false)) && (await btn.isEnabled().catch(() => false))) {
-      await btn.click()
+      await btn.click().catch(() => {})
       return true
     }
   }
@@ -202,7 +202,7 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   await page.goto('/shop')
   await expect(page.getByRole('heading', { name: 'World Mart', level: 1 })).toBeVisible()
   await expect(page.getByText('10 of 10 left')).toBeVisible()
-  await page.getByRole('tab', { name: 'Sell' }).click()
+  await page.getByRole('tab', { name: 'Bag' }).click()
   const kantoGold = s.parked?.kanto?.gold
   await page.getByRole('button', { name: /^Potion/ }).click()
   await page.getByRole('button', { name: 'Sell 1 Potion for ₽7' }).click()
@@ -301,7 +301,8 @@ test('a battle inside: the booster on a psychic hit; an area waits for its date'
   await expect(page.getByRole('heading', { name: 'Exploring Mirage Marsh' })).toBeAttached({ timeout: 15_000 })
   await expect(page.getByRole('button', { name: 'Back to Kanto' })).toBeVisible()
   // Twilight Path is next in the chain, but waits for its date.
-  await page.getByRole('button', { name: /^Areas/ }).first().click()
+  // Home's area button opens the Areas sheet (docs/43 §5.2).
+  await page.locator('[data-area-button]').click()
   await expect(page.getByText(/^Opens .*May/).first()).toBeVisible()
   await page.keyboard.press('Escape')
 
@@ -341,9 +342,15 @@ test('the final fight: the shiny Mew, beaten and caught, goes to the Kanto Box',
   await page.getByRole('button', { name: /^FACE IT/ }).first().click({ timeout: 15_000 })
   const won = page.getByText('The shiny Mew is yours!')
   for (const until = Date.now() + 80_000; Date.now() < until && !(await won.isVisible()); ) {
-    const master = page.getByRole('radio', { name: /^Master Ball/ })
-    if (await master.isVisible().catch(() => false)) await master.check().catch(() => {})
-    await clickAny(page, ['FIGHT', 'SKIP ▸▸', 'ATTACK', 'SKIP TURN', 'GOT IT', 'CATCH', 'ROLL TO CATCH', 'CONTINUE'])
+    // The Master Ball thrown, never another: a throw with another ball can miss, and Mew flees (a slow machine raced
+    // it). Each ball is its own throw (docs/42).
+    const master = page.getByRole('button', { name: /^Master Ball.*Throw it$/ })
+    if (await master.isVisible().catch(() => false)) {
+      await master.click().catch(() => {})
+      continue
+    }
+    // The rework: the send-out step's GO! first (a team of two).
+    await clickAny(page, ['FIGHT', 'SKIP ▸▸', /^Send out /, 'ATTACK', 'SKIP TURN', 'GOT IT', 'CATCH', 'ROLL TO CATCH', 'CONTINUE'])
     await page.waitForTimeout(120)
   }
   await expect(won).toBeVisible()
@@ -386,7 +393,8 @@ test('the world closes: back in Kanto, its Pokémon gone home (one locked), the 
   await page.goto('/team')
   await expect(page.getByRole('heading', { name: 'Waiting to unlock' })).toBeVisible()
   await page.getByRole('button', { name: 'Haunter, Locked until Lv.40' }).click()
-  const sheet = page.getByRole('dialog', { name: 'Haunter' })
+  // A PC: the sheet stands docked beside the Box (docs/43 §5.4).
+  const sheet = page.getByRole('region', { name: 'Haunter' })
   await expect(sheet.getByText('Locked until Lv.40')).toBeVisible()
   await expect(sheet.getByText('Home from Mirage Island')).toBeVisible()
   await expect(sheet.getByText(/joins your Kanto Box once one of your Pokémon here reaches Lv\.40 \(your best: Lv\.5\)/)).toBeVisible()

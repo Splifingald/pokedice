@@ -78,6 +78,8 @@ export default defineConfig({
     target: 'es2022',
     chunkSizeWarningLimit: 900,
   },
+  // Agents' git worktrees live under .claude/: watching their copies of the repo runs out of file watchers.
+  server: { watch: { ignored: ['**/.claude/**'] } },
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',

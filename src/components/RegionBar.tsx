@@ -1,85 +1,47 @@
-// The region strip at the top of the Map: where you are, where else you have been, and the offer of somewhere new.
-//
-// None of this exists until a league has been won: with one region unlocked and nothing on offer, the bar renders
-// nothing at all, which is what keeps Johto unmentioned for a player still working through Kanto.
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { donationDue, getRegion, regionOf, regionOfferDue, tutorialPending, type Region } from '@/engine'
+// The next region's offer, once a league is won: Prof. Oak's terms in a pop-up, then the professor's lab. It opens by
+// itself once per region, on its turn in the one-time pop-ups' queue (engine/popups.ts); once closed it is saved as
+// seen, and the offer waits on Home as a notice (home/Notices.tsx) and in the Areas sheet's Regions view, which start the
+// region themselves. Nothing of this exists until a league has been won, which keeps Johto unmentioned for a player
+// still working through Kanto.
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getRegion, regionOf, type Region } from '@/engine'
 import { useT } from '@/i18n/react'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { PartnerMoment } from '@/components/PartnerMoment'
-import { availableRegions, closeRegionOffer, regionOnOffer, startRegion, switchRegion } from '@/store/regions'
+import { useMyTurn, useOnScreen } from '@/components/popupTurn'
+import { closeRegionOffer, regionOnOffer, startRegion } from '@/store/regions'
 import { useGame } from '@/store/game'
-import { cx } from '@/theme/util'
+import { exploreFirstArea } from '@/store/run'
 import { TrainerSprite } from '@/components/TrainerArt'
 
-/** `modalOnly`: just the offer's pop-up (Home shows the regions in its Areas sheet). */
-export function RegionBar({ modalOnly = false }: { modalOnly?: boolean }) {
+/** `go`: a count bumped by Home's region notice's GO, which opens the lab straight away. */
+export function RegionBar({ go = 0 }: { go?: number }) {
   const { t } = useT()
-  const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
-  // Prof. Oak's one-time pop-ups queue rather than stack, and they go first: the offer waits its turn behind them,
-  // and the banner keeps it on screen meanwhile. The donation pop-up goes first too.
-  const waiting = useGame((s) => !!s.save && (tutorialPending(s.save, s.data) || donationDue(s.save, s.data)))
   const busy = useGame((s) => s.run.phase !== 'idle')
-  // The pop-up opens by itself once per region; once closed, it is saved as seen and only the banner reopens it.
-  const due = useGame((s) => !!s.save && !!regionOfferDue(s.save, s.data))
-  const [reopened, setReopened] = useState(false)
+  const open = useMyTurn('regionOffer')
   const [picking, setPicking] = useState(false)
-
-  const regions = availableRegions()
+  const navigate = useNavigate()
   const offer = regionOnOffer()
-  const current = regionOf(save)
-  const offerOpen = (due || reopened) && !waiting && !busy && !picking
-  const closeOffer = () => {
-    setReopened(false)
-    closeRegionOffer()
-  }
-  if (regions.length < 2 && !offer) return null
+  const offerOpen = open && !busy && !picking
+  useEffect(() => {
+    if (go > 0) setPicking(true)
+  }, [go])
+  useOnScreen('regionOffer', offerOpen)
+  if (!offer) return null
 
   return (
     <>
-      {!modalOnly && regions.length > 1 && (
-        <nav aria-label={t('ui.region.label')} className="flex flex-wrap items-center gap-2">
-          <span className="text-lg text-muted">{t('ui.region.label')}</span>
-          {regions.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              aria-current={r.id === current ? 'page' : undefined}
-              onClick={() => switchRegion(r.id)}
-              className={cx(
-                'min-h-[34px] border-2 border-edge px-2 text-xl leading-tight',
-                r.id === current ? 'bg-gold text-ink' : 'bg-panel hover:bg-paper',
-              )}
-            >
-              {r.name}
-            </button>
-          ))}
-        </nav>
-      )}
-
-      {!modalOnly && offer && (
-        <motion.div
-          className="pixel-panel flex flex-wrap items-center gap-3 border-gold p-3"
-          initial={{ y: -8, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-        >
-          <div className="min-w-0 flex-1 basis-64">
-            <div className="text-2xl leading-tight text-gold">{t('ui.region.newOpen')}</div>
-            <p className="text-lg leading-tight text-muted">{t('ui.region.newBody', { region: offer.name })}</p>
-          </div>
-          <PixelButton variant="primary" onClick={() => setReopened(true)}>
-            {t('ui.region.see', { region: offer.name })}
-          </PixelButton>
-        </motion.div>
-      )}
-
       {/* The terms, then the professor's lab: the three balls drop onto the table and one becomes the partner. */}
       {offer && (
-        <Modal open={offerOpen} onClose={closeOffer} title={t('ui.region.awaits', { region: offer.name })}>
-          <RegionTerms region={offer} onClose={closeOffer} onAccept={() => setPicking(true)} />
+        <Modal
+          open={offerOpen}
+          onClose={closeRegionOffer}
+          title={t('ui.region.awaits', { region: offer.name })}
+        >
+          <RegionTerms region={offer} onClose={closeRegionOffer} onAccept={() => setPicking(true)} />
         </Modal>
       )}
       {offer && picking && (
@@ -91,7 +53,8 @@ export function RegionBar({ modalOnly = false }: { modalOnly?: boolean }) {
           onLeave={() => setPicking(false)}
           onPick={(dex) => {
             setPicking(false)
-            startRegion(offer.id, dex)
+            // The rework: a region begun opens on its first area, not Home.
+            if (startRegion(offer.id, dex) && exploreFirstArea()) navigate('/area')
           }}
         />
       )}

@@ -41,7 +41,7 @@ interface RawEntry {
   is_me: boolean | null
   name: string | null
   character: string | null
-  team: { dex: number; level: number; shiny?: boolean }[] | null
+  team: { dex: number; level: number; shiny?: boolean; talent?: boolean }[] | null
   ids?: string[] | null
   version: number | null
   attack_wins: number | null
@@ -66,7 +66,7 @@ export function parseVersusBoard(raw: RawEntry[]): VersusEntry[] {
     name: r.name || 'Trainer',
     // The column carries the look (migration 0022); an unknown id shows as Red.
     avatar: avatarOf(r.character).id,
-    team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
+    team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny, ...(m.talent === true && { talent: true }) })),
     ids: Array.isArray(r.ids) ? r.ids.map(String) : null,
     version: Number(r.version) || 1,
     attackWins: Number(r.attack_wins) || 0,
@@ -170,7 +170,7 @@ export function rememberedVersus(userId: string | null): MyVersus | null {
     > | null
     if (!raw || !Array.isArray(raw.team) || !raw.team.length) return null
     return {
-      team: raw.team.map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
+      team: raw.team.map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny, ...(m.talent === true && { talent: true }) })),
       attackWins: Number(raw.attackWins) || 0,
       defenseWins: Number(raw.defenseWins) || 0,
     }
@@ -179,8 +179,11 @@ export function rememberedVersus(userId: string | null): MyVersus | null {
   }
 }
 
-/** The board, fetched at most once every `maxAgeMs` (the Versus screen always fetches it fresh). */
-export async function versusBoardCached(maxAgeMs = 10 * 60_000): Promise<VersusEntry[] | null> {
+/**
+ * The board, fetched at most once every `maxAgeMs` (the Versus screen always fetches it fresh). 15 minutes: the server
+ * builds the other players' numbers that often anyway (0139).
+ */
+export async function versusBoardCached(maxAgeMs = 15 * 60_000): Promise<VersusEntry[] | null> {
   if (lastBoard && Date.now() - lastBoard.at < maxAgeMs) return lastBoard.rows
   return fetchVersusBoard()
 }

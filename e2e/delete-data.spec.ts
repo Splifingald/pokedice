@@ -1,6 +1,6 @@
-// Settings → Delete all my data: the red button at the foot of the page, two pop-ups in a row, then the title screen
-// with nothing left but the settings. Signed in, the online data goes first (delete_my_data, migration 0038); if it
-// can't, nothing is deleted.
+// Settings → the one Delete at the foot of the page (docs/38 U8b) asks what goes. Delete all my data: two pop-ups in a
+// row, then the title screen with nothing left but the settings. Signed in, the online data goes first
+// (delete_my_data, migration 0038); if it can't, nothing is deleted. Delete save: one pop-up, the save in play only.
 import { expect, test, type Page } from '@playwright/test'
 import { FAST, fakeSession, makeSave, mockSupabase, STORAGE_KEY, SUPABASE } from './helpers'
 
@@ -24,9 +24,17 @@ async function seed(page: Page, session: boolean) {
 const gameKeys = (page: Page) =>
   page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('pokedice.')).sort())
 
-/** The red button, then the first pop-up's Continue: the second pop-up is open. */
+/** The one Delete, then what goes: its question answered. */
+async function ask(page: Page, what: string) {
+  await page.getByRole('button', { name: 'Delete a save or my data' }).click()
+  const chooser = page.getByRole('dialog', { name: 'What do you want to delete?' })
+  await chooser.getByRole('button', { name: what, exact: true }).click()
+  await expect(chooser).toHaveCount(0)
+}
+
+/** The red button, everything, then the first pop-up's Continue: the second pop-up is open. */
 async function toLastStep(page: Page) {
-  await page.getByRole('button', { name: 'Delete all my data' }).click()
+  await ask(page, 'Delete all my data')
   const first = page.getByRole('dialog', { name: 'Delete all your data?' })
   await first.getByRole('button', { name: 'Continue' }).click()
   await expect(first).toHaveCount(0)
@@ -38,13 +46,19 @@ test('signed out: two pop-ups, then everything on this device is gone but the se
   await seed(page, false)
   await page.goto('/settings')
 
-  // The last thing on the page.
-  const button = page.getByRole('button', { name: 'Delete all my data' })
+  // The last thing on the page, and the only Delete on it.
   const last = page.getByRole('main').getByRole('button').last()
-  await expect(last).toHaveText(/Delete all my data/i)
+  await expect(last).toHaveText(/Delete a save or my data/i)
+  await expect(page.getByRole('main').getByRole('button', { name: /^Delete/ })).toHaveCount(1)
 
-  // Cancel at either step deletes nothing.
-  await button.click()
+  // It asks what goes: the save in play or everything (no Extreme save here). Cancel at any step deletes nothing.
+  await last.click()
+  const chooser = page.getByRole('dialog', { name: 'What do you want to delete?' })
+  await expect(chooser.getByRole('button', { name: 'Delete save', exact: true })).toBeVisible()
+  await expect(chooser.getByRole('button', { name: 'Delete my Extreme save' })).toHaveCount(0)
+  await chooser.getByRole('button', { name: 'Cancel' }).click()
+  await expect(chooser).toHaveCount(0)
+  await ask(page, 'Delete all my data')
   const first = page.getByRole('dialog', { name: 'Delete all your data?' })
   await expect(first).toContainText('A cloud save stays too')
   await first.getByRole('button', { name: 'Cancel' }).click()
@@ -70,7 +84,7 @@ test('signed in: the online data is deleted first, then this device', async ({ p
   await page.goto('/settings')
   await expect(page.getByText('Backed up with Google (admin@example.com).')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Delete all my data' }).click()
+  await ask(page, 'Delete all my data')
   await expect(page.getByRole('dialog', { name: 'Delete all your data?' })).toContainText('your cloud save, trainer card')
   await page.getByRole('dialog').getByRole('button', { name: 'Continue' }).click()
   await page.getByRole('dialog', { name: 'Really delete everything?' }).getByRole('button', { name: 'Delete everything' }).click()
@@ -102,4 +116,18 @@ test("signed in: when the online data can't be deleted, nothing is", async ({ pa
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page).toHaveURL(/\/settings$/)
   expect(await gameKeys(page)).toEqual(expect.arrayContaining(['pokedice.save', 'pokedice.save.backups', 'pokedice.tip.catch']))
+})
+
+test('Delete save: one pop-up, then the title with no save, its backups and the settings kept', async ({ page }) => {
+  await mockSupabase(page)
+  await seed(page, false)
+  await page.goto('/settings')
+  await ask(page, 'Delete save')
+  const pop = page.getByRole('dialog', { name: 'Delete your save?' })
+  await expect(pop).toContainText("This can't be undone")
+  await pop.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole('button', { name: 'NEW GAME' })).toBeVisible()
+  await expect.poll(() => gameKeys(page)).not.toContain('pokedice.save')
+  expect(await gameKeys(page)).toEqual(expect.arrayContaining(['pokedice.save.backups', 'pokedice.settings']))
 })

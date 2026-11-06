@@ -1,12 +1,11 @@
 // Kitchen sink: gifts from the developer (docs/15 §23) — the wrapped gift under a message (ready, waiting in Extreme
 // mode or a small world, with OPEN IT, asking the server), an opened gift in My messages, what arrived (one region,
-// several, a shiny NEW that joined the team, one sent on to the latest region, Pokédollars), the rules (the first time
-// and INFO), and the opening itself (one item, Pokédollars, a shiny Pokémon, many things).
+// several, a shiny NEW that joined the team, one sent on to the latest region, Pokédollars, Heart Scales), and the
+// opening itself (one item, Pokédollars, Heart Scales, a shiny Pokémon, many things).
 import { useState } from 'react'
 import { GIFT_LATEST, type Gift, type GiftLanded } from '@/engine'
-import { GiftMoment, GiftOpened, GiftPresent, GiftResult, GiftRulesModal } from '@/components/Gifts'
+import { GiftMoment, GiftOpened, GiftPresent, GiftResult } from '@/components/Gifts'
 import { PixelButton } from '@/components/PixelButton'
-import { InfoButton } from '@/components/RulesModal'
 
 const item = (key: string, qty: number, region = GIFT_LATEST): Gift => ({ kind: 'item', key, qty, region })
 const mon = (dex: number, level: number, shiny = false, region = GIFT_LATEST): Gift => ({
@@ -25,6 +24,9 @@ const land = (gift: Gift, o: Partial<GiftLanded> = {}): GiftLanded => ({
 
 const ONE: GiftLanded[] = [land(item('rare-candy', 5))]
 const GOLD: GiftLanded[] = [land({ kind: 'gold', amount: 10000, region: GIFT_LATEST })]
+const SCALES: GiftLanded[] = [
+  land({ kind: 'heartScales', amount: 50, region: GIFT_LATEST }, { scales: true }),
+]
 const SHINY: GiftLanded[] = [land(mon(25, 20, true), { isNew: true, joinedTeam: true })]
 const MIXED: GiftLanded[] = [
   land(item('rare-candy', 10)),
@@ -32,6 +34,7 @@ const MIXED: GiftLanded[] = [
   land(mon(147, 30, false, 'hoenn'), { region: 'johto', moved: true, isNew: true }),
   land(mon(133, 25, true), { joinedTeam: true }),
   land({ kind: 'gold', amount: 5000, region: GIFT_LATEST }, { region: 'johto' }),
+  land({ kind: 'heartScales', amount: 20, region: GIFT_LATEST }, { scales: true }),
 ]
 const MANY: GiftLanded[] = [
   ...MIXED,
@@ -41,7 +44,7 @@ const MANY: GiftLanded[] = [
   land(mon(4, 5)),
 ]
 
-type Open = null | 'rules-first' | 'rules-info' | 'one' | 'gold' | 'shiny' | 'mixed' | 'many'
+type Open = null | 'one' | 'gold' | 'scales' | 'shiny' | 'mixed' | 'many'
 
 export function GiftBits() {
   const [open, setOpen] = useState<Open>(null)
@@ -51,13 +54,15 @@ export function GiftBits() {
       ? ONE
       : open === 'gold'
         ? GOLD
-        : open === 'shiny'
-          ? SHINY
-          : open === 'mixed'
-            ? MIXED
-            : open === 'many'
-              ? MANY
-              : null
+        : open === 'scales'
+          ? SCALES
+          : open === 'shiny'
+            ? SHINY
+            : open === 'mixed'
+              ? MIXED
+              : open === 'many'
+                ? MANY
+                : null
   return (
     <div className="grid w-full max-w-md gap-3">
       <GiftPresent count={3} wait={null} />
@@ -68,31 +73,25 @@ export function GiftBits() {
       <GiftOpened gifts={MIXED.map((l) => l.gift)} />
       <GiftResult landed={MIXED} onDone={() => {}} />
       <div className="flex flex-wrap gap-2">
-        <PixelButton size="sm" onClick={() => setOpen('rules-first')}>
-          First gift: rules
-        </PixelButton>
         <PixelButton size="sm" onClick={() => setOpen('one')}>
           Open: one item
         </PixelButton>
         <PixelButton size="sm" onClick={() => setOpen('gold')}>
           Open: ₽10,000
         </PixelButton>
+        <PixelButton size="sm" onClick={() => setOpen('scales')}>
+          Open: 50 Heart Scales
+        </PixelButton>
         <PixelButton size="sm" onClick={() => setOpen('shiny')}>
           Open: a shiny Pikachu
         </PixelButton>
         <PixelButton size="sm" onClick={() => setOpen('mixed')}>
-          Open: five things
+          Open: six things
         </PixelButton>
         <PixelButton size="sm" onClick={() => setOpen('many')}>
-          Open: eight things
+          Open: nine things
         </PixelButton>
       </div>
-      <InfoButton name="a gift" onClick={() => setOpen('rules-info')} />
-      <GiftRulesModal
-        open={open === 'rules-first' || open === 'rules-info'}
-        onClose={close}
-        onGo={open === 'rules-first' ? close : undefined}
-      />
       {moment && <GiftMoment key={open} landed={moment} onDone={close} />}
     </div>
   )

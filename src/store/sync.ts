@@ -5,6 +5,9 @@ import { startAnalytics } from '@/analytics/ping'
 import { checkContentVersion } from '@/config/remote'
 import { AUTH_PROVIDERS, loadAuthProviders } from '@/lib/authProviders'
 import { loadFriendStatus } from '@/lib/friends'
+import { loadFriendship } from './friendship'
+import { fetchRaidsDone } from '@/lib/raid'
+import { isOffline, offlineOr } from '@/lib/online'
 import { getSupabase } from '@/lib/supabase'
 import { disablePush, usePush } from '@/lib/push'
 import {
@@ -23,8 +26,17 @@ import {
   sameSave,
   SaveConflictError,
   schedulePush,
+  sendSaveOnLeave,
+  writtenSincePlayedAt,
 } from '@/save/cloud'
-import { keepGeneralBought } from '@/engine'
+import {
+  keepGemsHeld,
+  keepGeneralBought,
+  keepLooksEarned,
+  keepRaidsDone,
+  keepRebattleTiers,
+  keepWorldsDone,
+} from '@/engine'
 import type { SaveData, SaveMode } from '@/engine/types'
 import {
   activeSlot,
@@ -39,13 +51,24 @@ import {
   writeCloudMark,
   writeSlot,
 } from '@/save/storage'
-import { commitSave, initialRun, onSaveCommitted, pushToast, setContent, tickFossils, useGame, type AuthProvider } from './game'
+import {
+  commitSave,
+  initialRun,
+  mutateSave,
+  onSaveCommitted,
+  pushToast,
+  setContent,
+  tickFossils,
+  useGame,
+  type AuthProvider,
+} from './game'
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
 import { startWorldClock } from './worlds'
 import { armDayCareTimer, tickDayCare } from './daycare'
 import { comeBack, markAway, settleExtreme, startExtremeClocks } from './extreme'
 import { collectOfflineGold, markOfflineAway, startOfflineClock } from './general'
+import { startWelcomeBack } from './welcomeBack'
 
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
@@ -85,18 +108,22 @@ const inFight = () => {
   return phase === 'battle' || phase === 'catch' || phase === 'victory'
 }
 
+/**
+ * One copy replacing another keeps what either bought (General upgrades, Mega Gems), was granted (event looks, written
+ * into the cloud copy by SQL) or won for good (raids, rebattle tiers, small worlds finished): none of it is progress
+ * the compare counts, so the copy that wins it may not have it.
+ */
+const keepBoth = (save: SaveData, other: SaveData | null | undefined): SaveData => {
+  const bought = keepGemsHeld(keepLooksEarned(keepGeneralBought(save, other), other), other)
+  return keepWorldsDone(keepRebattleTiers(keepRaidsDone(bought, other?.events?.raidsDone), other), other)
+}
+
 const realmOf = (save: SaveData): SaveMode => (save.mode === 'extreme' ? 'extreme' : 'main')
 
 /** The cloud copy now holds the save with this key, stamped `at`: kept on the device for the next load. */
 function rememberCloud(user: string, realm: SaveMode, at: number | null, key: string, pushedAt?: number) {
   const known = readCloudMark(realm)
   writeCloudMark(realm, { user, at, key, pushedAt: pushedAt ?? (known?.user === user ? known.pushedAt : 0) })
-}
-
-/** This device may upload the signed-in player's save on its own now: its last upload is PUSH_GAP_MS behind. */
-const pushDue = () => {
-  const user = useGame.getState().auth.userId
-  return !user || pushGapLeft(readCloudMark(activeSlot()), user) === 0
 }
 
 /** A refused upload found mid-play tries again this much later, when the cloud copy may be loaded. */
@@ -224,8 +251,8 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
   let outcome: 'loaded' | 'pushed' | 'same' = 'same'
   if (decision === 'cloud' && cloud && !(local && sameSave(local, cloud))) {
     if (local) backupSave(local, t('ui.sync.replacedByCloud'))
-    // What this device bought stays bought (keepGeneralBought): the cloud copy then gets it too, stamped past itself.
-    const merged = keepGeneralBought(cloud, local)
+    // What this device bought or was granted stays (keepBoth): the cloud copy then gets it too, stamped past itself.
+    const merged = keepBoth(cloud, local)
     const loaded = merged === cloud ? cloud : { ...merged, updatedAt: Math.max(Date.now(), cloud.updatedAt + 1) }
     commitSave(loaded, { silent: true, keepTimestamp: true })
     resetRun()
@@ -239,10 +266,10 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
     // The copy just read is the one to write over (and none at all without a row): a device writing in between wins
     // the next compare instead of being overwritten.
     rememberCloud(id, realm, at, cloud ? pushKey(cloud) : '')
-    // What the cloud copy bought stays bought (keepGeneralBought). Kept over a copy stamped later: stamped past it, so
+    // What the cloud copy bought or was granted stays (keepBoth). Kept over a copy stamped later: stamped past it, so
     // the cloud row's stamp never goes back (an older page still lets the newest stamp win; another device's clock may
     // be ahead of this one).
-    const merged = keepGeneralBought(local, cloud)
+    const merged = keepBoth(local, cloud)
     const kept =
       cloud && cloud.updatedAt >= merged.updatedAt
         ? { ...merged, updatedAt: Math.max(Date.now(), cloud.updatedAt + 1) }
@@ -261,7 +288,11 @@ export async function reconcile(client: SupabaseClient, id: string, manual = fal
   return outcome
 }
 
+/** The session's access token, kept at hand: a page closing can't wait for supabase-js to read it (uploadOnLeave). */
+let accessToken: string | null = null
+
 async function handleSession(client: SupabaseClient, session: Session | null) {
+  accessToken = session?.access_token ?? null
   if (!session) {
     syncedUser = null
     settleSync(false)
@@ -290,8 +321,27 @@ async function handleSession(client: SupabaseClient, session: Session | null) {
   } catch (err) {
     console.warn('[cloud] sync failed', err)
     syncedUser = null // try again on the next auth event or SYNC ONLINE; stay local-only meanwhile
-    pushToast(t('ui.toast.syncUnavailable'), 'bad')
+    pushToast(offlineOr(t('ui.toast.syncUnavailable')), 'bad')
+    return
   }
+  void restoreRaidsDone()
+}
+
+/**
+ * Raids the server saw this player win and the save lost come back into it (0089). Pages left open from a build
+ * before 2026-10-22 wrote saves back without them (2026-10-29), and the raids opened again. Only ever adds; goes up with
+ * the next upload like any change.
+ */
+export async function restoreRaidsDone(): Promise<void> {
+  const done = await fetchRaidsDone()
+  if (!done?.length) return
+  mutateSave(
+    (s) => {
+      const next = keepRaidsDone(s, done)
+      return next === s ? null : next
+    },
+    { auto: true },
+  )
 }
 
 /** Why SYNC ONLINE can't be pressed right now, or null when it can. */
@@ -325,7 +375,7 @@ export async function syncNow() {
     console.warn('[cloud] sync failed', err)
     settleSync(was.pushAllowed)
     syncedUser = was.syncedUser
-    pushToast(t('ui.toast.syncFailed'), 'bad')
+    pushToast(offlineOr(t('ui.toast.syncFailed')), 'bad')
   } finally {
     useCloudSync.setState({ busy: false })
   }
@@ -409,6 +459,8 @@ export async function signIn(provider: AuthProvider = 'google') {
     pushToast(t('ui.toast.cloudNotConfigured'), 'bad')
     return
   }
+  // Offline, the provider's page can't load: say so here rather than leave the game for a browser error.
+  if (isOffline()) return pushToast(t('ui.common.offline'), 'bad')
   flushWrite()
   const { error } = await client.auth.signInWithOAuth({ provider, options: { redirectTo: here() } })
   if (error) pushToast(authErrorText(errorCode(error), provider, error.message), 'bad')
@@ -421,6 +473,7 @@ export const signInWithGoogle = () => signIn('google')
 export async function linkProvider(provider: AuthProvider) {
   const client = await getSupabase()
   if (!client) return
+  if (isOffline()) return pushToast(t('ui.common.offline'), 'bad')
   flushWrite()
   try {
     sessionStorage.setItem(LINKING_KEY, provider)
@@ -661,7 +714,7 @@ function reloadWhenSafe(tell = false) {
 /** Is a newer build out? Quiet on failure (offline, dev server without version.json). */
 async function checkForNewBuild() {
   lastVersionCheck = Date.now()
-  if (import.meta.env.DEV) return
+  if (import.meta.env.DEV || import.meta.env.VITE_PROTO) return
   try {
     const res = await fetch('/version.json', { cache: 'no-store' })
     if (!res.ok) return
@@ -759,7 +812,10 @@ function checkFreshness(returning: boolean) {
   reloadIfSafe()
   relisten()
   // New friends, on the way back to the tab (at most every 5 minutes): no Realtime for friends (docs/16 §1.7).
-  if (returning) void loadFriendStatus()
+  if (returning) {
+    void loadFriendStatus()
+    void loadFriendship()
+  }
   if (Date.now() - loadedAt >= MAX_PAGE_AGE_MS) return reloadWhenSafe()
   if (Date.now() - lastVersionCheck >= (returning ? VERSION_ON_RETURN_MS : VERSION_WHILE_OPEN_MS))
     void checkForNewBuild()
@@ -769,15 +825,20 @@ function checkFreshness(returning: boolean) {
  * Another tab of the game (or the installed app beside a browser tab) stored a newer save: this tab plays on from it.
  * Each tab keeps its own copy in memory, so an old tab brought back (its offline pay, a fossil, any tap) used to write
  * its stale copy over the newer one, here and in the cloud, and undo what was played in the other tab (General upgrades
- * lost, 2026-10-16). What either bought stays bought (keepGeneralBought). `raw`: a storage event's value.
+ * lost, 2026-10-16). What either bought or was granted stays (keepBoth). `raw`: a storage event's value.
  */
 export function adoptStoredSave(raw?: string | null): boolean {
   const { save } = useGame.getState()
   const stored = peekSave(raw)
   if (!stored || (save && stored.updatedAt <= save.updatedAt)) return false
+  // A page left open from before 2026-10-22 wrote it: the same save with every part its build never knew gone, stamped
+  // now (2026-10-29). This tab plays on from its own, which its next change stores again; writing it back at once
+  // would also undo a page that is only just starting on the copy it stored. A reload in between starts from that
+  // copy, and the sign-in's sync then prefers the cloud's (decideSync).
+  if (save && writtenSincePlayedAt(save) && !writtenSincePlayedAt(stored)) return false
   // Kept at the other tab's stamp: written back here unchanged, it is no news to that tab (it only takes a newer one).
   // With a level only this tab had, it is: stamped now, so that tab takes it in turn.
-  const merged = keepGeneralBought(stored, save)
+  const merged = keepBoth(stored, save)
   commitSave(merged === stored ? stored : { ...merged, updatedAt: Math.max(Date.now(), stored.updatedAt + 1) }, {
     silent: true,
     keepTimestamp: true,
@@ -786,6 +847,40 @@ export function adoptStoredSave(raw?: string | null): boolean {
   resetRun()
   if (typeof document !== 'undefined' && document.visibilityState === 'visible') pushToast(t('ui.toast.otherTab'), 'info')
   return true
+}
+
+/**
+ * The page is hidden or closing: what was played since the last upload goes up now. It used to wait for the next
+ * automatic sync (cloudSyncMinutes after the last one), and the push tried as the page closed went through supabase-js,
+ * which reads its session asynchronously first, so it never left a closing page. A game added to the home screen keeps
+ * a save of its own, apart from the browser's (iPhone), so what it played stayed there and the browser opened on the
+ * older cloud copy (2026-10-23). Phones hide the page all the time: at most once per PUSH_GAP_MS, and only when the save
+ * changed, as for automatic uploads. A save too big for a request that outlives the page goes the usual way, which
+ * still gets through when the page is only hidden.
+ */
+export function uploadOnLeave() {
+  const { auth, save } = useGame.getState()
+  const user = auth.userId
+  if (!save || !pushAllowed || cloudMoved || auth.status !== 'signed_in' || !user) return
+  const realm = realmOf(save)
+  const mark = readCloudMark(realm)
+  const key = pushKey(save)
+  if (key === cloudKey || (mark?.user === user && key === mark.key) || pushGapLeft(mark, user) > 0) return
+  if (accessToken && sendSaveOnLeave(user, accessToken, save, knownAt(user, realm))) {
+    cancelPush()
+    lastTry = Date.now()
+    // Taken as written. If it wasn't (refused, lost), the cloud's stamp isn't this one: the next load or upload sees
+    // it and compares, as for any copy moved elsewhere.
+    cloudKey = key
+    rememberCloud(user, realm, save.updatedAt, key, Date.now())
+    return
+  }
+  void getSupabase().then((client) => {
+    if (!client) return
+    cancelPush()
+    schedulePush(() => pushLatest(client, user), 0)
+    flushPush()
+  })
 }
 
 let started = false
@@ -797,6 +892,8 @@ export function startBackgroundServices() {
   // A small world ends on the server's clock (docs/21): it closes, or sends the player out when switched off.
   startWorldClock()
   startAnalytics()
+  // Welcome-back gifts (docs/58): the server is asked once a day whether the player is back from days away.
+  startWelcomeBack()
   void initAuth()
   void checkContent()
   // Catching up covers a request sent before the join; hidden by then, it joins when the player comes back (relisten).
@@ -820,14 +917,12 @@ export function startBackgroundServices() {
   window.addEventListener('storage', (e) => {
     if (e.key === saveKeyOf(activeSlot()) && e.newValue) adoptStoredSave(e.newValue)
   })
-  // Closing the page sends what the automatic sync hasn't yet. Merely switching away doesn't: on phones that happens
-  // all the time, and the local save keeps everything until the next sync. Nor does a close within PUSH_GAP_MS of the
-  // last upload — a page reloaded over and over would upload on every reload: it goes up at the next load instead.
+  // Hiding or closing the page sends what the automatic sync hasn't yet (uploadOnLeave).
   window.addEventListener('pagehide', () => {
     markAway()
     markOfflineAway()
     flushWrite()
-    if (pushDue()) flushPush()
+    uploadOnLeave()
   })
   document.addEventListener('visibilitychange', () => {
     clearTimeout(leaveTimer)
@@ -835,6 +930,7 @@ export function startBackgroundServices() {
       markAway()
       markOfflineAway()
       flushWrite()
+      uploadOnLeave()
       leaveTimer = setTimeout(leaveChannel, HIDDEN_LEAVE_MS)
     } else {
       // First: a frozen tab may not have heard another tab's writes, and what follows commits this tab's save.

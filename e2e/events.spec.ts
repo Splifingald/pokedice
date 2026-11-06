@@ -1,16 +1,23 @@
-// The special events (docs/18): the unlock pop-up, then the Fortune Wheel from Home's square to its prize, as a guest
-// (the prize drawn on the device, on the server's day) and signed in (the prize drawn by wheel_spin()).
+// The special events (docs/18): their rules where they apply (a card at the top of the page until GOT IT, docs/43 §7),
+// then the Fortune Wheel from Home's square to its prize: a ticket a spin, drawn on the device on the server's clock,
+// for guests and signed-in players alike (since 2026-10-25).
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG, linearAreas, type SaveData } from '../src/engine'
 import { FAST, fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY } from './helpers'
 
 const ROUTES_7_8 = DEFAULT_CONFIG.events.wheel.unlockAreaId!
 const cleared = { roundsDone: 1, cleared: true, bossDefeated: true, bossesDefeated: [], gymsDefeated: [] }
+const HOUR = 60 * 60 * 1000
 
-/** Routes 7 & 8 cleared: the wheel is open. `seen`: its pop-up was already shown. */
-function wheelSave(seen = true): SaveData {
+/** Routes 7 & 8 cleared: the wheel is open. `seen`: its pop-up (and so its rules) was already shown. */
+function wheelSave(seen = true, events: SaveData['events'] = {}): SaveData {
   const base = makeSave(4, { player: { name: 'Sam', character: 'red' } })
-  return { ...base, areaProgress: { ...base.areaProgress, [ROUTES_7_8]: cleared }, ...(seen && { events: { seen: ['wheel'] } }) }
+  return {
+    ...base,
+    gold: 1000,
+    areaProgress: { ...base.areaProgress, [ROUTES_7_8]: cleared },
+    events: { ...(seen && { seen: ['wheel' as const], wheelRulesSeen: true }), ...events },
+  }
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -29,20 +36,27 @@ async function boot(page: Page, save: SaveData, signedIn = false, settings = FAS
 
 const stored = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!) as SaveData)
 
-test('the wheel opens with a pop-up that goes straight to it', async ({ page }) => {
+test('the wheel’s rules sit at the top of its page until GOT IT, never a pop-up there', async ({ page }) => {
   await mockSupabase(page, { rpc: { event_time: eventTime } })
   await boot(page, wheelSave(false))
-  await page.goto('/home')
-  const pop = page.getByRole('dialog', { name: 'Fortune Wheel' })
-  await expect(pop).toBeVisible()
-  await expect(pop.getByText('Once a day', { exact: true })).toBeVisible()
-  await pop.getByRole('button', { name: "Let's go!" }).click()
-  await expect(page).toHaveURL(/\/events\/wheel$/)
-  await expect(page.getByRole('heading', { name: 'Fortune Wheel' })).toBeVisible()
-  // Seen once: back Home (in the app: a reload would seed the unseen save again), no pop-up.
+  await page.goto('/events/wheel')
+  await expect(page.getByRole('heading', { level: 1, name: 'Fortune Wheel' })).toBeVisible()
+  const card = page.getByRole('region', { name: 'How Fortune Wheel works' })
+  await expect(card).toBeVisible()
+  await expect(card.getByText('Tickets', { exact: true })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  // Opening the page isn't reading them: still unseen.
+  await page.waitForTimeout(500)
+  expect((await stored(page)).events?.seen ?? []).not.toContain('wheel')
+  await card.getByRole('button', { name: 'Got it' }).click()
+  await expect(card).toHaveCount(0)
+  await expect.poll(async () => (await stored(page)).events?.seen).toContain('wheel')
+  expect((await stored(page)).events?.wheelRulesSeen).toBe(true)
+  // Back on the page from Home (a reload would seed the unseen save again): no card this time.
   await page.getByRole('button', { name: 'Back to Home' }).click()
-  await expect(page.getByRole('button', { name: /^Fortune Wheel: a free spin is ready/ })).toBeVisible()
-  await expect(pop).toHaveCount(0)
+  await page.getByRole('button', { name: /^Fortune Wheel: 4\/4 tickets/ }).click()
+  await expect(page.getByRole('button', { name: 'Spin!' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'How Fortune Wheel works' })).toHaveCount(0)
 })
 
 test('the events ship off: no wheel until the admin switches it on', async ({ page }) => {
@@ -55,71 +69,60 @@ test('the events ship off: no wheel until the admin switches it on', async ({ pa
   await expect(page.getByRole('button', { name: /^Fortune Wheel/ })).toHaveCount(0)
 })
 
-test('a guest spins once a day: the odds, the prize in the bag, then the countdown', async ({ page }) => {
+test('a spin costs a ticket: the odds, the last ticket spent, one bought for ₽200', async ({ page }) => {
   const calls = await mockSupabase(page, { rpc: { event_time: eventTime } })
-  const save = wheelSave()
-  await boot(page, save)
+  const save = wheelSave(true, { wheelTickets: 1, wheelTicketAt: Date.now() + 5 * HOUR })
+  await boot(page, save, true)
   await page.goto('/home')
-  await page.getByRole('button', { name: /^Fortune Wheel: a free spin is ready/ }).click()
+  await page.getByRole('button', { name: /^Fortune Wheel: 1\/4 tickets/ }).click()
   await expect(page).toHaveURL(/\/events\/wheel$/)
 
-  await page.getByRole('button', { name: 'Info: every prize and its odds' }).click()
-  const odds = page.getByRole('dialog', { name: 'Prizes and odds' })
-  await expect(odds.getByRole('row')).toHaveCount(6)
-  await expect(odds.getByRole('row', { name: /Master Ball/ })).toContainText('2.5 %')
+  // INFO: the rules, then every prize's odds.
+  await page.getByRole('button', { name: 'Info: how Fortune Wheel works' }).click()
+  const odds = page.getByRole('dialog', { name: 'Fortune Wheel' })
+  await expect(odds.getByRole('heading', { name: 'Prizes and odds' })).toBeVisible()
+  // Eight prizes and the jackpot, under the header.
+  await expect(odds.getByRole('row')).toHaveCount(10)
+  await expect(odds.getByRole('row', { name: /Porygon/ })).toContainText('10 %')
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Spin!' }).click()
   const card = page.getByRole('dialog', { name: /^You won/ })
   await expect(card).toBeVisible({ timeout: 15_000 })
   await card.getByRole('button', { name: 'Nice!' }).click()
-  await expect(page.getByText('Come back tomorrow')).toBeVisible()
+  await expect(page.getByText('No ticket left')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Spin!' })).toHaveCount(0)
+  await expect.poll(async () => (await stored(page)).events?.wheelTickets).toBe(0)
+  const spent = await stored(page)
 
-  // The save is written a moment after it changes.
-  await expect.poll(async () => (await stored(page)).events).toEqual({ seen: ['wheel'], wheelDay: today() })
-  const after = await stored(page)
-  const gained =
-    after.gold - save.gold +
-    Object.entries(after.inventory).reduce((n, [k, q]) => n + q - (save.inventory[k] ?? 0), 0)
-  expect(gained).toBeGreaterThan(0)
-  // A guest's prize never asks the server.
+  await page.getByRole('button', { name: 'Buy a ticket · ₽200' }).click()
+  await expect(page.getByRole('button', { name: 'Spin!' })).toBeVisible()
+  await expect.poll(async () => (await stored(page)).events?.wheelTickets).toBe(1)
+  expect((await stored(page)).gold).toBe(spent.gold - 200)
+  // Signed in or not, the spin is drawn here: the server is never asked.
   expect(calls.some((c) => c.includes('wheel_spin'))).toBe(false)
-
-  await page.goto('/home')
-  await expect(page.getByRole('button', { name: /^Fortune Wheel: spun today/ })).toBeVisible()
 })
 
-test("signed in, the server draws the prize; a second device's spin is already spent", async ({ page }) => {
-  let spins = 0
-  await mockSupabase(page, {
-    rpc: {
-      event_time: eventTime,
-      wheel_spin: () => {
-        spins++
-        return { day: today(), prize: 4, reward: { kind: 'item', key: 'master-ball', qty: 1 }, fresh: spins === 1 }
-      },
-    },
-  })
-  const save = wheelSave()
-  await boot(page, save, true)
+test('the new rules show once on the page; a Porygon won is paid and the jackpot moves on to a shiny one', async ({ page }) => {
+  await mockSupabase(page, { rpc: { event_time: eventTime } })
+  // A player from before the tickets (the wheel seen, not its new rules), with a Porygon still waiting to be paid.
+  const save = wheelSave(false, { seen: ['wheel'], wheelPending: { kind: 'pokemon', dex: 137, level: 30 } })
+  await boot(page, save)
   await page.goto('/events/wheel')
-  await page.getByRole('button', { name: 'Spin!' }).click()
-  const card = page.getByRole('dialog', { name: /Master Ball/ })
-  await expect(card).toBeVisible({ timeout: 15_000 })
-  await expect(card.getByText('JACKPOT!')).toBeVisible()
-  await card.getByRole('button', { name: 'Nice!' }).click()
-  await expect.poll(async () => (await stored(page)).inventory['master-ball']).toBe((save.inventory['master-ball'] ?? 0) + 1)
-
-  // Another device, the same day: the server says it's spent, and nothing is paid.
-  await page.evaluate((s) => localStorage.setItem('pokedice.save', s), JSON.stringify(save))
-  await page.reload()
-  await page.getByRole('button', { name: 'Spin!' }).click()
-  await expect(page.getByText('Already spun today on this account. Come back tomorrow!')).toBeVisible()
-  await expect(page.getByText('Come back tomorrow', { exact: true })).toBeVisible()
-  await expect.poll(async () => (await stored(page)).events?.wheelDay).toBe(today())
-  expect((await stored(page)).inventory['master-ball'] ?? 0).toBe(save.inventory['master-ball'] ?? 0)
-  expect(spins).toBe(2)
+  const rules = page.getByRole('region', { name: 'How Fortune Wheel works' })
+  await expect(rules.getByText('Tickets', { exact: true })).toBeVisible()
+  await rules.getByRole('button', { name: 'Got it' }).click()
+  // The jackpot's card in the docked panel (PC): the next one, a shiny Porygon.
+  await expect(page.getByText('Shiny Porygon · 1 %')).toBeVisible()
+  await expect.poll(async () => (await stored(page)).box.some((p) => p.dex === 137)).toBe(true)
+  await expect.poll(async () => (await stored(page)).events?.wheelRulesSeen).toBe(true)
+  // Back on the page from Home (a reload would seed the first save again): no rules this time.
+  await page.getByRole('button', { name: 'Back to Home' }).click()
+  await page.getByRole('button', { name: /^Fortune Wheel: 4\/4 tickets/ }).click()
+  await expect(page.getByRole('button', { name: 'Spin!' })).toBeVisible()
+  await page.waitForTimeout(500)
+  await expect(page.getByRole('region', { name: 'How Fortune Wheel works' })).toHaveCount(0)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 /** Click the first visible, enabled button among `names` (exact accessible names, or patterns). */
@@ -136,7 +139,8 @@ async function clickAny(page: Page, names: (string | RegExp)[]): Promise<boolean
 
 /** The League area is cleared, so its fights can play themselves (auto mode): only the rewards' buttons to press. */
 const AUTO = JSON.stringify({ ...JSON.parse(FAST), autoMode: true })
-const FIGHT_ON = ['GOT IT', 'SKIP ▸▸', 'NEXT BATTLE']
+// A trainer's next Pokémon comes into the fight by itself (2026-11-04); Next ▸ closes a result card.
+const FIGHT_ON = ['GOT IT', 'SKIP ▸▸', 'NEXT BATTLE', 'Next ▸']
 
 /** The Kanto League won, and a team for the rebattle: three Lv.100s with every upgrade (`level` 5: a team to lose). */
 function leagueSave(level = 100): SaveData {
@@ -168,7 +172,7 @@ test('the Elite Rebattle: a gauntlet fight pays, the next trainer waits, and the
   // The rules, from the Info button at the foot of the page.
   await page.getByRole('button', { name: 'Info: how Elite Rebattle works' }).click()
   const rules = page.getByRole('dialog', { name: 'Elite Rebattle' })
-  await expect(rules.getByText(/^Five fights in a row with no Pokémon Center\./)).toBeVisible()
+  await expect(rules.getByText(/^Five fights in a row, no Center, items allowed\./)).toBeVisible()
   await rules.getByRole('button', { name: 'OK', exact: true }).click()
   await page.getByRole('button', { name: 'Start the Bronze tier' }).click()
   await expect(page.getByText('Each of their Pokémon pays ₽×1, once in this tier.')).toBeVisible()
@@ -188,7 +192,7 @@ test('the Elite Rebattle: a gauntlet fight pays, the next trainer waits, and the
   await page.getByRole('button', { name: 'Later', exact: true }).click()
   await expect(page).toHaveURL(/\/events\/rebattle$/)
   await expect(page.getByRole('button', { name: 'Continue: Elite Four Bruno' })).toBeVisible()
-  await expect(page.getByLabel('Beaten')).toHaveCount(1)
+  await expect(page.getByText('Elite Four Lorelei, Beaten')).toHaveCount(1)
 })
 
 test('the Elite Rebattle: a loss starts the tier over, the team healed', async ({ page }) => {
@@ -298,9 +302,9 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
   await expect(page.getByRole('button', { name: 'Calendar: the raids of the next two weeks' })).toBeVisible()
   await page.getByRole('button', { name: 'Info: how Raid Battles works' }).click()
   const rules = page.getByRole('dialog', { name: 'Raid Battles' })
-  await expect(rules.getByText(/^One raid a day, the same for everyone/)).toBeVisible()
+  await expect(rules.getByText(/^One raid a day for everyone/)).toBeVisible()
   // The raid's own type matchups, with the admin's numbers.
-  const matchups = /super-effective hits only do ×1\.3 to it; .* ×0\.7, and no type is immune to it \(×0\.5\)\.$/
+  const matchups = /Super-effective hits only do ×1\.3; resisted ones still do ×0\.7; nothing is immune \(×0\.5\)\.$/
   await expect(rules.getByText(matchups)).toBeVisible()
   await rules.getByRole('button', { name: 'OK', exact: true }).click()
   await page.getByRole('button', { name: 'Start the raid' }).click()
@@ -329,7 +333,7 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
 
   // The fight (animations off): you play first, the attack is yours, until the raid is won or lost.
   await expect(page.getByRole('heading', { name: 'Raid battle: Celebi' })).toBeAttached()
-  const caught = page.getByRole('button', { name: /ROLL TO CATCH|CATCH/ })
+  const caught = page.getByRole('button', { name: /ROLL TO CATCH|CATCH|Throw it$/ }).first()
   const lost = page.getByRole('heading', { name: 'The raid is lost' })
   for (let i = 0; i < 400 && !(await caught.isVisible()) && !(await lost.isVisible()); i++) {
     await clickAny(page, ['ATTACK', 'SKIP TURN'])
@@ -343,8 +347,8 @@ test('a raid: the day’s raid, its lock, NPC trainers in the group, the fight t
     await expect(page.getByRole('button', { name: 'Start the raid' })).toBeVisible()
     return
   }
-  await page.getByRole('radio', { name: /Ultra Ball/ }).click()
-  await caught.click()
+  // The Ultra Ball's tile is its throw (docs/42).
+  await page.getByRole('button', { name: /^Ultra Ball.*Throw it$/ }).click()
   const result = page.getByRole('button', { name: 'CONTINUE' })
   await expect(result).toBeVisible()
   await result.click()
@@ -466,17 +470,18 @@ test('signed in: two friends in the group, and the raid starts with their teams,
   await sheet.getByRole('button', { name: /Gary/ }).click()
   await sheet.getByRole('button', { name: /Erika/ }).click()
   await expect(sheet.getByRole('button', { name: /Gary/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(sheet.getByText('Helped you once')).toBeVisible()
   await sheet.getByRole('button', { name: 'OK', exact: true }).click()
-  await expect(page.getByText('Helped you once')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Take Erika out of your group' })).toBeVisible()
+  // Their seats beside yours; a tap on one opens the friends again (a pick is undone there).
+  const seat = (name: string) => page.getByRole('button', { name: new RegExp(`^${name}\\. Raid with a friend`) })
+  await expect(seat('Erika')).toBeVisible()
   // The green thumbs against Celebi (Grass / Psychic): your three Dark Pokémon, Gary's Arcanine (Fire), Erika's two
   // (Poison); not Gary's Blastoise or Alakazam.
-  const row = (button: string) =>
-    page.getByRole('listitem').filter({ has: page.getByRole('button', { name: button }) })
   const thumbs = 'svg[aria-label="Recommended"]'
-  await expect(page.getByRole('listitem').filter({ hasText: 'You' }).first().locator(thumbs)).toHaveCount(3)
-  await expect(row('Take Gary out of your group').locator(thumbs)).toHaveCount(1)
-  await expect(row('Take Erika out of your group').locator(thumbs)).toHaveCount(2)
+  const group = page.getByRole('region', { name: 'Your group' })
+  await expect(group.getByRole('listitem').filter({ hasText: 'You' }).first().locator(thumbs)).toHaveCount(3)
+  await expect(seat('Gary').locator(thumbs)).toHaveCount(1)
+  await expect(seat('Erika').locator(thumbs)).toHaveCount(2)
 
   // A full group: no NPC pop-up, straight into the raid, the friends' trainers beside you.
   await page.getByRole('button', { name: 'Start the raid' }).click()
@@ -520,14 +525,27 @@ test('a progression raid: RAID on CONTINUE once its area is completed, its page,
   await expect.poll(async () => (await stored(page)).events?.raidNpc?.key).toBe(`${seafoam}:144`)
 })
 
-test('the Raids page lists the legendary raids of the region, each opening its page', async ({ page }) => {
+test('the Raids page lists the legendary raids: docked beside the list on PC, their own page on a phone', async ({ page }) => {
   await mockSupabase(page, { rpc: { event_time: raidTime } })
   await boot(page, seafoamSave())
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/events/raid')
   await expect(page.getByRole('heading', { name: 'Legendary raids' })).toBeVisible()
   const row = page.getByRole('button', { name: /^Articuno Seafoam Islands/ })
   await expect(row).toContainText('Open')
   await expect(page.getByRole('button', { name: /Complete Cerulean Cave to open it/ })).toBeVisible()
+  // PC: a list and its detail — the raid's panel docks at the right, the page stays.
+  await row.click()
+  await expect(row).toHaveAttribute('aria-pressed', 'true')
+  const panel = page.getByRole('complementary', { name: 'Articuno' })
+  await expect(panel.getByRole('heading', { name: 'Your Kanto team' })).toBeVisible()
+  await expect(panel.getByRole('button', { name: 'Start the raid' })).toBeVisible()
+  await expect(page).toHaveURL(/\/events\/raid$/)
+  // Today's raid, the list's first row, comes back.
+  await page.getByRole('button', { name: /^Celebi Raid Battles/ }).click()
+  await expect(page.getByRole('complementary', { name: 'Raid Battles' }).getByRole('heading', { name: 'Your raid team' })).toBeVisible()
+  // A phone: the row opens the raid's own page.
+  await page.setViewportSize({ width: 390, height: 844 })
   await row.click()
   await expect(page).toHaveURL(/\/raid\/[0-9a-f-]+\/144$/)
   await page.getByRole('button', { name: 'Back', exact: true }).click()

@@ -1,13 +1,14 @@
-// "Your team helped Gary catch Mew! +1 Ultra Ball": the gifts friends' raids left you, shown between fights and after
-// Prof. Oak's tutorials, once claimed (store/raidGifts.ts). The items are in the bag already.
+// "Your team helped Gary catch Mew! +1 Ultra Ball": the gifts friends' raids left you, shown between fights on their turn
+// in the one-time pop-ups' queue (engine/popups.ts: after Prof. Oak's tutorials), once claimed (store/raidGifts.ts).
+// The items are in the bag already.
 import { useEffect } from 'react'
-import { dayCareTutorialDue, leaderboardTutorialDue } from '@/engine'
 import { useT } from '@/i18n/react'
 import { collectRaidGifts, dismissRaidGifts, useRaidGifts } from '@/store/raidGifts'
 import { useGame } from '@/store/game'
 import { ItemSprite } from './ItemSprite'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
+import { useMyTurn, useOnScreen } from './popupTurn'
 import { MiniSprite } from './SpriteImg'
 
 export function RaidGiftPopup() {
@@ -16,8 +17,7 @@ export function RaidGiftPopup() {
   const userId = useGame((s) => s.auth.userId)
   const data = useGame((s) => s.data)
   const gifts = useRaidGifts((s) => s.gifts)
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
-  const tutorial = useGame((s) => !!s.save && (dayCareTutorialDue(s.save, s.data) || leaderboardTutorialDue(s.save, s.data)))
+  const turn = useMyTurn('raidGifts')
 
   // On opening the game and signing in; then whenever the tab comes back (throttled).
   useEffect(() => {
@@ -29,7 +29,8 @@ export function RaidGiftPopup() {
     return () => document.removeEventListener('visibilitychange', onShow)
   }, [])
 
-  const open = gifts.length > 0 && idle && !tutorial
+  const open = gifts.length > 0 && turn
+  useOnScreen('raidGifts', open)
   return (
     <Modal open={open} onClose={dismissRaidGifts} title={t('ui.raid.gifts.title')}>
       <div className="flex flex-col gap-3">

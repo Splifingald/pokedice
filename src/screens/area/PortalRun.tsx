@@ -4,28 +4,24 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  leaderboardTutorialDue,
+  markPortalRulesSeen,
   monName,
   portalDiceCount,
   portalLock,
   portalModeOf,
   portalRulesDue,
+  portalSkin,
   portalStateOf,
-  regionOfferDue,
   teamOf,
-  versusRulesDue,
   type Area,
   type PortalRunMode,
+  type PortalSkin,
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import {
   describeOffer,
   DistortionChoiceView,
   DistortionFx,
-  GIRATINA,
   playPortalClose,
   PortalCloseFx,
   PortalEntry,
@@ -33,7 +29,9 @@ import {
   PortalVictoryView,
   RunBonuses,
 } from '@/components/Portal'
+import { useMyTurn, useOnScreen } from '@/components/popupTurn'
 import { InfoButton } from '@/components/RulesModal'
+import { prizeOf, PortalSkinProvider, skinKey } from '@/components/portalSkin'
 import { pictureOf } from '@/fx/areaArt'
 import { mutateSave, useGame } from '@/store/game'
 import {
@@ -50,7 +48,12 @@ import { travelTo } from '@/store/travel'
 import { progressRaidPath } from '@/screens/events/progressRaids'
 import { AreaTeam } from './AreaIdle'
 
-const markSeen = () => mutateSave((s) => (s.portalRulesSeen ? null : { ...s, portalRulesSeen: true }))
+/** Its look's rules pop-up seen (each look its own: the Stairway of Plates' is new to a Distortion World veteran). */
+const markSeen = (skin: PortalSkin) =>
+  mutateSave((s) => {
+    const next = markPortalRulesSeen(s, skin)
+    return next === s ? null : next
+  })
 
 /**
  * While a portal run is under way, every page but the area's sends back to it (a link, the menus, a reload), the run
@@ -58,6 +61,7 @@ const markSeen = () => mutateSave((s) => (s.portalRulesSeen ? null : { ...s, por
  */
 export function PortalGuard() {
   const lock = useGame((s) => portalLock(s.save, s.data))
+  const data = useGame((s) => s.data)
   const runArea = useGame((s) => s.run.areaId)
   const { pathname } = useLocation()
   useEffect(() => {
@@ -65,60 +69,61 @@ export function PortalGuard() {
   }, [lock, runArea])
   if (!lock) return null
   return (
-    <>
+    <PortalSkinProvider value={portalSkin(portalModeOf(lock, data))}>
       {pathname !== '/area' && <Navigate to="/area" replace />}
       <DistortionFx />
       <PortalCloseFx />
-    </>
+    </PortalSkinProvider>
   )
 }
 
 /**
- * The rules pop-up, once (docs/15 §20): when the region being played has a portal area open, between fights, after
- * the other one-time pop-ups. Let's go! travels there.
+ * The rules pop-up, once (docs/15 §20): when the region being played has a portal area open, between fights, on its turn
+ * in the one-time pop-ups' queue (engine/popups.ts), never over an area's page. Let's go! travels there.
  */
 export function PortalUnlockPopup() {
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
-  const area = useGame((s) =>
-    !s.save ||
-    versusRulesDue(s.save, s.data) ||
-    dayCareTutorialDue(s.save, s.data) ||
-    leaderboardTutorialDue(s.save, s.data) ||
-    donationDue(s.save, s.data) ||
-    regionOfferDue(s.save, s.data) ||
-    eventUnlockDue(s.save, s.data)
-      ? null
-      : portalRulesDue(s.save, s.data),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  const onArea = useLocation().pathname === '/area'
+  const area = useGame((s) => (s.save ? portalRulesDue(s.save, s.data) : null))
   const mode = portalModeOf(area, data)
+  const open = useMyTurn('portal') && !!area && !!mode
+  useOnScreen('portal', open)
   if (!area || !mode) return null
+  const skin = portalSkin(mode)
   return (
-    <PortalRulesModal
-      open={idle && !onArea}
-      onClose={markSeen}
-      onGo={() => {
-        markSeen()
-        if (travelTo(area)) navigate('/home')
-      }}
-      mode={mode}
-      data={data}
-    />
+    <PortalSkinProvider value={skin}>
+      <PortalRulesModal
+        open={open}
+        onClose={() => markSeen(skin)}
+        onGo={() => {
+          markSeen(skin)
+          if (travelTo(area)) navigate('/home')
+        }}
+        mode={mode}
+        data={data}
+        prize={prizeOf(area, skin)}
+      />
+    </PortalSkinProvider>
   )
 }
 
 /** INFO at the bottom of the area's page: the run's rules again. */
-export function PortalInfo({ mode }: { mode: PortalRunMode }) {
+export function PortalInfo({ mode, area }: { mode: PortalRunMode; area?: Area }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const [open, setOpen] = useState(false)
+  const skin = portalSkin(mode)
   return (
-    <>
-      <InfoButton name={t('ui.portal.title')} onClick={() => setOpen(true)} />
-      <PortalRulesModal open={open} onClose={() => setOpen(false)} mode={mode} data={data} />
-    </>
+    <PortalSkinProvider value={skin}>
+      <InfoButton name={t(skinKey(skin, 'ui.portal.title'))} onClick={() => setOpen(true)} />
+      <PortalRulesModal
+        open={open}
+        onClose={() => setOpen(false)}
+        mode={mode}
+        data={data}
+        prize={prizeOf(area, skin)}
+      />
+    </PortalSkinProvider>
   )
 }
 
@@ -128,17 +133,31 @@ export function PortalInfo({ mode }: { mode: PortalRunMode }) {
  * usual page, with the run's bonuses on it).
  */
 export function PortalStep({ area }: { area: Area }) {
+  const data = useGame((s) => s.data)
+  const mode = portalModeOf(area, data)
+  if (!mode) return null
+  // Every piece of the step wears the area's look (Distortion World, or the Stairway of Plates).
+  return (
+    <PortalSkinProvider value={portalSkin(mode)}>
+      <PortalStepIn area={area} mode={mode} />
+    </PortalSkinProvider>
+  )
+}
+
+function PortalStepIn({ area, mode }: { area: Area; mode: PortalRunMode }) {
   const { t } = useT()
   const navigate = useNavigate()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
-  const mode = portalModeOf(area, data)
-  if (!mode) return null
+  const skin = portalSkin(mode)
+  const prize = prizeOf(area, skin)
   const p = portalStateOf(save, area.id)
   if (p.won && !p.wonSeen)
     return (
       <PortalVictoryView
-        name={data.species[GIRATINA]?.name ?? 'Giratina'}
+        name={data.species[prize]?.name ?? ''}
+        dex={prize}
+        portals={mode.portals}
         level={mode.raid.level}
         onDone={() => {
           finishPortalVictory()
@@ -154,7 +173,7 @@ export function PortalStep({ area }: { area: Area }) {
   if (p.active && p.offers?.length) {
     const team = teamOf(save)
     const views = p.offers.map((o) =>
-      describeOffer(o, mode, data, team, (inst) => portalDiceCount(inst, data, p), t),
+      describeOffer(o, mode, data, team, (inst) => portalDiceCount(inst, data, p), t, skin),
     )
     return (
       <div className="flex flex-col gap-4">
@@ -163,7 +182,9 @@ export function PortalStep({ area }: { area: Area }) {
           index={p.closed + 1}
           total={mode.portals}
           onPick={(i) => {
-            playPortalClose()
+            const o = p.offers![i]
+            // A type boon is a Plate: the altar takes that one.
+            playPortalClose(o?.kind === 'boost' ? o.type : null)
             pickDistortionOffer(i)
           }}
         />
@@ -185,21 +206,23 @@ function PortalWayIn({ area, mode }: { area: Area; mode: PortalRunMode }) {
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const popup = useGame((s) => !!s.run.portalPopup)
+  const skin = portalSkin(mode)
   useEffect(() => arriveAtPortalIntro(area.id), [area.id])
   return (
     <PortalEntry
       mode={mode}
       data={data}
+      prize={prizeOf(area, skin)}
       picture={pictureOf(area.id)?.url ?? null}
       popup={popup}
       onPopup={markPortalPopup}
       onTeam={() => navigate('/team')}
       onReady={() => {
-        markSeen()
+        markSeen(skin)
         enterPortal(area.id)
       }}
       onNotNow={() => {
-        markSeen()
+        markSeen(skin)
         leaveArea()
         navigate('/home')
       }}
@@ -217,5 +240,9 @@ export function PortalBonuses({ area }: { area: Area }) {
     const inst = save.box.find((x) => x.id === uid)
     return inst ? [{ name: monName(inst, data), dex: inst.dex, types }] : []
   })
-  return <RunBonuses boosts={p.boosts ?? {}} dice={dice} />
+  return (
+    <PortalSkinProvider value={portalSkin(portalModeOf(area, data))}>
+      <RunBonuses boosts={p.boosts ?? {}} dice={dice} />
+    </PortalSkinProvider>
+  )
 }

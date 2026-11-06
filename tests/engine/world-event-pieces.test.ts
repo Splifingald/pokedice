@@ -3,6 +3,7 @@
 // raids); a secret area can wait for another area to be cleared; its Mart and loot ignore the item switches.
 import { describe, expect, it } from 'vitest'
 import {
+  RAID_SPECIALS,
   applyFieldItem,
   bossCaught,
   catchTarget,
@@ -144,15 +145,15 @@ describe('a small world’s raids', () => {
       expect(progressRaidShiny(data, { ...sinnoh, boss: { ...sinnoh.boss, shiny: true } })).toBe(false)
   })
 
-  it('fight at their boss’s level, teams capped there; a real region’s raid keeps the admin’s numbers', () => {
+  it('fight at their boss’s level, teams capped there; a real region’s raid keeps its own numbers', () => {
     expect(raidRules(data, 491, 'progress', NEWMOON.id).level).toBe(60)
     expect(raidTeamCap(data, 491, 'progress', NEWMOON.id)).toBe(60)
     expect(raidRules(data, 487, 'progress', DISTORTION.id).level).toBe(70)
     expect(raidTeamCap(data, 487, 'progress', DISTORTION.id)).toBe(70)
-    expect(raidRules(data, 487, 'progress').level).toBe(data.config.events.raid.level)
+    expect(raidRules(data, 487, 'progress').level).toBe(RAID_SPECIALS[487]!.level)
     const sinnoh = progressRaids(data, 'sinnoh').find((r) => r.dex === 487)
     if (sinnoh)
-      expect(raidRules(data, 487, 'progress', sinnoh.areaId).level).toBe(data.config.events.raid.level)
+      expect(raidRules(data, 487, 'progress', sinnoh.areaId).level).toBe(RAID_SPECIALS[487]!.level)
   })
 })
 

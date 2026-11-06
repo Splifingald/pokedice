@@ -340,7 +340,8 @@ game makes to the save, as it always was; the server's own world rules (trades, 
 ## 12. The cloud sync and a world in progress (2026-10-22)
 
 Reported on Discord: a player nearly finished Haunted Hollow on their phone (all but Giratina), then opened the game on
-their PC and got the PC's older save back, SYNC ONLINE pressed or not. Three faults, all fixed:
+their PC and got the PC's older save back, SYNC ONLINE pressed or not. Four faults, all fixed (the fourth found the
+next day):
 
 - **The sync counted nothing in a world.** `progressTotals` left the world's block out (it closes with the world), so a
   world nearly finished tied with a save that never went in, and the tie went to the newer stamp — which a stale device
@@ -355,8 +356,9 @@ their PC and got the PC's older save back, SYNC ONLINE pressed or not. Three fau
   the millisecond; the row keeps microseconds), or an insert when it knew of no row — and anything else throws
   `SaveConflictError` without writing. The waiting upload then compares the two again as at sign-in, so the further
   copy wins and the other goes to the device's backups — once nothing on screen would be cut short (a fight, an
-  encounter, a catch decision, Versus); until then no upload is even tried. Pages still on an older build write as
-  before until they reload (a day at most).
+  encounter, a catch decision, Versus); until then no upload is even tried. Pages still on an older build wrote as
+  before — not for a day at most, as hoped: resumed after days, they kept overwriting saves until 0088 refused them
+  (docs/49).
 - **A tie went to the save changed last, not played last.** Level on progress, the sync keeps the one played last —
   but `updatedAt` moves with every change, and a stale device changes its save on its own at load (the offline pay, an
   Extreme absence healed, a fossil revived, raid gifts and settled trades arriving), so it looked newest. The save now
@@ -365,6 +367,25 @@ their PC and got the PC's older save back, SYNC ONLINE pressed or not. Three fau
   last stamp. `decideSync` breaks ties on it (`updatedAt` for a copy without it), Settings → backups shows it as "Last
   played", and it is no reason to upload (left out of `pushKey`, so older saves keep their key). The cost: raid gifts
   claimed at load on the device that then loses a tie stay in that device's backup.
+- **What was played on a page then closed never went up** (2026-10-23, the same player: "it breaks when the game is
+  on the home screen"). Uploads came `cloudSyncMinutes` (15) after the last sync; hiding the page sent nothing; and the
+  push tried as the page closed went through supabase-js, which reads its session asynchronously before sending, so it
+  never left. A browser tab got it back at its next load from the device's own save — but a game added to the iPhone's
+  home screen keeps a save apart from Safari's (and a PC shortcut made in another browser, apart from that browser's),
+  so the other one opened on the older cloud copy: progress, the Day Care, all back, while the shiny raid (kept on the
+  server) stayed. Now hiding or closing the page sends the save at once (`uploadOnLeave`): one request started right
+  there with the token kept at hand, which the browser finishes even once the page is gone (`keepalive`, up to 64 KiB:
+  a typical save fits; a bigger one goes the usual way, which gets through while the page is only hidden). It writes
+  only over the copy last matched, as every upload, at most once per PUSH_GAP_MS (phones hide the page all the time),
+  and only when the save changed. Its answer can't be read: the device takes it as written, and if it wasn't, the
+  cloud's stamp says so at the next load, which compares.
 
 ### Setting it up
 1. **No SQL to run**: the check is the upload's own filter, on the `saves` table as it is.
+
+## 13. A world closed a week early (2026-10-29)
+
+A player's phone closed Haunted Hollow on 2026-10-25, a week before its end: the clock read the end on `serverNow()`,
+the device's clock plus the offset from the last reading of the server's, and the device's clock can move between two
+readings. A world now closes for its end on `trustedNow()`, the last reading carried on the page's own steady clock,
+and a reading whose round trip took too long is dropped (docs/49 §2).

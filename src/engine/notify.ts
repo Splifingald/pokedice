@@ -6,7 +6,7 @@ import { pairs, nextClock, type CarePair } from './breeding'
 import { dayCareOf, isDayCareOpen } from './daycare'
 import { utcDay } from './eventTime'
 import { eventOpenTo, eventUnlocked } from './events'
-import { badgesHeld, liveEvents, liveState } from './liveEvents'
+import { badgesHeld, liveStartsBetween } from './liveEvents'
 import { monName } from './nickname'
 import { todayRaid } from './raid'
 import { raidOfDay } from './raidCalendar'
@@ -133,13 +133,9 @@ export function raidNotices(save: SaveData, data: GameData, now: number, off: Lo
 export function liveNotices(save: SaveData, data: GameData, now: number): PushNotice[] {
   if (!eventOpenTo(data.config.liveEvents?.access, data)) return []
   const badges = badgesHeld(save, data)
-  return liveEvents(data)
-    .filter(
-      (e) =>
-        liveState(e, now) === 'scheduled' &&
-        Date.parse(e.start) - now <= PUSH_LIVE_DAYS * DAY &&
-        badges >= e.minBadges,
-    )
+  // A recurring event's runs each have their own id, so each is announced.
+  return liveStartsBetween(data, now + 1, now + PUSH_LIVE_DAYS * DAY + 1)
+    .filter((e) => badges >= e.minBadges)
     .map((e) => ({ topic: 'live', key: `live:${e.id}`, at: Date.parse(e.start), event: e }))
 }
 

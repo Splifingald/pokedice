@@ -376,7 +376,7 @@ describe('a duel step (battle.ts single mode)', () => {
     )
     const s = structuredClone(state)
     s.enemy.hp = 1
-    s.enemy.status = { ...s.enemy.status, confused: true }
+    s.enemy.status = { ...s.enemy.status, confused: 1 }
     const log: Parameters<typeof startDuelStep>[3] = []
     startDuelStep(s, 'enemy', data, log)
     expect(s.phase).toBe('enemy_turn')

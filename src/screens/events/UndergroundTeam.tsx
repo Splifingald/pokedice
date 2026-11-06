@@ -2,7 +2,7 @@
 // the sheet to manage it: invitations to answer, friends to invite, the invitations sent, leaving. Solo (or signed
 // out), every orb is the player's. The server decides every seat (store/ugTeams.ts).
 import { useEffect, useState } from 'react'
-import { ORB_COLOURS, type UgTeam } from '@/engine'
+import { ORB_COLOURS, soloShare, ugCfg, type UgTeam } from '@/engine'
 import { AccountButton } from '@/components/AccountButton'
 import { PixelButton } from '@/components/PixelButton'
 import { Sheet } from '@/components/Sheet'
@@ -20,6 +20,9 @@ import { cx } from '@/theme/util'
 /** The three seats: who holds each colour (you, a friend, or free), and the line under them. */
 export function UgTeamSeats({ team }: { team: UgTeam | null }) {
   const { t } = useT()
+  const cfg = useGame((s) => ugCfg(s.data))
+  // Solo, orbs still sell, for the admin's small share: say so where the player decides to team up or not.
+  const share = cfg.sellNeedsFull ? soloShare(cfg) : 0
   return (
     <div className="flex flex-col gap-2">
       <ul className="m-0 flex list-none gap-2 p-0">
@@ -38,12 +41,14 @@ export function UgTeamSeats({ team }: { team: UgTeam | null }) {
               <span className="max-w-full truncate text-[18px] leading-none">
                 {me ? t('ui.ug.you') : (seat?.name ?? (team ? t('ui.ug.freeSeat') : '—'))}
               </span>
-              <span className="font-pixel-sm text-[14px] text-muted">{t(`ui.ug.colour.${c}`)}</span>
+              <span className="font-pixel-sm text-[16px] text-muted">{t(`ui.ug.colour.${c}`)}</span>
             </li>
           )
         })}
       </ul>
-      <UgNote>{team ? t('ui.ug.teamNote') : t('ui.ug.teamSolo')}</UgNote>
+      <UgNote>
+        {team ? t('ui.ug.teamNote') : share > 0 ? t('ui.ug.teamSoloShare', { share }) : t('ui.ug.teamSolo')}
+      </UgNote>
     </div>
   )
 }
@@ -106,7 +111,7 @@ export function UgTeamSheet({ open, onClose }: { open: boolean; onClose: () => v
                   <li key={i.team} className="flex items-center gap-2 bg-cream p-1.5 shadow-card-gold">
                     <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
                       <b className="truncate text-[19px] font-normal leading-none">{i.name}</b>
-                      <small className="font-pixel-sm text-[14px] text-muted">
+                      <small className="font-pixel-sm text-[16px] text-muted">
                         {t('ui.ug.wantsYou', { n: i.seats })}
                       </small>
                     </span>
@@ -146,7 +151,7 @@ export function UgTeamSheet({ open, onClose }: { open: boolean; onClose: () => v
                       <TrainerLook src={avatarOf(f.avatar).src} w={36} h={40} />
                       <span className="grid min-w-0 flex-1 gap-0.5 leading-tight">
                         <b className="truncate text-[19px] font-normal leading-none">{f.name}</b>
-                        <small className="font-pixel-sm text-[14px] text-muted">
+                        <small className="font-pixel-sm text-[16px] text-muted">
                           {inTeam
                             ? t('ui.ug.inYourTeam')
                             : waiting

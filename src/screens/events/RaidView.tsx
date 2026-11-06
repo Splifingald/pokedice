@@ -11,9 +11,13 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import {
   comboDice,
   computeDamage,
+  confusionLevel,
   confusionRecoil,
   hasStatus,
+  legendCinemaOn,
+  MEGA_RAIDS,
   progressRaidOf,
+  raidSpecialFor,
   raidTeamCap,
   statusesFromRoll,
   sureThrow,
@@ -23,6 +27,8 @@ import {
   type RaidNpcOption,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
+import { useBattleMusic } from '@/audio/useBattleMusic'
+import { TalentPlaque } from '@/components/Talent'
 import { HpBar } from '@/components/HpBar'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
@@ -33,11 +39,12 @@ import { MiniSprite } from '@/components/SpriteImg'
 import { StatusIcons } from '@/components/StatusIcons'
 import { TypeBadge } from '@/components/TypeBadge'
 import { pictureOf } from '@/fx/areaArt'
-import { ballOfItem } from '@/fx/scenes'
+import { ballOfItem, loadRaidBall } from '@/fx/scenes'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { effectText } from '@/i18n/text'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
@@ -53,6 +60,7 @@ import {
   raidAgain,
   raidCatchShown,
   raidFightOver,
+  markRaidIntroSeen,
   raidIntroDone,
   throwRaidBall,
   useRaidRun,
@@ -73,6 +81,8 @@ import {
 import { BattleStage, type StageOverlay } from '../battle/BattleStage'
 import { CatchPanel, catchMessage } from '../battle/CatchPanel'
 import { RaidIntro } from './RaidIntro'
+import { LEGEND_RAID_SCENES } from '@/fx/timelines/legendRaidScenes'
+import { RAID_CINEMAS } from '@/fx/timelines/cinema'
 import { RaidNpcPicker } from './RaidNpcPicker'
 import { battlerOf, sideOfUid, useRaidAnimator, type RaidFx } from './raidAnimator'
 import { TrainerName } from '@/components/TrainerName'
@@ -108,13 +118,14 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
       <span className="flex min-w-0 items-center gap-1.5">
         <b className="min-w-0 truncate text-[20px] font-normal leading-none">{b.name}</b>
         {b.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
-        <span className="shrink-0 font-pixel-sm text-[15px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
+        <span className="shrink-0 font-pixel-sm text-[16px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
       </span>
       <span className="flex flex-wrap items-center gap-1">
         {b.types.map((ty) => (
           <TypeBadge key={ty} type={ty} size="sm" />
         ))}
         <StatusIcons status={b.status} />
+        <RaidMarks fx={fx} />
       </span>
       <span
         key={fx.barBreak?.id ?? 0}
@@ -126,9 +137,51 @@ function BossPlate({ b, hp, fx, bars, colors, aimed }: { b: Battler; hp: number;
           className="absolute bottom-0.5 left-0.5 top-0.5 block transition-[width] duration-500"
           style={{ width: `calc(${pct * 100}% - ${pct * 4}px)`, background: `linear-gradient(#ffffff70 0 3px, transparent 3px), ${color}` }}
         />
-        <b className="absolute -right-0.5 -top-[9px] bg-ink px-[5px] pb-px text-[15px] font-normal leading-none text-gold-pale">×{left}</b>
+        <b className="absolute -right-0.5 -top-[9px] bg-ink px-[5px] pb-px text-[16px] font-normal leading-none text-gold-pale">×{left}</b>
       </span>
     </div>
+  )
+}
+
+/**
+ * The raid overhaul's marks on the raid Pokémon's plate (docs/40), as the log has played: its last bar's power, a move
+ * charging (fires next round), and its combo-only shield with the HP it has left.
+ */
+export function RaidMarks({ fx }: { fx: Pick<RaidFx, 'charge' | 'shield' | 'final' | 'raidField'> }) {
+  const { t } = useT()
+  const { weather, terrain } = fx.raidField
+  const field = weather ? `ui.raid.x.weather.${weather}.name` : terrain ? `ui.raid.x.terrain.${terrain}.name` : null
+  return (
+    <>
+      {field && (
+        <span className="grid h-[18px] w-[18px] place-items-center bg-sky shadow-ring-line" title={t(field)}>
+          <PixelIcon
+            name={weather === 'sun' || weather === 'harshSun' ? 'daySun' : weather === 'snow' ? 'frozen' : terrain === 'grassy' ? 'heal' : 'cloud'}
+            size={14}
+            title={t(field)}
+          />
+        </span>
+      )}
+      {fx.final && (
+        <span title={t('ui.raid.x.finalBanner')} className="grid h-[18px] w-[18px] place-items-center bg-gold shadow-ring-line">
+          <PixelIcon name="crown" size={14} title={t('ui.raid.x.finalBanner')} />
+        </span>
+      )}
+      {fx.charge && (
+        <span className="rd-charge bg-accent px-1 pb-px font-pixel-sm text-[16px] leading-[16px] text-white shadow-ring-line">
+          {t('ui.raid.x.chargeBanner')}
+        </span>
+      )}
+      {fx.shield && (
+        <span
+          className="flex items-center gap-0.5 bg-paper px-1 font-pixel-sm text-[16px] leading-[16px] shadow-ring-line"
+          aria-label={t('ui.raid.x.shieldLabel', { hp: fx.shield.hp, max: fx.shield.max })}
+        >
+          <PixelIcon name="shield" size={12} />
+          {fx.shield.hp}
+        </span>
+      )}
+    </>
   )
 }
 
@@ -161,16 +214,15 @@ function AllyPlate({
       <span className="flex min-w-0 items-baseline gap-1.5">
         <span
           className={cx(
-            'shrink-0 px-[5px] pb-px font-pixel-sm text-[12px] leading-tight',
-            mine ? 'bg-crimson text-paper' : 'bg-[#dde5f0] text-ink',
-            // The light chip keeps a golden name's daylight gold at dusk too.
-            !mine && rich && 'light-scope',
+            'shrink-0 px-[5px] pb-px font-pixel-sm text-tag leading-tight',
+            // A fixed pale chip: light-scope keeps its navy (and a golden name's daylight gold) at dusk.
+            mine ? 'bg-crimson text-white' : 'light-scope bg-[#dde5f0] text-ink',
           )}
         >
           {mine ? t('ui.raid.you') : <TrainerName name={owner} rich={rich} />}
         </span>
         <b className="min-w-0 truncate text-[18px] font-normal leading-none">{b.name}</b>
-        <span className="ml-auto shrink-0 font-pixel-sm text-[15px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
+        <span className="ml-auto shrink-0 font-pixel-sm text-[16px] leading-none">{t('ui.common.level.short', { n: b.level })}</span>
       </span>
       <HpBar hp={hp} max={b.maxHp} compact height={8} />
       <span className="flex items-center gap-1.5">
@@ -231,7 +283,7 @@ export function RaidSpeedButton({ on, onChange }: { on: boolean; onChange: (on: 
       )}
     >
       <PixelIcon name="fastForward" size={16} />
-      <span className="font-pixel-sm text-[14px] tabular-nums">
+      <span className="font-pixel-sm text-[16px] tabular-nums">
         {t('ui.raid.speedTag', { n: (on ? RAID_FAST_SPEED : 1).toLocaleString(getLang()) })}
       </span>
     </button>
@@ -239,8 +291,10 @@ export function RaidSpeedButton({ on, onChange }: { on: boolean; onChange: (on: 
 }
 
 export function RaidView({ run }: { run: RaidRun }) {
+  const wide = useMediaQuery('(min-width: 1024px)')
   const { t } = useT()
   useHoldFullscreen()
+  useBattleMusic(run.stage !== 'result')
   // A pending reload (new build, Admin → "Reload all players") waits for the raid to end.
   useEffect(() => holdReload(), [])
   useEffect(() => {
@@ -308,6 +362,22 @@ export function RaidView({ run }: { run: RaidRun }) {
   const portal = usePortalRaid(run.raid.areaId)
   // Darkrai's raid, its area in nightmare mode (docs/15 §29): under the full moon.
   const nightmare = useNightmareRaid(run.raid.areaId) && !portal
+  // A legendary's own entrance (docs/40): with the overhaul on, its place and omen (a Mega raid's base's place). Skip
+  // shows from the second time the player meets it.
+  // With the legends' cinematics on (docs/53): its own when it has one (Mewtwo's lab…), and no warning tapes.
+  const legend = useMemo(() => {
+    if (portal || nightmare) return undefined
+    const kind = run.source.kind === 'progress' ? 'progress' : 'daily'
+    if (!raidSpecialFor(data, run.raid.dex, kind, run.raid.areaId)) return undefined
+    const base = MEGA_RAIDS[run.raid.dex]?.base ?? run.raid.dex
+    const scene = LEGEND_RAID_SCENES[base]
+    const quiet = legendCinemaOn(data)
+    const cinema = quiet ? RAID_CINEMAS[base] : undefined
+    return scene || cinema
+      ? { scene, cinema, quiet, skippable: !!save?.events?.raidIntrosSeen?.includes(run.raid.dex) }
+      : undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run.id])
 
   // ---- Your turn.
   const duel = st.duel
@@ -337,7 +407,11 @@ export function RaidView({ run }: { run: RaidRun }) {
   const preview = useMemo<Preview | null>(() => {
     if (!rolling || !duel || !mine || !duel.dice.length) return null
     const r = computeDamage(duel.dice, mine.types, duel.enemy.types, duel.playerLevels, data)
-    return { r, statuses: statusesFromRoll(duel.dice, data), almost: [], recoil: mine.status.confused ? confusionRecoil(mine.maxHp, data) : 0 }
+    return {
+      r,
+      statuses: statusesFromRoll(duel.dice, data, duel.playerLevels),
+      recoil: confusionRecoil(mine.maxHp, confusionLevel(mine.status), data),
+    }
   }, [rolling, duel, mine, data])
   const ring = useMemo(
     () => (preview?.r.combo ? new Set(comboDice(preview.r.perDie.map((p) => p.value), preview.r.combo.key)) : new Set<number>()),
@@ -394,21 +468,25 @@ export function RaidView({ run }: { run: RaidRun }) {
     : null
   // A throw a Bait could still save stops with the ball on the ground while the panel asks (docs/25); the answer
   // plays on from that frame. Raids have no Capture Luck.
-  // A throw that couldn't miss has no suspense to build: its result at once.
   const catchScene = (r: NonNullable<RaidCatch['result']>, from?: 'ground'): StageOverlay => ({
-    instant: sureThrow(r),
     timeline: catchTimeline({
       own: spriteKey(own.dex, true, own.shiny),
       foe: spriteKey(st.boss.dex, false, st.boss.shiny),
       ball: ballOfItem(r.ballKey),
       caught: r.caught,
+      roll: r,
       short: level === 'short',
       hold: !!r.baitOffer,
       from,
       bait: r.baited === 'used',
-      instant: sureThrow(r),
+      // A throw that couldn't miss has no suspense to build: it plays twice as fast.
+      sure: sureThrow(r),
     }),
-    ready: Promise.all([loadSprite(own.dex, true, own.shiny), loadSprite(st.boss.dex, false, st.boss.shiny)]),
+    ready: Promise.all([
+      loadSprite(own.dex, true, own.shiny),
+      loadSprite(st.boss.dex, false, st.boss.shiny),
+      ...(r.ballKey === 'raid-ball' ? [loadRaidBall()] : []),
+    ]),
     label:
       r.baited === 'used'
         ? t('ui.catch.baitThrown', { name: st.boss.name })
@@ -494,6 +572,18 @@ export function RaidView({ run }: { run: RaidRun }) {
             </motion.div>
           )}
         </AnimatePresence>
+        {/* A hidden talent at work (docs/51): its plaque, on its owner's side. */}
+        {fx.talent && (
+          <TalentPlaque
+            key={fx.talent.id}
+            talent={fx.talent.key}
+            name={fx.talent.name}
+            side={fx.talent.side}
+            entry={fx.talent.entry}
+            pace={pace}
+            still={quick}
+          />
+        )}
         {portal && <StageTear id={fx.barBreak?.id ?? null} />}
         {nightmare && <StageShadow id={fx.barBreak?.id ?? null} />}
         {fx.barBreak && !calm && <Shards key={fx.barBreak.id} color={cfg.barColors[(fx.broken - 1 + cfg.barColors.length) % cfg.barColors.length] ?? '#34c97a'} />}
@@ -544,6 +634,9 @@ export function RaidView({ run }: { run: RaidRun }) {
         aria-label={heading}
         className={cx(
           'mx-auto flex min-h-[100dvh] w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col',
+          // PC (docs/42 §2, docs/43 §5.11): the stage as large as the window allows on the left, the very same panel
+          // docked at its right, scrolling inside itself — not a phone column in the middle of the screen.
+          'lg:grid lg:max-w-[1440px] lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-5 lg:px-5 lg:pt-4',
           portal && 'dw-scope',
           nightmare && 'nm-scope',
         )}
@@ -551,17 +644,24 @@ export function RaidView({ run }: { run: RaidRun }) {
         data-nightmare-raid={nightmare || undefined}
       >
         <h1 className="sr-only">{heading}</h1>
-        {stage}
-        <div className="flex flex-1 flex-col gap-2 px-3 pt-3" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
+        <div className="w-full lg:sticky lg:top-4 lg:max-w-[calc((100dvh-2rem)*1.5)] lg:justify-self-center">{stage}</div>
+        <div
+          className={cx(
+            'flex flex-1 flex-col gap-2 px-3 pt-3',
+            wide && 'pixel-panel sticky top-4 max-h-[calc(100dvh-2rem)] overflow-y-auto pb-3',
+          )}
+          style={wide ? undefined : { paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+        >
           <p className="pixel-dialogue m-0 flex min-h-[64px] items-center px-3 py-1.5 text-[20px] leading-[1.15]" aria-live="polite">
             {message}
           </p>
           {run.stage === 'result' ? (
             <RaidResult run={run} />
           ) : catching && catchState ? (
-            <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} onBait={onBait} />
+            <CatchPanel c={catchState} onThrow={onThrow} revealed={revealed} onContinue={raidCatchShown} onBait={onBait} raid />
           ) : (
-            <>
+            // The dice, the actions and the team in the thumb's reach at the foot; the line stays under the stage.
+            <div className="mt-auto flex flex-col gap-2">
               <DiceTray
                 tray={tray}
                 live={rolling}
@@ -577,7 +677,7 @@ export function RaidView({ run }: { run: RaidRun }) {
                 )}
               </div>
               <div className="min-h-[56px]">{actions}</div>
-              <div className="mt-auto flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 {ownedItems.length > 0 && (
                   <BagButton
                     disabled={!canItem || usefulItems.length === 0}
@@ -607,7 +707,7 @@ export function RaidView({ run }: { run: RaidRun }) {
                   </button>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </section>
@@ -615,8 +715,12 @@ export function RaidView({ run }: { run: RaidRun }) {
       {intro && (
         <RaidIntro
           run={run}
-          onDone={raidIntroDone}
+          onDone={() => {
+            if (legend && !legend.skippable) markRaidIntroSeen(run.raid.dex)
+            raidIntroDone()
+          }}
           world={portal ? 'distortion' : nightmare ? 'nightmare' : undefined}
+          legend={legend}
         />
       )}
 
@@ -690,7 +794,7 @@ export function RaidView({ run }: { run: RaidRun }) {
                   <ItemSprite item={it} size={32} />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-[20px] leading-none">{it.name}</span>
-                    <span className="font-pixel-sm text-[15px] leading-tight text-muted">{effectText(it)}</span>
+                    <span className="font-pixel-sm text-[16px] leading-tight text-muted">{effectText(it)}</span>
                   </span>
                   <span className="font-pixel-sm text-[16px] tabular-nums">×{n}</span>
                 </button>
@@ -760,7 +864,7 @@ function RaidResult({ run }: { run: RaidRun }) {
   const [offer, setOffer] = useState<RaidNpcOption[] | null>(null)
   const need = emptySlots(run.friends)
   const cap =
-    run.source.kind === 'progress' ? raidTeamCap(data, progressRaidOf(data, run.source.key)?.dex ?? run.raid.dex, 'progress', run.raid.areaId) : data.config.events.raid.teamCap
+    run.source.kind === 'progress' ? raidTeamCap(data, progressRaidOf(data, run.source.key)?.dex ?? run.raid.dex, 'progress', run.raid.areaId) : raidTeamCap(data, run.raid.dex, 'daily')
   const again = (npcs: RaidNpcOption[] = []) => {
     setOffer(null)
     if (!raidAgain(npcs)) leaveRaid()
@@ -770,6 +874,22 @@ function RaidResult({ run }: { run: RaidRun }) {
   const regionName = (id?: string) => data.regions.find((r) => r.id === id)?.name ?? ''
   // A progression raid has no midnight: it stays open until caught, and its catch closes it for good.
   const k = run.source.kind === 'progress' ? 'ui.raid.progress.result' : 'ui.raid.result'
+  // A Mega raid won (docs/40): its gem or orb, nothing caught.
+  if (run.gem)
+    return (
+      <div className="grid gap-2.5 bg-paper p-3 shadow-card" role="status">
+        <h2 className="m-0 text-[28px] font-normal leading-none">{t('ui.raid.mega.wonTitle', { name })}</h2>
+        <p className="copy m-0 flex items-center gap-2 text-lg">
+          {data.items[run.gem]?.spriteUrl && (
+            <img src={data.items[run.gem]!.spriteUrl ?? undefined} alt="" width={30} height={30} className="pixelated shrink-0" />
+          )}
+          <span>{t('ui.raid.mega.wonText', { gem: data.items[run.gem]?.name ?? run.gem, name })}</span>
+        </p>
+        <PixelButton variant="primary" size="lg" className="w-full" onClick={leaveRaid}>
+          {t('ui.raid.back')}
+        </PixelButton>
+      </div>
+    )
   if (result?.caught)
     return (
       <div className="grid gap-2.5 bg-paper p-3 shadow-card" role="status">

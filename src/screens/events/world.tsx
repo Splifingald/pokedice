@@ -4,27 +4,20 @@
 // mythical, its Mart), the way to finish it once everything in it is done, the booster chips, the mythical's result
 // card, and the panel the main game's pages show instead of theirs. Every rule and number comes from engine/worlds.ts; the store's actions are store/worlds.ts.
 import { type CSSProperties, type ReactNode, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
   areaOpenAt,
   conditionStatus,
   currentWorld,
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
   getRegion,
   hasWorldMythical,
   heldWorld,
   inWorld,
-  nightmareLock,
+  heldIn,
   isAreaClosed,
   isAreaUnlocked,
-  leaderboardTutorialDue,
   mythicalHome,
-  regionOfferDue,
-  generalRulesDue,
-  versusRulesDue,
   worldByeDue,
   worldCompletion,
   worldFinishable,
@@ -55,12 +48,12 @@ import { PixelIcon } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
+import { useMyTurn, useOnScreen } from '@/components/popupTurn'
 import { InfoButton } from '@/components/RulesModal'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { dayTime, typeName } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
-import { useRaidGifts } from '@/store/raidGifts'
 import { serverNow, useServerNow } from '@/store/serverTime'
 import { travelTo } from '@/store/travel'
 import {
@@ -105,7 +98,7 @@ export function worldVars(w: Pick<SmallWorld, 'theme'> | null | undefined): CSSP
 /** WORLD, in the world's main colour. */
 export function WorldTag({ className }: { className?: string }) {
   const { t } = useT()
-  return <span className={cx('w-tag font-pixel-sm text-[13px]', className)}>{t('ui.world.tag')}</span>
+  return <span className={cx('w-tag font-pixel-sm text-[16px]', className)}>{t('ui.world.tag')}</span>
 }
 
 /** SHINY MEW, gold with a sparkle: what the world is for. */
@@ -323,7 +316,7 @@ export function WorldRules({ world }: { world: SmallWorld }) {
           </span>
           <span className="grid gap-0.5 leading-tight">
             <b className="text-[19px] font-normal leading-none">{r.title}</b>
-            <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>
+            <small className="font-pixel-sm text-[16px] text-muted">{r.text}</small>
           </span>
         </li>
       ))}
@@ -355,26 +348,9 @@ function WorldBanner({
           <MythicalArt dex={prize.dex} caught={caught} size={96} sparkles={6} />
         </span>
       )}
-      <span className="w-tag absolute left-2.5 top-2.5 z-[2] font-pixel-sm text-[15px]">{tag}</span>
+      <span className="w-tag absolute left-2.5 top-2.5 z-[2] font-pixel-sm text-[16px]">{tag}</span>
     </span>
   )
-}
-
-/** Other one-time pop-ups go first; the world's waits its turn (it goes before the live event's). */
-function useOthersDue(): boolean {
-  const gifts = useRaidGifts((s) => s.gifts.length)
-  const others = useGame(
-    (s) =>
-      !s.save ||
-      dayCareTutorialDue(s.save, s.data) ||
-      leaderboardTutorialDue(s.save, s.data) ||
-      donationDue(s.save, s.data) ||
-      !!regionOfferDue(s.save, s.data) ||
-      !!eventUnlockDue(s.save, s.data) ||
-      versusRulesDue(s.save, s.data) ||
-      generalRulesDue(s.save, s.data),
-  )
-  return others || gifts > 0
 }
 
 /** The world's pop-up: its banner, the time left, its rules; Later and Enter, or just OK as Home's INFO inside it. */
@@ -424,20 +400,20 @@ export function WorldPopupView({
 }
 
 /**
- * The world's pop-up: once, the first time the player is between fights while it's open (after Prof. Oak's tutorials
- * and the other pop-ups, before the live event's). Later, or Enter (the partner pick the first time).
+ * The world's pop-up: once, the first time the player is between fights while it's open, on its turn in the one-time
+ * pop-ups' queue (engine/popups.ts: after the features' rules, before the live event's; never in the Mart). Later, or
+ * Enter (the partner pick the first time).
  */
 export function WorldPopup() {
   const navigate = useNavigate()
-  const onShop = useLocation().pathname.startsWith('/shop')
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
-  const others = useOthersDue()
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
+  const turn = useMyTurn('world')
   const picking = useWorldPick((s) => s.open)
   const { world, now } = useWorld(5000)
+  const open = turn && !picking && !!world && !!save && now != null && !inWorld(save, data) && worldPopupDue(save, world)
+  useOnScreen('world', open)
   if (!world || !save || now == null || inWorld(save, data)) return null
-  const open = idle && !picking && worldPopupDue(save, world) && !others && !onShop
   const close = () => {
     if (worldPopupDue(save, world)) markWorldPopupSeen(world)
   }
@@ -494,7 +470,7 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
                 <b className="text-[19px] font-normal leading-none">
                   {bye.caught ? t('ui.world.bye.kept', { name: myth }) : t('ui.world.bye.gone', { name: myth })}
                 </b>
-                <small className="font-pixel-sm text-[15px] text-muted">
+                <small className="font-pixel-sm text-[16px] text-muted">
                   {bye.caught ? t('ui.world.myth.home', { region: home }) : t('ui.world.bye.goneText')}
                 </small>
               </span>
@@ -507,7 +483,7 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
               </span>
               <span className="grid gap-0.5 leading-tight">
                 <b className="text-[19px] font-normal leading-none">{t('ui.world.bye.home')}</b>
-                <small className="font-pixel-sm text-[15px] text-muted">{t('ui.world.bye.homeText', { list: homeList })}</small>
+                <small className="font-pixel-sm text-[16px] text-muted">{t('ui.world.bye.homeText', { list: homeList })}</small>
               </span>
             </li>
           )}
@@ -517,7 +493,7 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
             </span>
             <span className="grid gap-0.5 leading-tight">
               <b className="text-[19px] font-normal leading-none">{t('ui.world.bye.rest')}</b>
-              <small className="font-pixel-sm text-[15px] text-muted">
+              <small className="font-pixel-sm text-[16px] text-muted">
                 {bye.entered ? t('ui.world.bye.restText') : t('ui.world.bye.notEntered')}
               </small>
             </span>
@@ -535,12 +511,12 @@ export function WorldByeView({ bye, open, onOk }: { bye: WorldBye; open: boolean
 export function WorldByePopup() {
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
-  const others = useOthersDue()
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
+  const turn = useMyTurn('worldBye')
   const now = useServerNow(5000)
   const bye = save ? worldByeDue(save, data, now) : null
+  useOnScreen('worldBye', turn && !!bye)
   if (!bye || !save) return null
-  return <WorldByeView bye={bye} open={idle && !others} onOk={() => markWorldByeSeen(bye.id)} />
+  return <WorldByeView bye={bye} open={turn} onOk={() => markWorldByeSeen(bye.id)} />
 }
 
 // ------------------------------------------------------------------ finishing it early (docs/21 §11)
@@ -583,7 +559,7 @@ export function WorldFinishRowView({
       <span className="mt-1 flex min-w-0 flex-wrap items-end justify-between gap-2">
         <span className="grid min-w-0 gap-1 leading-none">
           <b className="lv-ink truncate text-[22px] font-normal">{t('ui.world.finish.rowTitle')}</b>
-          <small className="lv-ink truncate font-pixel-sm text-[15px] text-gold-light">
+          <small className="lv-ink truncate font-pixel-sm text-[16px] text-gold-light">
             {t('ui.world.finish.progress', { areas: done.areas.total, dex: done.dex.total })}
           </small>
         </span>
@@ -648,7 +624,7 @@ export function WorldFinishView({
               </span>
               <span className="grid gap-0.5 leading-tight">
                 <b className="text-[19px] font-normal leading-none">{r.title}</b>
-                <small className="font-pixel-sm text-[15px] text-muted">{r.text}</small>
+                <small className="font-pixel-sm text-[16px] text-muted">{r.text}</small>
               </span>
             </li>
           ))}
@@ -674,12 +650,13 @@ export function WorldFinishPopup() {
   const data = useGame((s) => s.data)
   const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
   const asked = useWorldFinish((s) => s.open)
-  const others = useOthersDue()
+  const turn = useMyTurn('worldFinish')
   const now = useServerNow(5000)
   const world = save ? worldFinishable(save, data, now) : null
+  // On its own it takes its turn in the one-time pop-ups' queue; asked for from Home's row, it opens at once.
+  const open = !!save && !!world && ((idle && asked) || (turn && worldFinishPopupDue(save, data, now)))
+  useOnScreen('worldFinish', open)
   if (!save || !world) return null
-  // On its own it waits behind the other one-time pop-ups; asked for from Home's row, it opens at once.
-  const open = idle && (asked || (!others && worldFinishPopupDue(save, data, now)))
   const close = () => {
     useWorldFinish.setState({ open: false })
     markWorldFinishPopupSeen()
@@ -749,7 +726,7 @@ export function WorldStripView({
           <b className="lv-ink truncate text-[22px] font-normal">{worldName(world, data)}</b>
         </span>
         {left && (
-          <small className={cx('lv-ink font-pixel-sm text-[15px]', hot ? 'text-[#ffb3a8]' : 'text-gold-light')}>
+          <small className={cx('lv-ink font-pixel-sm text-[16px]', hot ? 'text-[#ffb3a8]' : 'text-gold-light')}>
             {t('ui.live.endsIn', { time: liveTime(left.ms) })}
           </small>
         )}
@@ -776,7 +753,9 @@ export function WorldStrip() {
   const now = useServerNow(1000)
   const back = useBackName()
   const { t } = useT()
-  const held = useGame((s) => nightmareLock(s.save, s.data))
+  // The nightmare (docs/30) or the whiteout (docs/64 §4.3) holding the player: the way back is shut, and says why.
+  const held = useGame((s) => heldIn(s.save, s.data)?.area ?? null)
+  const heldBy = useGame((s) => heldIn(s.save, s.data)?.by ?? 'nightmare')
   if (!inside) return null
   return (
     <WorldStripView
@@ -784,7 +763,7 @@ export function WorldStrip() {
       now={now}
       back={back}
       onBack={() => leaveSmallWorld()}
-      locked={held ? t('ui.nightmare.locked', { area: held.name }) : null}
+      locked={held ? t(`ui.${heldBy}.locked`, { area: held.name }) : null}
     />
   )
 }
@@ -898,7 +877,7 @@ export function SecretRowView({
       <span className="mt-auto grid w-full max-w-[calc(100%-76px)] grid-rows-[22px_6px_15px] gap-[5px]">
         <span className="lv-ink truncate text-[22px] leading-none">{area.name}</span>
         <span>{locked && cond && cond.target > 1 && <Meter value={cond.current} max={cond.target} />}</span>
-        <span className="lv-ink truncate font-pixel-sm text-[15px] leading-none text-gold-light">{bottom}</span>
+        <span className="lv-ink truncate font-pixel-sm text-[16px] leading-none text-gold-light">{bottom}</span>
       </span>
     </button>
   )
@@ -1023,7 +1002,7 @@ export function WorldMythicalCard({ dex, region, waiting }: { dex: number; regio
       <SpriteImg dex={dex} shiny size={72} className="relative shrink-0" />
       <span className="relative grid gap-1 text-left">
         <b className="text-[22px] font-normal leading-none">{t('ui.world.won.title', { name })}</b>
-        <small className="font-pixel-sm text-[15px] leading-tight">
+        <small className="font-pixel-sm text-[16px] leading-tight">
           {waiting ? t('ui.world.won.waits', { region: home }) : t('ui.world.won.home', { region: home })}
         </small>
       </span>

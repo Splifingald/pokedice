@@ -3,6 +3,7 @@
 // save only: Extreme mode has no trades, so these calls never carry a realm.
 import {
   cleanNickname,
+  type PicksAsk,
   type PokemonInstance,
   type TradeSnapshot,
   type TradeVisibility,
@@ -27,6 +28,8 @@ export interface TradeListing {
   dex: number
   level: number
   shiny: boolean
+  /** It carries its hidden talent (docs/51); a database before 0095 doesn't say. */
+  talent: boolean
   homeRegion: string
   want: TradeWant
   visibility: TradeVisibility
@@ -141,8 +144,9 @@ const time = (v: unknown): number => {
 const VIS: TradeVisibility[] = ['public', 'friends', 'private']
 
 export function parseWant(raw: unknown): TradeWant {
-  const w = (raw ?? {}) as { kind?: unknown; dex?: unknown }
-  if (w.kind === 'species' && num(w.dex) > 0) return { kind: 'species', dex: num(w.dex) }
+  const w = (raw ?? {}) as { kind?: unknown; dex?: unknown; talent?: unknown }
+  if (w.kind === 'species' && num(w.dex) > 0)
+    return { kind: 'species', dex: num(w.dex), ...(w.talent === true && { talent: true as const }) }
   if (w.kind === 'notOwned') return { kind: 'notOwned' }
   return { kind: 'any' }
 }
@@ -161,6 +165,8 @@ export function parseInstance(raw: unknown): PokemonInstance | null {
     caughtAt: num(m.caughtAt),
     ...(m.shiny === true && { shiny: true }),
     ...(nickname && { nickname }),
+    // A traded Pokémon keeps its hidden talent (docs/51).
+    ...(m.talent === true && { talent: true }),
   }
 }
 
@@ -183,6 +189,7 @@ export function parseListing(raw: unknown): TradeListing | null {
     dex: num(r.dex),
     level: Math.max(1, num(r.level, 1)),
     shiny: r.shiny === true,
+    talent: r.talent === true,
     homeRegion: typeof r.home_region === 'string' ? r.home_region : 'kanto',
     want: parseWant(r.want),
     visibility: VIS.includes(r.visibility as TradeVisibility) ? (r.visibility as TradeVisibility) : 'public',
@@ -289,6 +296,32 @@ export async function fetchBoard(q: BoardQuery = {}): Promise<TradeListing[]> {
     p_owner: q.owner ?? null,
   })
   return (Array.isArray(rows) ? rows : []).map(parseListing).filter((l): l is TradeListing => !!l)
+}
+
+/** The candidates `trade_picks` sends back: enough for the game's exact ranking to find the picks among them. */
+export const PICK_CANDIDATES = 40
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * The board's candidates for this player (trade_picks, 0108), ranked by the server from what the game says it owns,
+ * could give and has unlocked; `skip`: the listings shown before a NEW PICKS today, least recently first, which come
+ * last. The game ranks them exactly and shows the picks (engine/trade.ts boardPicks). A database before 0108 answers
+ * with the board's first 50, ending soonest, so the page works before the migration has run.
+ */
+export async function fetchPicks(ask: PicksAsk, skip: string[] = []): Promise<TradeListing[]> {
+  const ids = skip.filter((id) => UUID.test(id))
+  try {
+    const rows = await rpc<unknown[]>('trade_picks', {
+      p_me: ask,
+      p_skip: ids.length ? ids : null,
+      p_limit: PICK_CANDIDATES,
+    })
+    return (Array.isArray(rows) ? rows : []).map(parseListing).filter((l): l is TradeListing => !!l)
+  } catch (err) {
+    if (tradeError(err) !== 'not_set_up') throw err
+    return (await fetchBoard({ sort: 'soon' })).filter((l) => !l.isMe)
+  }
 }
 
 /** One listing by its link: open (its row), gone (its status), or null (no such code). */

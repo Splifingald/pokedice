@@ -95,7 +95,7 @@ function main() {
     'apple-touch-icon.png': ball(180, 0.7, SKY),
     // The status bar reads alpha only: the ball's red and cream as one white shape, its outline and band cut out.
     'badge-96.png': drawMap(BALL_MAP, { r: '#ffffff', c: '#ffffff' }, 96, 6, null),
-    'egg-192.png': drawMap(EGG_MAP, EGG_COLORS, 192, 10, TINT),
+    'egg-192.png': drawMap(EGG_MAP, EGG_COLORS, 192, 5, TINT),
   }
   for (const [name, png] of Object.entries(files)) {
     writeFileSync(path.join(OUT, name), PNG.sync.write(png))

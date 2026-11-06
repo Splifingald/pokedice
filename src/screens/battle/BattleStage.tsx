@@ -1,27 +1,40 @@
 // The battle stage (240×160 art pixels, scaled up): the Daybreak background drawn in code, both Pokémon as the
 // animated sprites the browser plays, their plates, and — while a move, a form change or an intro plays — the
 // timeline's canvas on top (src/fx). docs/13-SHOWDOWN-SPRITES.md has why the sprites are page images.
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, steps } from 'framer-motion'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
-import type { Battler, Side } from '@/engine'
-import { AreaArt } from '@/components/AreaArt'
+import { flushSync } from 'react-dom'
+import { talentTier, type Battler, type Side } from '@/engine'
+import { AreaArt, artSeen } from '@/components/AreaArt'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
+import { TIER_ICON } from '@/components/Talent'
 import { RaidStageArt, useStageDistortion } from '@/components/PortalFx'
 import { NightStageArt, useHaunt } from '@/components/NightmareFx'
 import { StageCanvas } from '@/components/StageCanvas'
 import { TrainerSprite } from '@/components/TrainerArt'
 import { artPlacement, battleWindow, type AreaPicture } from '@/fx/areaArt'
 import { background, setArtUnderStage, zones } from '@/fx/scenes'
-import { loadSprite, placeSprite, spriteKey, stageSprite } from '@/fx/sprites'
+import {
+  loadSprite,
+  placeSprite,
+  resetLive,
+  spriteError,
+  spriteKey,
+  stageSprite,
+  type LiveSprite,
+} from '@/fx/sprites'
 import { H, quicken, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
+import { plateTimeline } from '@/fx/timelines/plates'
+import { shinyTimeline } from '@/fx/timelines/shiny'
 import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { usePace } from '@/lib/pace'
 import { useMotion } from '@/lib/motion'
+import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
-import type { Fx, Scene } from './useBattleAnimator'
+import { finalBlow, landHit, type Fx, type Scene } from './useBattleAnimator'
 
 const LAYOUT = background(W, H).layout
 
@@ -89,6 +102,27 @@ function Backdrop({ calm }: { calm: boolean }) {
   )
 }
 
+/**
+ * The fight's ground without a fight: the drawn background, the area's picture over it once loaded, filling the 3:2
+ * box it is put in (an area step on the stage: a find, docs/43). `zones`: the two Pokémon's translucent spots on the
+ * picture's ground, as in a fight; a step with no Pokémon on it leaves them out.
+ */
+export function StageBackground({ art, zones = true }: { art: AreaPicture | null; zones?: boolean }) {
+  const { calm } = useMotion()
+  // A picture seen before is there from the first frame (AreaArt): its zones and the still backdrop with it.
+  const [shown, setShown] = useState(() => !!art && artSeen(art.url))
+  return (
+    <>
+      <Backdrop calm={calm || shown} />
+      {art && <AreaArt key={art.id} src={art.url} place={artPlacement(battleWindow(art))} onShown={() => setShown(true)} />}
+      {shown && zones && <Zones />}
+    </>
+  )
+}
+
+/** How much bigger a Totem and a Titan's second phase stand (docs/62 §6–7). */
+const AURA_SIZE: Record<NonNullable<Battler['aura']>, number> = { totem: 1.3, titan: 1.55 }
+
 /** Five key frames round the orbit; star `i` starts a third of a turn after the one before. */
 const ORBIT = [0, 1, 2, 3, 4]
 const angle = (j: number, i: number) => ((j / 4) * 2 + (i * 2) / 3) * Math.PI
@@ -142,6 +176,16 @@ function useFlash(id: number | null, still: boolean) {
 
 const POP_COLOR = { super: '#ffbe2e', weak: '#fbfdff', immune: '#9c9caf', normal: '#fbfdff', heal: '#34c97a' }
 
+/**
+ * Whole, then (docs/38 F4a) cut away from the bottom as it sinks: the games' fall into the ground, never a fade. Whole
+ * means room on every side: a move's timeline lunges and grows the sprite past its box, and a cut at the box's edges
+ * sliced it off in a straight line, an invisible wall level with its plate (a player's report, 2026-10-29). The fall
+ * starts cut at its feet.
+ */
+const UNCUT = 'inset(-100% -100% -100% -100%)'
+const SINKING = 'inset(-100% -100% 0% -100%)'
+const SUNK = 'inset(-100% -100% 100% -100%)'
+
 /** One Pokémon as the page's animated sprite, standing on its platform. */
 function Mon({
   b,
@@ -158,10 +202,14 @@ function Mon({
   hostClass = 'portal-glitch-host',
   place,
   front = true,
+  live,
+  settled = false,
 }: {
   b: Battler
   side: Side
   scale: number
+  /** A move is playing and moves this sprite, kept animated (`LiveSprite`), instead of a still copy on the canvas. */
+  live?: Map<string, LiveSprite>
   /** A double battle's spot for it (docs/33); it slides there when the pair in front changes. */
   place?: Place
   /** The fx aimed at its side (a hit, a status, a number) play on it: the one in front of a double battle. */
@@ -174,6 +222,8 @@ function Mon({
   hostClass?: string
   /** Out on the field (the foe has slid in, yours has popped out of its ball). */
   shown: boolean
+  /** Out already before this stage drew (the same fight with another lead): no entrance again. */
+  settled?: boolean
   fainted: boolean
   /** A timeline is drawing it on the canvas right now. */
   hidden: boolean
@@ -187,15 +237,33 @@ function Mon({
   const { level } = useMotion()
   const still = level === 'off'
   const back = side === 'player'
-  const s = useMemo(() => stageSprite(b.dex, back, b.shiny), [b.dex, back, b.shiny])
+  // Only the sprite it first drew is out already: a form change later still comes in as its own.
+  const [settledKey] = useState(() => (settled ? `${b.uid}:${b.dex}` : null))
+  const entered = settledKey === `${b.uid}:${b.dex}`
+  // Showdown failing or stalling brings the local sprite, placed as it stands (src/lib/showdownReach.ts).
+  const down = useShowdownDown()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const s = useMemo(() => stageSprite(b.dex, back, b.shiny, b.outfit), [b.dex, back, b.shiny, b.outfit, down])
   const at = place ?? (back ? LAYOUT.own : LAYOUT.foe)
   const raw = placeSprite(s, at.x, at.y)
   // Scaled about its feet, so it stands on the same spot.
   const k = place?.k ?? 1
   const box = { left: at.x + (raw.left - at.x) * k, top: at.y + (raw.top - at.y) * k, w: raw.w * k, h: raw.h * k }
   const flash = useFlash(fx.flash?.target === side && front ? fx.flash.id : null, still)
+  const liveBox = useRef<HTMLSpanElement>(null)
+  const liveKey = spriteKey(b.dex, back, b.shiny, b.outfit)
+  useLayoutEffect(() => {
+    const el = liveBox.current
+    if (!live || !el) return
+    const entry: LiveSprite = { el, at, scale }
+    live.set(liveKey, entry)
+    return () => {
+      live.delete(liveKey)
+      resetLive(entry)
+    }
+  }, [live, liveKey, at, scale])
   // Worn out, waiting for the ball: the animated sprite stops on the frame it was showing (a still copy on a canvas).
-  const img = useRef<HTMLImageElement>(null)
+  const img = useRef<HTMLImageElement | null>(null)
   const frozen = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const im = img.current
@@ -211,13 +279,15 @@ function Mon({
   return (
     <div
       ref={host}
-      className={cx('absolute', host && hostClass)}
+      className={cx('absolute', host && hostClass, b.aura && `foe-aura-${b.aura}`)}
       style={{
         left: box.left * scale,
         top: box.top * scale,
         width: box.w * scale,
         height: box.h * scale,
         opacity: hidden ? 0 : 1,
+        // A Totem or a Titan (docs/62) stands bigger than its kind, its feet where they were.
+        ...(b.aura && { transform: `scale(${AURA_SIZE[b.aura]})`, transformOrigin: '50% 90%' }),
         ...(place && {
           zIndex: place.z,
           transition: still ? undefined : `left ${0.3 * pace}s, top ${0.3 * pace}s, width ${0.3 * pace}s, height ${0.3 * pace}s`,
@@ -228,12 +298,24 @@ function Mon({
         key={`${b.uid}:${b.dex}`}
         className="absolute inset-0"
         style={{ transformOrigin: '50% 90%' }}
-        initial={still ? false : back ? { opacity: 0, scale: 0 } : { opacity: 0, x: 60 * scale }}
+        initial={still || entered ? false : back ? { opacity: 0, scale: 0 } : { opacity: 0, x: 60 * scale }}
         animate={
           fainted
-            ? { opacity: 0, y: box.h * scale * 0.4, transition: { duration: still ? 0 : 0.6 * pace } }
+            ? // Down through its platform in four steps, its bottom cut away as it goes (the games' fall, docs/38).
+              {
+                opacity: 1,
+                y: [0, box.h * scale],
+                clipPath: [SINKING, SUNK],
+                transition: { duration: still ? 0 : 0.4 * pace, ease: steps(4) },
+              }
             : !shown
-              ? { opacity: 0, scale: back ? 0 : 1, x: back ? 0 : 60 * scale, transition: { duration: 0 } }
+              ? {
+                  opacity: 0,
+                  scale: back ? 0 : 1,
+                  x: back ? 0 : 60 * scale,
+                  clipPath: UNCUT,
+                  transition: { duration: 0 },
+                }
               : worn
                 ? // Out of strength, it reels, then sags on its platform, leaning a little to the right.
                   {
@@ -242,6 +324,7 @@ function Mon({
                     y: box.h * scale * 0.05,
                     rotate: 8,
                     scale: 1,
+                    clipPath: UNCUT,
                     transition: { duration: still ? 0 : 0.6 * pace },
                   }
               : {
@@ -249,19 +332,27 @@ function Mon({
                   x: 0,
                   y: 0,
                   scale: 1,
+                  // Whole again (sent back out, revived): a K.O.'s drop cut it away.
+                  clipPath: UNCUT,
                   transition: { duration: still ? 0 : (back ? 0.25 : 0.45) * pace, ease: 'backOut' },
                 }
         }
       >
+        {/* Moved by a move's timeline while it plays (`live`), about its feet. */}
+        <span
+          ref={liveBox}
+          className="absolute inset-0 block"
+          style={{ transformOrigin: `${((s.artX + s.artW / 2) / s.w) * 100}% ${((s.h - s.below) / s.h) * 100}%` }}
+        >
         <img
-          ref={img}
+          ref={(el) => {
+            img.current = el
+            watchShowdown(el)
+          }}
           src={s.url}
           alt=""
           draggable={false}
-          onError={(e) => {
-            if (s.fallback && e.currentTarget.src !== new URL(s.fallback, location.href).href)
-              e.currentTarget.src = s.fallback
-          }}
+          onError={spriteError(s)}
           className="pixelated absolute inset-0 h-full w-full max-w-none"
           // A flash (a faint, a form change with no timeline) turns the sprite into a white silhouette for a moment.
           style={{
@@ -270,6 +361,7 @@ function Mon({
             opacity: worn ? 0 : 1,
           }}
         />
+        </span>
         {/* Worn out: the frozen frame, all grey. */}
         <canvas
           ref={frozen}
@@ -284,6 +376,18 @@ function Mon({
         <button type="button" onClick={onTap} aria-label={tapLabel} className="absolute inset-0 z-[1]" />
       )}
       <AnimatePresence>
+        {/* A hidden talent at work (docs/51): its gem bursts on the Pokémon that carries it. */}
+        {fx.talent?.uid === b.uid && shown && !hidden && (
+          <motion.div
+            key={`gem${fx.talent.id}`}
+            className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center"
+            initial={{ opacity: 0, y: 0, scale: 0.4 }}
+            animate={still ? { opacity: [1, 0] } : { opacity: [0, 1, 1, 0], y: [0, -10, -16, -22], scale: [0.4, 1.5, 1.2, 1] }}
+            transition={{ duration: (still ? 1 : 1.05) * pace, ease: (p: number) => (still ? (p < 1 ? 0 : 1) : p) }}
+          >
+            <PixelIcon name={TIER_ICON[talentTier(fx.talent.key)]} size={Math.max(14, Math.round(box.w * scale * 0.22))} />
+          </motion.div>
+        )}
         {fx.status?.target === side && front && !hidden && (
           <motion.div
             key={fx.status.id}
@@ -413,14 +517,17 @@ function DoubleMons({
   )
 }
 
-const key = (b: Battler, back: boolean, dex = b.dex) => spriteKey(dex, back, b.shiny)
+const key = (b: Battler, back: boolean, dex = b.dex) => spriteKey(dex, back, b.shiny, b.outfit)
 
 const asShown = (b: Battler, fx: Fx): Battler => {
   const dex = fx.dex[b.uid]
   return dex == null || dex === b.dex ? b : { ...b, dex }
 }
 
-/** The timeline for a scene of the log, and the sprites it needs loaded first. */
+/**
+ * The timeline for a scene of the log, and the sprites it needs loaded first. A hit lands as hard as the log says
+ * (`power`) and settles half a second after its last hit (`trim`, docs/38).
+ */
 function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short: boolean) {
   const data = useGame((s) => s.data)
   return useMemo(() => {
@@ -428,8 +535,8 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
     const mine = scene.side === 'player'
     const changing = mine ? own : foe
     const sprites: Promise<string>[] = [
-      loadSprite(own.dex, true, own.shiny),
-      loadSprite(foe.dex, false, foe.shiny),
+      loadSprite(own.dex, true, own.shiny, own.outfit),
+      loadSprite(foe.dex, false, foe.shiny, foe.outfit),
     ]
     let timeline: Timeline<unknown>
     if (scene.kind === 'attack') {
@@ -440,6 +547,8 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
         type: scene.type ?? 'base',
         damage: scene.damage,
         short,
+        power: scene.hit?.power,
+        trim: true,
       })
     } else if (scene.kind === 'zstrike') {
       timeline = zStrikeTimeline({
@@ -450,6 +559,8 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
         damage: scene.damage,
         from: scene.how,
         short,
+        power: scene.hit?.power,
+        trim: true,
       })
     } else if (scene.kind === 'zaway') {
       timeline = zAwayTimeline({ own: key(own, true), foe: key(foe, false), side: mine ? 'own' : 'foe', how: scene.how ?? 'fly', short })
@@ -464,7 +575,7 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
     } else {
       const from = scene.fromDex ?? changing.dex
       const to = scene.toDex ?? changing.dex
-      sprites.push(loadSprite(from, mine, changing.shiny), loadSprite(to, mine, changing.shiny))
+      sprites.push(loadSprite(from, mine, changing.shiny, changing.outfit), loadSprite(to, mine, changing.shiny, changing.outfit))
       const p = {
         // The side that doesn't change keeps its sprite; the changing side's comes from the scene.
         own: key(own, true, mine ? from : own.dex),
@@ -483,13 +594,22 @@ function useSceneTimeline(scene: Scene | null, own: Battler, foe: Battler, short
             ? gmaxFor(p)
             : scene.kind === 'unleash'
               ? unleashTimeline(p)
-              : gmaxEndTimeline(p)
+              : scene.kind === 'plate'
+                ? plateTimeline(p)
+                : gmaxEndTimeline(p)
     }
     if (scene.speed && scene.speed !== 1) timeline = quicken(timeline, scene.speed)
     return { timeline, ready: Promise.all(sprites) }
     // One timeline per scene: later state changes don't restart it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene?.id])
+}
+
+/** A shiny's entrance playing over its sprite (docs/38 F10b). */
+interface Sparkle {
+  uid: string
+  timeline: Timeline<unknown>
+  ready: Promise<unknown>
 }
 
 /** A full-stage timeline over the fight: a legendary's entrance, the catch. */
@@ -499,8 +619,6 @@ export interface StageOverlay {
   label: string
   onEnd: () => void
   hud?: Hud
-  /** Straight to its end state, every cue fired (a catch that can't miss: nothing to wait for). */
-  instant?: boolean
 }
 
 export function BattleStage({
@@ -510,6 +628,7 @@ export function BattleStage({
   art,
   ownShown,
   foeShown,
+  foeSettled = false,
   trainer,
   overlay,
   worn,
@@ -520,6 +639,7 @@ export function BattleStage({
   label,
   children,
   distorted,
+  lit,
   haunted,
   world,
   ownBack,
@@ -540,6 +660,8 @@ export function BattleStage({
   aimLabel?: (b: Battler) => string
   /** The foe is one of a portal run's wild Pokémon (docs/28): it wears the distortion shader. */
   distorted?: boolean
+  /** With `distorted`: the Stairway of Plates' look, light instead of distortion (docs/64 §4.5). */
+  lit?: boolean
   /** The foe is one of the nightmare's (docs/30): a dark shadow haunts it (a rim on its sprite, smoke behind it). */
   haunted?: boolean
   /**
@@ -555,6 +677,11 @@ export function BattleStage({
   art?: AreaPicture | null
   ownShown: boolean
   foeShown: boolean
+  /**
+   * The foe was out before this stage drew: the same fight again with another lead picked at the send-out step. It
+   * stands there as it was (no slide-in, no shiny sparkle a second time).
+   */
+  foeSettled?: boolean
   /** A trainer stepping onto the field before their Pokémon (sprite URL), or null. */
   trainer: string | null
   /** A full-stage timeline that takes over from the sprites (a legendary's entrance, the catch). */
@@ -580,15 +707,51 @@ export function BattleStage({
   const { level, calm } = useMotion()
   const scene = useSceneTimeline(fx.scene, own, foe, level === 'short')
   const playing = !!scene || !!overlay
+  // A move that has settled (docs/38 F1a): the log has moved on and the page's sprites are back, but its canvas stays
+  // until it ends (or another scene, or an overlay, takes the stage), drawing only the particles still flying.
+  const live = scene && fx.scene ? { id: fx.scene.id, ...scene } : null
+  const [linger, setLinger] = useState<typeof live>(null)
+  useEffect(() => {
+    if (fx.scene || overlay) setLinger(null)
+  }, [fx.scene?.id, overlay]) // eslint-disable-line react-hooks/exhaustive-deps
+  const canvas = live ?? linger
+  // Read live by the canvas: each cue sees this render's scene.
+  const sceneHud: Hud = {
+    contact: () => {
+      if (fx.scene?.hit) landHit(fx.scene.hit)
+      onContact()
+    },
+    // Committed before the canvas draws this frame without its sprites: the page's must already be back.
+    settle: () =>
+      flushSync(() => {
+        setLinger(live)
+        onSceneDone()
+      }),
+    ko: finalBlow,
+  }
   // A portal run's wild Pokémon (docs/28): its distortion on its own sprite, the void's motes over it.
   const foeBox = useRef<HTMLDivElement>(null)
   const foeOut = !!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]
+  // A shiny comes out in a sparkle (docs/38 F10b): the hatching's rings of stars as it lands, once per Pokémon.
+  const [sparkle, setSparkle] = useState<Sparkle | null>(null)
+  const sparkled = useRef(new Set<string>(foeSettled ? [foe.uid] : []))
+  useEffect(() => {
+    if (!foe.shiny || !foeShown || foeOut || scale === 0 || sparkled.current.has(foe.uid)) return
+    sparkled.current.add(foe.uid)
+    setSparkle({
+      uid: foe.uid,
+      timeline: shinyTimeline({ key: key(foe, false), at: LAYOUT.foe, delay: 0.45 * pace }),
+      ready: loadSprite(foe.dex, false, true),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [foe.shiny, foe.uid, foeShown, foeOut, scale])
   const distortion = useStageDistortion(
     foeBox,
     key(foe, false),
     LAYOUT.foe,
     scale,
     !!distorted && scale > 0 && foeShown && !foeOut && !playing && !worn,
+    lit ? 'plates' : 'distortion',
   )
   // The nightmare's foe (docs/30): its shadow behind it, its rim on its own sprite.
   const haunt = useHaunt({
@@ -603,8 +766,15 @@ export function BattleStage({
   })
   const artId = art?.id ?? null
   // Which picture has loaded and shows (the drawn background stands in until then).
-  const [shownArt, setShownArt] = useState<string | null>(null)
+  // A picture seen before (the previous fight's, a trainer's next Pokémon) shows from the first frame (AreaArt).
+  const [shownArt, setShownArt] = useState<string | null>(() => (art && artSeen(art.url) ? art.id : null))
   const artShown = !!artId && shownArt === artId
+  // A move keeps both Pokémon animated on the page and moves them (`LiveSprite`); the canvas drew still copies, which
+  // froze them at every attack (the user, 2026-10-27). Over a picture or a world only (the drawn background is the
+  // canvas's own, under them), in a single battle, and not for a form change (two sprites swap).
+  const liveSprites = useMemo(() => new Map<string, LiveSprite>(), [])
+  const liveOn =
+    !!live && !overlay && !double && fx.scene?.kind === 'attack' && level !== 'off' && (artShown || !!world)
   // Over a picture (or the Distortion World) the timelines draw no background of their own (before a picture loads,
   // the drawn one shows through).
   // A double battle too: the Pokémon behind stay on the page under the timeline, so it must not paint over them.
@@ -616,9 +786,9 @@ export function BattleStage({
 
   // Keep both Pokémon ready on the canvas: a move can start any moment.
   useEffect(() => {
-    void loadSprite(own.dex, true, own.shiny)
-    void loadSprite(foe.dex, false, foe.shiny)
-  }, [own.dex, own.shiny, foe.dex, foe.shiny])
+    void loadSprite(own.dex, true, own.shiny, own.outfit)
+    void loadSprite(foe.dex, false, foe.shiny, foe.outfit)
+  }, [own.dex, own.shiny, own.outfit, foe.dex, foe.shiny, foe.outfit])
 
   useEffect(() => {
     const el = box.current
@@ -686,8 +856,10 @@ export function BattleStage({
               side="enemy"
               scale={scale}
               shown={foeShown}
+              settled={foeSettled}
               fainted={(!!fx.fainted[foe.uid] || !!fx.wornOut[foe.uid]) && !worn}
-              hidden={playing || !!fx.away?.[foe.uid]}
+              hidden={(playing && !liveOn) || !!fx.away?.[foe.uid]}
+              live={liveOn ? liveSprites : undefined}
               worn={worn}
               fx={fx}
               onTap={onTap && (() => onTap('enemy'))}
@@ -733,7 +905,8 @@ export function BattleStage({
               scale={scale}
               shown={ownShown}
               fainted={!!fx.fainted[own.uid]}
-              hidden={playing || !!fx.away?.[own.uid]}
+              hidden={(playing && !liveOn) || !!fx.away?.[own.uid]}
+              live={liveOn ? liveSprites : undefined}
               fx={fx}
               onTap={onTap && (() => onTap('player'))}
               tapLabel={tapLabel(own)}
@@ -749,21 +922,33 @@ export function BattleStage({
           hud={overlay.hud}
           onEnd={overlay.onEnd}
           label={overlay.label}
-          instant={overlay.instant}
           className={cx('absolute inset-0', double && 'z-[4]')}
         />
       ) : (
-        scene && (
+        canvas && (
           <StageCanvas
-            key={fx.scene!.id}
-            timeline={scene.timeline}
-            ready={scene.ready}
-            hud={{ contact: onContact }}
-            onEnd={onSceneDone}
+            key={canvas.id}
+            timeline={canvas.timeline}
+            ready={canvas.ready}
+            hud={live ? sceneHud : undefined}
+            live={liveOn ? liveSprites : undefined}
+            onEnd={live ? onSceneDone : () => setLinger(null)}
             label={label}
-            className={cx('absolute inset-0', double && 'z-[4]')}
+            className={cx('absolute inset-0', !live && 'pointer-events-none', double && 'z-[4]')}
           />
         )
+      )}
+      {sparkle && (
+        <div aria-hidden className={cx('pointer-events-none absolute inset-0', double && 'z-[4]')}>
+          <StageCanvas
+            key={sparkle.uid}
+            timeline={sparkle.timeline}
+            ready={sparkle.ready}
+            onEnd={() => setSparkle(null)}
+            label=""
+            className="absolute inset-0"
+          />
+        </div>
       )}
       <div className={cx('pointer-events-none absolute inset-0 z-10', '[&>*]:pointer-events-auto')}>
         {children}

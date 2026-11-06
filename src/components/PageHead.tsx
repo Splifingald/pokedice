@@ -4,6 +4,7 @@ import { money } from '@/lib/format'
 import { useGame } from '@/store/game'
 import { useCountUp } from './GoldPill'
 import { PixelIcon, type IconName } from './icons'
+import { SocialTabs, type SocialView } from './SocialTabs'
 
 /** Your gold as a navy plate, for screens where spending is the point (Poké Mart, Upgrades). */
 export function Wallet() {
@@ -51,6 +52,7 @@ export function PageHead({
   count,
   children,
   onBack,
+  social,
   as: Heading = 'h1',
 }: {
   icon?: IconName
@@ -61,13 +63,30 @@ export function PageHead({
   onBack?: () => void
   /** h2 where the page already has its title (the kitchen sink). */
   as?: 'h1' | 'h2'
+  /** One of the Social tab's views (docs/43 §3): its strip of views names the page, the count and extras under it. */
+  social?: SocialView
 }) {
+  if (social)
+    return (
+      <SocialTabs
+        current={social}
+        title={typeof title === 'string' ? title : ''}
+        aside={
+          count != null || children ? (
+            <>
+              {count != null && <span className="mr-auto font-pixel-sm text-[18px] text-muted">{count}</span>}
+              {children}
+            </>
+          ) : undefined
+        }
+      />
+    )
   return (
     <div className="flex min-h-[44px] flex-wrap items-center gap-x-2.5 gap-y-1">
       {onBack && <BackButton onClick={onBack} />}
       {icon && <PixelIcon name={icon} size={32} className="-mr-0.5 shrink-0" />}
       <Heading className="text-[32px] leading-none">{title}</Heading>
-      {count != null && <span className="font-pixel-sm text-[17px] text-muted">{count}</span>}
+      {count != null && <span className="font-pixel-sm text-[18px] text-muted">{count}</span>}
       {children && <div className="ml-auto flex items-center gap-2">{children}</div>}
     </div>
   )

@@ -124,11 +124,13 @@ beforeAll(async () => {
     '0040_lighter_save_writes.sql',
     '0044_trades.sql',
     '0047_trades_admin_read.sql',
+    '0108_trade_picks.sql',
   ])
     await db.exec(sql(f))
   // Safe to run again.
   await db.exec(sql('0044_trades.sql'))
   await db.exec(sql('0047_trades_admin_read.sql'))
+  await db.exec(sql('0108_trade_picks.sql'))
   const species = (dex: number, form: unknown = null) =>
     `(${dex}, 'P${dex}', 'normal', 10, 100, 5, '', '[]', 1, '[]', '[]', ${form ? `'${JSON.stringify(form)}'` : 'null'})`
   await db.exec(`
@@ -294,6 +296,113 @@ describe('the board and a link', () => {
       row!.code.toLowerCase(),
     ])
     expect(view).toMatchObject({ dex: 16, visibility: 'private' })
+  })
+})
+
+describe('the board’s picks (0108)', () => {
+  // Brock's listings, written straight in (posting has its own tests), and gone again after: the tests below take
+  // Ash's. Brock and Misty aren't friends; Erika is Ash's friend.
+  const HOUR = 3_600_000
+  const list = async (
+    code: string,
+    dex: number,
+    o: {
+      want?: unknown
+      vis?: string
+      endsIn?: number
+      shiny?: boolean
+      talent?: boolean
+      home?: string
+    } = {},
+  ) => {
+    const [row] = await as<{ id: string }>(
+      null,
+      `insert into trade_listings (code, owner, from_region, home_region, mon, dex, level, shiny, want, poster,
+         visibility, ends_at)
+       values ($1, $2, 'kanto', $3, $4::jsonb, $5, 20, $6, $7::jsonb, $8::jsonb, $9, now() + $10 * interval '1 ms')
+       returning id`,
+      [
+        code,
+        U.brock,
+        o.home ?? 'kanto',
+        JSON.stringify({
+          id: code,
+          dex,
+          level: 20,
+          ...(o.shiny && { shiny: true }),
+          ...(o.talent && { talent: true }),
+        }),
+        dex,
+        !!o.shiny,
+        JSON.stringify(o.want ?? { kind: 'any' }),
+        JSON.stringify(KANTO_ONLY),
+        o.vis ?? 'public',
+        o.endsIn ?? HOUR,
+      ],
+    )
+    return row!.id
+  }
+  // Misty owns Squirtle, Wartortle, Pikachu and Magikarp, none shiny, and has found no talent.
+  const MISTY = {
+    ...encodeDexSet([7, 8, 25, 129]),
+    shiny: [],
+    regions: ['kanto'],
+    offer: encodeDexSet([7, 8, 25, 129]),
+    talented: encodeDexSet([]),
+  }
+  const picks = async (who: string, me: unknown, skip: string[] = [], limit = 40) =>
+    (
+      await as<{ trade_picks: { dex: number; code: string } }>(
+        who,
+        `select * from trade_picks($1::jsonb, $2::uuid[], $3)`,
+        [JSON.stringify(me), skip, limit],
+      )
+    ).map((r) => r.trade_picks)
+  const ids: Record<string, string> = {}
+
+  beforeAll(async () => {
+    ids.shiny = await list('PICKS001', 25, { shiny: true, endsIn: 24 * HOUR }) // a shiny she lacks
+    ids.talent = await list('PICKS002', 129, { talent: true, endsIn: 30 * HOUR }) // a talent she lacks
+    ids.plain = await list('PICKS003', 7, { endsIn: 26 * HOUR }) // one she has
+    ids.johto = await list('PICKS004', 158, { home: 'johto', endsIn: HOUR }) // Johto not started
+    ids.mewtwo = await list('PICKS005', 16, { want: { kind: 'species', dex: 150 }, endsIn: 2 * HOUR }) // no Mewtwo
+    ids.hidden = await list('PICKS006', 4, { vis: 'friends' }) // Brock's friends only
+  })
+  afterAll(async () => {
+    await as(null, `delete from trade_listings where code like 'PICKS%'`)
+  })
+
+  it('ranks what she can take first: a Pokémon she lacks (a shiny counted), a talent, then the rest', async () => {
+    // Ash's Charmander (for a Wartortle, which she has, ending in 3 days) is new to her too.
+    expect((await picks(U.misty, MISTY)).map((r) => r.dex)).toEqual([25, 4, 129, 7, 158, 16])
+    // Talents off: the Magikarp is just another one she has.
+    expect((await picks(U.misty, { ...MISTY, talented: null })).map((r) => r.dex)).toEqual([
+      25, 4, 7, 129, 158, 16,
+    ])
+  })
+  it('puts the ones shown before a NEW PICKS last, least recently first', async () => {
+    const r = await picks(U.misty, MISTY, [ids.talent!, ids.shiny!])
+    expect(r.map((x) => x.dex)).toEqual([4, 7, 158, 16, 129, 25])
+    expect((await picks(U.misty, MISTY, [], 2)).map((x) => x.dex)).toEqual([25, 4])
+  })
+  it('puts friends’ listings first, never the caller’s own, and only the ones they may see', async () => {
+    const erika = {
+      ...encodeDexSet([43, 8]),
+      shiny: [],
+      regions: ['kanto'],
+      offer: encodeDexSet([43, 8]),
+      talented: null,
+    }
+    // Ash's Charmander and Rattata (friends only, any she doesn't own) first, though Brock's shiny Pikachu ends sooner.
+    expect((await picks(U.erika, erika)).slice(0, 3).map((r) => r.dex)).toEqual([4, 19, 25])
+    expect((await picks(U.brock, MISTY)).some((r) => r.code.startsWith('PICKS'))).toBe(false)
+    expect((await picks(U.misty, MISTY)).some((r) => r.code === 'PICKS006')).toBe(false)
+  })
+  it('needs a signed-in player and the switch', async () => {
+    expect(await fails(null, `trade_picks('{}'::jsonb)`)).toContain('trades_signed_out')
+    await setTrade({ access: 'admin' })
+    expect(await picks(U.misty, MISTY)).toEqual([])
+    await setTrade({ access: 'all' })
   })
 })
 

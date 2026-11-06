@@ -57,7 +57,7 @@ Title → a short intro → pick one of **Bulbasaur, Charmander, Squirtle at lev
 ### 2.1 Setup
 
 - Player team = up to **3 active Pokémon**. Before each fight the player picks which one to send.
-- **Speed** (base Speed stat ÷ 10, rounded down — v1.7) decides who acts first. Tie → player. With `noEscape` (the default, v1.7) there is no FLEE / AVOID before a fight and no RUN during one.
+- **Speed** (the species' base Speed stat + its level, docs/52; base ÷ 10 from v1.7 until then) decides who acts first. Tie → player. With `noEscape` (the default, v1.7) there is no FLEE / AVOID before a fight and no RUN during one.
 - Each Pokémon enters with a **reroll budget = its `rerolls` stat**, spent over the whole battle, not per turn.
 
 ### 2.2 A turn
@@ -188,14 +188,20 @@ All face lists are data, editable in admin.
 
 All statuses **clear when the battle ends**. HP damage persists (§6).
 
+A single face is enough for every status (since 2026-10): no pairs or three of a kind to chase. A status face also counts as its number (its corner) for damage and combos. Every number below is `game_config.status`, set in Admin → Config.
+
 | Status | Trigger | Effect | Stacking |
 |---|---|---|---|
-| **Burn** | ≥1 Burn face | 4 % of the victim's max HP per stack (at least 1) at the start of its turn, 3 turns | **Stacks.** 3 Burn faces in one roll = 3 stacks. Duration refreshes. |
-| **Poison** | **≥2** Poison faces | 10 % of the victim's max HP (at least 1) at the start of its turn, 3 turns | **Does not stack.** Re-applying only refreshes the duration. Below the threshold the face is worth 1. |
-| **Frozen** | **≥3** Frozen faces in one roll | victim stunned 2 turns | Refreshes, doesn't stack. Below threshold the face is worth 1. |
-| **Paralyze** | **≥2** Paralyze faces | victim stunned 1 turn | Refreshes. Below threshold the face is worth 4. |
-| **Confuse** | **≥2** Confuse faces | the victim's **next attack** still hits its target normally, then the victim takes **recoil** equal to `status.confuse.recoilPercent`% (default 10%) of its own max HP (rounded, min 1), and confusion clears | Refreshes. Below threshold the face is worth 2. |
-| **Heal** | **≥2** Heal faces | a *self*-effect: the **attacker** heals HP equal to the total value of the dice rolled (fallbacks included, no upgrades/multipliers), on top of the damage it deals; capped at max HP. `status.heal.amount = 'healFaces'` heals only the Heal faces' values instead | Nothing to stack. Below threshold the face is worth 3. |
+| **Burn** | ≥1 Burn face | 4 % of the victim's max HP per stack (at least 1) at the start of its turn, 3 turns | **Stacks.** 3 Burn faces in one roll = 3 stacks. Duration refreshes. The face is worth 1. |
+| **Poison** | ≥1 Poison face | 5 % of the victim's max HP (at least 1) at the start of its turn, **5 turns** (`poison.percent`, `poison.duration`) | **Does not stack.** More faces, or a new poisoning, only bring the turns back up. The face is worth 1. |
+| **Frozen** | each Frozen face: a **1-in-3 chance** (`frozen.sureAt` = 3), so 3 faces in one roll freeze for sure | victim stunned 2 turns | Refreshes, doesn't stack. A missed chance is logged ("avoided being frozen! (33% chance)"). The face is worth 1. |
+| **Paralyze** | each Paralyze face: a **50 % chance** (`paralyze.sureAt` = 2), so 2 faces paralyze for sure | victim stunned 1 turn | Refreshes. A missed chance is logged too. The face is worth 4. |
+| **Confuse** | ≥1 Confuse face; the faces set how confused: 1 "a bit confused", 2 "confused", 3+ "very confused" (`confuse.maxFaces` = 3) | the victim's **next attack** still hits its target normally, then the victim takes **recoil** of `confuse.recoilPercentPerFace` % (10 %) of its own max HP per level, so 10 / 20 / 30 % (rounded, min 1), and confusion clears | The stronger confusion holds: a lighter one never lowers it. A Psychic Z-Move confuses at the top level. The face is worth 2. |
+| **Heal** | ≥1 Heal face | a *self*-effect: the **attacker** heals the **Heal faces' value plus their die's upgrade bonus** (Grass Lv.3: 3 + 2 a face), on top of the damage it deals; capped at max HP | Nothing to stack. The face is worth 3. |
+
+The chance draws come from the battle's own RNG, only when a chance is short of sure, so a roll with no Freeze or Paralysis face draws exactly as before. Battles saved before the rework stored confusion as `true`: `confusionLevel` reads it as level 1.
+
+**Setting it up:** run [`supabase/migrations/0073_status_faces.sql`](https://github.com/Splifingald/pokedice/blob/feature/version_2_3/supabase/migrations/0073_status_faces.sql) in the Supabase SQL editor (`supabase/seed.sql` carries it too, inlined). It rewrites the `status` row with the new rules (Burn keeps the admin's numbers) and bumps `configVersion`; until it runs, the stored Poison numbers (10 %, 3 turns) still apply.
 
 - DoT ticks at the **start of the victim's turn**, before the stun check, and can K.O.
 - A stunned Pokémon still ticks DoT and still burns down its stun counter.
@@ -216,7 +222,7 @@ Each Pokémon's set is a list of `{type, count}` where `type` may be `base` or a
 | Dex no., Name, Type 1, Type 2 | PokeAPI |
 | Base HP | real HP stat at **level 1** |
 | Max HP | real HP stat at **level 100** |
-| Speed | base Speed stat ÷ 10, rounded down (Bulbasaur 4, Charmander 6, Squirtle 4) |
+| Speed | the real base Speed stat (Bulbasaur 45, Charmander 65, Squirtle 43); a battle adds `speedPerLevel` (1) × level (docs/52) |
 | Sprite | `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{dex}.png` |
 | Dice | generated, editable |
 | Rerolls | generated = dice count on arrival, +1 with every die gained later, editable |
@@ -294,12 +300,13 @@ Articuno, Zapdos, Moltres, Mewtwo and Mew are **not** in wild pools. Each is att
 
 - Helix Fossil and Dome Fossil are once-only finds in Mt. Moon, Old Amber in Silph Co. (`effect: {kind: 'fossil', dex, level: 20, hours: 24}`). They're never bought or sold, and wild Omanyte, Kabuto and Aerodactyl are gone (weight 0).
 - Found, the fossil goes straight to the Box as its Pokémon at Lv.20, reviving (`PokemonInstance.revivesAt`, `fossil`): a timer gauge replaces its HP; it can't join the team, go to the Day Care or take items, and isn't in the Pokédex or counted for duplicates yet. After 24 h (checked on load and every minute) it revives at full HP and joins the Pokédex.
+- **Shiny fossils** (2026-10-30): a fossil revives shiny at its own odds, `game_config.fossilShinyChance` (1 in 10 by default; Admin → Config → Encounters), wherever it was found: field finds, the Mart, the Underground. The Shiny Charm and a Shiny Parade never change them, and Extreme mode has none. The roll is seeded by the Pokémon's id (`fossilRevivesShiny`, `engine/fossils.ts`), so it is settled from the find and a reload can't roll it again; the revive toast says when it's shiny.
 
 ## 5. Economy & upgrades
 
 ### 5.1 Pokédollars (₽)
 
-- **Trainers pay Pokédollars:** `₽ = Σ levels of the trainer's Pokémon you defeated` × `goldMultiplier` (gym battles × `gymGoldMultiplier` too). Item finds can also turn up Pokédollars (§5.4). Internally the save field and config keys keep the name `gold`.
+- **Trainers pay Pokédollars:** `₽ = Σ levels of the trainer's Pokémon you defeated` × `goldMultiplier` (gym battles × `gymGoldMultiplier` too), **paid once their last Pokémon falls** (2026-11-04): a fight lost or given up before that pays none. Item finds can also turn up Pokédollars (§5.4). Internally the save field and config keys keep the name `gold`.
 - Wild fights, catches and legendary bosses pay none.
 - Replaying a cleared area applies its `backtrackMultiplier` (**default 0.5**) to both Pokédollars and XP.
 
@@ -348,7 +355,10 @@ Each item has `in_shop` and `shop_badges` (admin-editable, with its effect and p
 - **Selling** (v1.9): the Mart's **Sell · Bag** tab lists every item held (it doubles as the bag) and buys back anything the Mart stocks (`in_shop`, whatever the badges) for **half its price, rounded down**. Found-only items (Rare Candy, Master Ball) can't be sold.
 - **Revives in battle** go on a K.O.'d teammate on the bench (it can be sent in afterwards); like any item, no turn is used.
 
-### 5.5 Energy (v1.9)
+### 5.5 Energy (v1.9, removed 2026-10-28)
+
+Energy is gone for good (the user's call: it was Off and will never be used): no cost, no counter, no Config box;
+migration 0084 deletes its row and saves drop their `energy` on load. What it was:
 
 - `game_config.energy = { enabled, max, minutesPerEnergy }`, default **on, 50, 30 min** (admin: Config → Energy). Off = no cost and no counter.
 - **Discovering an encounter costs 1 energy** (NEXT ENCOUNTER / EXPLORE). Free: gym / Elite Four / Champion battles and legendaries (CHALLENGE / FACE IT, or a fled legendary's card), and **every Pokémon Center** (round-opening, forced or from the deck), as is any encounter when nobody can fight.
@@ -483,7 +493,7 @@ Reroll heuristic, one pass per available reroll:
    reroll budget is spent for the whole battle (§2), so a reroll here is a reroll missing from a later turn. This is
    the one rule that looks at the target rather than the dice, so it needs the caller to say what the target's HP is;
    the measurements that have no target to kill — the per-roll turns-to-kill table above — do not, and skip it.
-3. Build candidate keep-sets: the largest matching group; any straight draw of ≥3 distinct consecutive values; all dice with face value ≥5; any status face that has already met its threshold (**always kept**).
+3. Build candidate keep-sets: the largest matching group; any straight draw of ≥3 distinct consecutive values; all dice with face value ≥5; any status face (each one already does something, so **always kept**).
 4. Estimate expected damage after rerolling the complement, via a cheap Monte-Carlo (200 samples, per-die-type face tables precomputed).
 5. Reroll the best candidate's complement if its expected damage beats the current damage by **>8 %**; otherwise attack now.
 

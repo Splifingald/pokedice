@@ -1,5 +1,5 @@
 // localStorage is always written. Everything is wrapped: storage can be full, disabled or throw in private modes.
-import type { SaveData, SaveMode } from '@/engine/types'
+import { PLAY_STYLES, type PlayStyle, type SaveData, type SaveMode } from '@/engine/types'
 import { isLang, type Lang } from '@/i18n/langs'
 import { detectLang } from '@/i18n'
 import { BACKUP_KEYS, CORRUPT_KEYS, setWithRoom } from './room'
@@ -71,21 +71,54 @@ export interface Settings {
   animations?: AnimationLevel
   /** Multi EXP — on by default. */
   multiExp: boolean
-  /** Auto-mode: fights in cleared areas play themselves — off by default. */
+  /**
+   * Auto engaged — off by default. Its switch is in the area: a cleared area's fights play themselves; with the play
+   * styles on (docs/36), the autopilot runs where the style allows.
+   */
   autoMode?: boolean
-  /** Type hints: matchups on a Pokémon's sheet, and on tapping one in battle — off by default. */
+  /** After a fight: wait for NEXT (unset, the default) or go on by itself after a short countdown (the rework). */
+  advance?: 'auto'
+  /** The play style (docs/36): Auto on explored areas, Idle. Unset = from before them (engine/autopilot). */
+  playStyle?: PlayStyle
+  /**
+   * Type hints: matchups on a Pokémon's sheet, and on tapping one in battle. Unset = on until the first badge
+   * (`typeHintsOn`, docs/38 U1b), when a new player needs them most; a choice made in Settings or the type chart wins.
+   */
   typeHints?: boolean
+  /**
+   * More details (docs/42): the numbers and logs only an invested player reads — the battle history, HP and XP figures,
+   * type chips on cards, the key hints. Unset = off: the game shows the action, a tap shows the rest.
+   */
+  details?: boolean
   /** Raids: the ally sides' turns at 1.5× speed (the speed button) — off by default. */
   raidFast?: boolean
   /** UI language. Unset on an older save: the browser's language decides, English if we don't speak it. */
   lang?: Lang
-  /** Light, dark or the device's. Unset = light. */
+  /**
+   * Light, dark or the device's. A new player follows the device (DEFAULT_SETTINGS); unset in stored settings = light,
+   * so a player from before keeps the look they had.
+   */
   theme?: ThemeSetting
+  /** Haptics (docs/38), where the admin has switched them on and the device can vibrate. Unset = on. */
+  haptics?: boolean
+  /** Battle music (docs/38), where the admin has switched it on; it also needs Sound. Unset = on. */
+  music?: boolean
+  /** Battle music's volume, 0–1 (Settings offers three steps, `MUSIC_VOLUMES`). Unset = `MUSIC_VOLUME`. */
+  musicVolume?: number
 }
-export const DEFAULT_SETTINGS: Settings = { sfx: true, sound: true, reducedMotion: false, multiExp: true }
+export const DEFAULT_SETTINGS: Settings = {
+  sfx: true,
+  sound: true,
+  reducedMotion: false,
+  multiExp: true,
+  theme: 'auto',
+}
 
 /** Whether the game makes any sound: one switch for the effects and the cries. */
 export const soundOn = (s: Pick<Settings, 'sound'>) => s.sound !== false
+
+/** Whether type hints show: the player's choice once made, else on while no badge is won (store/hooks useTypeHints). */
+export const typeHintsOn = (s: Pick<Settings, 'typeHints'>, badges: number) => s.typeHints ?? badges === 0
 
 function storage(): Storage | null {
   try {
@@ -184,10 +217,21 @@ export function readSettings(): Settings {
       animations: s.animations === 'short' ? 'short' : 'full',
       multiExp: s.multiExp !== false,
       autoMode: !!s.autoMode,
-      typeHints: !!s.typeHints,
+      ...(s.advance === 'auto' && { advance: 'auto' as const }),
+      // Kept only when it is one of the styles; unset stays unset (playStyleOf reads it as the old auto-mode's).
+      ...(PLAY_STYLES.includes(s.playStyle as PlayStyle) && { playStyle: s.playStyle }),
+      // Kept only when the player chose; unset stays unset, so the badge decides (typeHintsOn).
+      ...(typeof s.typeHints === 'boolean' && { typeHints: s.typeHints }),
       raidFast: !!s.raidFast,
+      ...(s.details === true && { details: true }),
       lang: isLang(s.lang) ? s.lang : detectLang(),
       theme: s.theme === 'dark' || s.theme === 'auto' ? s.theme : 'light',
+      // The game-feel switches (docs/38): kept only once the player has set them; unset reads as on / the default.
+      ...(typeof s.haptics === 'boolean' && { haptics: s.haptics }),
+      ...(typeof s.music === 'boolean' && { music: s.music }),
+      ...(typeof s.musicVolume === 'number' &&
+        s.musicVolume >= 0 &&
+        s.musicVolume <= 1 && { musicVolume: s.musicVolume }),
     }
   } catch {
     return { ...DEFAULT_SETTINGS, lang: detectLang() }

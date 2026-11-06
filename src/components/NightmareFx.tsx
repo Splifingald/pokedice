@@ -24,6 +24,7 @@ import {
 import { nightBattleStage, nightCardStage } from '@/fx/timelines/nightmareRaid'
 import { useMotion, type MotionLevel } from '@/lib/motion'
 import { artBox } from '@/lib/showdown'
+import { useShowdownDown } from '@/lib/showdownReach'
 import { cx } from '@/theme/util'
 import { useBoxSize, useLoop, useUiGlitch } from './PortalFx'
 import { showdownView, SpriteImg } from './SpriteImg'
@@ -161,6 +162,8 @@ export function HauntSprite({
   className?: string
 }) {
   const host = useRef<HTMLDivElement>(null)
+  // Showdown down (src/lib/showdownReach.ts): SpriteImg shows the local sprite, so the scale follows it.
+  useShowdownDown()
   // The art's scale in the box, as SpriteImg places it: CSS pixels per canvas-sprite pixel.
   const s = stageSprite(dex, false, shiny)
   const sd = showdownView(dex, false, shiny)

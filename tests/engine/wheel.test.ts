@@ -1,33 +1,43 @@
-// The Fortune Wheel's rules (docs/18, docs/19 phase 2): the slices, the real chances, one spin per UTC day, and a
-// prize that's paid once, into the live region.
+// The Fortune Wheel's rules (docs/18; tickets since 2026-10-25): the slices, the real chances, the jackpot's stages,
+// the tickets, the ₽150 average and a prize that's paid once, into the live region.
 import { describe, expect, it } from 'vitest'
 import {
+  buyTicket,
   canSpin,
   createRng,
   DEFAULT_CONFIG,
   drawPrize,
+  jackpotIndex,
+  jackpotStage,
   newSave,
   payWheelPrize,
   prizeChances,
-  sameReward,
+  roulettePrizes,
   sliceFor,
-  spinSpent,
   takeSpin,
+  wheelAverage,
   wheelSlices,
+  wheelTickets,
+  type SaveData,
   type WheelPrize,
 } from '@/engine'
 import { parseSave } from '@/save/schema'
 import { makeData, newId } from '../fixtures'
 
-const PRIZES = DEFAULT_CONFIG.events.wheel.prizes
+const WHEEL = DEFAULT_CONFIG.events.wheel
+const HOUR = 60 * 60 * 1000
 const gold = (amount: number, count: number, odds: number): WheelPrize => ({ reward: { kind: 'gold', amount }, count, odds })
 const item = (key: string, count: number, odds: number): WheelPrize => ({ reward: { kind: 'item', key, qty: 1 }, count, odds })
+const data = makeData()
+const fresh = newSave(4, data, 1000, newId)
+const T0 = Date.UTC(2026, 9, 25, 8)
 
 describe('the wheel: slices', () => {
-  it('has one slice per count, and equal prizes never side by side (the last touches the first)', () => {
-    const slices = wheelSlices(PRIZES)
-    expect(slices).toHaveLength(9)
-    for (const [i, p] of PRIZES.entries()) expect(slices.filter((s) => s === i)).toHaveLength(p.count)
+  it('has one slice per count plus the jackpot’s, and equal prizes never side by side', () => {
+    const prizes = roulettePrizes(WHEEL, 0)
+    const slices = wheelSlices(prizes)
+    expect(slices).toHaveLength(12)
+    for (const [i, p] of prizes.entries()) expect(slices.filter((s) => s === i)).toHaveLength(p.count)
     for (let i = 0; i < slices.length; i++) expect(slices[i]).not.toBe(slices[(i + 1) % slices.length])
   })
 
@@ -37,18 +47,22 @@ describe('the wheel: slices', () => {
   })
 
   it('lands on one of the prize’s own slices', () => {
-    const slices = wheelSlices(PRIZES)
+    const prizes = roulettePrizes(WHEEL, 0)
+    const slices = wheelSlices(prizes)
     const rng = createRng(7)
     for (let n = 0; n < 50; n++) {
-      const prize = n % PRIZES.length
+      const prize = n % prizes.length
       expect(slices[sliceFor(slices, prize, rng)]).toBe(prize)
     }
   })
 })
 
 describe('the wheel: chances', () => {
-  it("are each prize's slices × their odds, out of 100", () => {
-    expect(prizeChances(PRIZES)).toEqual([50, 25, 12.5, 10, 2.5])
+  it('give the jackpot exactly its own chance at each stage: Porygon 10 %, shiny Porygon 1 %, a Master Ball 0.25 %', () => {
+    for (const [stage, odds] of [10, 1, 0.25].entries()) {
+      const chances = prizeChances(roulettePrizes(WHEEL, stage))
+      expect(chances[jackpotIndex(WHEEL, stage)]).toBeCloseTo(odds, 9)
+    }
   })
 
   it("are scaled to 100 % when the admin's odds don't add up", () => {
@@ -56,11 +70,12 @@ describe('the wheel: chances', () => {
   })
 
   it('come up as often as they say', () => {
+    const prizes = roulettePrizes(WHEEL, 0)
     const rng = createRng(42)
-    const hits = PRIZES.map(() => 0)
+    const hits = prizes.map(() => 0)
     const n = 20_000
-    for (let i = 0; i < n; i++) hits[drawPrize(PRIZES, rng)]!++
-    for (const [i, c] of prizeChances(PRIZES).entries()) expect(Math.abs((hits[i]! * 100) / n - c)).toBeLessThan(1.2)
+    for (let i = 0; i < n; i++) hits[drawPrize(prizes, rng)]!++
+    for (const [i, c] of prizeChances(prizes).entries()) expect(Math.abs((hits[i]! * 100) / n - c)).toBeLessThan(1.2)
   })
 
   it('never draw a prize without a chance', () => {
@@ -68,48 +83,101 @@ describe('the wheel: chances', () => {
     const prizes = [gold(10, 4, 0), item('master-ball', 1, 1), item('poke-ball', 0, 90)]
     for (let i = 0; i < 200; i++) expect(drawPrize(prizes, rng)).toBe(1)
   })
+
+  it('pay back ₽150 at most a spin on average, at every stage, and can pay more than a ticket', () => {
+    const averages = WHEEL.jackpot.map((_, stage) => wheelAverage(WHEEL, stage, data))
+    expect(averages.map(Math.round)).toEqual([136, 147, 120])
+    for (const a of averages) expect(a).toBeLessThanOrEqual(WHEEL.tickets.maxAverage)
+    expect(WHEEL.slices.some((p) => p.reward.kind === 'gold' && p.reward.amount > WHEEL.tickets.price)).toBe(true)
+  })
 })
 
-describe('the wheel: one spin a day', () => {
-  const data = makeData()
-  const fresh = newSave(4, data, 1000, newId)
-  const master = { kind: 'item', key: 'master-ball', qty: 1 } as const
+describe('the wheel: the jackpot’s stages', () => {
+  const porygon = (s: SaveData, shiny: boolean): SaveData => payWheelPrize({ ...s, events: { wheelPending: { kind: 'pokemon', dex: 137, level: 30, shiny } } }, data, T0, newId)
 
-  it('is there each UTC day, and taking it waits for the wheel to stop to pay', () => {
-    expect(canSpin(fresh, '2026-10-10')).toBe(true)
-    const taken = takeSpin(fresh, '2026-10-10', master)
-    expect(canSpin(taken, '2026-10-10')).toBe(false)
-    // A waiting prize blocks tomorrow's spin too, until it's paid.
-    expect(canSpin(taken, '2026-10-11')).toBe(false)
-    expect(taken.inventory['master-ball'] ?? 0).toBe(fresh.inventory['master-ball'] ?? 0)
-    const paid = payWheelPrize(taken, data)
-    expect(paid.inventory['master-ball']).toBe((fresh.inventory['master-ball'] ?? 0) + 1)
-    expect(canSpin(paid, '2026-10-10')).toBe(false)
-    expect(canSpin(paid, '2026-10-11')).toBe(true)
+  it('is Porygon until it’s caught, then a shiny Porygon until that’s caught, then a Master Ball for good', () => {
+    expect(jackpotStage(fresh, WHEEL)).toBe(0)
+    const caught = porygon(fresh, false)
+    expect(caught.pokedex).toContain(137)
+    expect(jackpotStage(caught, WHEEL)).toBe(1)
+    const shiny = porygon(caught, true)
+    expect(shiny.box.some((p) => p.dex === 137 && p.shiny)).toBe(true)
+    expect(jackpotStage(shiny, WHEEL)).toBe(2)
   })
 
-  it('pays once: ₽ into the live region', () => {
-    const paid = payWheelPrize(takeSpin(fresh, '2026-10-10', { kind: 'gold', amount: 10 }), data)
-    expect(paid.gold).toBe(fresh.gold + 10)
-    expect(payWheelPrize(paid, data)).toBe(paid)
+  it('counts a Porygon caught anywhere, and a shiny one noted in the shiny Pokédex', () => {
+    expect(jackpotStage({ ...fresh, pokedex: [...fresh.pokedex, 137] }, WHEEL)).toBe(1)
+    expect(jackpotStage({ ...fresh, pokedex: [...fresh.pokedex, 137], shinyDex: { johto: [137] } }, WHEEL)).toBe(2)
+  })
+})
+
+describe('the wheel: tickets', () => {
+  it('start as a full stack of 4, with the clock stopped', () => {
+    expect(wheelTickets(fresh, data, T0)).toEqual({ tickets: 4, nextAt: null })
+    expect(canSpin(fresh, data, T0)).toBe(true)
   })
 
-  it('a spin taken on another device spends the day here, with nothing to pay', () => {
-    const spent = spinSpent(fresh, '2026-10-10')
-    expect(canSpin(spent, '2026-10-10')).toBe(false)
-    expect(spent.gold).toBe(fresh.gold)
-    expect(spinSpent(spent, '2026-10-10')).toBe(spent)
+  it('cost one a spin; the first spent starts the 12 h clock, and a free one comes back on it', () => {
+    const spun = takeSpin(fresh, data, T0, { kind: 'gold', amount: 50 })!
+    expect(spun.events?.wheelPending).toEqual({ kind: 'gold', amount: 50 })
+    const paid = payWheelPrize(spun, data, T0, newId)
+    expect(wheelTickets(paid, data, T0)).toEqual({ tickets: 3, nextAt: T0 + 12 * HOUR })
+    expect(wheelTickets(paid, data, T0 + 12 * HOUR)).toEqual({ tickets: 4, nextAt: null })
   })
 
-  it('keeps the waiting prize through a save round trip', () => {
-    const taken = takeSpin(fresh, '2026-10-10', master)
+  it('come one every 12 h up to 4, and no further', () => {
+    const empty: SaveData = { ...fresh, events: { wheelTickets: 0, wheelTicketAt: T0 + HOUR } }
+    expect(canSpin(empty, data, T0)).toBe(false)
+    expect(takeSpin(empty, data, T0, { kind: 'gold', amount: 50 })).toBeNull()
+    expect(wheelTickets(empty, data, T0 + HOUR)).toEqual({ tickets: 1, nextAt: T0 + 13 * HOUR })
+    expect(wheelTickets(empty, data, T0 + 25 * HOUR)).toEqual({ tickets: 3, nextAt: T0 + 37 * HOUR })
+    expect(wheelTickets(empty, data, T0 + 100 * HOUR)).toEqual({ tickets: 4, nextAt: null })
+  })
+
+  it('wait for the last prize to be paid before the next spin', () => {
+    const spun = takeSpin(fresh, data, T0, { kind: 'gold', amount: 50 })!
+    expect(canSpin(spun, data, T0)).toBe(false)
+  })
+
+  it('sell for ₽200 each while fewer than 4 are held', () => {
+    const rich = { ...fresh, gold: 1000 }
+    expect(buyTicket(rich, data, T0)).toBeNull()
+    const two: SaveData = { ...rich, events: { wheelTickets: 2, wheelTicketAt: T0 + HOUR } }
+    const three = buyTicket(two, data, T0)!
+    expect(three.gold).toBe(800)
+    expect(wheelTickets(three, data, T0)).toEqual({ tickets: 3, nextAt: T0 + HOUR })
+    // The fourth fills the stack: its clock stops.
+    const four = buyTicket(three, data, T0)!
+    expect(wheelTickets(four, data, T0)).toEqual({ tickets: 4, nextAt: null })
+    expect(buyTicket({ ...two, gold: 199 }, data, T0)).toBeNull()
+  })
+})
+
+describe('the wheel: paying the prize', () => {
+  const spun = (s: SaveData, reward: Parameters<typeof takeSpin>[3]) => takeSpin(s, data, T0, reward)!
+
+  it('pays once: ₽ into the live region, items into the bag', () => {
+    const paid = payWheelPrize(spun(fresh, { kind: 'gold', amount: 500 }), data, T0, newId)
+    expect(paid.gold).toBe(fresh.gold + 500)
+    expect(payWheelPrize(paid, data, T0, newId)).toBe(paid)
+    const balls = payWheelPrize(spun(fresh, { kind: 'item', key: 'ultra-ball', qty: 2 }), data, T0, newId)
+    expect(balls.inventory['ultra-ball']).toBe((fresh.inventory['ultra-ball'] ?? 0) + 2)
+  })
+
+  it('a Pokémon joins as a catch', () => {
+    const paid = payWheelPrize(spun(fresh, { kind: 'pokemon', dex: 137, level: 30 }), data, T0, newId)
+    const mon = paid.box.find((p) => p.dex === 137)
+    expect(mon?.level).toBe(30)
+    expect(paid.events?.wheelPending).toBeUndefined()
+  })
+
+  it('keeps the waiting prize and the tickets through a save round trip', () => {
+    const taken = spun(fresh, { kind: 'pokemon', dex: 137, level: 30, shiny: true })
     const back = parseSave(JSON.parse(JSON.stringify(taken)))
-    expect(back.ok && back.save.events).toEqual({ wheelDay: '2026-10-10', wheelPending: master })
-  })
-
-  it('tells two prizes apart', () => {
-    expect(sameReward(master, { ...master })).toBe(true)
-    expect(sameReward(master, { kind: 'item', key: 'master-ball', qty: 2 })).toBe(false)
-    expect(sameReward({ kind: 'gold', amount: 10 }, { kind: 'gold', amount: 10 })).toBe(true)
+    expect(back.ok && back.save.events).toEqual({
+      wheelTickets: 3,
+      wheelTicketAt: T0 + 12 * HOUR,
+      wheelPending: { kind: 'pokemon', dex: 137, level: 30, shiny: true },
+    })
   })
 })

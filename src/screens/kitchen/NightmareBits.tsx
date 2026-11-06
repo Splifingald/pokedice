@@ -124,7 +124,7 @@ export function NightmareBits() {
             <div className="light-scope bg-[#080b1f] shadow-[inset_0_0_0_3px_#5a3aa8]">
               <HauntSprite dex={197} size={104} level={level} />
             </div>
-            <figcaption className="font-pixel-sm text-[15px] text-muted">{level}</figcaption>
+            <figcaption className="font-pixel-sm text-[16px] text-muted">{level}</figcaption>
           </figure>
         ))}
       </div>
@@ -171,11 +171,11 @@ export function NightmareBits() {
           className="pixel-btn hatched relative flex min-h-[72px] flex-col items-center justify-center gap-0.5 px-0.5"
         >
           <PixelIcon name="lock" size={24} />
-          <span className="font-pixel-sm text-[15px] uppercase leading-none tracking-[0.04em]">
+          <span className="font-pixel-sm text-[16px] uppercase leading-none tracking-[0.04em]">
             {t('ui.home.areas')}
           </span>
         </button>
-        <p className="m-0 flex items-start gap-2 bg-well p-2 font-pixel-sm text-[15px] leading-tight text-muted shadow-ring-line">
+        <p className="m-0 flex items-start gap-2 bg-well p-2 font-pixel-sm text-[16px] leading-tight text-muted shadow-ring-line">
           <PixelIcon name="lock" size={16} className="mt-px shrink-0" />
           <span>{t('ui.nightmare.locked', { area: 'Newmoon Island' })}</span>
         </p>

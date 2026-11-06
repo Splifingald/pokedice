@@ -10,8 +10,9 @@ Five things, from one request:
 | **Link Cable** (item) | Used on a Pokémon that only evolves by trade: it evolves, no trade needed. ₽1,000, **not in the Mart** by default. |
 | **Bait** (item) | When a ball's throw falls short, the catch asks whether to throw one: its own die (1, 1, 1, 2, 2, 3) adds to the total. ₽150, in every region's Mart from the **7th badge**. |
 | **Capture Luck** (General upgrade) | A wild Pokémon that broke free may stay for **one** more throw: 10 levels, 10 % to 100 %. Never a legendary, never a raid. |
-| **Offline earnings** (General upgrade) | ₽ for each hour the game is closed, up to 24 h an absence, on the server's clock: 10 levels, ₽2 to ₽20 an hour (level 0: none). |
+| **Offline earnings** (General upgrade) | ₽ for each hour the game is closed, up to 24 h an absence, on the server's clock: 10 levels, ₽2 to ₽20 an hour; level 0 pays ₽1 an hour (`offlineBase`, since 2026-10-31, migration 0104). |
 | **I am just rich** (General upgrade) | ₽99,999, one level, for fun: the trainer's name shines gold wherever other players see it. |
+| **Shiny Charm** (General upgrade, added 2026-10-18) | Better wild shiny odds: 10 levels, from the base 1 in 1,000 to 1 in 333. Its own switch. |
 
 ## 1. The rules (all in `src/engine`)
 
@@ -63,13 +64,38 @@ Five things, from one request:
 - The level is read when the player comes back: buying a level while away pays the new rate for that absence (it
   can only be bought while playing, so this never happens in practice).
 - An hour or more away: "While you were away" (the coin and +₽, the rate and the cap), between fights. Less: a toast.
+- **Level 0 pays too** (2026-10-31, the user's request: "make offline earnings level 0 still give a little something"):
+  `general.offlineBase`, ₽1 an hour by default (₽24 for a full day away, half of level 1), so every player with the
+  General upgrades open finds something waiting and the upgrade has a rate to grow from. 0 turns it off (no absence
+  starts, as before). The Upgrades screen shows level 0's rate instead of "None"; the rules' range starts there.
+  Admin → Config → General upgrades → *Offline earnings at level 0*. Setting it up: run
+  `supabase/migrations/0104_day_care_10_offline_base.sql` (adds `offlineBase: 1` when missing; it also opens the
+  Day Care at 10 species).
 
 ### 1.5 I am just rich
 
 - `general.rich` in the save. The trainer's own card (the drawer) shows it; other players see it through the server
   (§3). Nothing else changes.
 
-### 1.6 Buying the General upgrades — `buyGeneral`
+### 1.6 The Shiny Charm — `engine/general.ts` `wildShinyChance`, `engine/encounters.ts` `rollShiny`
+
+- Each level sets the wild shiny odds as "1 in N" (`general.charm[].oneIn`); level 0 is game_config's `shinyChance`.
+  A level **never makes them worse** than `shinyChance` (`charmChanceAt` takes the better of the two), so the table
+  only means what it says while the base odds are 1 in 1,000 (the user sets that in Admin → Config → `shinyChance`;
+  at the live 1 in 267 the charm changes nothing at all, its best being 1 in 333).
+- The store hands the odds to the encounter rolls (`EncounterContext.shinyChance`, `challengeEncounter`'s last
+  argument): every wild Pokémon (double battles' partner and the portal run's wild cards included), Trick or Treat's
+  ghosts, and bosses that aren't shiny-locked. A Shiny Parade multiplies them on top. Legendaries stay shiny-locked.
+- Not: Day Care Eggs (`dayCare.shinyChance`, their own odds), fossils (`fossilShinyChance`, theirs: docs/01 §4.6), raids (their shinies are the calendar's), small worlds
+  (`inWorldRegion`: a world keeps game_config's odds, like every General upgrade).
+- **Its own switch**, `general.charmAccess` (Off by default), inside the tab's: the card, its rules and its effect
+  need both on (`charmOn`). Off keeps the level bought. No server function decides a shiny, so there's nothing for
+  the server to check; the numbers are the game's defaults under the admin's `general` row (no migration: `mergeConfig`
+  fills them in, and the admin's General box shows and saves them).
+- **Its rules**: a row in the General tab's pop-up and INFO while it's on; a player who read the tab's rules before
+  it was switched on gets its own pop-up once (`charmRulesOnly`, `general.charmSeen`), in the same queue.
+
+### 1.7 Buying the General upgrades — `buyGeneral`
 
 - With the ₽ of the region being played; the levels are the save's (`SaveData.general`), so they hold in every region.
   Each save buys its own: an Extreme save's are its own.
@@ -83,11 +109,13 @@ Five things, from one request:
   | Capture Luck | 10 % · ₽1,000 | 20 % · ₽1,800 | 30 % · ₽2,800 | 40 % · ₽4,000 | 50 % · ₽5,500 | 60 % · ₽7,200 | 70 % · ₽9,200 | 80 % · ₽11,500 | 90 % · ₽14,000 | 100 % · ₽17,000 | ₽74,000 |
   | Offline | ₽2/h · ₽100 | ₽4/h · ₽175 | ₽6/h · ₽263 | ₽8/h · ₽375 | ₽10/h · ₽500 | ₽12/h · ₽650 | ₽14/h · ₽825 | ₽16/h · ₽1,025 | ₽18/h · ₽1,250 | ₽20/h · ₽1,500 | ₽6,663 |
   | I am just rich | ₽99,999 | | | | | | | | | | |
+  | Shiny Charm (1 in …) | 950 · ₽1,000 | 900 · ₽1,500 | 850 · ₽2,000 | 800 · ₽3,000 | 750 · ₽4,000 | 700 · ₽5,000 | 625 · ₽7,500 | 550 · ₽10,000 | 450 · ₽15,000 | 333 · ₽20,000 | ₽69,000 |
 
 ## 2. The switches (docs/15 §20)
 
 - `game_config.general.access`: the General tab, its pop-up, and every effect (Capture Luck, offline earnings, the
-  golden name). Off keeps the levels bought.
+  golden name, the Shiny Charm). Off keeps the levels bought.
+- `game_config.general.charmAccess`: the Shiny Charm's own (§1.6), Off by default.
 - `game_config.itemSwitches`: `{ "link-cable": …, "bait": … }`. An item switched off is not sold, not found in loot,
   not usable from the bag and never offered at the catch (`itemOn`); bags keep theirs. Items without an entry are always
   on, so the map can switch any future item.

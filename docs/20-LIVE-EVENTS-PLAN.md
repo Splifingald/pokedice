@@ -12,8 +12,8 @@ and a pop-up.
 
 | Topic | Decision |
 |---|---|
-| Overlap | **One live event at a time.** The admin refuses to schedule two that overlap. |
-| Scheduling | **Start and end date-times, UTC**, set in the admin; it starts and ends by itself (after a Publish). You can end one early. |
+| Overlap | ~~One live event at a time.~~ **They may overlap** (2026-10-24, §9): each gets its square on Home; two of a kind add up. Two Undergrounds can't. |
+| Scheduling | **Start and end date-times, UTC**, set in the admin; it starts and ends by itself (after a Publish). You can end one early. **Or recurring** (2026-10-24, §9): every year on a date, or on a weekday, every week or on some weeks of the month. |
 | Strength | **Free numbers** (shiny ×5, ₽ +50 %…), shown as such to players. |
 | Audience | Shown **after a set number of badges** (admin; the events teaser's 3 by default). |
 | Pop-up | **Once per event per player**, the first time they're in the game while it runs: banner, title, what it does, time left. **OK**, plus **Go** for a Special Shop (to the shop). |
@@ -148,3 +148,114 @@ interface LiveEvent {
 ## 8. Integration phases (after validation)
 1. Engine + config + save + admin editor + tests.
 2. Home square, pop-up, in-game chips, shop section; strings in 10 languages; e2e + layout.
+
+## 9. Overlapping and recurring events (2026-10-24)
+
+The user's ask: *"I should be able to schedule overlapping live events. If that happens then each event gets their card
+on the home page. I should be able to schedule by date like today or by 'recurring' and select either a specific date
+(will happen every year) or day (every week) and specify which week of the month (like first only or second and
+fourth)."*
+
+### Overlapping
+- **Any events may overlap**, except **two Undergrounds** (a player digs one at a time, with one team, and the server's
+  `ug_live()` answers with one). The admin refuses only that overlap, looking two years ahead through recurring runs.
+- **Home**: a square per event running for the player (`LiveSquares`), the earliest started first, after the small
+  world's and before the other event squares.
+- **Pop-ups**: each event's once, one after the other, the earliest started first (`livePopupNext`); a square reopens
+  its own (`openLivePopup(id)`).
+- **Two of a kind add up** (`LiveSet`: the engine's effects take one event or a list): two Cash Flows add their bonuses
+  (+50 % and +50 % = +100 %, on the purse's chip too), two Shiny Parades their boosts where both cover an area
+  (×5 and ×3 = ×7). Two Special Shops: a section each in the Mart, each with its own limits (bought by event id).
+- Store: `useLive()` → `{ lives, now }`, `currentLive()` → the list, `buyLive(eventId, key, qty)`.
+
+### Recurring
+- `LiveEvent.repeat` (null = once, between `start` and `end`, as before):
+  - `{ kind: 'yearly', month, day, time, hours }`: every year on that date (a 29 February: leap years only);
+  - `{ kind: 'weekly', weekday, weeks, time, hours }`: on that weekday (0 = Sunday), every week (`weeks: []`) or on the
+    weeks of the month listed: `1`–`4` (the 1st to the 4th of that weekday in the month) and `'last'`.
+  - `time` is "HH:MM" UTC, `hours` its length: at most 168 for a weekly one (it never reaches the next week's), 744
+    (31 days) for a yearly one.
+- **Each run is an event of its own** for players: id `<id>@<YYYY-MM-DD>` (the UTC date it starts), so its pop-up,
+  its shop limits, its push notice, its Discord post and the Underground's team, kits and orbs start afresh each time.
+  The engine builds runs from the rule (`liveRuns`, `liveNextRun`, `liveById`, `liveStartsBetween`); the list holds only
+  the rule.
+- **End now** on a recurring event ends the running run only (`stops`: the run's date → when it ended); it comes back
+  next time.
+- **Admin**: the editor's **When**: *Once (dates)*, *Every year (a date)*: month, day; *Every week (a weekday)*: the
+  weekday and the weeks of the month (Every week, 1st, 2nd, 3rd, 4th, Last), then the start time (UTC) and how many
+  hours, with the next three runs (UTC and your time). The list shows each event's run on or next, and a **Comes back**
+  column ("The 1st and 3rd Saturday of each month, 20:00 UTC, for 6 h").
+- **Server**: `live_run_at(e, t)` (0072) is the engine's `liveRuns` in SQL, and `ug_live()` uses it, so a recurring
+  Underground's teams and orbs work as a one-off one's. `tests/live-recurring-sql.test.ts` compares the two over three
+  months of moments.
+- No new switch: it's the admin's scheduling of the live events, behind their own switch (`liveEvents.access`, §6c),
+  and players see nothing new to learn (a square and a pop-up per event, as before).
+
+### Setting it up
+1. Run in Supabase → SQL Editor (it redefines `ug_live()`; without it, a recurring Underground doesn't open its teams):
+   https://github.com/Splifingald/pokedice/blob/ccr-09f15ba6-0tg5ou/supabase/migrations/0072_live_recurring.sql
+   (`supabase/seed.sql` inlines it too, after 0071).
+2. Admin → Events → Live events → New live event → **When**, then Save & Publish.
+
+
+## 10. Live event pictures, picked by default (2026-10-31)
+
+The user's ask: banners made in Gemini (prompts: BASE + one scene, 16:9, the Johto Daybreak style block of
+`design/visual-lab/bgs.js`), shrunk like the others, and *"when I select a live event, it automatically picks the right
+banner by default"*, the type's own banners as defaults too.
+
+- **The pictures** (`public/backgrounds/live-*.png`, 400 × 223, true pixel art, listed under the admin's **Event
+  pictures**). Per type: Shiny Parade (sparkling lakeside meadow, aurora), Cash Flow (coin fountain, treasure on the
+  pier), Underground (lantern-lit mine, gems and cart), Special Shop (striped awning, shelves of balls, potions and stones,
+  an empty window in the middle where the pop-up's three item tiles sit). Per occasion: Halloween, winter
+  (snowy town, tree, gifts), New Year, spring, summer, celebration. Each keeps its centre calm for the pop-up's big ×5
+  / +50 %, its motifs at a quarter and three quarters across.
+- **Made with** `pnpm unpixel <in> <out> --px <source width / 400> --width 400`: Gemini drew these on grids 240 to 480
+  art pixels wide, and `--width` alone pads or crops a grid to 400 rather than scaling it; `--px` reads the picture on
+  a 400-wide grid instead. JPGs are turned into PNGs first.
+- **The default** (`liveDefaultBanner`, engine): the occasion of the day halfway through the event wins (UTC: 15 Oct –
+  7 Nov Halloween, 1 – 25 Dec winter, 26 Dec – 10 Jan New Year, March – May spring, June – August summer), else the
+  type's own. A yearly event takes its date; a weekly one, back all year, its type's.
+  The Underground is always its cave, the place players dig in.
+- **Admin**: a new event starts with its default; while the picture is the default (or none), changing the dates, the
+  type or the repeat moves it to the new one; a picture picked by hand stays. An event saved with no picture gets its
+  default the next time it's edited. Players see nothing new to learn: no switch (it's the admin's picture picker,
+  behind Live events' own switch).
+
+## 11. The gift calendar (2026-10-31)
+
+A fifth type, **Gift calendar** (docs/55): a door a day from its start, one reward each (an item, ₽ or a Pokémon, in a
+quantity), opened on its day or the next. It runs once, its end the day after its last door; it has its own switch
+(`giftCalendar.access`, Off) and its own page (`/calendar`), so like the Underground it takes no turn in the pop-ups'
+queue (`queuedLives`): Home's notice announces it and its page shows its rules. `liveTypeOn` keeps a calendar switched
+off out of `liveEventsAt`, the push schedule and the Discord posts. Never in an Extreme save.
+
+## 12. The calendar view (2026-11-01)
+
+The user's ask: *"Create a live event calendar view in admin mode."*
+
+- **Admin → Events → Live events**: **List | Calendar** beside New live event (`Seg`, in the address as
+  `?tab=live&view=calendar`, so a reload stays on it). The list is as before.
+- **The calendar**: a month (UTC days, Monday first, as the raid calendar), ‹ › and Today, the month's run count and a
+  legend of the five types' colours. Every run is a bar over the days it's on: a recurring event's each time it comes
+  back (the engine's `liveRuns`, so it shows exactly what players get), a run crossing a week carried on with ‹ ›, its
+  start time (UTC) on its first day, LIVE on the one running, faded once over, hatched for a gift calendar whose own
+  switch is off; overlapping runs take lanes, the longer on top (`src/admin/liveCalendar.ts`, `monthWeeks`). A line
+  says when Live events are switched off altogether.
+- **A bar opens its event in the editor** (a recurring one's rule), brought into view; **a day from today on starts a
+  new event there** (18:00 UTC, or the next round hour if that's past; three days, as New live event). While a draft is
+  open the calendar waits, as the list's Edit does. It shows the working copy: an applied change shows before Save &
+  Publish.
+- **Small worlds too** (the user's ask, same day: *"include small worlds inside the calendar"*): each world (docs/21)
+  is a bar among the live events' runs, sharing their lanes, in the worlds' purple, hatched while the small worlds'
+  switch is off. Its bar opens it in the Small worlds tab's editor (`?tab=worlds&edit=<id>`: the tab opens that world,
+  then drops `edit` from the address).
+- **Daily raids** (*"an option to show daily raids too (with pokemon image)"*): a checkbox over the calendar
+  (`&raids=1` in the address) puts each day's raid Pokémon in its square, its sprite (shiny when it is), from the raid
+  calendar as it stands (the plan and the days set by hand, `raidOfDay`); its name in the day's label.
+- One line under the month names what's switched off among the live events, the small worlds and (when shown) the
+  raids.
+- No switch and no rules: it's the admin's own view of the live events; players see nothing new.
+- Tests: `tests/admin-live-calendar.test.ts` (weeks, a run cut at a week, midnight ends, lanes, recurring runs, a world
+  among them), `e2e/admin-events.spec.ts` (the view in the address, a bar per Saturday, a bar edits, a day starts a new
+  event; a world's bar, hatched, opening it in its tab; Daily raids with their pictures loaded).

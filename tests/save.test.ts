@@ -21,6 +21,19 @@ describe('save schema', () => {
     expect(res.ok && res.save.settings).toMatchObject({ typeHints: true, autoMode: true, raidFast: true })
   })
 
+  // A Mega Gem bought at the Mart vanished on the next start: the schema dropped `powers` (Discord, 2026-10-26).
+  it('keeps the battle powers: the gems held, the pop-ups seen and the badges won', () => {
+    const powers = { gems: ['greninjite'], seen: ['mega'], earned: ['mega', 'gmax'] }
+    const res = parseSave(JSON.parse(JSON.stringify({ ...newSave(7, data, 1, newId), powers })))
+    expect(res.ok && res.save.powers).toEqual(powers)
+  })
+
+  it('drops a power kind it does not know, never the save or its gems', () => {
+    const s = { ...newSave(7, data, 1, newId), powers: { gems: ['greninjite'], seen: ['mega', 'dynamax'] } }
+    const res = parseSave(JSON.parse(JSON.stringify(s)))
+    expect(res.ok && res.save.powers).toEqual({ gems: ['greninjite'], seen: ['mega'] })
+  })
+
   it('rejects garbage and wrong versions', () => {
     expect(parseSave(null).ok).toBe(false)
     expect(parseSave({ version: 2 }).ok).toBe(false)

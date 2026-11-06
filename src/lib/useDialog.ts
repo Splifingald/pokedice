@@ -1,9 +1,44 @@
-// What every dialog does (Modal, Sheet, SidePanel): focus moves in, Tab stays inside, Esc closes the top one only, and
-// focus goes back where it came from.
-import { useEffect, useRef, type RefObject } from 'react'
+// What every dialog does (Modal, Sheet, SidePanel): focus moves in, Tab stays inside, the page behind is inert, Esc
+// closes the top one only, and focus goes back where it came from.
+import { useEffect, useRef, useSyncExternalStore, type RefObject } from 'react'
+import { hasLayer, holdInert, isTopLayer } from './inert'
 
 /** Open dialogs, oldest first: only the last one answers the keyboard. */
 const stack: object[] = []
+const listeners = new Set<() => void>()
+
+/** Puts a dialog on the stack; the function returned takes it off again (only it, whatever opened since). */
+export function pushDialog(token: object): () => void {
+  stack.push(token)
+  listeners.forEach((fn) => fn())
+  return () => {
+    const i = stack.indexOf(token)
+    if (i < 0) return
+    stack.splice(i, 1)
+    listeners.forEach((fn) => fn())
+  }
+}
+
+/** How many dialogs are open right now. */
+export const dialogsOpen = (): number => stack.length
+
+/** Called whenever a dialog opens or closes; returns the unsubscribe. */
+export function onDialogs(fn: () => void): () => void {
+  listeners.add(fn)
+  return () => void listeners.delete(fn)
+}
+
+/**
+ * A dialog is open over the page (a Modal, a Sheet, the trainer menu…). The battle waits while one is (docs/15 §14):
+ * nothing of the fight plays behind Settings opened mid-fight, or the guide.
+ */
+export function useDialogOpen(): boolean {
+  return useSyncExternalStore(
+    onDialogs,
+    () => stack.length > 0,
+    () => false,
+  )
+}
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"])'
@@ -24,11 +59,17 @@ export function useDialog(ref: RefObject<HTMLElement>, open: boolean, onEscape?:
   useEffect(() => {
     if (!open) return
     const token = {}
-    stack.push(token)
+    const close = pushDialog(token)
     const prev = document.activeElement as HTMLElement | null
     ref.current?.focus()
+    // A screen reader's swipe stays in the dialog too, not only the Tab key (lib/inert.ts).
+    const wake = holdInert(ref.current)
+    // The dialog drawn on top answers the keyboard, which isn't always the last opened: a pop-up that opens under the
+    // partner lab (a lower z-index) waits under it, and the focus goes back up there.
+    const onTop = () => (hasLayer(ref.current) ? isTopLayer(ref.current) : stack[stack.length - 1] === token)
+    if (!onTop()) prev?.focus?.()
     const onKey = (e: KeyboardEvent) => {
-      if (stack[stack.length - 1] !== token) return
+      if (!onTop()) return
       const root = ref.current
       if (e.key === 'Escape') {
         if (!escape.current) return
@@ -56,7 +97,9 @@ export function useDialog(ref: RefObject<HTMLElement>, open: boolean, onEscape?:
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('keydown', onKey)
-      stack.splice(stack.indexOf(token), 1)
+      close()
+      // Awake first: an inert element can't take the focus back.
+      wake()
       prev?.focus?.()
     }
   }, [open, ref])

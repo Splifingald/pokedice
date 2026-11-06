@@ -3,9 +3,10 @@ import { AreaArt } from '@/components/AreaArt'
 import { EGG_COLORS, EGG_MAP } from '@/components/EggSprite'
 import { artPlacement, homeWindow } from '@/fx/areaArt'
 import { ellipse, icon } from '@/fx/pixel'
-import { stageSprite } from '@/fx/sprites'
+import { spriteError, stageSprite } from '@/fx/sprites'
 import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
+import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { H, W, dayCareWorld } from '../home/scene'
 import { useHerdLoop, type HerdOverlay } from '../home/SceneStage'
@@ -16,6 +17,8 @@ export interface YardMember {
   key: string
   dex: number
   shiny?: boolean
+  /** Its outfit (docs/59), as `outfitOf` gave it. */
+  outfit?: string | null
   name: string
   likes: string[]
 }
@@ -48,11 +51,13 @@ export function YardStage({
   const front = useRef<HTMLCanvasElement>(null)
   const imgs = useRef<(HTMLImageElement | null)[]>([])
 
-  const key = members.map((m) => `${m.key}:${m.dex}:${m.shiny ? 1 : 0}:${m.likes.join(',')}`).join('|')
+  const key = members.map((m) => `${m.key}:${m.dex}:${m.shiny ? 1 : 0}:${m.outfit ?? ''}:${m.likes.join(',')}`).join('|')
+  // Showdown failing or stalling brings the local sprites (src/lib/showdownReach.ts).
+  const down = useShowdownDown()
   const sprites = useMemo(
-    () => members.map((m) => stageSprite(m.dex, false, !!m.shiny)),
+    () => members.map((m) => stageSprite(m.dex, false, !!m.shiny, m.outfit)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [key],
+    [key, down],
   )
   const herd = useMemo(() => {
     const world = dayCareWorld()
@@ -131,14 +136,12 @@ export function YardStage({
           key={m.key}
           ref={(el) => {
             imgs.current[i] = el
+            watchShowdown(el)
           }}
           src={sprites[i]!.url}
           alt=""
           draggable={false}
-          onError={(e) => {
-            const fb = sprites[i]!.fallback
-            if (fb && e.currentTarget.src !== new URL(fb, location.href).href) e.currentTarget.src = fb
-          }}
+          onError={spriteError(sprites[i]!)}
           className="pointer-events-none absolute max-w-none"
           style={{ imageRendering: 'pixelated' }}
         />

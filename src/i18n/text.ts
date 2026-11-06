@@ -28,6 +28,8 @@ export function effectText(item: ItemDef): string {
       return e.bonus >= 9 ? t('ui.effect.ballAlways') : t('ui.effect.ball', { bonus: e.bonus })
     case 'link':
       return t('ui.effect.link')
+    case 'talent':
+      return t('ui.effect.talent')
     case 'bait':
       return t('ui.effect.bait', { faces: joinList(e.faces.map(String)) })
     case 'megaGem':
@@ -88,6 +90,10 @@ export function conditionLabel(cond: UnlockCondition, data: GameData): string {
       area: data.areas.find((a) => a.id === cond.areaId)?.name ?? t('ui.unlock.unknownArea'),
     })
   if (cond.kind === 'pokedex') return t('ui.unlock.pokedex', { count: cond.count })
+  if (cond.kind === 'caught')
+    return t('ui.unlock.caught', {
+      names: joinList([...new Set(cond.dex)].map((d) => data.species[d]?.name ?? `#${d}`)),
+    })
   return t('ui.unlock.maxLevel', { level: cond.level })
 }
 

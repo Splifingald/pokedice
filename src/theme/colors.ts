@@ -78,7 +78,7 @@ export const THEMES = {
     /** The blue tint: the trainer card, menu tiles, info. */
     sky: '#e8f1ff',
     'sky-line': '#cfe0fb',
-    /** The red tint behind a warning (no energy, a fainted lead). */
+    /** The red tint behind a warning (a fainted lead). */
     rose: '#fff2ef',
     /** The warm card: something you can afford, the next region, the lead. */
     cream: '#fffbea',

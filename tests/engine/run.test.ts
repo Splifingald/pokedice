@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildDeck,
   applyCatch,
   applyHp,
   applyVictory,
@@ -98,7 +99,12 @@ describe('encounters', () => {
   it('forces a Center first when anyone is hurt', () => {
     const base = fresh()
     const hurt = { ...base, box: base.box.map((p) => ({ ...p, currentHp: 1 })) }
-    expect(rollEncounter(ctx(hurt, { isFirstInArea: true }), createRng(1))).toEqual({ kind: 'center', forced: true })
+    // Mid-round (a fresh round opens with its own Center anyway).
+    const midRound = { ...progressOf(hurt, A1.id), deck: ['wild' as const] }
+    expect(rollEncounter(ctx(hurt, { isFirstInArea: true, progress: midRound }), createRng(1))).toEqual({
+      kind: 'center',
+      forced: true,
+    })
     expect(rollEncounter(ctx(fresh(), { isFirstInArea: true }), createRng(1)).kind).not.toBe('boss')
   })
 
@@ -106,7 +112,8 @@ describe('encounters', () => {
     const seen = new Set<string>()
     const rng = createRng(3)
     for (let i = 0; i < 200; i++) {
-      const e = rollEncounter(ctx(fresh()), rng)
+      // A card off the top of a deck mid-round (a fresh round opens with its Center).
+      const e = rollEncounter(ctx(fresh(), { progress: { ...emptyProgress(), deck: buildDeck(A1, data, rng) } }), rng)
       seen.add(e.kind)
       if (e.kind === 'wild') {
         expect(A1.wildPool.some((w) => w.dex === e.dex)).toBe(true)
@@ -121,7 +128,9 @@ describe('encounters', () => {
 
   it('offers trainers in Viridian Forest', () => {
     const rng = createRng(8)
-    const kinds = Array.from({ length: 100 }, () => rollEncounter(ctx(fresh(), { area: FOREST, progress: emptyProgress() }), rng))
+    const kinds = Array.from({ length: 100 }, () =>
+      rollEncounter(ctx(fresh(), { area: FOREST, progress: { ...emptyProgress(), deck: buildDeck(FOREST, data, rng) } }), rng),
+    )
     const t = kinds.find((k): k is Extract<Encounter, { kind: 'trainer' }> => k.kind === 'trainer')
     expect(t).toBeDefined()
     expect(t!.team.length).toBeGreaterThanOrEqual(1)
@@ -237,11 +246,31 @@ describe('victory rewards', () => {
     expect(r.save.gold).toBe(7)
   })
 
+  it("a trainer's ₽ waits for their last Pokémon, then is paid all at once", () => {
+    const first = win(fresh(), { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 7, last: false })
+    expect(first.save.gold).toBe(0)
+    expect(first.events.some((e) => e.kind === 'gold')).toBe(false)
+    expect(first.owed).toEqual({ amount: 7, bonus: 0 })
+    const second = win(first.save, { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 5, last: false, owed: first.owed })
+    expect(second.owed).toEqual({ amount: 12, bonus: 0 })
+    const end = win(second.save, { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 3, last: true, owed: second.owed })
+    expect(end.save.gold).toBe(15)
+    expect(end.events.filter((e) => e.kind === 'gold')).toEqual([{ kind: 'gold', amount: 15 }])
+    expect(end.owed).toBeUndefined()
+  })
+
+  it("a set trainer's prize comes with their last Pokémon, any ₽ held back with it", () => {
+    const held = win(fresh(), { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 7, prize: 0, last: false, owed: { amount: 3, bonus: 0 } })
+    expect(held.owed).toEqual({ amount: 3, bonus: 0 })
+    const end = win(fresh(), { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 7, prize: 20, last: true, owed: held.owed })
+    expect(end.save.gold).toBe(23)
+  })
+
   it('backtracking into a cleared area halves gold and XP', () => {
     const s = { ...fresh(), areaProgress: { [FOREST.id]: { ...emptyProgress(), cleared: true, xp: 150 } } }
     const r = win(s, { areaId: FOREST.id, kind: 'trainer', enemyDex: 10, enemyLevel: 8 })
     expect(r.save.gold).toBe(4)
-    expect(r.events).toContainEqual({ kind: 'xp', uid: s.team[0], amount: 4 })
+    expect(r.events).toContainEqual(expect.objectContaining({ kind: 'xp', uid: s.team[0], amount: 4 }))
   })
 
   it('every round done with no gym or legendary: the area clears and unlocks the next', () => {

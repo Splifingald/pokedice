@@ -11,6 +11,16 @@ import { DEFAULT_CONFIG } from '@/engine'
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 
+// wheel_spin()'s own default prizes (0035). The game has drawn its spins on the device since the wheel took tickets
+// (2026-10-25); the function stays in the database for older builds, and these tests keep it working as it was.
+const OLD_PRIZES = [
+  { reward: { kind: 'gold', amount: 10 }, count: 4, odds: 12.5 },
+  { reward: { kind: 'item', key: 'poke-ball', qty: 1 }, count: 2, odds: 12.5 },
+  { reward: { kind: 'item', key: 'great-ball', qty: 1 }, count: 1, odds: 12.5 },
+  { reward: { kind: 'item', key: 'ultra-ball', qty: 1 }, count: 1, odds: 10 },
+  { reward: { kind: 'item', key: 'master-ball', qty: 1 }, count: 1, odds: 2.5 },
+]
+
 const U = {
   ash: '00000000-0000-4000-8000-000000000001',
   misty: '00000000-0000-4000-8000-000000000002',
@@ -89,9 +99,9 @@ describe('0035: wheel_spin', () => {
     await setEvents({ wheel: { access: 'all' } })
   })
 
-  it("has the game's default prizes when the admin hasn't saved any", async () => {
+  it('has its default prizes when the admin hasn’t saved any', async () => {
     const [{ p }] = (await db.query<{ p: unknown }>('select wheel_prizes() as p')).rows as [{ p: unknown }]
-    expect(p).toEqual(DEFAULT_CONFIG.events.wheel.prizes)
+    expect(p).toEqual(OLD_PRIZES)
   })
 
   it('needs a signed-in player', async () => {
@@ -102,7 +112,7 @@ describe('0035: wheel_spin', () => {
     const first = await spin(U.ash)
     expect(first.fresh).toBe(true)
     expect(first.day).toMatch(/^\d{4}-\d\d-\d\d$/)
-    expect(first.reward).toEqual(DEFAULT_CONFIG.events.wheel.prizes[first.prize]!.reward)
+    expect(first.reward).toEqual(OLD_PRIZES[first.prize]!.reward)
     const again = await spin(U.ash)
     expect(again).toEqual({ ...first, fresh: false })
   })

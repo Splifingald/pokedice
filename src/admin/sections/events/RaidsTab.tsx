@@ -282,7 +282,7 @@ function MonthView({
               >
                 <span className="flex w-full items-center justify-between px-1 text-sm leading-none">
                   <span>{Number(day.slice(8))}</span>
-                  {manual && <span className="bg-ink px-1 text-xs text-white">hand</span>}
+                  {manual && <span className="bg-ink px-1 text-xs text-panel">hand</span>}
                 </span>
                 {r && r.dex ? <SpriteImg dex={r.dex} shiny={r.shiny} size={44} /> : <span className="text-muted">—</span>}
                 {r?.shiny && <span className="absolute bottom-0.5 right-1 text-sm text-gold">shiny</span>}
@@ -340,7 +340,7 @@ function DayPanel({
             </b>
             <span className="flex flex-wrap items-center gap-1">
               <KindChip kind={r.kind} />
-              {manual && <span className="bg-ink px-1.5 py-0.5 text-sm leading-none text-white">set by hand</span>}
+              {manual && <span className="bg-ink px-1.5 py-0.5 text-sm leading-none text-panel">set by hand</span>}
             </span>
             <span className="text-base text-muted">{area ? `${area.name} (${regionOfArea(area)})` : 'No area'}</span>
             {manual && plan && (plan.dex !== r.dex || plan.shiny !== r.shiny) && (

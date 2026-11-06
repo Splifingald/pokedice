@@ -5,8 +5,10 @@ import { SearchSelect } from '@/components/SearchSelect'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge, TypeSwatch } from '@/components/TypeBadge'
 import { BATTLE_BACKGROUNDS, DIE_TYPES, EVENT_ACCESS, POKE_TYPES, type BattleBackground, type DieType, type EventAccess, type GameData, type Species } from '@/engine'
+import { ART_GEOMETRY } from '@/fx/areaArtMap'
 import { dexNo } from '@/lib/format'
 import { cx } from '@/theme/util'
+import { BATTLE_SCENE_NAMES, PICTURE_GROUPS, pictureName } from './pictureNames'
 
 export function speciesOption(p: Species) {
   return (
@@ -113,7 +115,7 @@ export function BackgroundPicker({
         <option value="">{emptyLabel}</option>
         {BATTLE_BACKGROUNDS.map((b) => (
           <option key={b} value={b}>
-            {b}
+            {BATTLE_SCENE_NAMES[b]}
           </option>
         ))}
       </select>
@@ -121,6 +123,57 @@ export function BackgroundPicker({
         <img src={`/battle/${value}.png`} alt="" width={96} height={45} className="border-2 border-edge" style={{ imageRendering: 'pixelated' }} />
       )}
     </div>
+  )
+}
+
+/**
+ * A banner picture picker: the events' own pictures, then every measured area picture, by group and by name.
+ * `placeholder` adds an empty first choice; a saved key no longer on the list stays pickable.
+ */
+export function PicturePicker({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+}) {
+  const groups = PICTURE_GROUPS.map((g) => ({
+    label: g.label,
+    keys: Object.keys(g.names)
+      .filter((k) => k.includes('/') || k in ART_GEOMETRY)
+      .sort((a, b) => pictureName(a).localeCompare(pictureName(b))),
+  }))
+  // A measured picture nobody has named yet still shows, under its key.
+  const named = new Set(groups.flatMap((g) => g.keys))
+  const unnamed = Object.keys(ART_GEOMETRY)
+    .filter((k) => !named.has(k))
+    .sort()
+  const listed = named.has(value) || unnamed.includes(value)
+  return (
+    <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+      {placeholder !== undefined && <option value="">{placeholder}</option>}
+      {!listed && value && <option value={value}>{value}</option>}
+      {groups.map((g) => (
+        <optgroup key={g.label} label={g.label}>
+          {g.keys.map((k) => (
+            <option key={k} value={k}>
+              {pictureName(k)}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+      {unnamed.length > 0 && (
+        <optgroup label="Not named yet">
+          {unnamed.map((k) => (
+            <option key={k} value={k}>
+              {k}
+            </option>
+          ))}
+        </optgroup>
+      )}
+    </select>
   )
 }
 
@@ -297,13 +350,33 @@ export function Stepper({
 export const n = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : v == null || v === '' ? d : Number(v) || d)
 export const s = (v: unknown) => (v == null ? '' : String(v))
 
-const ACCESS_LABEL: Record<EventAccess, string> = { off: 'Off', admin: 'On for admin', all: 'On for everyone' }
+const ACCESS_LABEL: Record<EventAccess, string> = {
+  off: 'Off',
+  admin: 'On for admin',
+  beta: 'On for beta testers',
+  all: 'On for everyone',
+}
 
-/** An event type's switch: off, on for the admin only (to try it in production first), on for everyone. */
-export function AccessSwitch({ value, onChange, label }: { value: EventAccess; onChange: (v: EventAccess) => void; label: string }) {
+/**
+ * An event type's switch: off, on for the admin only (to try it in production first), on for everyone. `beta`: also on
+ * for the beta testers' list (docs/65 §3), offered only on a feature whose server functions read `access_open`; a row
+ * already set to beta shows the choice anyway, so it can be turned back.
+ */
+export function AccessSwitch({
+  value,
+  onChange,
+  label,
+  beta = false,
+}: {
+  value: EventAccess
+  onChange: (v: EventAccess) => void
+  label: string
+  beta?: boolean
+}) {
+  const options = EVENT_ACCESS.filter((a) => a !== 'beta' || beta || value === 'beta')
   return (
     <span role="radiogroup" aria-label={label} className="inline-flex flex-wrap gap-1">
-      {EVENT_ACCESS.map((a) => (
+      {options.map((a) => (
         <button
           key={a}
           type="button"
@@ -312,7 +385,15 @@ export function AccessSwitch({ value, onChange, label }: { value: EventAccess; o
           onClick={() => onChange(a)}
           className={cx(
             'min-h-[34px] px-2.5 text-lg leading-none shadow-ring',
-            value === a ? (a === 'off' ? 'bg-well-deep text-ink' : a === 'admin' ? 'bg-gold text-ink' : 'bg-good text-white') : 'bg-panel text-muted',
+            value === a
+              ? a === 'off'
+                ? 'bg-well-deep text-ink'
+                : a === 'admin'
+                  ? 'bg-gold text-ink'
+                  : a === 'beta'
+                    ? 'bg-[#3a7bd5] text-white'
+                    : 'bg-good text-white'
+              : 'bg-panel text-muted',
           )}
         >
           {ACCESS_LABEL[a]}

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'
 import { SupportView } from '@/components/SupportModal'
 
-const PAYPAL = 'https://paypal.me/example'
+const KOFI = 'https://ko-fi.com/example'
 const DISCORD = 'https://discord.gg/example'
 
 export function SupportBits() {
@@ -21,7 +21,7 @@ export function SupportBits() {
       <SupportView
         open={!!open}
         onClose={close}
-        paypal={PAYPAL}
+        kofi={KOFI}
         discord={open === 'noDiscord' ? null : DISCORD}
       />
     </div>

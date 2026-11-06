@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { liveBlock, regionOf, worldRegionOf } from '@/engine/regions'
 import { missesTrades } from '@/engine/trade'
 import type { RegionSave, SaveData, SaveMode } from '@/engine/types'
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/lib/supabase'
 import { parseSave } from './schema'
 import type { CloudMark } from './storage'
 
@@ -121,6 +122,44 @@ export async function pushCloudSave(
   throw new SaveConflictError()
 }
 
+/**
+ * Browsers finish a request a closing page started (`keepalive`) only up to 64 KiB of body, all such requests together:
+ * a typical save (~50 kB) fits, a big one doesn't.
+ */
+export const KEEPALIVE_MAX_BYTES = 60_000
+
+/**
+ * The page is going away (hidden, closed): the save goes up in one request started right now, which the browser
+ * finishes even once the page is gone (keepalive). Through supabase-js it never left: the client reads its session
+ * asynchronously before sending, and a closing page doesn't wait. Written only over the copy stamped `base`, like
+ * pushCloudSave; no answer is read, nobody is left to read it. False when it can't go this way (too big for keepalive,
+ * no row known): the caller pushes as usual instead.
+ */
+export function sendSaveOnLeave(userId: string, token: string, save: SaveData, base: number | null): boolean {
+  if (base == null || !SUPABASE_URL || typeof fetch !== 'function') return false
+  const body = JSON.stringify({ data: save, updated_at: iso(save.updatedAt) })
+  if (new Blob([body]).size > KEEPALIVE_MAX_BYTES) return false
+  const realm: SaveMode = save.mode === 'extreme' ? 'extreme' : 'main'
+  const filter = [
+    `user_id=eq.${encodeURIComponent(userId)}`,
+    ...(noRealm ? [] : [`realm=eq.${realm}`]),
+    `updated_at=gte.${encodeURIComponent(iso(base))}`,
+    `updated_at=lt.${encodeURIComponent(iso(base + 1))}`,
+  ].join('&')
+  fetch(`${SUPABASE_URL}/rest/v1/saves?${filter}`, {
+    method: 'PATCH',
+    keepalive: true,
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body,
+  }).catch(() => {})
+  return true
+}
+
 export type SyncWinner = 'local' | 'cloud' | 'none'
 
 export function pickNewest(local: SaveData | null, cloud: SaveData | null): { winner: SyncWinner; save: SaveData | null } {
@@ -219,8 +258,10 @@ export function progressTotals(s: SaveData) {
   const open = openWorld(s)
   const world = open && {
     id: open.id,
-    cleared: Object.values(open.block.areaProgress).filter((p) => p.cleared || p.portal?.won || p.nightmare?.won)
-      .length,
+    cleared: Object.values(open.block.areaProgress).filter(
+      (p) =>
+        p.cleared || p.portal?.won || p.nightmare?.won || !!p.timeRace?.won?.length || p.whiteout?.won || p.tracks?.won,
+    ).length,
     gyms: Object.values(open.block.areaProgress).reduce((n, p) => n + (p.gymsDefeated?.length ?? 0), 0),
     species: new Set(open.block.pokedex).size,
   }
@@ -259,12 +300,20 @@ export type SyncDecision = 'none' | 'local' | 'cloud'
 export const playedOf = (s: SaveData): number => s.playedAt ?? s.updatedAt
 
 /**
+ * Written by a page from 2026-10-22 on: every commit since stamps `playedAt`. A page left open from before then, resumed
+ * on a phone or a PC, reads a save through its own old schema and writes it back without `playedAt` — and without every
+ * other part it never knew (raids won, rebattles, small worlds, General upgrades: 46 players, 25–29 Oct 2026).
+ */
+export const writtenSincePlayedAt = (s: SaveData): boolean => s.playedAt != null
+
+/**
  * The sync, with no question asked: the save further along in its areas wins, then the one with the bigger Pokédex
  * (`compareProgress`). A stamp is easy to move, progress isn't, so progress decides first. Level on both, the one
  * played last: ₽, levels, rematches and upgrades don't count as progress, and keeping this device's own on a tie let
  * an idle device's older save undo all of them on another (players lost their General upgrades and the ₽ spent on
  * them that way, 2026-10-16). Played, not changed: a stale device's own clocks (its offline pay at load) stamp its
- * save "now" before the sync compares, and used to win it the tie that way (2026-10-22).
+ * save "now" before the sync compares, and used to win it the tie that way (2026-10-22). Before that, a copy an old
+ * page wrote loses to one this game wrote, however recent its stamp: it is the same save with parts missing.
  */
 export function decideSync(local: SaveData | null, cloud: SaveData | null): SyncDecision {
   if (!local && !cloud) return 'none'
@@ -274,6 +323,8 @@ export function decideSync(local: SaveData | null, cloud: SaveData | null): Sync
   if (cloud.updatedAt > local.updatedAt && (cloud.adminEditAt ?? 0) > local.updatedAt) return 'cloud'
   const ahead = compareProgress(local, cloud)
   if (ahead !== 0) return ahead > 0 ? 'local' : 'cloud'
+  const localKnown = writtenSincePlayedAt(local)
+  if (localKnown !== writtenSincePlayedAt(cloud)) return localKnown ? 'local' : 'cloud'
   // Level, but one copy never saw a trade the other did: keeping it would bring back the Pokémon traded away while the
   // other trainer keeps it too (docs/23).
   if (missesTrades(local, cloud)) return 'cloud'

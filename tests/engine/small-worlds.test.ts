@@ -13,6 +13,7 @@ import {
   buyItem,
   buyWorldItem,
   captureLuck,
+  wildShinyChance,
   catchWorldMythical,
   centerHeal,
   challengeEncounter,
@@ -37,7 +38,7 @@ import {
   isAreaUnlocked,
   isWorldRegion,
   leaveWorld,
-  liveFor,
+  livesFor,
   markWorldBye,
   markWorldSeen,
   markOfflineFrom,
@@ -468,11 +469,11 @@ describe('no event reaches inside', () => {
       areaProgress: Object.fromEntries(data.areas.filter((a) => (a.regionId ?? 'kanto') === 'kanto').map((a) => [a.id, { ...emptyProgress(), cleared: true }])),
     }
     expect(activeEvents(out, data).length).toBeGreaterThan(0)
-    expect(liveFor(out, data, NOW)?.id).toBe('l1')
+    expect(livesFor(out, data, NOW)[0]?.id).toBe('l1')
     const s = enterWorld(out, data, WORLD, 63, NOW, newId)!
     for (const id of ['wheel', 'raid', 'rebattle'] as const) expect(eventUnlocked(id, s, data)).toBe(false)
     expect(eventsTeaser(s, data)).toBeNull()
-    expect(liveFor(s, data, NOW)).toBeNull()
+    expect(livesFor(s, data, NOW)).toEqual([])
     expect(depositPokemon(s, s.box[0]!.id, data, NOW)).toBeNull()
   })
 
@@ -509,6 +510,13 @@ describe('the General upgrades stay outside (docs/25)', () => {
     expect(res.save.general?.carryMs).toBe(1000)
     // Back in Kanto, the world's hours pay nothing.
     expect(collectOffline(leaveWorld(res.save, gd)!, gd, NOW + 20 * H)).toBeNull()
+  })
+
+  it('the Shiny Charm: a world keeps the wild odds', () => {
+    const cd: GameData = { ...gd, config: { ...gd.config, shinyChance: 0.001, general: { ...general, charmAccess: 'all' } } }
+    const charmed = (x: SaveData): SaveData => ({ ...x, general: { ...x.general, charm: 10 } })
+    expect(wildShinyChance(charmed(kanto()), cd)).toBeCloseTo(1 / 333)
+    expect(wildShinyChance(charmed(enterWorld(kanto(), cd, WORLD, 63, NOW, newId)!), cd)).toBe(0.001)
   })
 })
 

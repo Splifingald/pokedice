@@ -6,7 +6,10 @@ import { raidBosses, shinyLocked } from './encounters'
 import { areaProgressAnywhere } from './events'
 import { portalModeOf } from './portalMode'
 import { nightmareModeOf } from './nightmareMode'
+import { timeRaceModeOf } from './timeRaceMode'
+import { powerEarned } from './powers'
 import { addRaidMon, type RaidMon } from './raid'
+import { MEGA_RAIDS } from './raidSpecials'
 import { raidRules } from './raidCalendar'
 import { inWorldRegion, isWorldRegion, regionOf, regionOfArea } from './regions'
 import type { Area, BossDef, GameData, PokemonInstance, RegionId, SaveData } from './types'
@@ -19,6 +22,11 @@ export interface ProgressRaid {
   areaId: string
   region: RegionId
   boss: BossDef
+  /**
+   * A Mega raid (docs/40): its raid Pokémon's Mega or Primal form (`dex` is the form's), opened once that raid is caught
+   * and Mega Evolution is earned in Kalos. A win gives its gem or orb (`gem`), the only way to get it; no catch.
+   */
+  mega?: { base: number; gem: string }
 }
 
 export const progressRaidKey = (areaId: string, dex: number): string => `${areaId}:${dex}`
@@ -31,9 +39,17 @@ const raidOf = (area: Area, boss: BossDef): ProgressRaid => ({
   boss,
 })
 
-/** An area's progression raids, in its own order (none while Raid Battles are off for the player). */
+/** An area's progression raids, in its own order (none while Raid Battles are off for the player); each Mega raid after its own. */
 export const progressRaidsIn = (data: GameData, area: Area): ProgressRaid[] =>
-  raidBosses(area, data).map((b) => raidOf(area, b))
+  raidBosses(area, data).flatMap((b) => [raidOf(area, b), ...megaRaidsOf(data, area, b)])
+
+/** The Mega raids of an area's raid boss (docs/40): never in a small world. */
+function megaRaidsOf(data: GameData, area: Area, boss: BossDef): ProgressRaid[] {
+  if (isWorldRegion(data, regionOfArea(area))) return []
+  return Object.values(MEGA_RAIDS)
+    .filter((m) => m.base === boss.dex && !!data.species[m.form] && !!data.items[m.gem])
+    .map((m) => ({ ...raidOf(area, boss), key: progressRaidKey(area.id, m.form), dex: m.form, mega: { base: m.base, gem: m.gem } }))
+}
 
 /** Every progression raid of a region (or of the game), in area order. */
 export function progressRaids(data: GameData, region?: RegionId): ProgressRaid[] {
@@ -82,14 +98,30 @@ export type ProgressRaidState = 'locked' | 'open' | 'done'
 export function progressRaidState(save: SaveData, data: GameData, raid: ProgressRaid): ProgressRaidState {
   const progress = areaProgressAnywhere(save, data, raid.areaId)
   if (save.events?.raidsDone?.includes(raid.key)) return 'done'
+  if (raid.mega) return megaRaidLock(save, data, raid) ? 'locked' : 'open'
   // A portal area's raid (docs/28) opens once its run is won, never with the area's rounds.
   if (portalModeOf(data.areas.find((a) => a.id === raid.areaId), data)) return progress?.portal?.won ? 'open' : 'locked'
   // So does a nightmare area's (docs/30), once the player has woken up from it.
   if (nightmareModeOf(data.areas.find((a) => a.id === raid.areaId), data))
     return progress?.nightmare?.won ? 'open' : 'locked'
+  // A race area's two raids (docs/64 §4.4): each opens once a race won at its legend's gate, never with the rounds.
+  if (timeRaceModeOf(data.areas.find((a) => a.id === raid.areaId), data))
+    return progress?.timeRace?.won?.includes(raid.dex) ? 'open' : 'locked'
   if (progress?.bossesDefeated.includes(raid.dex) && regionPokedex(save, raid.region).includes(raid.dex))
     return 'done'
   return progress?.cleared ? 'open' : 'locked'
+}
+
+/**
+ * Why a Mega raid is locked (docs/40): its raid Pokémon isn't caught yet ('base'), or Mega Evolution isn't earned in
+ * Kalos yet ('kalos'). Null when it's open (or not a Mega raid).
+ */
+export function megaRaidLock(save: SaveData, data: GameData, raid: ProgressRaid): 'base' | 'kalos' | null {
+  if (!raid.mega) return null
+  const area = data.areas.find((a) => a.id === raid.areaId)
+  const base = area && progressRaidsIn(data, area).find((r) => !r.mega && r.dex === raid.mega!.base)
+  if (!base || progressRaidState(save, data, base) !== 'done') return 'base'
+  return powerEarned(save, data, 'mega') ? null : 'kalos'
 }
 
 /** The area's next raid to fight, if any: Home's CONTINUE offers it like a gym leader's challenge. */
@@ -116,7 +148,7 @@ export function progressRaidTeam(save: SaveData, data: GameData, raid: ProgressR
   const team = chosen.length ? chosen : [...box].sort((a, b) => b.level - a.level).slice(0, 3)
   return team
     .slice(0, 3)
-    .map((p) => ({ id: p.id, dex: p.dex, level: p.level, shiny: !!p.shiny }))
+    .map((p) => ({ id: p.id, dex: p.dex, level: p.level, shiny: !!p.shiny, ...(p.talent && { talent: true }) }))
 }
 
 /** Leaves a team on a progression raid: up to three ids from its region's Box. */
@@ -153,6 +185,46 @@ export function applyProgressRaidCatch(
   )
   return { save: res.save, region: res.region, instId: res.instId, live: res.live }
 }
+
+/**
+ * Raids won elsewhere stay won: another copy of the save (the cloud sync, another tab) or the server's own record of
+ * the player's raids (`raid_progress_done`, 0089), which no page can overwrite. A raid is never undone, so this only
+ * adds. The same save back when there's nothing to add.
+ */
+export function keepRaidsDone(save: SaveData, done: readonly string[] | null | undefined): SaveData {
+  const mine = save.events?.raidsDone ?? []
+  const add = (done ?? []).filter((key) => !mine.includes(key))
+  if (!add.length) return save
+  return { ...save, events: { ...save.events, raidsDone: [...mine, ...add] } }
+}
+
+/**
+ * A Mega raid is won (docs/40): its gem or orb is the player's (for every region, like any gem), the raid closes for
+ * good, and the count of raids won goes up. Nothing to catch.
+ */
+export function applyMegaRaidWin(save: SaveData, raid: ProgressRaid): SaveData {
+  if (!raid.mega) return save
+  const done = [...new Set([...(save.events?.raidsDone ?? []), raid.key])]
+  const gems = [...new Set([...(save.powers?.gems ?? []), raid.mega.gem])]
+  return {
+    ...save,
+    events: { ...save.events, raidsDone: done, raidsWon: (save.events?.raidsWon ?? 0) + 1 },
+    powers: { ...save.powers, gems },
+  }
+}
+
+/**
+ * The raid overhaul's rules pop-up is due (docs/40): once, with a progression raid open (or done) for the player,
+ * outside a small world.
+ */
+export function raidOverhaulRulesDue(save: SaveData, data: GameData): boolean {
+  if (save.events?.raidRulesSeen || inWorldRegion(save, data)) return false
+  return progressRaids(data).some((r) => !r.mega && progressRaidState(save, data, r) !== 'locked')
+}
+
+/** The rules pop-up has been shown. */
+export const markRaidRulesSeen = (save: SaveData): SaveData =>
+  save.events?.raidRulesSeen ? save : { ...save, events: { ...save.events, raidRulesSeen: true } }
 
 /** A progression raid's numbers (its own, then the progression default, then the raid's). */
 export const progressRaidRules = (data: GameData, raid: ProgressRaid) => raidRules(data, raid.dex, 'progress', raid.areaId)

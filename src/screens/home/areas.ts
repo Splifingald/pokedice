@@ -3,6 +3,7 @@
 import {
   areaOpenAt,
   areaOpensAt,
+  closestSecret,
   conditionStatus,
   isAreaClosed,
   isAreaUnlocked,
@@ -12,7 +13,6 @@ import {
   regionOfArea,
   regionSpecies,
   type Area,
-  type ConditionStatus,
   type GameData,
   type RegionId,
   type SaveData,
@@ -104,25 +104,15 @@ export function featuredSecret(
   const secrets = data.areas.filter((a) => a.hidden && regionOfArea(a) === regionOf(save))
   const fresh = secrets.find((a) => areaStatus(save, data, a) === 'new')
   if (fresh) return { area: fresh, fresh: true }
-  let best: { area: Area; s: ConditionStatus; left: number; k: number } | null = null
-  for (const a of secrets) {
-    if (isAreaUnlocked(save, a.id, data)) continue
-    // Most secrets want several things (an area reached, a Pokédex, a level), so several can be left: the first one
-    // left is what's shown, as in the areas list.
-    const unmet = (a.unlockConditions ?? []).map((c) => conditionStatus(c, save, data)).filter((s) => !s.met)
-    const s = unmet[0]
-    if (!s) continue
-    const k = s.target > 0 ? s.current / s.target : 0
-    if (!best || unmet.length < best.left || (unmet.length === best.left && k > best.k))
-      best = { area: a, s, left: unmet.length, k }
-  }
+  // The first condition left is what's shown, as in the areas list.
+  const best = closestSecret(save, data)
   return (
     best && {
       area: best.area,
       fresh: false,
-      cond: best.s.cond,
-      current: best.s.current,
-      target: best.s.target,
+      cond: best.status.cond,
+      current: best.status.current,
+      target: best.status.target,
     }
   )
 }

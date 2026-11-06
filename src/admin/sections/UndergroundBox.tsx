@@ -264,8 +264,19 @@ export function UndergroundBox() {
             checked={cfg.sellNeedsFull}
             onChange={(e) => set({ sellNeedsFull: e.target.checked })}
           />
-          Orbs sell only in a full team of 3
+          Orbs sell at full price only in a full team of 3
         </label>
+        {cfg.sellNeedsFull && (
+          <Field label="Outside a full team, orbs sell for (% of their price; 0 = not at all)">
+            <NumInput
+              className="w-24"
+              value={cfg.soloShare}
+              min={0}
+              max={100}
+              onChange={(v) => set({ soloShare: v ?? 0 })}
+            />
+          </Field>
+        )}
         <table className="w-full text-lg">
           <thead>
             <tr className="text-left text-muted">

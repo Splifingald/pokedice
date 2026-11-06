@@ -1,3 +1,5 @@
+import { GALAR_WEATHER, HOENN_WEATHER, KAHUNA_CRYSTALS, TRIALS } from './flavoursContent'
+import { GIFT_MOMENTS, RIVAL_MEETINGS } from './momentsContent'
 import type { GameConfig } from './types'
 
 /** Starting values for every game_config key. Anything missing from the DB/bundle falls back to these. */
@@ -16,6 +18,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   // Tuned with `pnpm balance` on the full Kanto content: ×1 HP keeps main-chain fights at ~3 turns with the v1.8 dice
   // schedule (×1.4 before it) while every hit stays exactly what the dice show; ×0.5 trainer gold paces the upgrades (v1.3).
   hpMultiplier: 1,
+  // Speed = base Speed stat + level (docs/52): each level is worth one point of Speed.
+  speedPerLevel: 1,
   goldMultiplier: 0.5,
   gymGoldMultiplier: 2,
   forcedCenterWhenHurt: true,
@@ -25,6 +29,10 @@ export const DEFAULT_CONFIG: GameConfig = {
   scaleLevelSpread: 3,
   enemyUpgradeLevel: 1,
   versusUpgradeLevel: 5,
+  // The weekly Versus league (docs/44): off until the admin switches it on (the numbers: engine/versusLeague.ts).
+  versusLeague: { access: 'off' },
+  // Real-player battles in areas (docs/54): off until the admin switches it on (the numbers: engine/areaVersus.ts).
+  areaVersus: { access: 'off' },
   allowVoluntarySwitch: true,
   maxBattleTurns: 150,
   multiExpShare: 0.3,
@@ -36,20 +44,18 @@ export const DEFAULT_CONFIG: GameConfig = {
   showRoundGauge: true,
   showRoundPreview: false,
   shinyChance: 0.01,
+  // A fossil revives shiny 1 in 10 (the user's call, 2026-10-30), whatever the Shiny Charm does to the wild odds.
+  fossilShinyChance: 0.1,
   cloudSyncMinutes: 15,
   maxFriends: 100,
-  energy: { enabled: true, max: 50, minutesPerEnergy: 30 },
   status: {
     burn: { threshold: 1, percentPerStack: 4, duration: 3 },
-    poison: { threshold: 2, percent: 10, duration: 3 },
-    frozen: { threshold: 3, stunTurns: 2 },
-    paralyze: { threshold: 2, stunTurns: 1 },
-    confuse: { threshold: 2, recoilPercent: 10 },
-    heal: { threshold: 2, amount: 'rollTotal' },
+    poison: { percent: 5, duration: 5 },
+    frozen: { sureAt: 3, stunTurns: 2 },
+    paralyze: { sureAt: 2, stunTurns: 1 },
+    confuse: { recoilPercentPerFace: 10, maxFaces: 3 },
   },
   ai: { samples: 200, rerollGainThreshold: 0.08 },
-  // Game Corner: every spin shows something. Returns 8.5 ₽ per 10 ₽ on average, plus the Porygon jackpot; a jackpot
-  // when Porygon Lv.30+ is already yours refunds the spin, so the machine never becomes a money printer.
   // Raikou, Entei and Suicune, once both tower legendaries are caught: ~2% each per Johto wild encounter.
   roamers: {
     regionId: 'johto',
@@ -58,7 +64,11 @@ export const DEFAULT_CONFIG: GameConfig = {
     level: 40,
     dex: [243, 244, 245],
   },
+  // Game Corner: every spin shows something. Returns 8.5 ₽ per 10 ₽ on average, plus the Porygon jackpot; a jackpot
+  // when Porygon Lv.30+ is already yours refunds the spin, so the machine never becomes a money printer. Off since
+  // 2026-10-25 (the user's call): the Fortune Wheel's jackpot gives Porygon now.
   slotMachine: {
+    access: 'off',
     cost: 10,
     oneBall: { weight: 50, gold: 1 },
     twoBalls: { weight: 30, gold: 10 },
@@ -70,7 +80,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   // One Day Care for every region (docs/15): two of yours, four friends' visitors, Lv.100 the only XP cap, an Egg-group
   // check every 12 h and Ditto's every 24 h, Egg now for ₽200, ₽10 when a hatchling isn't kept, shiny 1 in 100.
   dayCare: {
-    unlockPokedex: 20,
+    unlockPokedex: 10,
     slots: 2,
     friendSlots: 4,
     xpPerTick: 1,
@@ -85,8 +95,8 @@ export const DEFAULT_CONFIG: GameConfig = {
     hatchOffset: 5,
     hatchMinLevel: 5,
   },
-  // Off until the admin sets a PayPal link and switches it on.
-  donation: { enabled: false, paypalUrl: '', round: 0 },
+  // Off until the admin sets a Ko-fi link and switches it on.
+  donation: { enabled: false, kofiUrl: '', monthlyGoal: 0, currency: 'EUR', startMonth: '', raisedBefore: 0, round: 0 },
   // No Discord button until the admin sets the invite link.
   discordUrl: '',
   // Mega Evolution opens with Kalos (X and Y's mechanic) and then works in every region: a Lv.50 Pokémon of a species
@@ -171,6 +181,9 @@ export const DEFAULT_CONFIG: GameConfig = {
       [710, 711],
     ],
     exclude: [793, 794, 795, 796, 797, 798, 799, 803, 804, 805, 806],
+    // The board shows 5 listings picked for the player (docs/23 §2.1), and NEW PICKS twice a UTC day.
+    boardPicks: 5,
+    boardRerolls: 2,
   },
   // Gifts with the developer's messages (docs/15 §23): off until the admin switches them on.
   gifts: { access: 'off' },
@@ -184,9 +197,47 @@ export const DEFAULT_CONFIG: GameConfig = {
       { friends: 4, gifts: [{ kind: 'item', key: 'master-ball', qty: 1, region: 'latest' }] },
     ],
   },
+  // Welcome-back gifts (docs/58): off until the admin switches them on. Migration 0103 inserts the same row (and its
+  // SQL test keeps the two the same). Only the highest tier reached is given, at most once every 14 days.
+  welcomeBack: {
+    access: 'off',
+    cooldownDays: 14,
+    tiers: [
+      {
+        minDays: 3,
+        gifts: [
+          { kind: 'gold', amount: 300, region: 'latest' },
+          { kind: 'item', key: 'great-ball', qty: 5, region: 'latest' },
+          { kind: 'item', key: 'super-potion', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 1, region: 'latest' },
+        ],
+      },
+      {
+        minDays: 7,
+        gifts: [
+          { kind: 'gold', amount: 1000, region: 'latest' },
+          { kind: 'item', key: 'ultra-ball', qty: 5, region: 'latest' },
+          { kind: 'item', key: 'hyper-potion', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'revive', qty: 2, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 2, region: 'latest' },
+        ],
+      },
+      {
+        minDays: 14,
+        gifts: [
+          { kind: 'gold', amount: 2500, region: 'latest' },
+          { kind: 'item', key: 'ultra-ball', qty: 10, region: 'latest' },
+          { kind: 'item', key: 'max-revive', qty: 3, region: 'latest' },
+          { kind: 'item', key: 'max-ether', qty: 2, region: 'latest' },
+          { kind: 'item', key: 'rare-candy', qty: 5, region: 'latest' },
+        ],
+      },
+    ],
+  },
   extreme: {
     access: 'off',
-    unlockRegion: 'johto',
+    // The speedrun (docs/48): Kanto's League opens it, and each region's League its run.
+    unlockRegion: 'kanto',
     centers: false,
     wipeHeals: false,
     koHours: 12,
@@ -194,6 +245,29 @@ export const DEFAULT_CONFIG: GameConfig = {
     awayHealPctPerHour: 10,
     awayMinMinutes: 2,
     items: true,
+  },
+  // Extreme mode's Pokémon Centers (docs/47): a boon to pick instead of a heal, the team heal always on offer. The
+  // user's numbers of 2026-10-28.
+  extremeCenters: {
+    access: 'off',
+    offers: 3,
+    heal: { percent: 30 },
+    full: { weight: 30 },
+    item: {
+      weight: 30,
+      potion: 82,
+      revive: 15,
+      maxRevive: 3,
+      potions: [
+        { key: 'potion', badges: 0 },
+        { key: 'super-potion', badges: 3 },
+        { key: 'hyper-potion', badges: 6 },
+      ],
+    },
+    // Never before the region's 2nd badge (the user, 2026-10-29).
+    buff: { weight: 20, hours: 24, maxDice: 8, badges: 2 },
+    donor: { weight: 10, trainers: 3 },
+    rocket: { weight: 10, levels: 3, band: 10 },
   },
   // The special events (docs/18). Each is off until the admin switches it on, for the admin alone or for everyone;
   // before the first opens, Home keeps a locked square from the 3rd Kanto badge. Banners: an event's own picture, or an
@@ -208,19 +282,32 @@ export const DEFAULT_CONFIG: GameConfig = {
       // A carnival booth with the big wheel at dusk (349 × 144, the wheel on the right, clear of the title plate).
       banner: '/backgrounds/fortune-wheel.png',
       rules: ['wheel.daily', 'wheel.prizes', 'wheel.odds'],
-      // Nine equal slices: 4 × ₽10, 2 Poké Balls, a Great, an Ultra and a Master Ball. The odds add up to 100 %.
-      prizes: [
-        { reward: { kind: 'gold', amount: 10 }, count: 4, odds: 12.5 },
-        { reward: { kind: 'item', key: 'poke-ball', qty: 1 }, count: 2, odds: 12.5 },
-        { reward: { kind: 'item', key: 'great-ball', qty: 1 }, count: 1, odds: 12.5 },
-        { reward: { kind: 'item', key: 'ultra-ball', qty: 1 }, count: 1, odds: 10 },
-        { reward: { kind: 'item', key: 'master-ball', qty: 1 }, count: 1, odds: 2.5 },
+      // A ticket a spin (the user's design, 2026-10-25): one free every 12 h, 4 held at most, ₽200 each while under 4,
+      // and a spin pays back ₽150 at most on average (tests/engine/wheel.test.ts holds every stage to it).
+      tickets: { everyHours: 12, cap: 4, price: 200, maxAverage: 150 },
+      // Eleven slices, worth ₽118 a spin on average (items at their Mart price); the jackpot's slice makes twelve.
+      slices: [
+        { reward: { kind: 'gold', amount: 50 }, count: 3, odds: 13 },
+        { reward: { kind: 'gold', amount: 100 }, count: 2, odds: 12.5 },
+        { reward: { kind: 'item', key: 'great-ball', qty: 2 }, count: 1, odds: 10 },
+        { reward: { kind: 'gold', amount: 150 }, count: 1, odds: 10 },
+        { reward: { kind: 'item', key: 'ultra-ball', qty: 2 }, count: 1, odds: 8 },
+        { reward: { kind: 'item', key: 'rare-candy', qty: 1 }, count: 1, odds: 5 },
+        { reward: { kind: 'gold', amount: 500 }, count: 1, odds: 2.5 },
+        { reward: { kind: 'gold', amount: 1000 }, count: 1, odds: 0.5 },
+      ],
+      // Porygon at 10 %; once caught, a shiny Porygon at 1 %; once that's caught, a Master Ball at 0.25 % for good.
+      // Averages a spin: ₽136, ₽147, ₽120 (Porygon counted at ₽300, the shiny at ₽3,000).
+      jackpot: [
+        { reward: { kind: 'pokemon', dex: 137, level: 30 }, odds: 10, value: 300 },
+        { reward: { kind: 'pokemon', dex: 137, level: 30, shiny: true }, odds: 1, value: 3000 },
+        { reward: { kind: 'item', key: 'master-ball', qty: 1 }, odds: 0.25, value: 1000 },
       ],
     },
     raid: {
       access: 'off',
       priority: 3,
-      // The Safari Zone, Kanto.
+      // Fuchsia City, Kanto (the area that held the Safari Zone until docs/61 split it off: the same id, the same point).
       unlockAreaId: '2238f26a-2629-5f28-af07-e74cb41d5f7a',
       banner: 'lair-shrine',
       rules: ['raid.daily', 'raid.sides', 'raid.bars', 'raid.catch'],
@@ -345,12 +432,89 @@ export const DEFAULT_CONFIG: GameConfig = {
   push: { access: 'off', raidHour: 9, quietHours: [22, 8] },
   // The areas' portal run (docs/28): off until the admin switches it on. Migration 0057 inserts the same row.
   portalRun: { access: 'off' },
+  // The Stairway of Plates (docs/64 §4.5): its own switch, off until the admin switches it on. Migration 0127 inserts
+  // the same row.
+  platesRun: { access: 'off' },
   // The areas' nightmare (docs/30): off until the admin switches it on. Migration 0060 inserts the same row.
   nightmare: { access: 'off' },
+  // The areas' race of time and space (docs/64 §4.4): off until the admin switches it on. Migration 0126 inserts the
+  // same row.
+  timeRace: { access: 'off' },
+  // Crown Shrine's whiteout (docs/64 §4.3): off until the admin switches it on. Migration 0125 inserts the same row.
+  whiteout: { access: 'off' },
+  // Tracks in the Snow (docs/64 §4.1): off until the admin switches it on. Migration 0124 inserts the same row.
+  tracks: { access: 'off' },
   // Trainer looks (docs/31): off until the admin switches them on; the old free list stays meanwhile.
   looks: { access: 'off' },
   // Day and night in Johto (docs/32): off until the admin switches it on. Migration 0061 inserts the same row.
   dayNight: { access: 'off' },
+  // Idle mode and the play styles (docs/36): off until the admin switches it on; auto-mode stays as it was meanwhile.
+  // Migration 0068 inserts the same row.
+  idleMode: { access: 'off' },
+  // The League's heal between its battles (docs/42): off until the admin switches it on. Migration 0081 inserts the
+  // same row.
+  leagueHeal: { access: 'off' },
+  rivalLossHeal: { access: 'off' },
+  // A rival's team matched to the player (docs/61 §5.5): Off; its choices' defaults in engine/rivalMatch.ts. Migration
+  // 0137 inserts the same row.
+  rivalMatch: { access: 'off' },
+  // Hidden talents (docs/51): off until the admin switches them on. Migration 0094 inserts the same row.
+  hiddenTalents: { access: 'off', wildChance: 0.05, evolveChance: 0.3, families: {} },
+  // The legends' own cinematics (docs/53): off until the admin switches it on. Migration 0098 inserts the same row.
+  legendCinema: { access: 'off' },
+  // The gift calendar (docs/55): off until the admin switches it on. Migration 0100 inserts the same row.
+  giftCalendar: { access: 'off' },
+  // The champions' own cinematics (docs/56): off until the admin switches it on. Migration 0101 inserts the same row.
+  championCinema: { access: 'off' },
+  // Friendship streaks and the Friend Market (docs/60): off until the admin switches it on. 3 to 7 Heart Scales a
+  // streak day by tier, 50 a day at most; the market's weekly shelf and the shiny of the week turning through Pokémon
+  // that grow with friendship. Migration 0107 holds the same numbers (friendship_defaults()).
+  friendship: {
+    access: 'off',
+    tiers: [
+      { from: 1, coins: 3 },
+      { from: 4, coins: 4 },
+      { from: 8, coins: 5 },
+      { from: 15, coins: 6 },
+      { from: 31, coins: 7 },
+    ],
+    dailyCap: 50,
+    market: [
+      { key: 'friend-ball', price: 5, limit: 20 },
+      { key: 'rare-candy', price: 15, limit: 10 },
+      { key: 'talent-candy', price: 60, limit: 2 },
+    ],
+    shiny: { price: 150, level: 15, pool: [175, 133, 172, 173, 174, 447, 440, 446, 427, 298, 433, 527] },
+    ballBoost: [1, 2, 3, 4, 5],
+  },
+  // Outfits (docs/59): off until the admin switches it on. Migration 0105 inserts the same row.
+  outfits: { access: 'off' },
+  // The Unown Pokédex (docs/41): off until the admin switches it on; ₽1,000 for the 28th letter. Migration 0080 inserts
+  // the same row.
+  unownDex: { access: 'off', reward: 1000 },
+  // Route 1's set opening (docs/46): off until the admin switches it on. Two rounds met in a set order, ending with
+  // Youngster Joey's Rattata (₽10); the rounds after them are shuffled as before. Migration 0081 inserts the switch's row.
+  openingRounds: {
+    access: 'off',
+    areaId: '3585c2a5-43bc-50c9-9818-e148404cabf8',
+    rounds: [
+      [
+        { kind: 'wild', dex: 19, level: 2 },
+        { kind: 'wild', dex: 16, level: 2 },
+        { kind: 'item', itemKey: 'poke-ball', qty: 2 },
+        { kind: 'center' },
+        { kind: 'wild', dex: 19, level: 3 },
+        { kind: 'trainer', trainerId: '251c41f0-3e55-56a0-bb95-7a33ea96b68f', prize: 10 },
+      ],
+      [
+        { kind: 'wild', dex: 16, level: 4 },
+        { kind: 'wild', dex: 19, level: 3 },
+        { kind: 'item', itemKey: 'potion', qty: 1 },
+        { kind: 'wild', dex: 43, level: 4 },
+        { kind: 'wild', dex: 16, level: 5 },
+      ],
+    ],
+  },
   // Double battles (docs/33): off until the admin switches them on; from Hoenn on, 10 % of the wild encounters.
   // Migration 0062 inserts the same row.
   doubleBattles: { access: 'off', regions: ['hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea'], wildChance: 10 },
@@ -385,8 +549,26 @@ export const DEFAULT_CONFIG: GameConfig = {
       { perHour: 18, cost: 1250 },
       { perHour: 20, cost: 1500 },
     ],
+    // Before any level is bought, so every player's first absence pays a little and the upgrade has something to grow
+    // from (₽24 a day at most, half of level 1).
+    offlineBase: 1,
     offlineMaxHours: 24,
     richCost: 99999,
+    // The Shiny Charm (the user's numbers, 2026-10-18): from the base 1 in 1,000 to 1 in 333, ₽69,000 in all, a
+    // goal as long as Capture Luck. Off on its own switch too.
+    charmAccess: 'off',
+    charm: [
+      { oneIn: 950, cost: 1000 },
+      { oneIn: 900, cost: 1500 },
+      { oneIn: 850, cost: 2000 },
+      { oneIn: 800, cost: 3000 },
+      { oneIn: 750, cost: 4000 },
+      { oneIn: 700, cost: 5000 },
+      { oneIn: 625, cost: 7500 },
+      { oneIn: 550, cost: 10000 },
+      { oneIn: 450, cost: 15000 },
+      { oneIn: 333, cost: 20000 },
+    ],
   },
   // Trick or Treat (docs/29): off until the admin switches it on; the areas' ghost lists come with their content
   // (Haunted Hollow's from migration 0056). The numbers were set by the exact best play and a Monte Carlo of simpler
@@ -394,6 +576,72 @@ export const DEFAULT_CONFIG: GameConfig = {
   // about 3 in 5 and a very rare one about 1 in 3, and no fixed recipe (Trick Balls only, one or two Treats first,
   // Treats up to the best section) comes within 4 points. A miss pushing the gauge by 35 is what keeps Balls only from
   // winning: at the first idea's +10 they caught 98 % of common ghosts, and the Treats were never worth giving.
+  // Pokémon posing as items (docs/61 §3): a find that springs out as Voltorb. Off until the admin opens it.
+  disguises: { access: 'off' },
+  // Set moments (docs/61 §5): the rivals' meetings and the gifts are the game's own (momentsContent.ts, written by
+  // scripts/patch-side-quests.ts); the database holds their switches, Off. A gift Egg hatches in 6 hours.
+  rivals: { access: 'off', meetings: RIVAL_MEETINGS },
+  giftMoments: { access: 'off', eggHours: 6, gifts: GIFT_MOMENTS },
+  // The region flavours (docs/62), each Off: the weather's areas and the trials are the game's own (flavoursContent.ts).
+  // Galar's weather doubles the weight of its types' wild Pokémon. A horde is 4 % of Kalos's wild cards, once a visit at
+  // most: five of a species 3 levels down, one in ten mixed. A Totem has ×2 HP, a die more and calls two allies; a
+  // Titan's second phase ×2 HP and a die more (Dondozo with Tatsugiri: ×2 and two dice), and it leaves ₽1,000 and 3 Rare
+  // Candies.
+  hoennWeather: { access: 'off', areas: HOENN_WEATHER },
+  galarWeather: { access: 'off', areas: GALAR_WEATHER, poolTimes: 2 },
+  hordes: { access: 'off', chance: 4, perArea: 1, size: 5, levelDrop: 3, mixedChance: 10, minWeight: 2, regions: ['kalos'] },
+  trials: { access: 'off', hpTimes: 2, extraDice: 1, calls: 2, trials: TRIALS, crystals: KAHUNA_CRYSTALS },
+  titans: {
+    access: 'off',
+    hpTimes: 2,
+    extraDice: 1,
+    commanderHpTimes: 2,
+    commanderExtraDice: 2,
+    gold: 1000,
+    items: [{ key: 'rare-candy', qty: 3 }],
+  },
+  // The Safari (docs/61 §4): Trick or Treat's gauge with Bait and Safari Balls, its numbers starting from Trick's (the
+  // same measured best play: about 7 common Pokémon in 10, 4 rare ones in 7, a very rare one in 3). The first round in
+  // each Safari area is free, then ₽100 a round (the user's call, 2026-11-01). `areas`: each Safari's tier overrides;
+  // a Pokémon not listed takes its tier from its catch value.
+  safari: {
+    access: 'off',
+    freeRounds: 1,
+    roundPrice: 100,
+    treatMin: 10,
+    treatMax: 30,
+    failPush: 35,
+    tiers: {
+      common: {
+        weight: 6,
+        flee: 90,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 40, need: 5 },
+          { from: 75, need: 4 },
+          { from: 80, need: 3 },
+        ],
+      },
+      rare: {
+        weight: 3,
+        flee: 85,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 40, need: 5 },
+          { from: 75, need: 4 },
+        ],
+      },
+      veryRare: {
+        weight: 1,
+        flee: 65,
+        sections: [
+          { from: 0, need: 6 },
+          { from: 45, need: 5 },
+        ],
+      },
+    },
+    areas: {},
+  },
   trickOrTreat: {
     access: 'off',
     treatMin: 10,
@@ -429,6 +677,32 @@ export const DEFAULT_CONFIG: GameConfig = {
       },
     },
     areas: {},
+  },
+  // The Gift card (docs/64 §4.0, the user's design of 2026-11-01): off until the admin switches it on. A tap breaks the
+  // gift 20 / 40 / 60 / 80 % of the time from levels 1 to 4, level 5 the top; owning a Delibird takes 20 off each and
+  // adds level 6. Always tapping reaches level 5 3.8 % of the time (19.2 % with a Delibird, and level 6 3.8 %), so the
+  // rewards climb steeply: two of the area's balls, then better ones or Super Potions, Hyper Potions or ₽ (the area's
+  // level × 15), a Revive or an evolution item its Mart sells, 3 Rare Candies (the user's call), and on top 3 Rare
+  // Candies and a Revive. Evergreen Hill's Delibird bursts out of its present on the 5th tap (docs/64 §4.2).
+  giftCard: {
+    access: 'off',
+    breakChances: [20, 40, 60, 80],
+    helper: { dex: 225, safer: 20, extraLevels: 1 },
+    rewards: [
+      [[{ kind: 'ball', qty: 2 }]],
+      [[{ kind: 'betterBall', qty: 3 }], [{ kind: 'item', key: 'super-potion', qty: 2 }]],
+      [[{ kind: 'item', key: 'hyper-potion', qty: 2 }], [{ kind: 'money', qty: 15 }]],
+      [[{ kind: 'item', key: 'revive', qty: 1 }], [{ kind: 'evolution', qty: 1 }]],
+      [[{ kind: 'item', key: 'rare-candy', qty: 3 }]],
+      [
+        [
+          { kind: 'item', key: 'rare-candy', qty: 3 },
+          { kind: 'item', key: 'revive', qty: 1 },
+        ],
+      ],
+    ],
+    balls: ['poke-ball', 'great-ball', 'ultra-ball'],
+    bossTaps: 5,
   },
   // The Underground (docs/34): off until the admin switches it on. Shapes follow Platinum's treasures, whose large
   // sphere is half again the small one: small orb 1×1, medium 2×2, large 3×3, a plate 3×2, a fossil 2×2. A 6×6 wall of 1–3 layers (30 / 40 / 30 %) hides 2–4
@@ -467,5 +741,7 @@ export const DEFAULT_CONFIG: GameConfig = {
       { faces: [2, 2, 2, 3, 3, 3], price: 10000 },
     ],
     sellNeedsFull: true,
+    // Outside a full team, orbs sell for a tenth of their price: teaming up stays worth it.
+    soloShare: 10,
   },
 }

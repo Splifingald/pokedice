@@ -14,9 +14,29 @@ export function areaProgressAnywhere(save: SaveData, data: GameData, areaId: str
 
 export const eventDef = (data: GameData, id: EventId): EventDef => data.config.events[id]
 
-/** Switched on for whoever is playing: for everyone, or for the admin alone while the admin plays (to try it first). */
+/**
+ * Switched on for whoever is playing: for everyone, for the admin alone while the admin plays (to try it first), or for
+ * the admin and the beta testers' list (docs/65 §3).
+ */
 export const eventOpenTo = (access: EventAccess | undefined, data: GameData): boolean =>
-  access === 'all' || (access === 'admin' && !!data.viewer?.admin)
+  access === 'all' ||
+  (access === 'admin' && !!data.viewer?.admin) ||
+  (access === 'beta' && (!!data.viewer?.admin || !!data.viewer?.beta))
+
+/** The Game Corner's slot machine (its cards in area decks): off since 2026-10-25, the wheel gives Porygon instead. */
+export const gameCornerOn = (data: GameData): boolean => eventOpenTo(data.config.slotMachine?.access, data)
+
+/**
+ * The legends' own cinematics (docs/53): Mewtwo's lab, Articuno's ice cavern… instead of the shared entrance, and no
+ * warning tapes on a legend's raid. Purely visual: the fights are the same either way.
+ */
+export const legendCinemaOn = (data: GameData): boolean => eventOpenTo(data.config.legendCinema?.access, data)
+
+/**
+ * The champions' own cinematics (docs/56): Red on Mt. Silver's summit, Leon's stadium… instead of the trainer stepping
+ * onto the field. Purely visual: the fights are the same either way.
+ */
+export const championCinemaOn = (data: GameData): boolean => eventOpenTo(data.config.championCinema?.access, data)
 
 /** This event is switched on for whoever is playing. */
 export const eventOn = (data: GameData, id: EventId): boolean => eventOpenTo(eventDef(data, id)?.access, data)
@@ -58,7 +78,12 @@ export function markEventsSeen(save: SaveData, data: GameData): SaveData {
   const before = seen.size
   for (const id of EVENT_IDS) if (eventUnlocked(id, save, data)) seen.add(id)
   if (seen.size === before) return save
-  return { ...save, events: { ...save.events, seen: EVENT_IDS.filter((id) => seen.has(id)) } }
+  // The wheel's unlock pop-up lists its rules: its page doesn't show them a second time.
+  const wheel = seen.has('wheel') && !save.events?.seen?.includes('wheel')
+  return {
+    ...save,
+    events: { ...save.events, seen: EVENT_IDS.filter((id) => seen.has(id)), ...(wheel && { wheelRulesSeen: true }) },
+  }
 }
 
 /** Kanto badges held (the teaser counts them, wherever the player is now). */

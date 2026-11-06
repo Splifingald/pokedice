@@ -1,7 +1,7 @@
 // The Mart renders group by group: an item whose effect kind no group claims is dropped from the screen entirely.
 import { describe, expect, it } from 'vitest'
 import { shopStock, type ItemDef } from '@/engine'
-import { groupOf } from '@/screens/Shop'
+import { groupOf } from '@/screens/mart/groups'
 import { data } from './fixtures'
 
 /** Every kind `ItemEffect` can take. Adding one to the union without a group is what this file exists to catch. */

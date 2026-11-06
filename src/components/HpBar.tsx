@@ -1,6 +1,6 @@
 import { useT } from '@/i18n/react'
 import { usePace } from '@/lib/pace'
-import { cx, hpColor, mixOklab } from '@/theme/util'
+import { cx, hpColor, mixOklab, typeColor } from '@/theme/util'
 
 /**
  * HP bar: a track with an ink edge and clipped corners, the fill (a lighter top row over the HP colour) and a pale red
@@ -69,10 +69,55 @@ export function HpBar({
         />
       </div>
       {showNumbers && (
-        <span className={cx('text-right font-mono tabular-nums leading-none', compact ? 'text-[13px]' : 'min-w-[4.5ch] text-[15px]')}>
+        <span className={cx('text-right font-mono tabular-nums leading-none', compact ? 'text-[16px]' : 'min-w-[4.5ch] text-[16px]')}>
           {Math.max(0, Math.round(hp))}/{max}
         </span>
       )}
+    </div>
+  )
+}
+
+const XP_BLUE = typeColor('water')
+/** The XP fill: the HP bar's lighter top row over the blue. */
+const XP_FILL = `linear-gradient(${XP_BLUE} 0 0) 0 2px / 100% 100% no-repeat, ${mixOklab(XP_BLUE, 0.55, '#ffffff')}`
+
+/**
+ * An XP gauge in the HP bar's shape (the user's call, 2026-11-03: one shape for both): clipped corners, the ink edge,
+ * the fill 2px inside with its lighter top row, but blue on the dark track. `white`: the level-up's flash frames.
+ * `animate`: the fill glides to a new width (off while the result card plays its own steps).
+ */
+export function XpGauge({
+  pct,
+  height = 8,
+  white = false,
+  animate = true,
+  className,
+  ...aria
+}: {
+  pct: number
+  height?: number
+  white?: boolean
+  animate?: boolean
+  className?: string
+  role?: string
+  'aria-label'?: string
+  'aria-hidden'?: boolean
+}) {
+  const k = Math.max(0, Math.min(1, pct))
+  return (
+    <div
+      className={cx('pixel-corners relative overflow-hidden bg-night shadow-ring', className)}
+      style={{ height: Math.max(8, height) }}
+      {...aria}
+    >
+      <div
+        className={cx('absolute bottom-[2px] left-[2px] top-[2px]', white && 'bg-white')}
+        style={{
+          width: `calc(${k * 100}% - ${k * 4}px)`,
+          background: white ? undefined : XP_FILL,
+          transition: animate ? 'width 700ms ease-out' : 'none',
+        }}
+      />
     </div>
   )
 }

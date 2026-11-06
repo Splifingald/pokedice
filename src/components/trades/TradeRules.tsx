@@ -1,22 +1,9 @@
 // Trades' rules (docs/15 §20, docs/23): the special events' pop-up, once when trades open to the player, then from
 // the INFO button at the bottom of the Trades page. The numbers come from the config, so a rebalance shows up here.
-import { useLocation, useNavigate } from 'react-router-dom'
-import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  leaderboardTutorialDue,
-  regionOfferDue,
-  tradeCfg,
-  tradeRulesDue,
-  versusRulesDue,
-} from '@/engine'
+import { tradeCfg } from '@/engine'
 import { useT } from '@/i18n/react'
-import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
-import { seeTradeRules } from '@/store/trades'
 import { RulesModal, type RuleRow } from '../RulesModal'
-import { useSharePromptWaiting } from '../ShareTutorial'
 import { MiniSprite } from '../SpriteImg'
 import { TRADES_PICTURE } from './TradeBits'
 
@@ -80,42 +67,6 @@ export function TradesRulesModal({
       icon="trade"
       rules={rules}
       onGo={onGo}
-    />
-  )
-}
-
-/**
- * Trades have opened to this player (signed in, the switch on, enough badges): once, between fights, the rules and a
- * button straight to them. It waits its turn behind Prof. Oak's tutorials and invite, and the other one-time pop-ups.
- */
-export function TradesUnlockPopup() {
-  const navigate = useNavigate()
-  const onTrades = useLocation().pathname.startsWith('/trades')
-  const due = useGame(
-    (s) =>
-      isSupabaseConfigured &&
-      s.auth.status === 'signed_in' &&
-      !!s.save &&
-      tradeRulesDue(s.save, s.data) &&
-      !dayCareTutorialDue(s.save, s.data) &&
-      !leaderboardTutorialDue(s.save, s.data) &&
-      !donationDue(s.save, s.data) &&
-      !regionOfferDue(s.save, s.data) &&
-      !eventUnlockDue(s.save, s.data) &&
-      !versusRulesDue(s.save, s.data),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
-  // Prof. Oak's invite comes at the same 2nd badge: it goes first.
-  const invite = useSharePromptWaiting()
-  if (!due || invite) return null
-  return (
-    <TradesRulesModal
-      open={idle && !onTrades}
-      onClose={seeTradeRules}
-      onGo={() => {
-        seeTradeRules()
-        navigate('/trades')
-      }}
     />
   )
 }

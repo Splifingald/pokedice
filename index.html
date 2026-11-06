@@ -26,9 +26,12 @@
     <link rel="preload" href="/fonts/jersey25-latin.woff2" as="font" type="font/woff2" crossorigin />
     <title>Pokédice</title>
     <script>
-      // The theme before anything loads (src/theme/theme.ts keeps pokedice.theme up to date): no light flash.
+      // The theme before anything loads (src/theme/theme.ts keeps pokedice.theme up to date): no light flash. A first
+      // visit has none stored yet, and a new player follows the device (Theme: Auto).
       try {
-        if (localStorage.getItem('pokedice.theme') === 'dark') document.documentElement.dataset.theme = 'dark'
+        var theme = localStorage.getItem('pokedice.theme')
+        if (theme === 'dark' || (theme === null && matchMedia('(prefers-color-scheme: dark)').matches))
+          document.documentElement.dataset.theme = 'dark'
       } catch (e) {}
     </script>
   </head>

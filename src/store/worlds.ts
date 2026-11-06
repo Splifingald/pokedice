@@ -14,7 +14,7 @@ import {
   markWorldBye,
   markWorldFinishSeen,
   markWorldSeen,
-  nightmareLock,
+  heldIn,
   payWheelPrize,
   regionOf,
   worldById,
@@ -27,6 +27,7 @@ import {
 } from '@/engine'
 import { getLang, t } from '@/i18n'
 import { commitSave, initialRun, mutateSave, pushToast, useGame } from './game'
+import { trustedNow } from './clock'
 import { collectRaidGifts } from './raidGifts'
 import { newId } from './run'
 import { serverNow, useServerNow, useServerTime } from './serverTime'
@@ -84,17 +85,17 @@ export function leaveSmallWorld(): boolean {
     pushToast(t('ui.region.finishFight'), 'bad')
     return false
   }
-  // Darkrai's nightmare (docs/30) holds the player in its area, so in the world too, until they wake up.
-  const held = nightmareLock(save, data)
+  // Darkrai's nightmare (docs/30) or the whiteout (docs/64 §4.3) holds the player in its area, so in the world too.
+  const held = heldIn(save, data)
   if (held) {
-    pushToast(t('ui.nightmare.locked', { area: held.name }), 'info')
+    pushToast(t(`ui.${held.by}.locked`, { area: held.area.name }), 'info')
     return false
   }
   const next = leaveWorld(save, data)
   if (!next) return false
   useGame.setState({ run: initialRun() })
   // What waited outside while the player was in (a wheel prize, friends' raid gifts) comes in now.
-  commitSave(payWheelPrize(next, data))
+  commitSave(payWheelPrize(next, data, Date.now(), newId))
   pushToast(t('ui.world.back', { region: getRegion(data, regionOf(next))?.name ?? '' }), 'good')
   void collectRaidGifts(true)
   return true
@@ -111,16 +112,16 @@ export function finishSmallWorld(): boolean {
     pushToast(t('ui.region.finishFight'), 'bad')
     return false
   }
-  const held = nightmareLock(save, data)
+  const held = heldIn(save, data)
   if (held) {
-    pushToast(t('ui.nightmare.locked', { area: held.name }), 'info')
+    pushToast(t(`ui.${held.by}.locked`, { area: held.area.name }), 'info')
     return false
   }
   const next = finishWorld(save, data, serverNow())
   if (!next) return false
   useGame.setState({ run: initialRun() })
   // What waited outside while the player was in comes in now, as on the way out.
-  commitSave(payWheelPrize(next, data))
+  commitSave(payWheelPrize(next, data, Date.now(), newId))
   void collectRaidGifts(true)
   return true
 }
@@ -185,7 +186,10 @@ function settleOnce(): void {
   const inside = regionOf(save) === held.regionId
   if (inside && !calm()) return
   const now = serverNow()
-  if (worldOver(save, data, now, contentChecked)) {
+  // Closing deletes the world's block, so its end is read on the page's own steady clock since the last reading of the
+  // server's (store/clock.ts), never on the device's, which can move between two readings: a world closed a week early
+  // on a player's phone (2026-10-25). Sending a player out (below) loses nothing, and keeps the usual clock.
+  if (worldOver(save, data, trustedNow(), contentChecked)) {
     const next = closeWorld(save, data)
     if (next === save) return
     commitSave(next, { auto: true })

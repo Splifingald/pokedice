@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Die } from '@/components/Die'
+import { DiceLogo } from '@/components/DiceLogo'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite } from '@/components/SpriteImg'
@@ -16,10 +15,9 @@ import { avatarOf } from '@/lib/avatars'
 import { TrainerLook } from '@/components/TrainerLook'
 import { activeSlot } from '@/save/storage'
 import { useGame } from '@/store/game'
+import { useIsAdmin } from '@/store/hooks'
+import { takeResumeLanding } from '@/store/resume'
 import { AccountButton } from '@/components/AccountButton'
-import type { DieType } from '@/engine/types'
-
-const DECOR: DieType[] = ['fire', 'water', 'grass', 'electric', 'psychic']
 
 /** An invite link was opened (docs/16): who sent it, under the logo, until there is a game to become friends in. */
 function InviteRibbon() {
@@ -52,6 +50,7 @@ export function Title() {
   const data = useGame((s) => s.data)
   const auth = useGame((s) => s.auth)
   const corrupt = useGame((s) => s.corruptSaveArchived)
+  const isAdmin = useIsAdmin()
   const [confirmNew, setConfirmNew] = useState(false)
   const [toMain, setToMain] = useState(false)
   const lead = save ? teamOf(save)[0] : undefined
@@ -63,34 +62,21 @@ export function Title() {
 
   return (
     <main className="scanlines flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-10">
-      <motion.div
-        className="text-center"
-        initial={{ y: -30 }}
-        animate={{ y: 0 }}
-        transition={{ type: 'spring', stiffness: 120, damping: 12 }}
-      >
-        <h1
-          className="text-7xl leading-none tracking-widest sm:text-8xl"
-          style={{ textShadow: '4px 4px 0 #b6c3d9, 8px 8px 0 #24304f' }}
-        >
-          POKÉ<span className="text-danger">DICE</span>
-        </h1>
-      </motion.div>
+      {/* The title forms with dice, as in the trailer (docs/38 §9). Full width: they come in from the screen's edge. */}
+      <DiceLogo className="-mx-4 self-stretch" />
 
       <InviteRibbon />
-
-      <div className="flex gap-3" aria-hidden>
-        {DECOR.map((t, i) => (
-          <Die key={t} type={t} face={data.diceTypes[t]?.faces[(i * 2 + 3) % 6] ?? null} size={48} rollKey={`t${i}`} delay={0.2 + i * 0.1} />
-        ))}
-      </div>
 
       <div className="flex w-full max-w-xs flex-col gap-3">
         {save && (
           <PixelButton
             variant="primary"
             size="lg"
-            onClick={() => navigate('/home')}
+            // An encounter left under way (store/resume.ts) is where CONTINUE goes: straight back into it.
+            onClick={() => {
+              const { run } = useGame.getState()
+              navigate(takeResumeLanding(run) || run.phase !== 'idle' ? '/area' : '/home')
+            }}
             aria-label={lead ? t('ui.title.continueWith', { name: data.species[lead.dex]?.name ?? '' }) : t('ui.common.continue')}
           >
             {lead && <MiniSprite dex={lead.dex} size={48} className="-my-3 -ml-2" />}
@@ -120,11 +106,14 @@ export function Title() {
       <footer className="copy mt-4 max-w-lg text-center text-muted">
         {t('ui.title.legal')}
         <div className="mt-2 flex justify-center gap-4">
-          <Link to="/setup" className="underline">
-            {t('ui.title.deployGuide')}
-          </Link>
+          {/* The deploy guide is for whoever runs the game, not for players: in dev and for the admin only. */}
+          {(import.meta.env.DEV || isAdmin) && (
+            <Link to="/setup" className="inline-flex min-h-[44px] items-center underline">
+              {t('ui.title.deployGuide')}
+            </Link>
+          )}
           {import.meta.env.DEV && (
-            <Link to="/kitchen-sink" className="underline">
+            <Link to="/kitchen-sink" className="inline-flex min-h-[44px] items-center underline">
               {t('ui.title.kitchenSink')}
             </Link>
           )}

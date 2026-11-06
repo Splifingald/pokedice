@@ -72,6 +72,35 @@ A new **Events** section in `AdminApp` (the config is too large for a ConfigSect
 
 ## 2. Event 1 — Fortune Wheel (permanent, priority 5)
 
+> **Since 2026-10-25 the wheel takes tickets** (the user's design; this replaces "once per UTC day" and the server draw
+> below, which stays as history):
+>
+> - **Tickets.** A spin costs one. One free ticket every **12 h**, **4** held at most (at 4 the clock stops, as the
+>   Underground's free kits do); more for **₽200** each while fewer than 4 are held. A save that never spun starts
+>   with a full stack. Config `events.wheel.tickets: { everyHours, cap, price, maxAverage }`; the save keeps
+>   `events.wheelTickets` and `events.wheelTicketAt` (when the next free one comes, on the server's clock).
+> - **Drawn on the device**, for guests and signed-in players alike, on the server's clock (engine/wheel.ts,
+>   store/wheel.ts), like the Underground's walls: the tickets, the purse and the prize all live in the save, so a
+>   server draw guarded nothing a save can't. `wheel_spin()` stays in the database for older builds; the game no
+>   longer calls it, so this change has no SQL to run.
+> - **Slices** (`events.wheel.slices`, the old `prizes` key is ignored so the new defaults reach every player): 3 × ₽50,
+>   2 × ₽100, 2 Great Balls, ₽150, 2 Ultra Balls, a Rare Candy, ₽500, ₽1,000 — ₽118 a spin on average.
+> - **The jackpot slice** (`events.wheel.jackpot`, one slice, won exactly its % whatever the others add up to):
+>   **Porygon** Lv.30 at **10 %**; once Porygon is caught, a **shiny Porygon** at **1 %**; once a shiny Porygon is
+>   owned, a **Master Ball** at **0.25 %** for good. The stage is read from the Pokédex, the shiny Pokédex and the Boxes
+>   (`jackpotStage`), never stored, so a Porygon won at the old Game Corner counts. A Pokémon joins as a catch.
+> - **₽150 a spin at most on average**, at every stage: ₽ as is, items at their Mart price, a Pokémon at its stage's
+>   `value` (Porygon ₽300, shiny Porygon ₽3,000). The defaults: ₽136, ₽147, ₽120 (`wheelAverage`;
+>   tests/engine/wheel.test.ts holds them to it, and the admin's wheel tab turns red above the cap). Cash Flow still
+>   boosts the ₽ slices while it runs.
+> - **The page:** the tickets chip (held / 4 and the next free one), the jackpot of the moment, the wheel, Info, SPIN,
+>   and BUY A TICKET under it. Its rules once on the first open since the change (`events.wheelRulesSeen`; a new player
+>   sees them in the unlock pop-up instead), and the banner's Info shows them again. Home's square counts the tickets
+>   and fills its gauge toward the next free one.
+> - **The Game Corner** (the slot machine on the area cards, Rocket Hideout and the other Game Corner areas) has its
+>   own switch since then, `slotMachine.access`, **Off** by default: no Game Corner card is dealt, and Porygon comes from
+>   the wheel. Admin → Config → Game Corner turns it back on.
+
 - **Unlock:** Kanto Celadon City cleared (the area that reveals the Game Corner / Rocket Hideout).
 - **Once per UTC day.** `wheel_spin()` RPC: checks `wheel_day < today`, rolls the slot on the server from the admin odds, stores the day and returns the slot index. The client animates to that slot and grants the reward into the save. Guests roll locally, but only once the online time is known.
 - **Config** `wheel.slices: {reward: {kind:'gold', amount} | {kind:'item', itemId, qty}, odds}[]`. Default (100 %):

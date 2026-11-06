@@ -6,6 +6,10 @@ import {
   fitDayCare,
   isExtreme,
   migrateLeagueII,
+  noShinies,
+  raceData,
+  runsWon,
+  settleRuns,
   migrateRounds,
   monName,
   settleClears,
@@ -18,10 +22,15 @@ import {
   settleKo,
   settleLook,
   stampExtremeUnlock,
+  noteShinyDex,
+  syncTalents,
+  noteUnownDex,
+  payUnownDex,
   syncPowers,
   syncEggClocks,
   syncHpScale,
   syncXpCurve,
+  type AreaFoe,
   type BattleState,
   type BundleRaw,
   type CatchRoll,
@@ -31,17 +40,25 @@ import {
   type GameData,
   type HomerArrival,
   type LogEntry,
+  type OwedGold,
   type RunEvent,
   type SaveData,
   type TrickPlaced,
   type TrickState,
   type TrickStep,
+  type GiftItem,
+  type GiftState,
+  type GiftStep,
+  type TracksBush,
+  type TracksPrint,
 } from '@/engine'
 import { activeSlot, DEFAULT_SETTINGS, readSave, readSettings, scheduleWrite, writeSettings, type Settings } from '@/save/storage'
 import { trustedNow } from './clock'
 import { DEFAULT_LANG, setLangInternal, t, type Lang } from '@/i18n'
 import { localizeGameData } from '@/i18n/data'
+import { money } from '@/lib/format'
 import { isAdminEmail } from '@/lib/supabase'
+import { restoreSnapshot, snapshotOf } from './resume'
 
 export type ToastTone = 'info' | 'good' | 'bad'
 export interface Toast {
@@ -50,7 +67,47 @@ export interface Toast {
   tone: ToastTone
 }
 
-export type RunPhase = 'idle' | 'preview' | 'battle' | 'catch' | 'victory' | 'center' | 'casino' | 'trick' | 'wipe' | 'stalemate'
+export type RunPhase =
+  | 'idle'
+  | 'preview'
+  | 'battle'
+  | 'catch'
+  | 'victory'
+  | 'center'
+  | 'casino'
+  | 'trick'
+  | 'present'
+  | 'gift'
+  | 'wipe'
+  | 'stalemate'
+
+/**
+ * A Gift card under way (docs/64 §4.0), or a boss's present (§4.2): the present, the last tap for the screen to play,
+ * what OPEN gave, and what came out of it when it broke or burst (the fight that follows).
+ */
+export interface PresentRun {
+  /** One per present: the screen starts afresh for each. */
+  id: number
+  state: GiftState
+  /** The last MAKE IT BIGGER, for the screen to play (null before the first, and once opened). */
+  last: GiftStep | null
+  /** Opened: what went into the bag (the save has it already). */
+  got: GiftItem[] | null
+  /** Broken or burst: the wild Pokémon or the boss that came out, fought once its moment has played. */
+  out: Encounter | null
+}
+
+/** A gift being given (docs/61 §5.3): which one, and once taken what came of it (the screen's result). */
+export interface GiftRun {
+  id: string
+  received: {
+    dex: number
+    shiny: boolean
+    placed: 'team' | 'box' | 'replaced' | 'merged' | 'egg'
+    isNew: boolean
+    replacedLevel?: number
+  } | null
+}
 
 /** Trick or Treat under way (docs/29): the ghost and its gauge, the last Treat or Trick Ball to play, and the catch. */
 export interface TrickRun {
@@ -70,6 +127,10 @@ export interface CatchState {
   dex: number
   level: number
   shiny?: boolean
+  /** It carries its family's hidden talent (docs/51). */
+  talent?: boolean
+  /** + the catch die: False Swipe on the Pokémon that made the K.O. (docs/51). */
+  bonus?: number
   kind: 'wild' | 'boss'
   target: CatchTarget
   /** Capture Luck kept it after a miss and this is the second throw: it won't stay again (docs/25). */
@@ -99,7 +160,12 @@ export interface RunState {
   /** Skips spent on the encounter currently being rolled (skipPolicy 'once'). */
   skipsUsed: number
   /** Trainer gauntlet progress. */
-  trainer: { index: number; gold: number } | null
+  /**
+   * A trainer's fight under way: the Pokémon of theirs faced (`index`), the ₽ won so far, the rewards of the K.O.s
+   * before this one (`carried`), shown together on the fight's one result card at the end, and their ₽ held back till
+   * then (`owed`).
+   */
+  trainer: { index: number; gold: number; carried?: RunEvent[]; owed?: OwedGold } | null
   /** Rewards from the last K.O., for the victory screen. */
   events: RunEvent[]
   /** A catch waiting on the "Add to team?" decision. */
@@ -111,6 +177,8 @@ export interface RunState {
   catchPending?: string[]
   /** Dev tools: force the next encounter type. */
   forceNext: ForceKind | null
+  /** Pickup's find (docs/51): shown as a find of its own before the next card is dealt. */
+  pickup?: Extract<Encounter, { kind: 'item' }> | null
   /** An Elite Rebattle gauntlet is being fought: its region and tier (the fights run on its League area). */
   rebattle?: { regionId: string; tier: number } | null
   /** The Pokémon Center's healing has played: back from Home, the Center opens on the team, not on the jingle again. */
@@ -131,8 +199,56 @@ export interface RunState {
   nightmarePopup?: boolean
   /** Darkrai's strike has landed and its moment is still on the area's page (until CONTINUE: the next round). */
   nightmareStruck?: boolean
+  /**
+   * The race's way in has shown its pop-up (docs/64 §4.4): back from the Team screen, it shows again at once over the
+   * intro's end, with no intro and no tap to wait for (as the Distortion World's portalPopup).
+   */
+  racePopup?: boolean
+  /**
+   * A try of the race just ended (docs/64 §4.4): the clock reached 0:00 or the team was K.O., with the fights it had won
+   * (the wipe card says so).
+   */
+  raceLost?: { reason: 'time' | 'wipe'; fights: number; total: number } | null
+  /** A wipe just ended a whiteout try (docs/64 §4.3): the waves it had cleared, lost now (the wipe card says so). */
+  whiteoutLost?: number | null
+  /**
+   * The whiteout's way in has shown its pop-up: back from the Team screen, it shows again at once over the intro's
+   * end, with no intro and no tap to wait for (as the nightmare's nightmarePopup).
+   */
+  whiteoutPopup?: boolean
+  /** A wipe just sent the player back to the glade's edge (docs/64 §4.1): the wipe card says its cleared rounds stay. */
+  tracksWiped?: boolean
+  /**
+   * Tracks in the Snow's way in has shown its pop-up (docs/64 §4.1): back from the Team screen, it shows again at once
+   * over the intro's end (as the nightmare's nightmarePopup).
+   */
+  tracksPopup?: boolean
+  /**
+   * The bush just opened in the glade (docs/64 §4.1), for its moment on the glade (it parts, shows what it held and its
+   * prints; the snow falls after the last tap). With an encounter, the glade shows it first: `meetBush` then brings
+   * the fight, the find or the cabin. `id` tells one opening from the next.
+   */
+  tracksBush?: { id: number; index: number; bush: TracksBush; print: TracksPrint | null; snowfall: boolean } | null
   /** Trick or Treat under way (docs/29). */
   trick?: TrickRun | null
+  /** A Gift card or a boss's present under way (docs/64 §4.0, §4.2). */
+  present?: PresentRun | null
+  /** A Pokémon posing as a find has sprung out (docs/61 §3): the find's screen shows it, FIGHT to go. */
+  sprung?: boolean
+  /** A gift being given (docs/61 §5.3), phase 'gift'. */
+  gift?: GiftRun | null
+  /** The fight is on the screen, the player's side not out yet: one tap on a Pokémon sends it (the rework). */
+  pickLead?: boolean
+  /**
+   * A real player's fight just ended (docs/54): won (the victory card) or lost (the stalemate card, which a loss to
+   * them is: no wipe). The result card's SEND FRIEND REQUEST is for `foe`.
+   */
+  duel?: { outcome: 'won' | 'lost'; foe: AreaFoe } | null
+  /**
+   * A rival's set meeting was just lost, its switch on (docs/61 §5.4): no wipe, the stalemate's card says the rival
+   * moved on and whether the team was healed (not in Extreme mode while its wipes heal nobody).
+   */
+  rivalLost?: { name: string; healed: boolean } | null
 }
 
 export interface BattleSlice {
@@ -141,6 +257,19 @@ export interface BattleSlice {
   log: LogEntry[]
   /** Increments per battle so the UI can reset its animation cursor. */
   id: number
+  /**
+   * Picked up from the last visit (store/resume.ts): the screen opens on the fight as it stands, with no entrance and
+   * no replay of the log so far.
+   */
+  resumed?: boolean
+  /** The same fight with another lead picked before anything happened: the foe is out already, no entrance again. */
+  sendLater?: boolean
+  /**
+   * A trainer's next Pokémon, sent out straight into the fight view (the user's call, 2026-11-04): no entrance, no
+   * swipe, and the line says who was sent out, not the trainer's opening again. 'stay': yours that fought is still out
+   * (the send-out step offers to change it); 'go': another goes out.
+   */
+  next?: 'stay' | 'go'
 }
 
 /** The ways in: Supabase Auth providers the game offers (docs/17). */
@@ -179,6 +308,8 @@ export interface GameStore {
   run: RunState
   battle: BattleSlice | null
   auth: AuthState
+  /** The signed-in account is on the admin's beta testers' list (docs/65 §3): friend_status says so. */
+  beta: boolean
   toasts: Toast[]
 }
 
@@ -228,16 +359,31 @@ function settle(save: SaveData, data: GameData) {
   const dup = releaseDuplicates(syncXpCurve(syncHpScale(home.save, data), data))
   // Extreme mode (docs/22): the main save beat the league that opens it (noted once, so it stays open); an Extreme
   // save's K.O. clocks, on the real time.
-  const ko = settleKo(stampExtremeUnlock(dup.save, data, Date.now()), data, trustedNow())
+  // Its runs (docs/48): a League just won stops its timer; a region from before the runs gets one.
+  // No shiny Pokémon in Extreme (docs/48), whatever brought one.
+  const ko = settleKo(
+    settleRuns(noShinies(stampExtremeUnlock(dup.save, data, Date.now())), data, trustedNow()),
+    data,
+    trustedNow(),
+  )
   // Trainer looks (docs/31): while the switch is on, a look not unlocked comes off. The Extreme save wears the looks
   // the main save has earned.
   const progress = isExtreme(ko.save) ? (mainForLooks() ?? ko.save) : ko.save
   // The battle powers (docs/35): a badge's Mega Gem handed over (one won now, or before the gem rules were on), and the
   // badges that open each power noted for Versus.
   const powers = syncPowers(settleLook(ko.save, progress, data), data)
+  // The shiny Pokédex (docs/39): every shiny held is noted under its region, kept when it leaves.
+  // Hidden talents (docs/51): a Pokémon that came with its talent unlocks its family; every one of an unlocked family
+  // carries it.
+  const shinyDex = noteShinyDex(syncTalents(powers.save, data))
+  // The Unown Pokédex (docs/41): the letters held noted (a save from before it, a trade), and its prize once complete
+  // (a page finished while the switch was off is paid the day it opens).
+  const unown = payUnownDex(noteUnownDex(shinyDex), data)
   return {
     ...dup,
-    save: powers.save,
+    save: unown.save,
+    won: runsWon(save, unown.save),
+    unownPaid: unown.paid,
     gemsGiven: powers.given,
     revived: fossils.revived,
     raidsReleased: raids.released,
@@ -258,18 +404,46 @@ function inSlot(save: SaveData): SaveData {
   return main
 }
 
-function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings'> {
+function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings' | 'run' | 'battle'> {
   const rawData = compileGameData(BUNDLE)
   const { save, corrupt } = readSave()
   // A save carries the language it was last played in; a fresh browser falls back to readSettings' detection.
   const stored = readSettings()
   const settings = save?.settings ? { ...save.settings, lang: save.settings.lang ?? stored.lang } : stored
   setLangInternal(settings.lang ?? DEFAULT_LANG)
-  const data = localizeGameData(rawData, settings.lang ?? DEFAULT_LANG)
-  if (!save) return { data, rawData, save: null, corruptSaveArchived: corrupt, settings }
+  // The Extreme save's page is a race (docs/48): its online features off from the first render.
+  const localized = localizeGameData(rawData, settings.lang ?? DEFAULT_LANG)
+  const data = activeSlot() === 'extreme' ? raceData(localized) : localized
+  if (!save) return { data, rawData, save: null, corruptSaveArchived: corrupt, settings, run: initialRun(), battle: null }
   // Settle the save (HP scale, XP curve, duplicates) before the first render. A Fortune Wheel prize still waiting (the
   // page closed while the wheel turned) is paid now.
-  return { data, rawData, save: settle(payWheelPrize(save, data), data).save, corruptSaveArchived: corrupt, settings }
+  const settled = settle(payWheelPrize(withoutResume(save), data, Date.now(), raidId), data).save
+  // Back into the encounter the page was left in, at the point it was left (store/resume.ts).
+  const resumed = restoreSnapshot(save.resume, settled, data, initialRun())
+  return {
+    data,
+    rawData,
+    save: settled,
+    corruptSaveArchived: corrupt,
+    settings,
+    run: resumed?.run ?? initialRun(),
+    battle: resumed?.battle ?? null,
+  }
+}
+
+/** The encounter under way travels with the stored save only (onDisk), never in the save in play or the cloud's. */
+function withoutResume(save: SaveData): SaveData {
+  if (!('resume' in save)) return save
+  const { resume: _r, ...rest } = save
+  return rest
+}
+
+/** The save as this device stores it: with the encounter under way, if any, to play on from at the next load. */
+function onDisk(save: SaveData | null): SaveData | null {
+  if (!save) return null
+  const { run, battle } = useGame.getState()
+  const resume = snapshotOf(run, battle)
+  return resume ? { ...save, resume } : save
 }
 
 export const useGame = create<GameStore>()(() => ({
@@ -277,9 +451,8 @@ export const useGame = create<GameStore>()(() => ({
   contentSource: 'bundle',
   contentChecked: false,
   contentAsked: false,
-  run: initialRun(),
-  battle: null,
   auth: { status: 'unknown', userId: null, email: null },
+  beta: false,
   toasts: [],
 }))
 
@@ -287,26 +460,77 @@ export const useGame = create<GameStore>()(() => ({
  * Who's playing goes into the game data: an event the admin switched on "for the admin" (to try it in production
  * first) shows only while the admin is signed in. Kept up to date as the sign-in and the content change.
  */
-function withViewer(data: GameData, auth: AuthState): GameData {
+function withViewer(data: GameData, auth: AuthState, betaTester: boolean): GameData {
   const admin = auth.status === 'signed_in' && isAdminEmail(auth.email)
-  return !!data.viewer?.admin === admin ? data : { ...data, viewer: { admin } }
+  // A beta tester (docs/65 §3) sees what the admin set "On for beta testers", signed in.
+  const beta = auth.status === 'signed_in' && betaTester
+  const same = !!data.viewer?.admin === admin && !!data.viewer?.beta === beta
+  const viewed = same ? data : { ...data, viewer: { ...data.viewer, admin, beta } }
+  // The Extreme save's page is a race (docs/48): new content or a new language gets its online features off again.
+  return activeSlot() === 'extreme' ? raceData(viewed) : viewed
 }
+// The encounter moves on (a roll, a K.O., the rewards) without the save always changing: stored with it each time, so
+// a reload finds it as it stood (onDisk). The write is the save's own debounced one, flushed when the page goes.
 useGame.subscribe((s, prev) => {
-  if (s.auth === prev.auth && s.data === prev.data) return
-  const data = withViewer(s.data, s.auth)
+  if ((s.run !== prev.run || s.battle !== prev.battle) && s.save) scheduleWrite(onDisk(s.save))
+})
+useGame.subscribe((s, prev) => {
+  if (s.auth === prev.auth && s.data === prev.data && s.beta === prev.beta) return
+  const data = withViewer(s.data, s.auth, s.beta)
   if (data !== s.data) useGame.setState({ data })
 })
 
 // ---------------------------------------------------------------- core actions
 
+/**
+ * How long a toast stays (docs/15 §7): long enough to read it, 4 s at least, then 70 ms a character over a 1.2 s
+ * start; `ms` from a caller only makes it longer. An error stays until the player closes it (null): a toast is often
+ * the only word on why something didn't happen.
+ */
+export function toastMs(text: string, tone: ToastTone = 'info', ms?: number): number | null {
+  if (tone === 'bad') return null
+  return Math.max(4000, 1200 + 70 * [...text].length, ms ?? 0)
+}
+
 let toastSeq = 0
-export function pushToast(text: string, tone: ToastTone = 'info', ms = 3200) {
+/** Each toast's countdown: what's left, and the timer running it (none while it's held). */
+const toastClocks = new Map<number, { left: number; since: number; timer: ReturnType<typeof setTimeout> | null }>()
+
+export function pushToast(text: string, tone: ToastTone = 'info', ms?: number) {
   const id = ++toastSeq
-  useGame.setState((s) => ({ toasts: [...s.toasts, { id, text, tone }].slice(-4) }))
-  setTimeout(() => dismissToast(id), ms)
+  useGame.setState((s) => {
+    const toasts = [...s.toasts, { id, text, tone }]
+    // Four at most: the oldest goes, and its countdown with it.
+    for (const old of toasts.slice(0, -4)) stopToastClock(old.id)
+    return { toasts: toasts.slice(-4) }
+  })
+  const left = toastMs(text, tone, ms)
+  if (left == null) return
+  toastClocks.set(id, { left, since: Date.now(), timer: setTimeout(() => dismissToast(id), left) })
+}
+
+function stopToastClock(id: number) {
+  const clock = toastClocks.get(id)
+  if (clock?.timer) clearTimeout(clock.timer)
+  toastClocks.delete(id)
+}
+
+/** A finger on it, the pointer over it or the focus in it: its countdown waits, and goes on from there once let go. */
+export function holdToast(id: number, held: boolean) {
+  const clock = toastClocks.get(id)
+  if (!clock) return
+  if (held && clock.timer) {
+    clearTimeout(clock.timer)
+    clock.timer = null
+    clock.left = Math.max(0, clock.left - (Date.now() - clock.since))
+  } else if (!held && !clock.timer) {
+    clock.since = Date.now()
+    clock.timer = setTimeout(() => dismissToast(id), clock.left)
+  }
 }
 
 export function dismissToast(id: number) {
+  stopToastClock(id)
   useGame.setState((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
 }
 
@@ -325,7 +549,8 @@ export function onSaveCommitted(fn: SaveListener) {
 export function commitSave(next: SaveData | null, opts: { silent?: boolean; keepTimestamp?: boolean; auto?: boolean } = {}) {
   const { settings, data, save: prev } = useGame.getState()
   // Whatever arrives here (cloud pull, import, new game) is settled: HP scale, XP curve, one copy per species.
-  const settled = next ? settle(next, data) : null
+  // A stored copy read back (another tab's) may carry its encounter under way: that one is the other page's, not this one's.
+  const settled = next ? settle(withoutResume(next), data) : null
   const scaled = settled?.save ?? null
   const now = Date.now()
   // A save from before playedAt, changed on its own: last played no later than its stamp so far.
@@ -339,12 +564,21 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
       }
     : null
   useGame.setState({ save: stamped })
-  scheduleWrite(stamped)
+  scheduleWrite(onDisk(stamped))
   if (!opts.silent) for (const fn of saveListeners) fn(stamped, prev)
   for (const p of settled?.revived ?? [])
-    pushToast(t('ui.toast.revivedFossil', { name: data.species[p.dex]?.name ?? `#${p.dex}` }), 'good', 4500)
+    pushToast(
+      t(p.egg ? (p.shiny ? 'ui.toast.hatchedGiftShiny' : 'ui.toast.hatchedGift') : p.shiny ? 'ui.toast.revivedFossilShiny' : 'ui.toast.revivedFossil', {
+        name: data.species[p.dex]?.name ?? `#${p.dex}`,
+      }),
+      'good',
+      4500,
+    )
   for (const g of settled?.gemsGiven ?? [])
     pushToast(t('ui.powers.gemGiven', { leader: g.leader, gem: g.gem.name }), 'good', 5000)
+  for (const region of settled?.won ?? [])
+    pushToast(t('ui.xrun.wonToast', { region: data.regions.find((r) => r.id === region)?.name ?? region }), 'good', 6000)
+  if (settled?.unownPaid) pushToast(t('ui.unown.paidToast', { amount: money(settled.unownPaid) }), 'good', 5000)
   for (const id of settled?.back ?? []) {
     const inst = stamped?.box.find((p) => p.id === id)
     if (inst) pushToast(t('ui.extreme.backToast', { name: data.species[inst.dex]?.name ?? '' }), 'good', 4000)

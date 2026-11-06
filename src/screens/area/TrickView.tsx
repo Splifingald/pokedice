@@ -5,15 +5,21 @@
 // the flee) and the battle's catch timeline with the Trick Ball (the throw, the ball on the ground, the wobbles, Gotcha!
 // or the break-free), the die shown as the ball stops. Once it's over, the result card rises as a battle's does.
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   failPush,
+  lureCfg,
+  markSafariRulesSeen,
+  portalLock,
+  safariRulesDue,
+  timeRaceLock,
   treatRange,
   trickBand,
-  trickCfg,
   trickChance,
   trickRulesDue,
   trickZoneAt,
   markTrickRulesSeen,
+  type LureTheme,
   type TrickBand,
   type TrickPlaced,
   type TrickStep,
@@ -27,6 +33,7 @@ import { InfoButton } from '@/components/RulesModal'
 import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import {
+  lureKey,
   NeedDie,
   TierChip,
   TRICK_AT,
@@ -38,7 +45,7 @@ import {
   targetLabel,
   type TrickOverlay,
 } from '@/components/TrickOrTreat'
-import { loadTrickBall } from '@/fx/scenes'
+import { loadSafariBall, loadTrickBall, SAFARI_BAIT_URL } from '@/fx/scenes'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { TREAT_URL, treatTimeline } from '@/fx/timelines/trick'
@@ -47,20 +54,21 @@ import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
 import { mutateSave, useGame, type TrickRun } from '@/store/game'
-import { fleeTrick, giveTreat, leaveTrick, throwTrickBall } from '@/store/run'
+import { fleeTrick, giveTreat, leaveTrick, leaveTrickHome, throwTrickBall } from '@/store/run'
 import { CatchCard, Overlay, SecretAreaCard } from '@/screens/battle/VictoryView'
 import { cx } from '@/theme/util'
 import { PlateBox } from '@/screens/battle/Plates'
 import { RunRoundGauge } from './RoundGauge'
 
-/** What the message box says once a step has played. */
-export function stepMessage(step: TrickStep, name: string): string {
+/** What the message box says once a step has played (in the Safari's words there, docs/61 §4). */
+export function stepMessage(step: TrickStep, name: string, theme?: LureTheme): string {
   const target = targetLabel(step.need ?? 6)
+  const k = (key: string) => lureKey(theme, key)
   if (step.kind === 'treat')
-    return step.fled ? tr('ui.trick.fledTreat', { name }) : tr('ui.trick.ate', { name, n: step.amount })
-  if (step.caught) return tr('ui.trick.caught', { name })
-  if (step.fled) return tr('ui.trick.fledBall', { name, die: step.die ?? 0, target })
-  return tr('ui.trick.missed', { name, die: step.die ?? 0, target, n: step.amount })
+    return step.fled ? tr(k('fledTreat'), { name }) : tr(k('ate'), { name, n: step.amount })
+  if (step.caught) return tr(k('caught'), { name })
+  if (step.fled) return tr(k('fledBall'), { name, die: step.die ?? 0, target })
+  return tr(k('missed'), { name, die: step.die ?? 0, target, n: step.amount })
 }
 
 /** What the last step did, beside the gauge's value: the Treat, or the Trick Ball's die against what it needed. */
@@ -94,7 +102,7 @@ export function TrickPlate({
       <span className="flex min-w-0 items-center gap-1.5">
         <b className="min-w-0 truncate text-[20px] font-normal leading-none">{name}</b>
         {shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
-        <span className="shrink-0 font-pixel-sm text-[15px] leading-none">{lv}</span>
+        <span className="shrink-0 font-pixel-sm text-[16px] leading-none">{lv}</span>
       </span>
       <span className="flex flex-wrap items-center gap-1">
         {sp && <TypeBadge type={sp.type1} size="sm" />}
@@ -128,6 +136,8 @@ function Readout({ r }: { r: TrickReadout }) {
 }
 
 export interface TrickScreenProps {
+  /** The Safari's look and words (docs/61 §4); absent = Trick or Treat's. */
+  theme?: LureTheme
   areaId: string | null
   dex: number
   level: number
@@ -163,27 +173,29 @@ export interface TrickScreenProps {
 /** The screen itself, from what TrickView (or the kitchen sink) gives it. */
 export function TrickScreen(p: TrickScreenProps) {
   const { t } = useT()
-  const cfg = trickCfg(useGame((s) => s.data))
+  const cfg = lureCfg(useGame((s) => s.data), p.theme)
+  const k = (key: string) => lureKey(p.theme, key)
   const name = useGame((s) => s.data.species[p.dex]?.name) ?? `#${p.dex}`
   const { min, max } = treatRange(cfg)
   const here = trickZoneAt(p.band, p.gauge)
   const odds = here ? Math.round(trickChance(here.zone.need) * 100) : 0
-  const heading = t('ui.trick.stage', { name, level: p.level })
+  const heading = t(k('stage'), { name, level: p.level })
   const off = p.busy || p.ended
   const id = useId()
   return (
     // Wide screens: the battle's column, as big as the height allows with the panel still in view.
     <div className="mx-auto w-full lg:p-4">
       <section
-        aria-label={t('ui.trick.title')}
+        aria-label={t(k('title'))}
         className={cx(
           'mx-auto flex w-full max-w-[max(300px,min(560px,calc((100dvh_-_330px)_*_1.5)))] flex-col lg:max-w-[max(560px,min(700px,calc((100dvh_-_380px)_*_1.5)))]',
           p.fill && 'min-h-[100dvh] lg:min-h-0',
         )}
       >
-        {p.fill && <h1 className="sr-only">{t('ui.trick.title')}</h1>}
+        {p.fill && <h1 className="sr-only">{t(k('title'))}</h1>}
         <div className="shadow-ledge">
           <TrickStage
+            theme={p.theme}
             areaId={p.areaId}
             dex={p.dex}
             shiny={p.shiny}
@@ -206,6 +218,7 @@ export function TrickScreen(p: TrickScreenProps) {
             {p.message}
           </p>
           <TrickGauge
+            theme={p.theme}
             band={p.band}
             value={p.gauge}
             delta={p.delta}
@@ -221,12 +234,12 @@ export function TrickScreen(p: TrickScreenProps) {
                 onClick={p.onTreat}
                 aria-describedby={`${id}-treat`}
               >
-                <TrickSprite kind="treat" size={28} />
-                {t('ui.trick.treat')}
+                <TrickSprite kind="treat" size={28} theme={p.theme} />
+                {t(k('treat'))}
               </PixelButton>
               <span
                 id={`${id}-treat`}
-                className="text-center font-pixel-sm text-[15px] leading-tight text-muted"
+                className="text-center font-pixel-sm text-[16px] leading-tight text-muted"
               >
                 {t('ui.trick.treatNote', { min, max })}
               </span>
@@ -240,12 +253,12 @@ export function TrickScreen(p: TrickScreenProps) {
                 onClick={p.onBall}
                 aria-describedby={`${id}-ball`}
               >
-                <TrickSprite kind="ball" size={28} />
-                {t('ui.trick.ball')}
+                <TrickSprite kind="ball" size={28} theme={p.theme} />
+                {t(k('ball'))}
               </PixelButton>
               <span
                 id={`${id}-ball`}
-                className="flex items-center justify-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted"
+                className="flex items-center justify-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted"
               >
                 {here && (
                   <>
@@ -258,7 +271,7 @@ export function TrickScreen(p: TrickScreenProps) {
           </div>
           {/* FLEE stays small, beside INFO: the way out for those who'd rather skip it, never the main action. */}
           <div className="mt-auto flex items-center gap-2 pt-1">
-            <InfoButton name={t('ui.trick.title')} onClick={p.onInfo} className="min-w-0 flex-1" />
+            <InfoButton name={t(k('title'))} onClick={p.onInfo} className="min-w-0 flex-1" />
             <PixelButton size="sm" className="shrink-0" disabled={off} onClick={p.onFlee}>
               <PixelIcon name="run" size={16} />
               {t('ui.enc.flee')}
@@ -281,7 +294,9 @@ export function TrickRecapBody({
   isNew,
   replacedLevel,
   secrets = [],
+  theme,
 }: {
+  theme?: LureTheme
   dex: number
   level: number
   shiny?: boolean
@@ -301,13 +316,13 @@ export function TrickRecapBody({
           level={level}
           shiny={!!shiny}
           isNew={isNew}
-          ball={<TrickSprite kind="ball" size={40} />}
+          ball={<TrickSprite kind="ball" size={40} theme={theme} />}
           where={t(`ui.trick.placed.${placed ?? 'box'}`, { level: replacedLevel ?? 0 })}
         />
       ) : (
         <div className="flex items-center gap-3 bg-paper p-2 shadow-ring">
           <SpriteImg dex={dex} size={72} shiny={shiny} className="shrink-0 opacity-50 grayscale" />
-          <p className="copy m-0 text-lg text-muted">{t('ui.trick.fledText')}</p>
+          <p className="copy m-0 text-lg text-muted">{t(lureKey(theme, 'fledText'))}</p>
         </div>
       )}
       {secrets.map((s) => (
@@ -317,12 +332,18 @@ export function TrickRecapBody({
   )
 }
 
-/** The result card, risen over the panel as a battle's: the title, the recap, the round gauge and CONTINUE. */
+/** The result card, risen over the panel as a battle's: the title, the recap, the round gauge, HOME and CONTINUE. */
 export function TrickRecap({
   name,
   onContinue,
+  onHome,
   ...body
-}: Parameters<typeof TrickRecapBody>[0] & { name: string; onContinue: () => void }) {
+}: Parameters<typeof TrickRecapBody>[0] & {
+  name: string
+  onContinue: () => void
+  /** HOME, as on a battle's card; absent (a portal run, a race) = CONTINUE alone. */
+  onHome?: () => void
+}) {
   const { t } = useT()
   const title =
     body.end === 'caught' ? t('ui.trick.caughtTitle', { name }) : t('ui.trick.fledTitle', { name })
@@ -332,15 +353,24 @@ export function TrickRecap({
       footer={
         <div className="flex flex-col gap-2">
           <RunRoundGauge className="px-1" />
-          <PixelButton variant="primary" size="lg" className="w-full" onClick={onContinue}>
-            {t('ui.common.continue')}
-          </PixelButton>
+          {/* HOME beside CONTINUE, as a battle's card has it: a Safari is nothing but these cards, so without it the
+              only way out was the next one (a player's report, 2026-11-03). */}
+          <div className={onHome ? 'grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-2.5' : 'grid'}>
+            {onHome && (
+              <PixelButton size="lg" className="whitespace-nowrap px-2" onClick={onHome}>
+                {t('ui.nav.home')}
+              </PixelButton>
+            )}
+            <PixelButton variant="primary" size="lg" className="w-full whitespace-nowrap px-2" onClick={onContinue}>
+              {t('ui.common.continue')}
+            </PixelButton>
+          </div>
         </div>
       }
     >
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <h2 className="m-0 text-[28px] font-normal leading-none">{title}</h2>
-        <span className="min-w-0 truncate text-lg text-muted">{t('ui.trick.title')}</span>
+        <span className="min-w-0 truncate text-lg text-muted">{t(lureKey(body.theme, 'title'))}</span>
       </div>
       <TrickRecapBody {...body} />
     </Overlay>
@@ -355,7 +385,13 @@ export function TrickView() {
   const save = useGame((s) => s.save)
   const trick = run.trick as TrickRun
   const { level, calm } = useMotion()
+  const navigate = useNavigate()
+  // Inside a portal run or a try of the race there is no way Home (as on a battle's card).
+  const locked = useGame((s) => !!portalLock(s.save, s.data) || !!timeRaceLock(s.save, s.data))
   const st = trick.state
+  // The Safari (docs/61 §4) is Trick or Treat's screen with its own look, words and numbers.
+  const theme = st.theme
+  const safari = theme === 'safari'
   const name = data.species[st.dex]?.name ?? `#${st.dex}`
   const last = trick.last
   const [gauge, setGauge] = useState(st.gauge)
@@ -366,12 +402,12 @@ export function TrickView() {
     last ? { kind: last.kind, die: last.die, need: last.need, key: 0, roll: false } : null,
   )
   const [message, setMessage] = useState(() =>
-    last ? stepMessage(last, name) : t('ui.trick.appears', { name }),
+    last ? stepMessage(last, name, theme) : t(lureKey(theme, 'appears'), { name }),
   )
   const [overlay, setOverlay] = useState<TrickOverlay | null>(null)
   const [busy, setBusy] = useState(false)
   const [rules, setRules] = useState<'unlock' | 'info' | null>(() =>
-    save && trickRulesDue(save, data) ? 'unlock' : null,
+    save && (safari ? safariRulesDue(save, data) : trickRulesDue(save, data)) ? 'unlock' : null,
   )
   const seq = useRef(0)
   const alive = useRef(true)
@@ -382,7 +418,7 @@ export function TrickView() {
     }
   }, [])
 
-  const band = trickBand(trickCfg(data), st.tier)
+  const band = trickBand(lureCfg(data, theme), st.tier)
   const end = st.end
   const done = !!end && !busy
   const short = level === 'short'
@@ -393,7 +429,7 @@ export function TrickView() {
   const settle = (step: TrickStep) => {
     if (!alive.current) return
     setGauge(step.to)
-    setMessage(stepMessage(step, name))
+    setMessage(stepMessage(step, name, theme))
     setBusy(false)
     // Still there: the page's sprite takes over again. Over: the timeline's last frame stays.
     if (!step.state.end) setOverlay(null)
@@ -411,14 +447,21 @@ export function TrickView() {
     if (step.kind === 'treat') {
       setReadout({ kind: 'treat', key, roll: false })
       setOverlay({
-        timeline: treatTimeline({ own: '', foe: foeKey, at: TRICK_AT, fled: step.fled, short }),
-        ready: Promise.all([ghost(), loadItemSprite(TREAT_URL)]),
-        label: t('ui.trick.stage', { name, level: st.level }),
+        timeline: treatTimeline({
+          own: '',
+          foe: foeKey,
+          at: TRICK_AT,
+          fled: step.fled,
+          short,
+          ...(safari && { treatKey: `item|${SAFARI_BAIT_URL}`, runs: true }),
+        }),
+        ready: Promise.all([ghost(), loadItemSprite(safari ? SAFARI_BAIT_URL : TREAT_URL)]),
+        label: t(lureKey(theme, 'stage'), { name, level: st.level }),
         hud: {
           beat: (b) => {
-            if (b === 'ate') setMessage(stepMessage({ ...step, fled: false }, name))
+            if (b === 'ate') setMessage(stepMessage({ ...step, fled: false }, name, theme))
             else if (b === 'fill') fill()
-            else if (b === 'fled') setMessage(stepMessage(step, name))
+            else if (b === 'fled') setMessage(stepMessage(step, name, theme))
           },
         },
         onEnd: () => settle(step),
@@ -427,29 +470,31 @@ export function TrickView() {
     }
     // A Trick Ball: the battle's catch, with the Trick Ball, at the ghost's spot. A miss that leaves it there is
     // Capture Luck's stay ("!" and two hops: restless); one that pushes it into the flee zone runs off as a wild one.
-    setMessage(t('ui.trick.throwing'))
+    setMessage(t(lureKey(theme, 'throwing')))
     let out = false
     setOverlay({
       timeline: catchTimeline({
         own: '',
         foe: foeKey,
-        ball: 'trick',
+        ball: safari ? 'safari' : 'trick',
         caught: !!step.caught,
+        roll: { total: step.die ?? 0, need: step.need ?? 6, caught: !!step.caught },
         short,
         stays: !step.caught && !step.fled,
         awake: true,
-        ghost: true,
+        // A ghost fades into wisps; the Safari's Pokémon runs off as a wild one does.
+        ghost: !safari,
         at: TRICK_AT,
         ground: TRICK_GROUND,
       }),
-      ready: Promise.all([ghost(), loadTrickBall()]),
-      label: t('ui.trick.throwing'),
+      ready: Promise.all([ghost(), safari ? loadSafariBall() : loadTrickBall()]),
+      label: t(lureKey(theme, 'throwing')),
       hud: {
         // The die and the result show together as the ball stops, never before (the wobbles would be spoilt).
         catchResult: (caught) => {
           out = true
           setReadout({ kind: 'ball', die: step.die, need: step.need, key, roll: level !== 'off' })
-          setMessage(stepMessage({ ...step, fled: false }, name))
+          setMessage(stepMessage({ ...step, fled: false }, name, theme))
           if (!caught) {
             fxSound('trick.fill')
             fill()
@@ -458,8 +503,8 @@ export function TrickView() {
         show: (_, on) => {
           // After the result, the ghost leaving the stage is the flee.
           if (out && !on && step.fled) {
-            fxSound('trick.flee')
-            setMessage(stepMessage(step, name))
+            fxSound(safari ? 'catch.break' : 'trick.flee')
+            setMessage(stepMessage(step, name, theme))
           }
         },
       },
@@ -474,12 +519,22 @@ export function TrickView() {
   }
 
   const closeRules = () => {
-    if (rules === 'unlock') mutateSave((s) => (s.trickOrTreat?.rulesSeen ? null : markTrickRulesSeen(s)))
+    if (rules === 'unlock')
+      mutateSave((s) =>
+        safari
+          ? s.safari?.rulesSeen
+            ? null
+            : markSafariRulesSeen(s)
+          : s.trickOrTreat?.rulesSeen
+            ? null
+            : markTrickRulesSeen(s),
+      )
     setRules(null)
   }
 
   return (
     <TrickScreen
+      theme={theme}
       areaId={run.areaId}
       dex={st.dex}
       level={st.level}
@@ -505,12 +560,14 @@ export function TrickView() {
       fill
     >
       <TrickRulesModal
+        theme={theme}
         open={rules != null}
         onClose={closeRules}
         onGo={rules === 'unlock' ? closeRules : undefined}
       />
       {done && (
         <TrickRecap
+          theme={theme}
           name={name}
           dex={st.dex}
           level={st.level}
@@ -521,6 +578,14 @@ export function TrickView() {
           replacedLevel={trick.caught?.replacedLevel}
           secrets={(trick.caught?.secrets ?? []).map((id) => data.areas.find((a) => a.id === id)?.name ?? id)}
           onContinue={leaveTrick}
+          onHome={
+            locked
+              ? undefined
+              : () => {
+                  leaveTrickHome()
+                  navigate('/home')
+                }
+          }
         />
       )}
     </TrickScreen>

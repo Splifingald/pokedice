@@ -71,7 +71,8 @@ test('a Pokémon above the region’s best is sent there locked, without its lea
     .getByRole('button', { name: /Pidgey/ })
     .first()
     .click()
-  const sheet = page.getByRole('dialog', { name: 'Pidgey' })
+  // A PC: the sheet stands docked beside the Box (docs/43 §5.4), a region named for the Pokémon.
+  const sheet = page.getByRole('region', { name: 'Pidgey' })
   await expect(
     sheet.getByText(
       'Pidgey waits in your Johto Box, locked, until one of your Pokémon there reaches Lv.40 (your best: Lv.5).',
@@ -98,7 +99,8 @@ test('in the region it was sent to, it waits apart with where it came from', asy
   await page.goto('/team')
   await expect(page.getByRole('heading', { name: 'Waiting to unlock' })).toBeVisible()
   await page.getByRole('button', { name: 'Pidgey, Locked until Lv.40' }).click()
-  const sheet = page.getByRole('dialog', { name: 'Pidgey' })
+  // A PC: the sheet stands docked beside the Box (docs/43 §5.4), a region named for the Pokémon.
+  const sheet = page.getByRole('region', { name: 'Pidgey' })
   await expect(sheet.getByText('Locked until Lv.40')).toBeVisible()
   await expect(sheet.getByText('Sent from Kanto')).toBeVisible()
   await expect(

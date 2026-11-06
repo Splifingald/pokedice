@@ -1,39 +1,29 @@
 // Friend invite rewards (docs/15 §25): the gauge (at the top of the Friends page, in Prof. Oak's invite pop-up and in the
-// reward's own pop-up), its rules (once when the rewards open, then INFO at the bottom of the Friends page), and the
+// reward's own pop-up), its rules (once, the first time on the Friends page, then INFO at its bottom), and the
 // pop-up that says a reward is ready. Every number — the tiers, the fill, what each one holds — is the engine's
 // (engine/invites.ts); the opening is the developer's gifts' own (GiftMoment).
-import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
   inviteGauge,
-  inviteRulesDue,
   inviteTiers,
   invitesWait,
-  leaderboardTutorialDue,
-  regionOfferDue,
-  tradeRulesDue,
-  versusRulesDue,
   type Gift,
   type InviteGauge,
   type InviteGaugeTier,
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
-import { useFullscreen } from '@/lib/fullscreen'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from '@/store/game'
 import { useGiftMoment } from '@/store/gifts'
-import { openInviteRewards, putOffInviteRewards, seeInviteRules, useInviteRewards } from '@/store/invites'
+import { openInviteRewards, putOffInviteRewards, useInviteRewards } from '@/store/invites'
 import { useCloudSync } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { GiftIcon, useGiftText } from '../Gifts'
 import { PixelIcon } from '../icons'
 import { Modal } from '../Modal'
 import { PixelButton } from '../PixelButton'
+import { useMyTurn, useOnScreen } from '../popupTurn'
 import { RulesModal, type RuleRow } from '../RulesModal'
-import { useSharePromptWaiting } from '../ShareTutorial'
 import { FriendPreview } from './FriendBits'
 
 /**
@@ -97,7 +87,7 @@ function TierTile({ tier, size }: { tier: InviteGaugeTier; size: number }) {
         <PixelIcon name="sparkle" size={12} className="absolute left-0.5 top-0.5" />
       )}
       {tier.gifts.length > 1 && (
-        <span className="absolute bottom-0 left-0 bg-paper px-0.5 font-pixel-sm text-[12px] leading-none text-ink shadow-ring-line">
+        <span className="absolute bottom-0 left-0 bg-paper px-0.5 font-pixel-sm text-tag leading-none text-ink shadow-ring-line">
           +{tier.gifts.length - 1}
         </span>
       )}
@@ -157,7 +147,7 @@ export function InviteGaugeBar({ gauge, compact = false }: { gauge: InviteGauge;
           />
         ))}
       </div>
-      <div className="grid font-pixel-sm text-[14px] leading-none text-muted" style={cols} aria-hidden>
+      <div className="grid font-pixel-sm text-[16px] leading-none text-muted" style={cols} aria-hidden>
         {gauge.tiers.map((tier) => (
           <span key={tier.friends} className="flex items-center justify-end gap-1 tabular-nums">
             <PixelIcon name="friends" size={12} />
@@ -231,7 +221,7 @@ export function InviteRewardsCard({
           {tPlural('ui.invite.pending', gauge.pending, { n: gauge.pending })}
         </p>
       )}
-      <p className="m-0 font-pixel-sm text-[15px] leading-tight text-muted">{t('ui.invite.how')}</p>
+      <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.invite.how')}</p>
     </section>
   )
 }
@@ -245,7 +235,7 @@ export function InviteGaugeCompact({ gauge }: { gauge: InviteGauge }) {
       <p className="m-0 flex items-center gap-1.5 text-[19px] leading-none">
         <PixelIcon name="gift" size={18} />
         <span className="min-w-0 flex-1">{t('ui.invite.title')}</span>
-        <span className="font-pixel-sm text-[15px] tabular-nums text-muted">
+        <span className="font-pixel-sm text-[16px] tabular-nums text-muted">
           {Math.min(gauge.count, gauge.goal)}/{gauge.goal}
         </span>
       </p>
@@ -282,7 +272,7 @@ export function useInviteRules(): RuleRow[] {
   ]
 }
 
-/** The rewards' rules: once when they open (Later / Let's go!), and from INFO on the Friends page (OK). */
+/** The rewards' rules, on the Friends page: once the first time in, then from INFO (OK). */
 export function InviteRulesModal({
   open,
   onClose,
@@ -306,73 +296,32 @@ export function InviteRulesModal({
   )
 }
 
-/** The other one-time pop-ups, Prof. Oak's invite and the trades' rules among them, go first: one pop-up at a time. */
-function useOthersFirst(): boolean {
-  const invite = useSharePromptWaiting()
-  const others = useGame(
-    (s) =>
-      !!s.save &&
-      (dayCareTutorialDue(s.save, s.data) ||
-        leaderboardTutorialDue(s.save, s.data) ||
-        donationDue(s.save, s.data) ||
-        !!regionOfferDue(s.save, s.data) ||
-        !!eventUnlockDue(s.save, s.data) ||
-        versusRulesDue(s.save, s.data) ||
-        (s.auth.status === 'signed_in' && tradeRulesDue(s.save, s.data))),
-  )
-  return invite || others
+/** A reward is waiting to pop up (one ready, not put off this visit): the queue's `inviteReward` (engine/popups.ts). */
+export function useInviteRewardWaiting(): boolean {
+  const ready = useInviteGauge()?.ready.length ?? 0
+  const putOff = useInviteRewards((s) => s.putOff)
+  return ready > 0 && !putOff
 }
 
 /**
- * The rewards have opened to this player (signed in, the main game, the switch on): once, between fights, their
- * rules and a button to the Friends page, where the gauge is. On the Friends page itself, the page counts as seen.
- */
-export function InviteRulesPopup() {
-  const navigate = useNavigate()
-  const onFriends = useLocation().pathname.startsWith('/friends')
-  const due = useGame(
-    (s) =>
-      isSupabaseConfigured && s.auth.status === 'signed_in' && !!s.save && inviteRulesDue(s.save, s.data),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
-  const full = useFullscreen()
-  const othersFirst = useOthersFirst()
-  if (!due || othersFirst) return null
-  return (
-    <InviteRulesModal
-      open={idle && !full && !onFriends}
-      onClose={seeInviteRules}
-      onGo={() => {
-        seeInviteRules()
-        navigate('/friends')
-      }}
-    />
-  )
-}
-
-/**
- * A reward is ready (an invited friend won their first badge): between fights, after the rules and the other one-time
- * pop-ups, who did it, the gauge, and OPEN THE GIFT, which plays the gifts' opening. Later keeps it on the Friends page
- * until the next visit.
+ * A reward is ready (an invited friend won their first badge): between fights, on its turn in the one-time pop-ups'
+ * queue (engine/popups.ts: right after the rewards' rules), who did it, the gauge, and OPEN THE GIFT, which plays the
+ * gifts' opening. Later keeps it on the Friends page until the next visit.
  */
 export function InviteRewardPopup() {
   const gauge = useInviteGauge()
   const latest = useFriends((s) => s.invites?.latest ?? null)
-  const onFriends = useLocation().pathname.startsWith('/friends')
-  const rulesFirst = useGame((s) => !!s.save && inviteRulesDue(s.save, s.data))
-  const idle = useGame((s) => s.run.phase === 'idle' && !s.battle)
-  const full = useFullscreen()
+  const turn = useMyTurn('inviteReward')
   const busy = useInviteRewards((s) => s.busy)
-  const putOff = useInviteRewards((s) => s.putOff)
-  const gifts = useGiftMoment((s) => s.busy || !!s.rulesFor || !!s.opening)
+  const gifts = useGiftMoment((s) => s.busy || !!s.opening)
   // Opened once the sign-in's sync has settled, so the cloud copy can't replace what the gifts went into.
   const synced = useCloudSync((s) => s.settled)
-  const othersFirst = useOthersFirst()
-  const ready = gauge?.ready.length ?? 0
-  if (!gauge || !ready || putOff || rulesFirst || othersFirst) return null
+  const open = turn && !!gauge && !gifts && synced
+  useOnScreen('inviteReward', open)
+  if (!gauge || !gauge.ready.length) return null
   return (
     <InviteReadyModal
-      open={idle && !full && !onFriends && !gifts && synced}
+      open={open}
       gauge={gauge}
       latest={latest}
       busy={busy}

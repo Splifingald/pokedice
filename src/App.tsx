@@ -1,15 +1,16 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { MotionConfig } from 'framer-motion'
 import { setCriesEnabled, unlockCriesOnFirstTap } from '@/audio/cries'
 import { setSfxEnabled } from '@/audio/sfx'
-import { t } from '@/i18n'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { GameLayout } from '@/components/GameLayout'
+import { PageLoading } from '@/components/PageLoading'
 import { RotateCover } from '@/components/RotateCover'
 import { ToastStack } from '@/components/Toast'
 import { AreaScreen } from '@/screens/Area'
 import { DayCareScreen } from '@/screens/DayCareScreen'
+import { ExtremeScreen } from '@/screens/Extreme'
 import { FriendInvite } from '@/screens/FriendInvite'
 import { TradeLink } from '@/screens/TradeLink'
 import { TradesScreen } from '@/screens/Trades'
@@ -24,23 +25,50 @@ import { TeamScreen } from '@/screens/Team'
 import { Title } from '@/screens/Title'
 import { UpgradesScreen } from '@/screens/Upgrades'
 import { VersusScreen } from '@/screens/Versus'
+import { SocialScreen } from '@/components/SocialTabs'
 import { EventsScreen } from '@/screens/events/EventsScreen'
 import { UndergroundScreen } from '@/screens/events/Underground'
+import { CalendarScreen } from '@/screens/events/Calendar'
+import { FriendMarketScreen } from '@/screens/FriendMarket'
+import { BattlesScreen } from '@/screens/Battles'
+import { BattleLiveScreen } from '@/screens/battles/Live'
 import { UndergroundDig } from '@/screens/events/UndergroundDig'
 import { ProgressRaidScreen } from '@/screens/events/ProgressRaidScreen'
+import { PageMeta } from '@/lib/pageMeta'
 import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
+import { useRunIntent } from '@/store/extremeRuns'
 
-// Route-split out of the main bundle.
-const AdminApp = lazy(() => import('@/admin/AdminApp'))
-const SetupPage = lazy(() => import('@/setup/SetupPage'))
+/** A run chosen on the main save's Extreme page, carried out once this page plays the Extreme save (docs/48). */
+function RunIntent() {
+  useRunIntent()
+  return null
+}
+
+// Route-split out of the main bundle. The rework prototype (one page, no server) carries neither.
+const AdminApp = import.meta.env.VITE_PROTO ? () => null : lazy(() => import('@/admin/AdminApp'))
+const SetupPage = import.meta.env.VITE_PROTO ? () => null : lazy(() => import('@/setup/SetupPage'))
 const HelpPage = lazy(() => import('@/screens/Help').then((m) => ({ default: m.HelpPage })))
 const KitchenSink = lazy(() => import('@/screens/KitchenSink').then((m) => ({ default: m.KitchenSink })))
 const FxLab = lazy(() => import('@/screens/FxLab').then((m) => ({ default: m.FxLab })))
+const LeagueFightLab = lazy(() =>
+  import('@/screens/kitchen/LeagueFightLab').then((m) => ({ default: m.LeagueFightLab })),
+)
+const TalentLab = lazy(() => import('@/screens/kitchen/TalentLab').then((m) => ({ default: m.TalentLab })))
+
+/**
+ * The rework prototype (vite.proto.config.ts) runs inside an Artifact, whose address is not the game's: its pages live
+ * in memory, and it opens on Home (or a new game), not the title screen.
+ */
+const PROTO = !!import.meta.env.VITE_PROTO
+function Router({ children }: { children: ReactNode }) {
+  if (!PROTO) return <BrowserRouter>{children}</BrowserRouter>
+  return <MemoryRouter initialEntries={[useGame.getState().save ? '/home' : '/new']}>{children}</MemoryRouter>
+}
 
 function Lazy({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<div className="p-6 text-3xl">{t('ui.common.loading')}</div>}>{children}</Suspense>
+  return <Suspense fallback={<PageLoading />}>{children}</Suspense>
 }
 
 export function App() {
@@ -58,7 +86,10 @@ export function App() {
   return (
     <MotionConfig reducedMotion={settings.reducedMotion ? 'always' : 'user'}>
       <ErrorBoundary>
-        <BrowserRouter>
+        <Router>
+          {/* The tab's title per page, and the focus on its <h1> after a move (docs/15 §7). */}
+          <PageMeta />
+          <RunIntent />
           <Routes>
             <Route path="/" element={<Title />} />
             <Route path="/new" element={<NewGame />} />
@@ -71,15 +102,23 @@ export function App() {
             {import.meta.env.DEV && <Route path="/kitchen-sink" element={<Lazy><KitchenSink /></Lazy>} />}
             {import.meta.env.DEV && <Route path="/kitchen-sink/fx" element={<Lazy><FxLab /></Lazy>} />}
             <Route element={<GameLayout />}>
+              {import.meta.env.DEV && (
+                <Route path="/kitchen-sink/league-fight" element={<Lazy><LeagueFightLab /></Lazy>} />
+              )}
+              {import.meta.env.DEV && (
+                <Route path="/kitchen-sink/talent-lab" element={<Lazy><TalentLab /></Lazy>} />
+              )}
               <Route path="/home" element={<HomeScreen />} />
               {/* Home replaced the Map as the landing screen: old links land there. */}
               <Route path="/map" element={<Navigate to="/home" replace />} />
               <Route path="/daycare" element={<DayCareScreen />} />
+              <Route path="/extreme" element={<ExtremeScreen />} />
               <Route path="/area" element={<AreaScreen />} />
               <Route path="/team" element={<TeamScreen />} />
               <Route path="/shop" element={<ShopScreen />} />
               <Route path="/upgrades" element={<UpgradesScreen />} />
               <Route path="/pokedex" element={<PokedexScreen />} />
+              <Route path="/social" element={<SocialScreen />} />
               <Route path="/leaderboard" element={<LeaderboardScreen />} />
               <Route path="/friends" element={<FriendsScreen />} />
               <Route path="/versus" element={<VersusScreen />} />
@@ -87,12 +126,16 @@ export function App() {
               <Route path="/events/:id" element={<EventsScreen />} />
               <Route path="/underground" element={<UndergroundScreen />} />
               <Route path="/underground/dig" element={<UndergroundDig />} />
+              <Route path="/calendar" element={<CalendarScreen />} />
+              <Route path="/market" element={<FriendMarketScreen />} />
+              <Route path="/battles" element={<BattlesScreen />} />
+              <Route path="/battles/live" element={<BattleLiveScreen />} />
               <Route path="/raid/:areaId/:dex" element={<ProgressRaidScreen />} />
               <Route path="/settings" element={<SettingsScreen />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </BrowserRouter>
+        </Router>
         <ToastStack />
         {/* Phones and tablets play upright: turned sideways, the game waits behind it (docs/15 §6). */}
         <RotateCover />

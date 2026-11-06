@@ -1,0 +1,440 @@
+// Hidden talents (docs/51, docs/15 §38): the gem a Pokémon that carries its talent wears (green, blue or gold by
+// rarity), the sheet's Talent section, and the rules pop-up (once, in the one-time pop-ups' queue; then a tap on
+// the sheet's talent box).
+// The engine decides who carries what (`engine/talents.ts`); these only show it.
+import { motion } from 'framer-motion'
+import { useState } from 'react'
+import {
+  familyTalent,
+  familyUnlocked,
+  TALENT,
+  talentMet,
+  talentTier,
+  talentsOn,
+  type GameData,
+  type PokemonInstance,
+  type TalentKey,
+} from '@/engine'
+import { t } from '@/i18n'
+import { useT } from '@/i18n/react'
+import { useGame } from '@/store/game'
+import { cx } from '@/theme/util'
+import { PixelIcon } from './icons'
+import { RulesModal, type RuleRow } from './RulesModal'
+import { SheetSection } from './SheetSection'
+
+/** The gem of each rarity: green for common, blue for rare, gold for ultra, red for the unique one (Ditto's). */
+export const TIER_ICON = {
+  common: 'talentCommon',
+  rare: 'talentBase',
+  ultra: 'talent',
+  unique: 'talentUnique',
+} as const
+
+/** The numbers each talent's text says, from the engine's table. */
+const pct = (x: number) => Math.round(x * 100)
+const NUMBERS: Partial<Record<TalentKey, Record<string, number | string>>> = {
+  extraReroll: { n: TALENT.extraReroll },
+  doubleReroll: { n: TALENT.doubleReroll },
+  quick: { n: pct(TALENT.quick) },
+  ultraSpeed: { n: pct(TALENT.ultraSpeed) },
+  thickHide: { n: pct(TALENT.thickHide) },
+  opener: { n: pct(TALENT.opener) },
+  finisher: { n: pct(TALENT.finisher), below: pct(TALENT.finisherBelow) },
+  technician: { n: pct(TALENT.technician) },
+  triplePro: { n: pct(TALENT.triplePro) },
+  foursPro: { n: pct(TALENT.foursPro) },
+  powerSpot: { n: pct(TALENT.powerSpot) },
+  regenerator: { n: pct(TALENT.regenerator) },
+  leftovers: { n: pct(TALENT.leftovers) },
+  mindsEye: { x: TALENT.mindsEye },
+  raider: { n: pct(TALENT.raider) },
+  payDay: { n: pct(TALENT.payDay) },
+  amuletCoin: { n: pct(TALENT.amuletCoin) },
+  pickup: { n: pct(TALENT.pickup) },
+  daycareDarling: { n: pct(TALENT.daycareDarling) },
+  flameBody: { n: TALENT.flameBody },
+  falseSwipe: { n: TALENT.falseSwipe },
+  static: { n: pct(TALENT.static) },
+  shedSkin: { n: pct(TALENT.shedSkin) },
+  roughSkin: { n: pct(TALENT.roughSkin) },
+  intimidate: { n: pct(TALENT.intimidate), k: TALENT.intimidateHits },
+  guts: { n: pct(TALENT.guts) },
+  shellBell: { n: pct(TALENT.shellBell) },
+  friendGuard: { n: pct(TALENT.friendGuard) },
+  disguise: { n: pct(TALENT.disguise) },
+  pressure: { n: TALENT.pressure },
+}
+
+export const talentName = (key: TalentKey): string => t(`ui.talent.name.${key}`)
+export const talentText = (key: TalentKey): string => t(`ui.talent.text.${key}`, NUMBERS[key] ?? {})
+
+/** What the battle log says of a talent at work (`LogEntry` kind 'talent'). */
+export function talentLogText(
+  name: string,
+  e: { talent: TalentKey; amount?: number; hurt?: { amount: number }; entry?: boolean },
+  ally?: string,
+): string {
+  const talent = talentName(e.talent)
+  // One that works on its own, said as it first acts.
+  if (e.entry) return t('ui.talent.log.entry', { name, talent })
+  switch (e.talent) {
+    case 'leftovers':
+    case 'poisonHeal':
+    case 'flameHeal':
+    case 'shellBell':
+      return t('ui.talent.log.heal', { name, talent, n: e.amount ?? 0 })
+    case 'static':
+      return t('ui.talent.log.static', { name, ally: ally ?? '' })
+    case 'roughSkin':
+      return t('ui.talent.log.roughSkin', { name, ally: ally ?? '', n: e.hurt?.amount ?? 0 })
+    case 'pressure':
+      return t('ui.talent.log.pressure', { name, ally: ally ?? '' })
+    case 'shedSkin':
+      return t('ui.talent.log.shedSkin', { name })
+    case 'limber':
+      return t('ui.talent.log.limber', { name })
+    case 'magicGuard':
+      return t('ui.talent.log.magicGuard', { name })
+    case 'intimidate':
+    case 'disguise':
+      return t('ui.talent.log.guard', { name, talent })
+    case 'friendGuard':
+      return t('ui.talent.log.friendGuard', { name, ally: ally ?? '' })
+    case 'imposter':
+      return t('ui.talent.log.entry', { name, talent })
+    case 'mirror':
+      return t('ui.talent.log.mirror', { name, n: e.amount ?? 0 })
+    case 'sturdy':
+      return t('ui.talent.log.sturdy', { name })
+    case 'naturalCure':
+      return t('ui.talent.log.cure', { name })
+    case 'magmaArmor':
+      return t('ui.talent.log.magmaArmor', { name })
+    case 'powerSpot':
+      return t('ui.talent.log.powerSpot', { name, ally: ally ?? '' })
+    default:
+      return t('ui.talent.log.boost', { name, talent })
+  }
+}
+
+/**
+ * A hidden talent at work in battle (docs/51, docs/15 §38): its plaque, as an ability's pop-up in the main games. It
+ * slides in from its owner's edge (yours bottom left, the foe's top right) in three steps, holds while it reads, and
+ * slides back out; `still` (no animations), it shows and goes. One that works on its own (`entry`) says what it does.
+ */
+export function TalentPlaque({
+  talent,
+  name,
+  side,
+  entry,
+  pace = 1,
+  still,
+  rest,
+  className,
+}: {
+  talent: TalentKey
+  name: string
+  side: 'player' | 'enemy'
+  entry?: boolean
+  pace?: number
+  still?: boolean
+  /** Shown at rest, in place (the kitchen sink). */
+  rest?: boolean
+  className?: string
+}) {
+  const mine = side === 'player'
+  const off = mine ? '-110%' : '110%'
+  const hold = (entry ? 1.25 : 1) * pace
+  return (
+    <motion.div
+      role="status"
+      className={cx(
+        'pointer-events-none absolute z-30 flex max-w-[82%] items-center gap-2 bg-gold-pale py-1.5 pl-2 pr-3 text-ink shadow-ring',
+        mine ? 'bottom-[30%] left-0' : 'right-0 top-[20%] flex-row-reverse pl-3 pr-2 text-right',
+        className,
+      )}
+      initial={rest || still ? { opacity: 1 } : { x: off }}
+      animate={
+        rest
+          ? { opacity: 1 }
+          : still
+            ? { opacity: [1, 1, 0] }
+            : { x: [off, mine ? '-55%' : '55%', '0%', '0%', off] }
+      }
+      transition={{
+        duration: still ? hold : hold + 0.3,
+        times: still ? [0, 0.95, 1] : [0, 0.06, 0.12, 0.88, 1],
+        // Steps, never a glide: each keyframe held until the next (docs/15 §8).
+        ease: (p: number) => (p < 1 ? 0 : 1),
+      }}
+    >
+      <TalentGem talent={talent} size={28} className="shrink-0" />
+      <span className="grid min-w-0 gap-0.5">
+        <span className="truncate font-pixel-sm text-[16px] leading-none text-muted">{name}</span>
+        <span className="text-[24px] leading-none">{talentName(talent)}</span>
+        {entry && (
+          <span className="font-pixel-sm text-[16px] leading-tight text-muted">{talentText(talent)}</span>
+        )}
+      </span>
+    </motion.div>
+  )
+}
+
+/** A Pokémon of the save by id, its name as the player knows it (its nickname, else its species'). */
+function useMonName(uid: string, dex: number): string {
+  const data = useGame((s) => s.data)
+  const nick = useGame((s) => s.save?.box.find((p) => p.id === uid)?.nickname)
+  return nick || data.species[dex]?.name || t('ui.common.pokemon')
+}
+
+/** A family's talent unlocked (a result card, a toast's twin): caught with it, passed from a weaker one, found evolving. */
+export function TalentFoundCard({
+  uid,
+  dex,
+  talent,
+  how,
+}: {
+  uid: string
+  dex: number
+  talent: TalentKey
+  how: 'caught' | 'passed' | 'evolved' | 'candy'
+}) {
+  useT()
+  const name = useMonName(uid, dex)
+  return (
+    <div className="flex items-center gap-2 bg-gold-pale p-2 text-left shadow-ring">
+      <TalentGem talent={talent} size={24} />
+      <span className="grid gap-0.5">
+        <span className="text-xl leading-tight">
+          {t(`ui.talent.found.${how}`, { name, talent: talentName(talent) })}
+        </span>
+        <span className="font-pixel-sm text-[16px] leading-tight text-muted">{talentText(talent)}</span>
+      </span>
+    </div>
+  )
+}
+
+/** Regenerator and Pickup after a win (docs/51): what the talent did. */
+export function TalentAfterWinCard({
+  uid,
+  dex,
+  line,
+  talent,
+}: {
+  uid: string
+  dex: number
+  line: (name: string) => string
+  /** The talent that did it; its family's by default. */
+  talent?: TalentKey
+}) {
+  useT()
+  const data = useGame((s) => s.data)
+  const name = useMonName(uid, dex)
+  const key = talent ?? familyTalent(data, dex)
+  return (
+    <div className="flex items-center gap-2 bg-sky p-2 text-left shadow-ring">
+      <TalentGem talent={key} size={24} className="shrink-0" />
+      <span className="grid gap-0.5">
+        <span className="font-pixel-sm text-[16px] leading-none text-muted">{talentName(key)}</span>
+        <span className="text-lg leading-tight">{line(name)}</span>
+      </span>
+    </div>
+  )
+}
+
+/** A talent at work where it lives (a Day Care resident's): its gem, its name and what it does, on one line. */
+export function TalentLine({ talent, className }: { talent: TalentKey; className?: string }) {
+  useT()
+  return (
+    <p
+      className={cx(
+        'm-0 flex items-start gap-1.5 font-pixel-sm text-[16px] leading-tight text-ink',
+        className,
+      )}
+    >
+      <TalentGem talent={talent} size={14} className="mt-0.5 shrink-0" />
+      <span>
+        <b className="font-normal">{talentName(talent)}</b> · {talentText(talent)}
+      </span>
+    </p>
+  )
+}
+
+/** The switch, for the screens: off, no gem, no section, nothing. */
+export const useTalentsOn = (): boolean => useGame((s) => talentsOn(s.data))
+
+/**
+ * The gem: green, blue or gold for a common, rare or ultra talent, grey for a talent not known yet. Its title names
+ * the talent for screen readers and on hover.
+ */
+export function TalentGem({
+  talent,
+  unknown,
+  size = 12,
+  className,
+}: {
+  talent: TalentKey
+  unknown?: boolean
+  size?: number
+  className?: string
+}) {
+  useT()
+  const name = unknown ? t('ui.talent.unknown') : t('ui.talent.carries', { talent: talentName(talent) })
+  const icon = unknown ? 'talentLocked' : TIER_ICON[talentTier(talent)]
+  return <PixelIcon name={icon} size={size} title={name} className={cx('shrink-0', className)} />
+}
+
+/** A Pokémon's gem, when it carries its talent and the switch is on; nothing otherwise. */
+export function InstTalentGem({
+  inst,
+  size,
+  className,
+}: {
+  inst: Pick<PokemonInstance, 'dex' | 'talent'>
+  size?: number
+  className?: string
+}) {
+  const data = useGame((s) => s.data)
+  if (!inst.talent || !talentsOn(data)) return null
+  return <TalentGem talent={familyTalent(data, inst.dex)} size={size} className={className} />
+}
+
+/** The gem of a species' family talent (a listing's Pokémon, a want "with its talent"), while the switch is on. */
+export function DexTalentGem({ dex, size, className }: { dex: number; size?: number; className?: string }) {
+  const data = useGame((s) => s.data)
+  if (!talentsOn(data)) return null
+  return <TalentGem talent={familyTalent(data, dex)} size={size} className={className} />
+}
+
+/** The talent's name with its tier, as a chip of text: "Pickup · Base talent". */
+function TalentTitle({ talent, dim }: { talent: TalentKey; dim?: boolean }) {
+  useT()
+  return (
+    <span className={cx('flex flex-wrap items-center gap-x-2 gap-y-0.5', dim && 'text-muted')}>
+      <TalentGem talent={talent} size={16} />
+      <b className="text-[22px] font-normal leading-none">{talentName(talent)}</b>
+      <span className="font-pixel-sm text-[16px] leading-none text-muted">
+        {t(`ui.talent.tier.${talentTier(talent)}`)}
+      </span>
+    </span>
+  )
+}
+
+/**
+ * The sheet's Talent section: what this Pokémon's family has. Carried: its name, tier and what it does. Known but not
+ * learnt here: the same, dimmed, with how to learn it. Never met: "???" and how to find out. A tap shows the rules.
+ */
+export function TalentSection({ dex, inst }: { dex: number; inst?: PokemonInstance }) {
+  useT()
+  const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  const [info, setInfo] = useState(false)
+  if (!talentsOn(data)) return null
+  const has = inst ? !!inst.talent : !!save && familyUnlocked(save, data, dex)
+  return (
+    <SheetSection title={t('ui.talent.section')}>
+      {/* The box itself opens the rules (the user's call, 2026-10-30): no INFO button over it. */}
+      <TalentBox
+        talent={familyTalent(data, dex)}
+        has={has}
+        known={has || talentMet(save, data, dex)}
+        onClick={() => setInfo(true)}
+      />
+      <TalentRulesModal open={info} onClose={() => setInfo(false)} />
+    </SheetSection>
+  )
+}
+
+/**
+ * The section's box, in its three states: carried, known but not learnt, never met. With `onClick` the whole box is a
+ * button that opens the rules.
+ */
+export function TalentBox({
+  talent,
+  has,
+  known,
+  onClick,
+}: {
+  talent: TalentKey
+  has: boolean
+  known: boolean
+  onClick?: () => void
+}) {
+  useT()
+  const Box = onClick ? 'button' : 'div'
+  return (
+    <Box
+      {...(onClick && { type: 'button' as const, onClick, 'aria-haspopup': 'dialog' as const })}
+      className={cx(
+        'grid w-full gap-1 px-3 py-2 text-left shadow-ring-line',
+        has ? 'bg-paper' : 'bg-well',
+        onClick && 'cursor-pointer hover:shadow-ring focus-visible:shadow-ring',
+      )}
+    >
+      {known ? (
+        <>
+          <TalentTitle talent={talent} dim={!has} />
+          <p className={cx('copy', !has && 'text-muted')}>{talentText(talent)}</p>
+          {!has && <p className="font-pixel-sm text-[16px] text-muted">{t('ui.talent.notLearnt')}</p>}
+        </>
+      ) : (
+        <>
+          <span className="flex items-center gap-2">
+            <TalentGem talent={talent} unknown size={16} />
+            <b className="text-[22px] font-normal leading-none text-muted">{t('ui.talent.unknown')}</b>
+          </span>
+          <p className="copy text-muted">{t('ui.talent.unknownHint')}</p>
+        </>
+      )}
+    </Box>
+  )
+}
+
+export function useTalentRules(data: GameData): RuleRow[] {
+  useT()
+  const odds = (x: number | undefined, d: number) => pct(Number.isFinite(Number(x)) ? Number(x) : d)
+  const cfg = data.config.hiddenTalents
+  return [
+    { icon: 'talent', title: t('ui.talent.rules.what.title'), text: t('ui.talent.rules.what.text') },
+    {
+      icon: 'ball',
+      title: t('ui.talent.rules.catch.title'),
+      text: t('ui.talent.rules.catch.text', { n: odds(cfg?.wildChance, 0.05) }),
+    },
+    {
+      icon: 'up',
+      title: t('ui.talent.rules.evolve.title'),
+      text: t('ui.talent.rules.evolve.text', { n: odds(cfg?.evolveChance, 0.3) }),
+    },
+    { icon: 'talentBase', title: t('ui.talent.rules.tiers.title'), text: t('ui.talent.rules.tiers.text') },
+  ]
+}
+
+/** The rules (docs/15 §20), from a tap on the sheet's talent box (OK): they never open by themselves (2026-11-01). */
+export function TalentRulesModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useT()
+  const data = useGame((s) => s.data)
+  const rules = useTalentRules(data)
+  return (
+    <RulesModal
+      open={open}
+      onClose={onClose}
+      title={t('ui.talent.title')}
+      picture={<TalentBanner />}
+      icon="talent"
+      rules={rules}
+    />
+  )
+}
+
+/** The banner: the three gems on a night-blue ground, the gold one in the middle. */
+function TalentBanner() {
+  return (
+    <div className="light-scope absolute inset-0 flex items-center justify-center gap-6 bg-night" aria-hidden>
+      <PixelIcon name="talentBase" size={44} />
+      <PixelIcon name="talent" size={64} />
+      <PixelIcon name="talentLocked" size={44} />
+    </div>
+  )
+}

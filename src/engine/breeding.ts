@@ -3,7 +3,9 @@
 // group, every `breedDittoHours` for pairs with a Ditto. A clock only runs while it has a pair. One Egg waits at a
 // time; Egg now buys the next check early. The hatching itself is `hatchEgg` in daycare.ts.
 import { dayCareOf, isDayCareOpen } from './daycare'
+import { friendshipOn, queueEggReport } from './friendship'
 import type { Rng } from './rng'
+import { TALENT, talentOf } from './talents'
 import type { DayCareGuest, DayCareResident, DayCareState, EggParent, GameData, SaveData } from './types'
 
 const HOUR = 3_600_000
@@ -91,7 +93,8 @@ export function matesOf(save: SaveData, data: GameData, key: string): CareMember
   return ps.flatMap((p) => (p.a.key === key ? [p.b] : p.b.key === key ? [p.a] : []))
 }
 
-const parentOf = (m: CareMember): EggParent => (m.guest ? { dex: m.dex, owner: m.guest.ownerName } : { dex: m.dex })
+const parentOf = (m: CareMember): EggParent =>
+  m.guest ? { dex: m.dex, owner: m.guest.ownerName, ownerId: m.guest.owner } : { dex: m.dex }
 
 export type Clock = 'breed' | 'ditto'
 const CLOCKS: readonly Clock[] = ['breed', 'ditto']
@@ -101,6 +104,15 @@ const FIELD = { breed: 'breedAt', ditto: 'dittoAt' } as const
 export function clockMs(data: GameData, clock: Clock): number {
   const cfg = data.config.dayCare
   return Math.max(0.01, clock === 'breed' ? cfg.breedHours : cfg.breedDittoHours) * HOUR
+}
+
+/**
+ * A clock's interval for this save: Flame Body (docs/51) on one of your residents runs it `flameBody` times as fast. The
+ * admin's summary (`eggsPerWeek`) reads `clockMs`, the plain one.
+ */
+function stepMs(save: SaveData, data: GameData, clock: Clock): number {
+  const rush = dayCareOf(save).residents.some((r) => talentOf(data, r.inst) === 'flameBody')
+  return clockMs(data, clock) / (rush ? TALENT.flameBody : 1)
 }
 
 const lastOf = (dc: DayCareState, clock: Clock) => dc[FIELD[clock]]
@@ -139,14 +151,14 @@ export function syncEggClocks(save: SaveData, data: GameData, now: number): Save
 /** When a clock checks next; null while it has no pair (it isn't running). One with a pair that never ran starts now. */
 export function clockDueAt(save: SaveData, data: GameData, clock: Clock, now: number): number | null {
   if (!runningClocks(save, data).includes(clock)) return null
-  return (lastOf(dayCareOf(save), clock) ?? now) + clockMs(data, clock)
+  return (lastOf(dayCareOf(save), clock) ?? now) + stepMs(save, data, clock)
 }
 
 /** The clock the next Egg can come from: the sooner of those with pairs. Null with no pair: nothing is checked. */
 export function nextClock(save: SaveData, data: GameData, now: number): { clock: Clock; at: number } | null {
   return (
     runningClocks(save, data)
-      .map((clock) => ({ clock, at: (lastOf(dayCareOf(save), clock) ?? now) + clockMs(data, clock) }))
+      .map((clock) => ({ clock, at: (lastOf(dayCareOf(save), clock) ?? now) + stepMs(save, data, clock) }))
       .sort((x, y) => x.at - y.at)[0] ?? null
   )
 }
@@ -158,7 +170,7 @@ export const nextCheckAt = (save: SaveData, data: GameData, now: number) => next
 export function nextCheckProgress(save: SaveData, data: GameData, now: number): { at: number; done: number } | null {
   const next = nextClock(save, data, now)
   if (!next) return null
-  const step = clockMs(data, next.clock)
+  const step = stepMs(save, data, next.clock)
   return { at: next.at, done: Math.min(1, Math.max(0, (now - (next.at - step)) / step)) }
 }
 
@@ -183,7 +195,7 @@ export function processDayCare(save: SaveData, data: GameData, now: number, rng:
   // one that would have found the pair.
   const clocks = CLOCKS.flatMap((clock) => {
     const last = lastOf(dc, clock)
-    return last == null ? [] : [{ clock, last, step: clockMs(data, clock) }]
+    return last == null ? [] : [{ clock, last, step: stepMs(save, data, clock) }]
   }).sort((x, y) => x.last + x.step - (y.last + y.step))
   for (const { clock, last, step } of clocks) {
     const due = Math.floor((now - last) / step)
@@ -198,7 +210,17 @@ export function processDayCare(save: SaveData, data: GameData, now: number, rng:
     changed = true
   }
   if (!changed) return { save }
-  return laid ? { save: { ...save, dayCare: dc }, laid: true } : { save: { ...save, dayCare: dc } }
+  return laid
+    ? { save: reportEggFriends({ ...save, dayCare: dc }, data, dc.egg?.parents), laid: true }
+    : { save: { ...save, dayCare: dc } }
+}
+
+/** An Egg made with a friend's Pokémon keeps the friendship streak going (docs/60): the server is told later. */
+function reportEggFriends(save: SaveData, data: GameData, parents: readonly EggParent[] | undefined): SaveData {
+  if (!friendshipOn(data)) return save
+  let out = save
+  for (const p of parents ?? []) if (p.ownerId) out = queueEggReport(out, p.ownerId)
+  return out
 }
 
 export type RushRefusal = 'egg' | 'pair' | 'gold'
@@ -224,12 +246,13 @@ export function rushEgg(
   // There is a pair, so a clock runs.
   const { clock } = nextClock(save, data, now)!
   const p = rng.pick(ps.filter((x) => onClock(x, clock)))
+  const parents: [EggParent, EggParent] = [parentOf(p.a), parentOf(p.b)]
   return {
-    save: {
-      ...save,
-      gold: save.gold - price,
-      dayCare: { ...dc, [FIELD[clock]]: now, egg: { at: now, parents: [parentOf(p.a), parentOf(p.b)] } },
-    },
+    save: reportEggFriends(
+      { ...save, gold: save.gold - price, dayCare: { ...dc, [FIELD[clock]]: now, egg: { at: now, parents } } },
+      data,
+      parents,
+    ),
   }
 }
 

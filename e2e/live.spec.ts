@@ -1,6 +1,7 @@
 // Live events (docs/20): the admin's event reaches the game as content (a newer configVersion, here served from the
 // content cache the way a player gets it the second time), on the server's clock. Its pop-up once, Home's square, the
-// Shiny Parade's chip on the area, the Special Shop's section and its limit, Cash Flow's chip on the purse; a phone.
+// Shiny Parade's chip on the area, the Special Shop's section and its limit, Cash Flow's chip on the purse; several
+// at once, a recurring one's run among them; a phone.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { newLiveEvent, type LiveEvent, type SaveData } from '../src/engine'
@@ -80,7 +81,7 @@ test('a Shiny Parade: its pop-up once, the square on Home, the ×5 on the area',
   const pop = page.getByRole('dialog', { name: 'Shiny Parade' })
   await expect(pop).toBeVisible({ timeout: 15_000 })
   await expect(pop.getByText('Shiny Pokémon ×5')).toBeVisible()
-  await expect(pop.getByText('Wild Pokémon are 5 times more likely to be shiny here: Kanto.')).toBeVisible()
+  await expect(pop.getByText('Shinies 5× likelier in Kanto.')).toBeVisible()
   await expect(pop.getByText(/^2d [56]h left · until /)).toBeVisible()
   await pop.getByRole('button', { name: 'OK' }).click()
   await expect(pop).toBeHidden()
@@ -112,8 +113,8 @@ test('a Special Shop: Go to the shop, a never-sold item bought to its limit', as
   await expect(master).toContainText('NEVER SOLD')
   await expect(master).toContainText('1 of 1 left')
   await master.click()
-  await expect(section.getByText('One per player')).toBeVisible()
-  await section.getByRole('button', { name: 'Buy ₽9,000' }).click()
+  await expect(page.getByText('One per player')).toBeVisible()
+  await page.getByRole('button', { name: 'Buy ₽9,000' }).click()
   await expect(master).toContainText('Sold out')
   await expect(master).toBeDisabled()
   await expect.poll(async () => (await stored(page)).events?.liveBought).toEqual({ sale: { 'master-ball': 1 } })
@@ -134,6 +135,30 @@ test('Cash Flow: its rules, and +50% on the purse', async ({ page }) => {
   await pop.getByRole('button', { name: 'OK' }).click()
   await expect(page.getByRole('img', { name: 'Every ₽ you earn +50%' })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Live event: Cash Flow, \+50% on every ₽\./ })).toBeVisible()
+})
+
+test('several at once: a square each, their pop-ups one after the other, two Cash Flows adding up', async ({ page }) => {
+  // NOW is a Thursday: the weekly event's run started at 10:00 UTC today.
+  const weekly = live({
+    id: 'weekly',
+    type: 'cash',
+    cash: { multiplier: 1.5 },
+    title: { en: 'Thursday Cash' },
+    repeat: { kind: 'weekly', weekday: 4, weeks: [], time: '10:00', hours: 12 },
+  })
+  await boot(page, [parade, cash, weekly], playerSave())
+  await page.goto('/home')
+  // The earliest started first.
+  for (const name of ['Cash Flow', 'Shiny Parade', 'Thursday Cash']) {
+    const pop = page.getByRole('dialog', { name })
+    await expect(pop).toBeVisible({ timeout: 15_000 })
+    await pop.getByRole('button', { name: 'OK' }).click()
+    await expect(pop).toBeHidden()
+  }
+  await expect.poll(async () => (await stored(page)).events?.liveSeen).toEqual(['cash', 'parade', 'weekly@2027-04-22'])
+  await expect(page.getByTestId('live-square')).toHaveCount(3)
+  await expect(page.getByRole('button', { name: /^Live event: Thursday Cash, \+50% on every ₽\. Ends in (10h 0?0m|9h 5\dm)/ })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Every ₽ you earn +100%' })).toBeVisible()
 })
 
 test('a player short of its badges sees nothing', async ({ page }) => {
@@ -160,9 +185,12 @@ test('on a 360×640 phone: the square, the pop-up and the shop fit, in the Jerse
   await square.scrollIntoViewIfNeeded()
   await expect(square).toBeVisible()
   const sq = await square.boundingBox()
-  // The same size as the square beside it.
-  const daycare = await page.getByRole('button', { name: /Day Care/ }).first().boundingBox()
-  if (daycare) expect(Math.abs(sq!.height - daycare.height)).toBeLessThanOrEqual(2)
+  // The same size as the square beside it, if any: a locked feature has no square (docs/38 U3a).
+  const daycare = page.getByRole('button', { name: /^Day Care/ })
+  if (await daycare.count()) {
+    const dc = await daycare.first().boundingBox()
+    expect(Math.abs(sq!.height - dc!.height)).toBeLessThanOrEqual(2)
+  }
   for (const route of ['/home', '/shop']) {
     await page.goto(route)
     if (route === '/shop') await expect(page.getByRole('region', { name: 'Special Shop' })).toBeVisible({ timeout: 15_000 })

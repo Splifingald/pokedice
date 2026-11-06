@@ -541,7 +541,7 @@ async function fetchSpecies(): Promise<Species[]> {
       type2,
       baseHp: hpAtLevel(hpStat, 1),
       maxHp: hpAtLevel(hpStat, 100),
-      speed: Math.floor(stat('speed') / 10), // game Speed = base Speed ÷ 10, rounded down
+      speed: stat('speed'), // the real base Speed stat; battles add the level (docs/50)
       spriteUrl: SPRITE(dex),
       dice: composeDice(diceCount, type1, type2),
       rerolls: diceCount,
@@ -858,7 +858,25 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * and its switch, Off; its tags are the bundle's own, written below), then 0062 (double battles, docs/33: `trainers.duo`, which the trainers
  * below need, and the switch's row; its new trainers are no-ops before the areas, then come with the bundle), then 0063 (the Underground's teams, docs/34: its row, Off, and
  * delete_my_data once more), then 0065 (raid teams at their own levels: 0039's and 0060's team writers
- * redefined), then 0066 (the small worlds on the leaderboard: it redefines 0054's leaderboard). Folded into seed.sql
+ * redefined), then 0066 (the small worlds on the leaderboard: it redefines 0054's leaderboard), then 0068 (idle mode,
+ * docs/36: its switch's row, Off), then 0069 (recorded dice throws, docs/37: its switch's row, Off), then 0070 (the
+ * Underground's solo price, docs/34: its row gains `soloShare`, so it comes after 0063), then 0072 (recurring live
+ * events, docs/20 §9: 0063's ug_live redefined, so it comes after it), then 0073 (the status faces' new rules,
+ * docs/01 §3.2: the `status` row rewritten), then 0074 (the game-feel pass, haptics and battle music, docs/38: their
+ * switches' rows, Off), then 0075 (the shiny Pokédex, docs/39: its switch's row, Off), then 0076 (the raid
+ * overhaul, docs/40: its switch's row, Off, and raid_progress_dex taking the Mega raids' keys, so it comes after
+ * 0045), then 0078 (the Elite Rebattle on the Progression board: it redefines 0049's card writer, so it comes after
+ * it), then 0079 (game feel, haptics and battle music on for everyone: 0074's rows, so it comes after it), then 0080
+ * (the Unown Pokédex, docs/41: its switch's row, Off, and its prize), then 0081 (the League's heal, docs/42: its
+ * switch's row, Off), then 0083 (Route 1's set opening, docs/46: its switch's
+ * row, Off, Youngster Joey and Oddish on Route 1, which the upserts below then write again), then 0084, 0085 and
+ * 0087 (their headers say what), then 0088 (an old page's plain upsert refused over an existing save) and 0089 (a
+ * player's raids won, read back), then 0090 (Versus teams at their own levels: 0039's team writer redefined), and the
+ * later ones listed below (0108: the trade board's picks, after the trades' own; 0124: Tracks in the Snow's switch
+ * and tracks_open; 0126: the race of time and space's switch and its raids' checks, after 0060's, its Spear Pillar patch
+ * a no-op here, the bundle has no Snowglobe Valley; 0127: the Stairway of Plates' own switch, after 0057's
+ * raid_progress_portal, which it redefines). Folded into
+ * seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
  * migrations stay the single source of that SQL — they are written to be idempotent, so re-running them costs little.
@@ -888,6 +906,43 @@ export async function regionsPrelude(): Promise<string> {
       '0064_battle_powers.sql',
       '0065_raid_true_levels.sql',
       '0066_leaderboard_worlds.sql',
+      '0068_idle_mode.sql',
+      '0069_dice_throws.sql',
+      '0070_underground_solo_sell.sql',
+      '0071_kofi.sql',
+      '0072_live_recurring.sql',
+      '0073_status_faces.sql',
+      '0074_game_feel.sql',
+      '0075_shiny_dex.sql',
+      '0076_raid_overhaul.sql',
+      '0078_leaderboard_rebattle.sql',
+      '0079_game_feel_on.sql',
+      '0080_unown_dex.sql',
+      '0081_league_heal.sql',
+      '0083_route_1_opening.sql',
+      '0084_switches_retired.sql',
+      '0085_extreme_centers.sql',
+      '0087_extreme_speedrun.sql',
+      '0088_saves_no_overwrite.sql',
+      '0089_raids_done_mine.sql',
+      '0090_versus_true_levels.sql',
+      '0093_kofi_months.sql',
+      '0094_speed_by_level.sql',
+      '0095_hidden_talents.sql',
+      '0096_talent_candy.sql',
+      '0098_legend_cinema.sql',
+      '0100_gift_calendar.sql',
+      '0101_champion_cinema.sql',
+      '0105_outfits.sql',
+      '0108_trade_picks.sql',
+      '0123_gift_card.sql',
+      '0127_plates_run.sql',
+      '0126_time_race.sql',
+      '0125_whiteout.sql',
+      '0124_tracks_in_the_snow.sql',
+      '0136_rival_loss_heal.sql',
+      '0138_rival_match.sql',
+      '0139_versus_board_cache.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`
@@ -925,6 +980,8 @@ export function buildSql(b: {
     'alter table pokemon add column if not exists form jsonb;',
     // Day and night (0061, docs/32): a wild Pokémon met only by day or only by night.
     'alter table area_wild_pool add column if not exists time_of_day text;',
+    // Pokémon posing as items (docs/61 §3, migration 0111).
+    'alter table area_loot_pool add column if not exists disguise jsonb;',
     prelude,
     upsert(
       'type_chart',
@@ -1048,8 +1105,10 @@ export function buildSql(b: {
     ),
     upsert(
       'area_loot_pool',
-      ['id', 'area_id', 'item_key', 'weight', 'unique_find', 'min_qty', 'max_qty'],
-      b.areas.flatMap((a) => a.lootPool.map((l) => [l.id, a.id, l.itemKey, l.weight, l.unique, l.minQty, l.maxQty])),
+      ['id', 'area_id', 'item_key', 'weight', 'unique_find', 'min_qty', 'max_qty', 'disguise'],
+      b.areas.flatMap((a) =>
+        a.lootPool.map((l) => [l.id, a.id, l.itemKey, l.weight, l.unique, l.minQty, l.maxQty, l.disguise ?? null]),
+      ),
       ['id'],
     ),
     upsert(

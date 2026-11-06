@@ -9,7 +9,8 @@ export interface RaidFriend {
   name: string
   /** Their look: an id from src/lib/avatars, already checked. */
   avatar: string
-  team: { dex: number; level: number; shiny: boolean }[]
+  /** `talent`: it carries its hidden talent (docs/51), as their snapshot says from 0095. */
+  team: { dex: number; level: number; shiny: boolean; talent?: boolean }[]
   /** Times they've helped you catch a raid Pokémon. */
   helped: number
   /** Their name shines gold ("I am just rich", docs/25). */
@@ -22,7 +23,7 @@ const parseFriend = (r: RawFriend): RaidFriend => ({
   userId: String(r.user_id),
   name: r.name || 'Trainer',
   avatar: avatarOf(r.avatar).id,
-  team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny })),
+  team: (r.team ?? []).map((m) => ({ dex: Number(m.dex), level: Number(m.level), shiny: !!m.shiny, ...(m.talent === true && { talent: true }) })),
   helped: Number(r.helped) || 0,
   // A database before 0049 doesn't say: nobody's is.
   rich: r.rich === true,
@@ -93,6 +94,22 @@ export async function fetchProgressRaidFriends(key: string): Promise<RaidFriend[
   const { data, error } = await client.rpc('raid_progress_friend_teams', { p_key: key, ...realmArgs() })
   if (error || !Array.isArray(data)) return null
   return (data as RawFriend[]).map(parseFriend)
+}
+
+/**
+ * The progression raids you won, as the server recorded them (0089): no page can write over that record, unlike the
+ * save. Null when it can't be read (signed out, offline, a database before 0089).
+ */
+export async function fetchRaidsDone(): Promise<string[] | null> {
+  try {
+    const client = await getSupabase()
+    if (!client) return null
+    const { data, error } = await client.rpc('raid_progress_mine', realmArgs())
+    if (error || !Array.isArray(data)) return null
+    return data.map(String)
+  } catch {
+    return null
+  }
 }
 
 /** A progression raid's Pokémon is caught: the server counts it once, and the friends who helped get a gift each. */

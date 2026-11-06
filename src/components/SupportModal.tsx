@@ -1,18 +1,20 @@
 // "Support me": the developer's three asks, as a rules pop-up (docs/15 §17): join the Discord (the one that matters
-// most), invite friends, and support the developer with PayPal, under a line saying why the game itself can never be
-// paid for (Pokémon is a licence). The side menu's and Settings' SUPPORT ME open it whenever the admin has it switched
-// on with a PayPal link (engine/donation). It also shows once per region when its 5th badge is won, between fights,
-// after Prof. Oak's tutorials and the developer's answers; the share prompt waits for it.
-import { discordUrl, donationDue, donationEnabled, donationUrl, tutorialPending } from '@/engine'
+// most), invite friends, and support the developer on Ko-fi, under a line saying why the game itself can never be
+// paid for (Pokémon is a licence). The trainer menu's and Settings' SUPPORT ME open it whenever the admin has it
+// switched on with a Ko-fi link (engine/donation). Once per region, when its 5th badge is won, Home shows a note that
+// leads to it (`SupportNotice`; engine/popups.ts `homeNotices`).
+import { useState } from 'react'
+import { discordUrl, donationEnabled, donationUrl } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
-import { unseenReplies, useInbox } from '@/lib/feedback'
+import { useInbox } from '@/lib/feedback'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { closeDonation } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
+import { NoticeCard } from './NoticeCard'
 import { PixelButton } from './PixelButton'
 import { RuleList, RulesBanner, type RuleRow, type RulesPicture } from './RulesModal'
 import { useInviteShare } from './ShareTutorial'
@@ -20,32 +22,76 @@ import { useInviteShare } from './ShareTutorial'
 /** A village under the morning sun: the players' community. */
 export const SUPPORT_PICTURE: RulesPicture = { src: artUrl('village'), focus: '50% 58%' }
 
-export function DonationPopup() {
-  const due = useGame((s) => !!s.save && donationDue(s.save, s.data) && !tutorialPending(s.save, s.data))
-  const idle = useGame((s) => s.run.phase === 'idle')
-  const replies = useInbox((s) => (s.messages ? unseenReplies(s.messages).length : 0))
-  // A reload starts on the build's content, before the sign-in, the cloud save and the developer's answers are in: any
-  // of them can still take the pop-up away (the admin's settings, a region seen on another device, an answer first), so
-  // it waits for them rather than show and vanish.
+/**
+ * Whether Home may show the region's Support me note yet. A reload starts on the build's content, before the sign-in,
+ * the cloud save and the developer's answers are in: any of them can still take the note away (the admin's settings, a
+ * region seen on another device), so it waits for them rather than show and vanish.
+ */
+export function useDonationReady(): boolean {
   const status = useGame((s) => s.auth.status)
   const contentIn = useGame((s) => s.contentAsked)
   const synced = useCloudSync((s) => s.settled)
   const answersIn = useInbox((s) => s.loaded) || !isSupabaseConfigured
-  const ready = contentIn && status !== 'unknown' && (status !== 'signed_in' || synced) && answersIn
-  return <SupportModal open={ready && due && idle && !replies} onClose={() => undefined} />
+  return contentIn && status !== 'unknown' && (status !== 'signed_in' || synced) && answersIn
+}
+
+/**
+ * Support me on Home, once per region at its 5th badge (docs/43 §7: a note in the page, no longer a pop-up on
+ * arrival): the village, one line, and SUPPORT ME, which opens the three asks. ✕ or the asks' OK count as this
+ * region's showing (`closeDonation`).
+ */
+export function SupportNotice() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <SupportNoticeView onClose={closeDonation} onOpen={() => setOpen(true)} />
+      <SupportModal open={open} onClose={() => setOpen(false)} />
+    </>
+  )
+}
+
+/** The note itself (the kitchen sink shows it without the admin's config). */
+export function SupportNoticeView({ onClose, onOpen }: { onClose: () => void; onOpen: () => void }) {
+  const { t } = useT()
+  return (
+    <NoticeCard
+      picture={
+        <span
+          className="block h-14 w-14 bg-cover shadow-ring-thin"
+          style={{
+            backgroundImage: `url(${SUPPORT_PICTURE.src})`,
+            backgroundPosition: SUPPORT_PICTURE.focus,
+            imageRendering: 'pixelated',
+          }}
+          aria-hidden
+        />
+      }
+      title={t('ui.support.title')}
+      onClose={onClose}
+      testId="support-notice"
+      action={
+        <PixelButton size="sm" onClick={onOpen}>
+          <PixelIcon name="heart" size={18} className="shrink-0" />
+          {t('ui.support.button')}
+        </PixelButton>
+      }
+    >
+      {t('ui.home.supportLine')}
+    </NoticeCard>
+  )
 }
 
 const openTab = (url: string) => window.open(url, '_blank', 'noopener,noreferrer')
 
 /** The pop-up itself. Closing it, either way, also counts as this region's showing. */
 export function SupportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const paypal = useGame((s) => donationUrl(s.data))
+  const kofi = useGame((s) => donationUrl(s.data))
   const discord = useGame((s) => discordUrl(s.data))
   const enabled = useGame((s) => donationEnabled(s.data))
   return (
     <SupportView
-      open={open && enabled && !!paypal}
-      paypal={paypal ?? ''}
+      open={open && enabled && !!kofi}
+      kofi={kofi ?? ''}
       discord={discord}
       onClose={() => {
         closeDonation()
@@ -59,12 +105,12 @@ export function SupportModal({ open, onClose }: { open: boolean; onClose: () => 
 export function SupportView({
   open,
   onClose,
-  paypal,
+  kofi,
   discord,
 }: {
   open: boolean
   onClose: () => void
-  paypal: string
+  kofi: string
   /** The community Discord's invite; null (none set in the admin) leaves its row out. */
   discord: string | null
 }) {
@@ -103,7 +149,7 @@ export function SupportView({
       title: t('ui.support.me.title'),
       text: t('ui.support.me.text'),
       action: (
-        <PixelButton size="sm" onClick={() => openTab(paypal)}>
+        <PixelButton size="sm" onClick={() => openTab(kofi)}>
           <PixelIcon name="heart" size={18} />
           {t('ui.support.me.button')}
         </PixelButton>

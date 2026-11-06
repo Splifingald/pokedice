@@ -1,7 +1,8 @@
-// Trades (docs/23) against the mocked Supabase, on a phone: the rules pop-up once; a poster lists a Pokémon, then
+// Trades (docs/23) against the mocked Supabase, on a phone: the rules at the top of the page until GOT IT; a poster lists a Pokémon, then
 // finds it taken while away (back Home, "Trade done!" plays by itself, then what arrived; the Done list plays it
 // again); a listing taken while you play shows up when you come back Home; a taker trades for a listing from the
-// board; a guest sees the connect prompt and the newest listings; a shared link opens the listing, signed out too.
+// board; the board picks 5 for the player, NEW PICKS twice a day, and a search shows every listing (docs/23 §2.1); a
+// guest sees the connect prompt and the newest listings; a shared link opens the listing, signed out too.
 // With Johto started too, a Pokémon both Pokédexes list asks where it goes (on the confirm for a taker, at the end of
 // "Trade done!" for a poster), and one above that region's best waits there, locked (docs/23 §1.4).
 import AxeBuilder from '@axe-core/playwright'
@@ -128,7 +129,7 @@ async function seriousAxe(page: Page) {
     .map((v) => `${v.id}: ${v.nodes[0]?.target.join(' ')}`)
 }
 
-test('a poster: the rules once, a listing posted, then taken while away', async ({ page }) => {
+test('a poster: the rules on the page, a listing posted, then taken while away', async ({ page }) => {
   const save = trader(4, 12)
   let phase: 'none' | 'open' | 'taken' = 'none'
   const posted: Record<string, unknown>[] = []
@@ -149,6 +150,7 @@ test('a poster: the rules once, a listing posted, then taken while away', async 
   })
   await boot(page, save, {
     rpc: {
+      trade_picks: [row()],
       trade_board: [row()],
       trade_mine: () => (phase === 'none' ? [] : [mineRow(phase)]),
       trade_post: (body: Record<string, unknown>) => {
@@ -162,22 +164,28 @@ test('a poster: the rules once, a listing posted, then taken while away', async 
       },
     },
   })
-  await page.goto('/home')
+  await page.goto('/trades')
 
-  // Trades have opened: their rules, once, with a button straight there.
-  const rules = page.getByRole('dialog', { name: 'Trades' })
-  await expect(rules).toBeVisible()
+  // Trades are open: their rules where they apply (docs/43 §7), a card at the top of the page until GOT IT.
+  const rules = page.getByRole('region', { name: 'How Trades works' })
   await expect(rules.getByText('You lose the one you trade')).toBeVisible()
-  await rules.getByRole('button', { name: "Let's go!" }).click()
-  await expect(page).toHaveURL(/\/trades$/)
-  await expect(page.getByRole('heading', { name: 'Trades', level: 1 })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Trades', level: 1 })).toBeAttached()
+  const seen = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').trades?.rulesSeen)
+  await page.waitForTimeout(800)
+  expect(await seen()).toBeFalsy()
+  await rules.getByRole('button', { name: 'GOT IT' }).click()
+  await expect(rules).toHaveCount(0)
+  await expect.poll(seen).toBe(true)
   await expect(page.getByTestId('trade-board').getByText('Charmander')).toBeVisible()
   await fitsThePhone(page)
   expect(await seriousAxe(page)).toEqual([])
 
-  // Mine: an empty slot opens New listing.
+  // NEW LISTING, pinned at the foot on a phone (the page's one red action), with the slots used.
+  const newListing = page.getByRole('button', { name: /^New listing · 0\/4/ })
+  await expect(newListing).toBeInViewport()
   await page.getByRole('tab', { name: /Mine/ }).click()
-  await page.getByRole('button', { name: 'New listing' }).first().click()
+  await newListing.click()
   const sheet = page.getByRole('dialog', { name: 'New listing' })
   await sheet.getByRole('button', { name: 'Pidgey, Lv.12' }).click()
   await sheet.getByRole('radio', { name: 'Anything' }).click()
@@ -281,6 +289,7 @@ test('a taker: from the board to the picker, the confirm, the scene', async ({ p
   const applied: unknown[] = []
   await boot(page, { ...save, trades: { out: [], done: [], rulesSeen: true } }, {
     rpc: {
+      trade_picks: [row(), row({ id: 'L-far', code: 'ZZ99ZZ99', dex: 158, home_region: 'johto', name: 'Ethan' })],
       trade_board: [row(), row({ id: 'L-far', code: 'ZZ99ZZ99', dex: 158, home_region: 'johto', name: 'Ethan' })],
       trade_mine: [],
       trade_take: {
@@ -297,8 +306,13 @@ test('a taker: from the board to the picker, the confirm, the scene', async ({ p
   })
   await page.goto('/trades')
   const board = page.getByTestId('trade-board')
-  // A Johto Pokémon for a Kanto-only save: greyed, with why.
+  // The picks are listings this save can take: not the Johto one. A search shows it, greyed, with why.
+  await expect(board.getByRole('button', { name: /Charmander/ })).toBeVisible()
+  await expect(board.getByText('Start Johto first')).toHaveCount(0)
+  await page.getByRole('searchbox', { name: 'Search a Pokémon or a trainer' }).fill('Toto')
   await expect(board.getByText('Start Johto first')).toBeVisible()
+  await page.getByRole('searchbox', { name: 'Search a Pokémon or a trainer' }).fill('')
+  await expect(board.getByText('Start Johto first')).toHaveCount(0)
   await board.getByRole('button', { name: /Charmander/ }).click()
   const sheet = page.getByTestId('listing-sheet')
   await expect(sheet.getByText('You have 1 Pidgey')).toBeVisible()
@@ -322,6 +336,64 @@ test('a taker: from the board to the picker, the confirm, the scene', async ({ p
     )
   await expect.poll(async () => (await box()).some((p) => p.id === 'e2e-pidgey')).toBe(false)
   expect((await box()).find((p) => p.dex === 4)?.level).toBe(22)
+})
+
+test('the board: 5 picked for you, new Pokémon first; NEW PICKS twice a day; a search shows every listing', async ({
+  page,
+}) => {
+  // Charmander (the starter), a Pidgey and a Rattata. Six species it lacks, its own Charmander, a Johto Totodile.
+  // Listing ids are the server's uuids: the save passes them back to it on NEW PICKS.
+  const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+  const ends = (h: number) => iso(NOW + h * 3_600_000)
+  const lacks = [1, 7, 25, 10, 13, 21].map((dex, i) =>
+    row({ id: id(dex), code: `NEW${dex}`, dex, want: { kind: 'any' }, ends_at: ends(i + 1) }),
+  )
+  const rows = [
+    ...lacks,
+    row({ id: id(4), code: 'OWN4', dex: 4, want: { kind: 'any' }, ends_at: ends(0.5) }),
+    row({ id: id(158), code: 'FAR158', dex: 158, home_region: 'johto', want: { kind: 'any' }, ends_at: ends(0.2) }),
+  ]
+  const asked: Record<string, unknown>[] = []
+  await boot(page, trader(4, 12, { trades: { out: [], done: [], rulesSeen: true } } as Partial<SaveData>), {
+    rpc: {
+      trade_picks: (body: Record<string, unknown>) => {
+        asked.push(body)
+        return rows
+      },
+      trade_board: rows,
+      trade_mine: [],
+    },
+  })
+  await page.goto('/trades')
+  const board = page.getByTestId('trade-board')
+  const names = () => board.locator('li b > span.truncate').allTextContents()
+  // The five it lacks that end soonest; not its own species, not the Johto one.
+  await expect.poll(names).toEqual(['Bulbasaur', 'Squirtle', 'Pikachu', 'Caterpie', 'Weedle'])
+  expect(asked[0]).toMatchObject({ p_skip: null, p_me: { regions: ['kanto'] } })
+  await expect(page.getByText(/Pokémon you don't have first/)).toBeVisible()
+  await fitsThePhone(page)
+  expect(await seriousAxe(page)).toEqual([])
+
+  // NEW PICKS: the ones not shown yet first (the last it lacks, then its own species), then those seen.
+  await page.getByRole('button', { name: /New picks · 2\/2 today/ }).click()
+  await expect.poll(names).toEqual(['Spearow', 'Charmander', 'Bulbasaur', 'Squirtle', 'Pikachu'])
+  expect(asked.at(-1)!.p_skip).toEqual([1, 7, 25, 10, 13].map(id))
+  await page.getByRole('button', { name: /New picks · 1\/2 today/ }).click()
+  await expect.poll(names).toEqual(['Caterpie', 'Weedle', 'Spearow', 'Charmander', 'Bulbasaur'])
+  await expect(page.getByRole('button', { name: 'New picks tomorrow' })).toBeDisabled()
+  const picks = () =>
+    page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').trades?.picks?.rerolls)
+  await expect.poll(picks).toBe(2)
+  // Kept through a reload: none left today.
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'New picks tomorrow' })).toBeDisabled()
+
+  // A search, as often as you like: every listing that matches, with the chips.
+  await page.getByRole('searchbox', { name: 'Search a Pokémon or a trainer' }).fill('Totodile')
+  await expect(board.getByText('Start Johto first')).toBeVisible()
+  await expect(page.getByRole('radio', { name: /I can trade/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /New picks/ })).toHaveCount(0)
+  await fitsThePhone(page)
 })
 
 test('a guest: the connect prompt and the newest listings; a shared link opens the listing', async ({ page }) => {
@@ -359,9 +431,27 @@ test('switched off, Trades are nowhere: no menu row, and the page goes Home', as
   )
   await page.goto('/trades')
   await expect(page).toHaveURL(/\/home$/)
-  await page.getByRole('button', { name: /trainer menu/i }).click()
-  await expect(page.getByRole('button', { name: 'Friends' })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Trades/ })).toHaveCount(0)
+  // Social's strip has no Trades view.
+  await page.goto('/friends')
+  const strip = page.getByRole('navigation', { name: 'Social' })
+  await expect(strip.getByRole('link', { name: /^Friends/ })).toBeVisible()
+  await expect(strip.getByRole('link', { name: /^Trades/ })).toHaveCount(0)
+})
+
+test('PC: the board, and your listings beside it with NEW LISTING on top', async ({ page }) => {
+  const save = trader(4, 12, { trades: { out: [], done: [], rulesSeen: true } } as Partial<SaveData>)
+  const rows = [row(), row({ id: 'L2', dex: 25, want: { kind: 'any' } })]
+  await boot(page, save, { rpc: { trade_picks: rows, trade_board: rows } })
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/trades')
+  await expect(page.getByTestId('trade-board').getByText('Charmander')).toBeVisible()
+  const side = page.getByRole('complementary')
+  await expect(side.getByRole('heading', { name: 'Mine' })).toBeVisible()
+  await expect(side.getByRole('button', { name: /^New listing · 0\/4/ })).toBeVisible()
+  await expect(side.getByTestId('trade-slots')).toBeVisible()
+  // No tabs on PC: both are on screen.
+  await expect(page.getByRole('tab', { name: /Mine/ })).toHaveCount(0)
+  expect(await seriousAxe(page)).toEqual([])
 })
 
 test('a taker with Johto started picks the Box on the confirm; above Johto’s best it waits there, locked', async ({
@@ -372,6 +462,7 @@ test('a taker with Johto started picks the Box on the confirm; above Johto’s b
   const save = withJohto({ ...kanto, box: [...kanto.box, mon('e2e-ace', 9, 40)] })
   await boot(page, { ...save, trades: { out: [], done: [], rulesSeen: true } }, {
     rpc: {
+      trade_picks: [row({ dex: 25 })],
       trade_board: [row({ dex: 25 })],
       trade_mine: [],
       trade_take: { id: 'L-sora', listed: mon('sora-pikachu', 25, 9), given: mon('e2e-pidgey', 16, 22), with: 'Sora' },

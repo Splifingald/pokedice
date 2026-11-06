@@ -92,8 +92,11 @@ export interface SpeciesForm {
   /**
    * Battle forms only — when the engine switches to it. `lowHp`: below half HP, swapping one `swapDie.from` die for a
    * `swapDie.to` one (Giratina). `choice`: picked from a menu, every die turning into the form's type (Arceus).
+   * `weather`: as a fight under one of `weather` starts, its dice of the species' type turning into the form's
+   * (Castform, docs/62 §3).
    */
-  trigger?: 'lowHp' | 'choice' | null
+  trigger?: 'lowHp' | 'choice' | 'weather' | null
+  weather?: Weather[] | null
   swapDie?: { from: DieType; to: DieType } | null
   /** A `mega` row that is a Primal Reversion or an Ultra Burst: the same rules, its own name in the game. */
   mechanic?: 'primal' | 'ultra' | null
@@ -148,6 +151,24 @@ export const COMBO_NAMES: Record<ComboKey, string> = {
   five_kind: 'Five of a Kind',
 }
 
+/**
+ * How big a combo feels (docs/38): 1 a pair or two pairs, 2 three of a kind or a small straight, 3 a full house or four
+ * of a kind, 4 a full straight or five of a kind. Presentation only: the damage comes from the combo's own bonus.
+ */
+export const COMBO_TIERS: Record<ComboKey, 1 | 2 | 3 | 4> = {
+  pair: 1,
+  two_pair: 1,
+  three_kind: 2,
+  small_straight: 2,
+  full_house: 3,
+  four_kind: 3,
+  full_straight: 4,
+  five_kind: 4,
+}
+
+/** A roll's combo tier: 0 with no combo. */
+export const comboTier = (key: ComboKey | null | undefined): 0 | 1 | 2 | 3 | 4 => (key ? COMBO_TIERS[key] : 0)
+
 export interface ComboUpgradeRow {
   comboKey: ComboKey
   level: number
@@ -165,11 +186,32 @@ export interface DieUpgradeRow {
 /**
  * 'casino': the Game Corner — a slot machine the player can play as long as they like (Rocket Hideout). 'trick': Trick
  * or Treat (docs/29) — a ghost tempted with treats and caught with a Trick Ball, dealt only while its switch is on.
+ * 'versus': a real player's team (docs/54), dealt only while its switch is on and the server has one for the area.
+ * 'gift': the Gift card (docs/64 §4.0) — a present to open or make bigger, dealt only while its switch is on, in place
+ * of the area's item cards.
  */
-export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick'] as const
+export const ENCOUNTER_KINDS = ['wild', 'trainer', 'center', 'item', 'casino', 'trick', 'versus', 'gift'] as const
 export type EncounterKind = (typeof ENCOUNTER_KINDS)[number]
 /** Cards in an area's encounter deck; 'legend' is a fled legendary coming back (one per deck until it's caught). */
 export type DeckCard = EncounterKind | 'legend'
+
+/** One card of a set opening round (docs/46): what it is, decided in advance. */
+export type OpeningCard =
+  | { kind: 'wild'; dex: number; level: number }
+  /** A trainer from the trainers table; `prize` ₽ for the win, in place of the usual Σ levels. */
+  | { kind: 'trainer'; trainerId: string; prize?: number }
+  /** A find: `qty` of an item, or Pokédollars (itemKey 'money'). */
+  | { kind: 'item'; itemKey: string; qty: number }
+  | { kind: 'center' }
+
+/** An area's first rounds, set (docs/46): Route 1's opening. */
+export interface OpeningRoundsConfig {
+  access: EventAccess
+  /** The area they're played in. */
+  areaId: string
+  /** Its first rounds in order, each card in the order it's met. The rounds after them are shuffled decks as before. */
+  rounds: OpeningCard[][]
+}
 
 /** Day and night (docs/32): the half of the day an area's wild Pokémon is met in, where the region keeps the time. */
 export const DAY_TIMES = ['day', 'night'] as const
@@ -204,15 +246,35 @@ export interface LootEntry {
   /** Quantity found (for money: the ₽ amount), drawn between these. */
   minQty: number
   maxQty: number
+  /**
+   * A Pokémon posing as this item (docs/61 §3): Voltorb in a Poké Ball. Dealt and shown as the find, it springs out as
+   * a wild Pokémon when picked up, at a level between these. Only while its switch is on.
+   */
+  disguise?: LootDisguise | null
+}
+
+export interface LootDisguise {
+  dex: number
+  minLevel: number
+  maxLevel: number
 }
 
 /** Battle scenes (public/battle/*.png). */
 export const BATTLE_BACKGROUNDS = ['grass', 'sea', 'water', 'rock', 'default'] as const
 export type BattleBackground = (typeof BATTLE_BACKGROUNDS)[number]
 
+/**
+ * A roadblock boss (docs/61 §2): a Pokémon across the road, not a legendary. Its kind picks its words: Snorlax asleep,
+ * Sudowoodo the "tree", Kecleon unseen.
+ */
+export const ROADBLOCK_KINDS = ['sleeping', 'tree', 'invisible'] as const
+export type RoadblockKind = (typeof ROADBLOCK_KINDS)[number]
+
 export interface BossDef {
   dex: number
   level: number
+  /** A Pokémon blocking the road rather than a legendary (docs/61 §2): the same rules, its own words. */
+  roadblock?: RoadblockKind | null
   /** Victory Road style: the boss triggers when the team's average level reaches this, instead of once every round is done. */
   teamAvgThreshold?: number
   /** Upgrade level this legendary fights at; unset = the area's. */
@@ -229,6 +291,25 @@ export interface BossDef {
    * caught nowhere else here. Only while Raid Battles are switched on for the player; otherwise a boss as before.
    */
   raid?: boolean
+  /**
+   * It comes out of a present (the Gift card's, docs/64 §4.2: Evergreen Hill's Delibird): its challenge opens on a
+   * present that only grows and bursts on the last tap, then the fight. Only while the Gift card is on; a plain boss
+   * otherwise.
+   */
+  present?: boolean
+  /**
+   * A Titan (docs/62 §7): fought in two phases, the second bigger and stronger after a Herba Mystica, never caught.
+   * Only while the Titans' switch is on for the player; otherwise the area has no boss.
+   */
+  titan?: TitanDef | null
+}
+
+/** A Titan's own (docs/62 §7); its numbers are the Titans' config. */
+export interface TitanDef {
+  /** The species fought instead by a player in Green's look (Violet's side): Iron Treads for Great Tusk. */
+  versionDex?: number | null
+  /** A second Titan fought beside it in the first phase (Tatsugiri with Dondozo), which jumps in for the second. */
+  partner?: { dex: number; level: number } | null
 }
 
 /** Levels relative to the team average, both ends included: { min: -15, max: -10 } = 15 to 10 levels below. */
@@ -254,8 +335,16 @@ export interface Area {
   roundsToClear: number | null
   minLevel: number
   maxLevel: number
-  /** Copies of each card in a deck; Trick or Treat's (docs/29) is optional, as content from before it has none. */
-  encounterWeights: Record<Exclude<EncounterKind, 'trick'>, number> & { trick?: number }
+  /**
+   * Copies of each card in a deck; Trick or Treat's (docs/29), a real player's (docs/54) and the Gift card's (docs/64
+   * §4.0) are optional, as content from before them has none. While the Gift card is on, its copies replace the item
+   * cards: an area with `gift` deals no item card then.
+   */
+  encounterWeights: Record<Exclude<EncounterKind, 'trick' | 'versus' | 'gift'>, number> & {
+    trick?: number
+    versus?: number
+    gift?: number
+  }
   backtrackMultiplier: number
   legendaryBoss: BossDef[] | null
   scalesToTeam: boolean
@@ -277,13 +366,203 @@ export interface Area {
   lootPool: LootEntry[]
   /**
    * How the area plays instead of rounds: Distortion World's portal run (docs/28), Newmoon Island's nightmare
-   * (docs/30). Absent or null = a plain area.
+   * (docs/30), Moonlit Glade's Tracks in the Snow (docs/64 §4.1), Crown Shrine's whiteout (§4.3), Spear Pillar's race
+   * of time and space (§4.4). Absent or null = a plain area.
    */
   mode?: AreaMode | null
 }
 
-/** An area's special mode: the portal run (docs/28) or the nightmare (docs/30). */
-export type AreaMode = PortalRunMode | NightmareMode
+/**
+ * An area's special mode: the portal run (docs/28), the nightmare (docs/30), the Safari (docs/61 §4), Tracks in the Snow
+ * (docs/64 §4.1), the whiteout (§4.3) or the time race (§4.4).
+ */
+export type AreaMode = PortalRunMode | NightmareMode | SafariMode | TracksMode | TimeRaceMode | WhiteoutMode
+
+/** One of the race's two gates at a fork leading to a legend (docs/64 §4.4): its type, and whose raid it opens. */
+export interface TimeRaceLegend {
+  type: PokeType
+  /** The legend's dex: one of the area's raid bosses (`legendaryBoss`). */
+  dex: number
+}
+
+/**
+ * The race of time and space (docs/64 §4.4, Spear Pillar): a time trial. From READY! the clock runs on the server's
+ * time: `perFork` fights after each fork, each fork two gates of a type (the next foes of that type, drawn from the
+ * area's wild pool); the forks are `forks` then the last one, whose gates are the `legends`' types: the gate taken there
+ * opens that legend's raid when the last fight is won within `seconds`. Each gate holds a find: an item, or a time shard
+ * (`shard.seconds` more on the clock). No Pokémon Center, no catch, no way out but a full K.O. or the clock; inside it
+ * every fight plays at one speed (`speed`) with no auto-battle, so the clock means the same for everyone. Once that
+ * legend is caught, one `replay` with its own forks, the other legend's gate alone at the end, foes `levelBonus` higher
+ * and `seconds` on the clock. Every number is the admin's.
+ */
+export interface TimeRaceMode {
+  kind: 'timeRace'
+  /** The forks before the last, in order: two gate types each. */
+  forks: [PokeType, PokeType][]
+  /** The last fork's gates: each type opens its legend's raid. */
+  legends: TimeRaceLegend[]
+  /** Fights after each fork (3). */
+  perFork: number
+  /** The clock at READY!, in seconds (12:00). */
+  seconds: number
+  /** A gate's find: a time shard `chance` % of the time (`seconds` more on the clock), else an item from `items`. */
+  shard: { chance: number; seconds: number }
+  items: { key: string; qty: number; weight: number }[]
+  /** The battle's speed inside the race, for everyone (1.5: the quick speed). */
+  speed: number
+  /** The one replay, once the first legend is caught: its forks, its foes' extra levels, its clock. */
+  replay: { forks: [PokeType, PokeType][]; levelBonus: number; seconds: number }
+  /** The legends' raids once won: their level, the foe's dice level, its HP bars and the teams' level cap. */
+  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number }
+}
+
+/** A gate at a fork, as drawn: its type and its find (an item, or a time shard; none when the admin left neither). */
+export interface TimeRaceGate {
+  type: PokeType
+  find: { kind: 'shard'; seconds: number } | { kind: 'item'; key: string; qty: number } | null
+}
+
+/** Where the race stands, in its area's progress (so it's saved and parked with the region). */
+export interface TimeRaceState {
+  /** In a try: the player can't leave the area until it is won, lost to the clock or to a full K.O. */
+  active: boolean
+  /** The server's time at READY! (ms). */
+  startedAt?: number
+  /** The server's time the clock reaches 0:00 (ms): READY! plus the clock plus the shards picked up. */
+  deadline?: number
+  /** Fights won this try. */
+  fights: number
+  /** The gates taken this try, in order (their types). */
+  path: PokeType[]
+  /** A fork is open: its gates, waiting for the pick. */
+  gates?: TimeRaceGate[] | null
+  /** Species met since the last fork (the next foe is another one while the pool allows). */
+  met?: number[]
+  /** Time shards picked up this try. */
+  shards?: number
+  /** What was left on the clock when the last try was won (ms), for the win's line. */
+  left?: number
+  /** The legends (dex) whose raid a won try opened, in order: the first race's, then the replay's. */
+  won?: number[]
+  /** The last win's moment has played. */
+  wonSeen?: boolean
+  /** Tries started here. */
+  tries?: number
+}
+
+/** One of the whiteout's foes (docs/64 §4.3): a wild Pokémon at a set level, met in its wave's order. */
+export interface WhiteoutFoe {
+  dex: number
+  level: number
+}
+
+/**
+ * The whiteout (docs/64 §4.3, Crown Shrine): weather survival. Its `waves` of fixed foes are fought one after the other,
+ * as wild Pokémon that can't be caught, in the blizzard: every Pokémon that isn't of the weather's spared types loses
+ * the weather's share of its max HP each round, both sides (the raids' rule, engine/raidSpecials.ts). After every wave
+ * a bonfire heals the team `bonfirePercent` % of each one's max HP, and it is the only place the team can change and
+ * the bag be used; in battle the bag stays shut. After the last bonfire: the area's boss, in the blizzard too. Caught,
+ * the area closes for good; a full K.O. sends the player back to wave 1. Every number is the admin's.
+ */
+export interface WhiteoutMode {
+  kind: 'whiteout'
+  waves: WhiteoutFoe[][]
+  /** The weather of every fight here: snow (Ice spared) or a sandstorm (Rock, Ground, Steel spared); null = none. */
+  weather: 'snow' | 'sand' | null
+  /** % of max HP a bonfire gives back to every team member still standing (never above its max). */
+  bonfirePercent: number
+}
+
+/** Where the whiteout stands, in its area's progress (so it's saved and parked with the region). */
+export interface WhiteoutState {
+  /** Under way: the player can't travel elsewhere until it ends. */
+  active: boolean
+  /** Waves cleared this try (the next foes are `waves[wave]`). */
+  wave: number
+  /** Foes beaten in the wave under way. */
+  foe: number
+  /** At a bonfire (a wave just cleared, or the boss got away): the team and the bag open, MOVE ON next. */
+  bonfire?: boolean
+  /** This bonfire's heal has been given (a reload doesn't give it twice). */
+  warmed?: boolean
+  /** Every wave and bonfire behind: the boss is next. */
+  boss?: boolean
+  /** The boss caught: the blizzard is over, the area closed for good. */
+  won?: boolean
+  /** The outro has played. */
+  wonSeen?: boolean
+  /** Tries started here (a wipe ends one). */
+  tries?: number
+}
+
+/** One round of Tracks in the Snow (docs/64 §4.1): its glade of snowy bushes and what they hold. */
+export interface TracksRound {
+  /** Bushes on a side: a size × size glade. */
+  size: number
+  /** Bushes the player may open before the snow falls (a fresh glade, Stantler moved). */
+  taps: number
+  /** Bushes holding a wild Pokémon of the area's pool, a find of its loot, a warm cabin (a Pokémon Center's heal). */
+  wild: number
+  finds: number
+  cabins: number
+  /** Stantler never hides in one of the 8 bushes around the first one opened either (the 4 × 4: a little hunting). */
+  apart: boolean
+}
+
+/**
+ * Tracks in the Snow (docs/64 §4.1, Moonlit Glade): hide and seek with Stantler, round after round. Each round is a
+ * glade of snowy bushes; the first opened is never Stantler's (it is hidden only then, away from it). Every bush opened
+ * shows hoofprints pointing at it (or only the empty ones, `emptyPrintsOnly`). Each round but the last ends on a wild
+ * Stantler (the boss's species, catchable); the last on the area's boss (the shiny Stantler). Every number is the
+ * admin's.
+ */
+export interface TracksMode {
+  kind: 'tracks'
+  rounds: TracksRound[]
+  emptyPrintsOnly: boolean
+}
+
+/** What a bush of the glade holds. */
+export type TracksBush = 'stantler' | 'wild' | 'find' | 'cabin' | 'empty'
+
+/** The glade being searched (one snowfall's): it lives in the save, so a reload can't reshuffle it. */
+export interface TracksField {
+  /** Bushes left to open before the snow falls. */
+  taps: number
+  /** What each bush holds, row by row; null until the first is opened (Stantler is hidden then, away from it). */
+  bushes: TracksBush[] | null
+  /** The bushes opened, in order. */
+  opened: number[]
+  /** Stantler was found: its fight (and its catch) decide; back on the glade without it, it has bolted. */
+  found?: boolean
+  /** Fresh snow fell on this glade (the last one ran out of taps): said on the glade until a bush is opened. */
+  snowed?: boolean
+  /** Stantler bolted to another bush (it fled, or the throw missed): said on the glade until a bush is opened. */
+  bolted?: boolean
+}
+
+/** Where Tracks in the Snow stands, in its area's progress (so it's saved and parked with the region). */
+export interface TracksState {
+  /** In the glade: begun, not over. A trip Home keeps it (and its field). */
+  active: boolean
+  /** Rounds cleared, kept through a wipe and a trip Home: the next is `rounds[round]`. */
+  round: number
+  field?: TracksField | null
+  /** The shiny Stantler caught: the glade closes for good. */
+  won?: boolean
+  /** The outro has played. */
+  wonSeen?: boolean
+  /** Times the glade was entered (BEGIN). */
+  tries?: number
+}
+
+/**
+ * A Safari (docs/61 §4): a secret area of its own where nobody battles. Its wild cards are Safari encounters, Trick or
+ * Treat's gauge with Bait and Safari Balls, while the Safari's switch is on; off, they're fought as wild Pokémon.
+ */
+export interface SafariMode {
+  kind: 'safari'
+}
 
 /** One of the nightmare's foes, met in its order (docs/30): a wild Pokémon at a set level. */
 export interface NightmareFoe {
@@ -340,8 +619,17 @@ export interface NightmareState {
  * distortion offers `offers` boons of distinct kinds drawn by weight; the last one wins the run and opens the area's
  * raid at `raid`'s numbers. Every number is the admin's (Admin → Areas).
  */
+/**
+ * How a portal run is dressed (docs/28, docs/64 §4.5): Distortion World's portals (the default), or the Hall of
+ * Origin's stairway of light, its landings ended by altars and its damage boons named after Arceus's Plates. The
+ * rules and numbers are the same either way: only the words and the effects change.
+ */
+export type PortalSkin = 'distortion' | 'plates'
+
 export interface PortalRunMode {
   kind: 'portal'
+  /** Its look (absent: Distortion World's). */
+  skin?: PortalSkin
   portals: number
   wild: number
   items: number
@@ -356,8 +644,12 @@ export interface PortalRunMode {
   die: { weight: number; maxDice: number }
   /** A rare item into the bag, drawn from `items` by weight. */
   item: { weight: number; items: { key: string; weight: number }[] }
-  /** The area's raid once the run is won: its level, the foe's dice level, its HP bars and the teams' level cap. */
-  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number }
+  /**
+   * The area's raid once the run is won: its level, the foe's dice level, its HP bars and the teams' level cap.
+   * `barTypes`: the type the raid Pokémon takes at the start of each bar (the Hall of Origin's Arceus changing its Plate:
+   * Normal → Ice → Steel → Dragon), through its type forms; absent or short, it keeps the type it has.
+   */
+  raid: { level: number; upgradeLevel: number; bars: number; teamCap: number; barTypes?: PokeType[] }
 }
 
 /** One boon a distortion offers (docs/28), as drawn: who and what it names is fixed when it's offered. */
@@ -402,6 +694,11 @@ export type UnlockCondition =
   | { kind: 'area'; areaId: string }
   /** Another area is cleared — e.g. a small world's league beaten, every main area done (docs/26 §2.5). */
   | { kind: 'cleared'; areaId: string }
+  /**
+   * Every species listed is caught, in any region's Pokédex (docs/61 §1): Snowpoint Temple waits for the three Regis,
+   * caught in Hoenn. Caught rather than owned, so trading one away doesn't shut the area again.
+   */
+  | { kind: 'caught'; dex: number[] }
 
 /**
  * The roaming legendaries. They have no area of their own: once every Pokémon in `requires` has been **caught**, each
@@ -429,6 +726,8 @@ export interface SlotOutcome {
  * weights first, then the reels are laid out to show it (1, 2 or 3 balls — or 3 prize Pokémon, the jackpot).
  */
 export interface SlotMachineConfig {
+  /** Off (the default since 2026-10-25): no Game Corner card is dealt anywhere, the wheel gives Porygon instead. */
+  access: EventAccess
   /** Pokédollars per spin. */
   cost: number
   oneBall: SlotOutcome
@@ -479,6 +778,8 @@ export interface TrainerMon {
   item?: string
   /** Shiny colours (cosmetic only), set per trainer in the admin. */
   shiny?: boolean
+  /** Dealt with its family's hidden talent for this fight (docs/51): never set in the data. */
+  talent?: boolean
 }
 
 export type TrainerRole = 'trainer' | 'leader' | 'elite' | 'champion'
@@ -529,10 +830,19 @@ export type ItemEffect =
   | { kind: 'fossil'; dex: number; level: number; hours: number }
   /** Rare Candy: levels, from the Team screen. */
   | { kind: 'level'; amount: number }
-  /** Poké Balls: added to the catch die. */
-  | { kind: 'ball'; bonus: number }
+  /** Poké Balls: added to the catch die. `raidOnly`: thrown in raids alone (the Raid Ball, docs/44). */
+  /**
+   * `talentBoost` (the Friend Ball, docs/60): a catch with it has more chances to find the Pokémon's hidden talent, by
+   * the player's best friendship streak (`friendBallBoost`).
+   */
+  | { kind: 'ball'; bonus: number; raidOnly?: boolean; talentBoost?: boolean }
   /** The Link Cable: evolves a Pokémon that only evolves by trade (`trade.evolveOnTrade`), from the Team screen. */
   | { kind: 'link' }
+  /**
+   * The Talent Candy (docs/51): reveals the hidden talent of a Pokémon whose family hasn't found it here, from the Team
+   * screen; the whole family carries it from then on. Does nothing while hidden talents are off.
+   */
+  | { kind: 'talent' }
   /**
    * The Bait: after a ball's throw falls short, its own die (these faces) is thrown and added to the total
    * (engine/catching). Never chosen from the bag: the catch offers it.
@@ -566,32 +876,37 @@ export interface ItemDef {
 export interface StatusRules {
   /** Burn and Poison hurt by a share of the victim's max HP each turn (at least 1): Burn `percentPerStack`% per stack. */
   burn: { threshold: number; percentPerStack: number; duration: number }
-  poison: { threshold: number; percent: number; duration: number }
-  frozen: { threshold: number; stunTurns: number }
-  paralyze: { threshold: number; stunTurns: number }
-  /** Confusion: the victim's next attack still lands, then it takes `recoilPercent`% of its max HP as recoil. */
-  confuse: { threshold: number; recoilPercent: number }
-  /** Heal faces: at the threshold the attacker heals itself, on top of the damage it deals. */
-  heal: { threshold: number; amount: 'rollTotal' | 'healFaces' }
+  /** Poison: one face is enough. It doesn't stack: another only brings its turns back up. */
+  poison: { percent: number; duration: number }
+  /** Freeze and Paralysis: each face gives a 1-in-`sureAt` chance to land, so `sureAt` faces make it sure. */
+  frozen: { sureAt: number; stunTurns: number }
+  paralyze: { sureAt: number; stunTurns: number }
+  /**
+   * Confusion: the victim's next attack still lands, then it takes `recoilPercentPerFace`% of its max HP as recoil per
+   * Confuse face that confused it, `maxFaces` at most ("a bit confused", "confused", "very confused").
+   */
+  confuse: { recoilPercentPerFace: number; maxFaces: number }
 }
 
 export type SkipPolicy = 'free' | 'once' | 'none'
 
-export interface EnergyConfig {
-  /** Off = encounters are free and the counter is hidden. */
-  enabled: boolean
-  /** The cap, and what a new save starts with. */
-  max: number
-  /** Real-time minutes per point regained (offline too). */
-  minutesPerEnergy: number
-}
-
-/** "Support me": the developer's pop-up and its PayPal button (Admin → Config). */
+/** "Support me": the developer's pop-up and its Ko-fi button (Admin → Config). */
 export interface DonationConfig {
-  /** Off = the pop-up never shows. It also stays hidden while `paypalUrl` is empty. */
+  /** Off = the pop-up never shows. It also stays hidden while `kofiUrl` is empty. */
   enabled: boolean
-  /** Where the PayPal button leads (a paypal.me or donate link). */
-  paypalUrl: string
+  /** Where the Ko-fi button leads (the developer's ko-fi.com page). */
+  kofiUrl: string
+  /** The month's target, in `currency`, for the weekly #support-me post on Discord; 0 = the post names none. */
+  monthlyGoal: number
+  /** The Ko-fi page's currency (ISO code, e.g. EUR): the goal's, and the one the weekly post counts in. */
+  currency: string
+  /**
+   * The first month the goal counts ("2026-10"): from there, what goes past a month's goal covers the next ones, and
+   * the weekly post says how many months ahead are covered. '' = the month of Ko-fi's first payment.
+   */
+  startMonth: string
+  /** Raised before Ko-fi's webhook was connected (Ko-fi only reports new payments), counted in `startMonth`. */
+  raisedBefore: number
   /** Bumped by the admin's reset: every player who has already seen the pop-up gets it once more. */
   round: number
 }
@@ -602,10 +917,72 @@ export type EventId = (typeof EVENT_IDS)[number]
 
 /**
  * Each event type's switch in the admin (the user's rule, 2026-10-11): off (nowhere in the game), on for the admin only
- * (to try it in production first), on for everyone. Off by default.
+ * (to try it in production first), on for the admin and the beta testers' list (docs/65 §3, offered only where the
+ * feature's server functions read `access_open`), on for everyone. Off by default.
  */
-export const EVENT_ACCESS = ['off', 'admin', 'all'] as const
+export const EVENT_ACCESS = ['off', 'admin', 'beta', 'all'] as const
 export type EventAccess = (typeof EVENT_ACCESS)[number]
+
+/** One place band of the week's rewards: ranks up to `upTo` (after the band before) get these. */
+export interface LeagueRewardBand {
+  upTo: number
+  raidBalls: number
+  rareCandies: number
+}
+
+/** Real-player battles in areas (docs/54). */
+export interface AreaVersusConfig {
+  access: EventAccess
+  /** A real player's team pays this × a trainer's ₽ for each K.O. */
+  prizeMultiplier: number
+  /** A team is met this many days after its owner last played there. */
+  recentDays: number
+  /** An unanswered friend request goes after this many days. */
+  requestDays: number
+  /** The cards go among the round's last this many. */
+  lastCards: number
+  /**
+   * The level match's own switch (the user's ask, 2026-11-03): a team whose best Pokémon stands more than `levelMargin`
+   * above the player's best in the region is scaled down, and fights with the area's dice and combos. Off when missing.
+   */
+  levelMatchAccess: EventAccess
+  /** Their best Pokémon is at most this many levels above the player's best. */
+  levelMargin: number
+}
+
+export interface VersusLeagueConfig {
+  access: EventAccess
+  /** The global board's own switch (docs/44 §8): every player of the week, no rewards. Off when missing. */
+  globalAccess?: EventAccess
+  /** Trophies for a win with 1, 2 or 3 Pokémon left; a loss costs what the opponent had left, the same way. */
+  trophies: [number, number, number]
+  /** Below this many trophies, a loss costs nothing. */
+  safeBelow: number
+  /** A group's places. */
+  groupSize: number
+  /** Players each group is made for on Monday: the rest of its places wait for late players and bots. */
+  groupFill: number
+  /** Bots seated in each group with room, on each bot day. */
+  botsPerDay: number
+  /** The days bots are seated (1 = Monday … 7 = Sunday, UTC). */
+  botDays: number[]
+  /** Opponents are offered within this share of your trophies, and at least `rangeMin` either way. */
+  range: number
+  rangeMin: number
+  /** A win is refused under this many seconds, or under `secondsPerMove` for each of the player's moves. */
+  minWinSeconds: number
+  secondsPerMove: number
+  /** The trophies from which a bot's team gets stronger: a tier each (the last brings all three powers). */
+  botTiers: number[]
+  /**
+   * Where seated bots' trophies are headed by Sunday night: [lowest, highest], most of them near the bottom. Fixed, so
+   * every group gets bots as strong as every other's, whatever its players do (the user's rule, 2026-11-01).
+   */
+  botTargets: [number, number]
+  /** ₽ for each trophy at the end of the week. */
+  goldPerTrophy: number
+  rewards: LeagueRewardBand[]
+}
 
 /** What every event has, whatever it does (Admin → Events). */
 export interface EventDef {
@@ -624,13 +1001,45 @@ export interface EventDef {
   rules: string[]
 }
 
-export type WheelReward = { kind: 'gold'; amount: number } | { kind: 'item'; key: string; qty: number }
+export type WheelReward =
+  | { kind: 'gold'; amount: number }
+  | { kind: 'item'; key: string; qty: number }
+  /** The jackpot's Pokémon: it joins as a catch does (team, or the Box). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean }
 
 /** One prize of the Fortune Wheel: it takes `count` equal slices, each won `odds` % of the time. */
 export interface WheelPrize {
   reward: WheelReward
   count: number
   odds: number
+}
+
+/**
+ * One stage of the wheel's jackpot slice (the user's design, 2026-10-25): its prize, won `odds` % of spins whatever the
+ * other slices add up to. A Pokémon stage gives way to the next once that Pokémon is caught (shiny: owned shiny); an
+ * item stage stays for good. `value` is the ₽ a Pokémon counts for in the wheel's average (an item counts its price).
+ */
+export interface WheelJackpot {
+  reward: WheelReward
+  odds: number
+  value: number
+}
+
+/** The wheel's tickets: one a spin, one free every `everyHours` up to `cap` held, `price` ₽ each while under it. */
+export interface WheelTickets {
+  everyHours: number
+  cap: number
+  price: number
+  /** What a spin may pay back on average, in ₽ (the admin is warned above it). */
+  maxAverage: number
+}
+
+export type WheelConfig = EventDef & {
+  /** The ordinary slices (the jackpot's slice comes on top of them). */
+  slices: WheelPrize[]
+  /** The jackpot's stages, in order. */
+  jackpot: WheelJackpot[]
+  tickets: WheelTickets
 }
 
 export const REBATTLE_TIER_IDS = ['bronze', 'silver', 'gold', 'diamond'] as const
@@ -732,13 +1141,13 @@ export type RebattleLineups = Record<string, Partial<Record<RebattleTierId, stri
 export interface EventsConfig {
   /** Home shows a locked "Special events" square from this many Kanto badges until the first event opens. */
   teaserBadges: number
-  wheel: EventDef & { prizes: WheelPrize[] }
+  wheel: WheelConfig
   raid: EventDef & RaidConfig
   rebattle: EventDef & { tiers: RebattleTier[] }
 }
 
 /** Live events (docs/20): the kinds the admin can schedule. */
-export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground'] as const
+export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar'] as const
 export type LiveType = (typeof LIVE_TYPES)[number]
 
 /** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
@@ -751,15 +1160,47 @@ export interface LiveShopItem {
 }
 
 /**
+ * A gift calendar's day (docs/55): one reward, in a quantity. A Pokémon comes `qty` times, each a Pokémon of its own.
+ * It lands in the region being played when the player opens it (the gifts' rules, engine/gifts.ts).
+ */
+export type CalendarReward =
+  | { kind: 'item'; key: string; qty: number }
+  | { kind: 'gold'; amount: number }
+  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; qty: number }
+
+/** A week of the month a weekly live event runs in: the 1st to the 4th of that weekday, or the month's last. */
+export type LiveWeek = 1 | 2 | 3 | 4 | 'last'
+
+/**
+ * A live event that comes back (docs/20 §9), at `time` (UTC, "HH:MM") for `hours`: every year on a date, or every
+ * week on a weekday (only some weeks of the month when `weeks` lists them; empty = every week).
+ */
+export type LiveRepeat =
+  | { kind: 'yearly'; month: number; day: number; time: string; hours: number }
+  | { kind: 'weekly'; weekday: number; weeks: LiveWeek[]; time: string; hours: number }
+
+/**
  * A live event (docs/20): the whole game changes for a while, the same for everyone, between `start` and `end` (ISO,
- * UTC, server time). Only the settings of its `type` count; the others stay so switching type back keeps them.
+ * UTC, server time), or on each date its `repeat` gives. Only the settings of its `type` count; the others stay so
+ * switching type back keeps them. Several can run at once.
  */
 export interface LiveEvent {
-  /** Stable: the pop-up's "seen" and the shop's per-player counts are kept by it. */
+  /**
+   * Stable: the pop-up's "seen" and the shop's per-player counts are kept by it. A recurring event's runs each have
+   * their own, `<id>@<YYYY-MM-DD>` (the UTC date it starts), so every run is a fresh event for players.
+   */
   id: string
   type: LiveType
+  /** A one-off event's start and end; a recurring one's runs take theirs from `repeat`. */
   start: string
   end: string
+  /** Comes back by itself (null or absent = once, between `start` and `end`). */
+  repeat?: LiveRepeat | null
+  /** A recurring event's runs ended early ("End now"): the run's UTC date → when it ended. */
+  stops?: Record<string, string>
+  /** On a run of a recurring event: the event it's a run of. */
+  ruleId?: string
   /** Its picture on Home, in the pop-up and over the shop's section: an area picture's key or a path. */
   banner: string
   /** A custom title for an occasion, per language (others fall back to English); empty = the type's own name. */
@@ -772,6 +1213,11 @@ export interface LiveEvent {
   shop: { items: LiveShopItem[] }
   /** Cash Flow: every ₽ earned × `multiplier` (1.5 = +50 %), selling excluded. */
   cash: { multiplier: number }
+  /**
+   * Gift calendar (docs/55): a door a day from `start`, one reward each (`days[0]` is day 1). Runs once: its `end` is
+   * the day after its last, the last day's catch-up.
+   */
+  calendar: { days: CalendarReward[] }
 }
 
 export interface GameConfig {
@@ -791,6 +1237,11 @@ export interface GameConfig {
    * exactly what the dice show.
    */
   hpMultiplier: number
+  /**
+   * Speed = the species' base Speed stat + this × level (docs/52): the weight of a level against the species' Speed.
+   * Migration 0093 inserts the same row.
+   */
+  speedPerLevel: number
   /** Global multiplier on trainer gold — the economy's pacing knob (Phase 10). */
   goldMultiplier: number
   /** Extra gold multiplier for gym leaders, the Elite Four and the Champion. */
@@ -810,6 +1261,10 @@ export interface GameConfig {
   enemyUpgradeLevel: number
   /** Versus: every combo and die track of both sides is at this level; nobody brings their own upgrades. */
   versusUpgradeLevel: number
+  /** The weekly Versus league (docs/44): its switch and numbers. Migration 0082 inserts the same row; the server reads it. */
+  versusLeague?: Partial<VersusLeagueConfig>
+  /** Real-player battles in areas (docs/54): its switch and numbers. Migration 0099 inserts the same row. */
+  areaVersus?: Partial<AreaVersusConfig>
   /** Switching the active Pokémon on your own turn (costs the turn). Switching after a faint is always free. */
   allowVoluntarySwitch: boolean
   /** Safety valve: two Pokémon immune to each other's every die would otherwise fight forever. Ends in a stalemate. */
@@ -828,12 +1283,12 @@ export interface GameConfig {
   showRoundPreview: boolean
   /** Chance (0–1) that a wild Pokémon is shiny: only its sprites change. */
   shinyChance: number
+  /** Chance (0–1) that a fossil revives shiny, wherever it was found: its own odds, never the Shiny Charm's. */
+  fossilShinyChance: number
   /** Signed-in players' save goes to the cloud at most this often (minutes) while they play; SYNC ONLINE does it now. */
   cloudSyncMinutes: number
   /** Friends each player can have (both sides of a friendship count it). The database reads the same key. */
   maxFriends: number
-  /** Energy: 1 per encounter discovered (not gyms, legendaries or Pokémon Centers), refilled over time. */
-  energy: EnergyConfig
   status: StatusRules
   ai: { samples: number; rerollGainThreshold: number }
   slotMachine: SlotMachineConfig
@@ -857,6 +1312,8 @@ export interface GameConfig {
   rebattleLineups: RebattleLineups
   /** Extreme mode (docs/22): the second save's rules. */
   extreme: ExtremeConfig
+  /** Extreme mode's Pokémon Centers with a boon to pick instead of a heal (docs/47). Migration 0085 inserts its switch. */
+  extremeCenters: ExtremeCentersConfig
   /** Live events (docs/20): their switch, and the admin's list, past, running and to come; one runs at a time. */
   liveEvents: { access: EventAccess; list: LiveEvent[] }
   /** Trades (docs/23): their switch and numbers, a game_config row of its own that seeding never writes. */
@@ -878,18 +1335,113 @@ export interface GameConfig {
   general: GeneralConfig
   /** Friend invite rewards (docs/15 §25): their switch and the gauge's tiers. The server reads the same row. */
   inviteRewards: InviteRewardsConfig
+  /** Welcome-back gifts (docs/58): their switch, the cooldown and the tiers. The server reads the same row (0103). */
+  welcomeBack: WelcomeBackConfig
   /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */
   portalRun: { access: EventAccess }
+  /** The Hall of Origin's Stairway of Plates (docs/64 §4.5): a portal run with its own switch. The server reads it (0127). */
+  platesRun: { access: EventAccess }
   /** The areas' nightmare (docs/30): its switch. The server reads the same row (0060). */
   nightmare: { access: EventAccess }
+  /** The areas' race of time and space (docs/64 §4.4): its switch. The server reads the same row (0126). */
+  timeRace: { access: EventAccess }
+  /** The areas' whiteout (docs/64 §4.3, Crown Shrine): its switch. Migration 0125 inserts the same row. */
+  whiteout: { access: EventAccess }
+  /** Tracks in the Snow (docs/64 §4.1): its switch. The server reads the same row (0124, tracks_open). */
+  tracks: { access: EventAccess }
   /** Trainer looks (docs/31): unlockable looks in place of the free list. Off by default. */
   looks: { access: EventAccess }
   /** Trick or Treat (docs/29): its switch, numbers and each area's ghosts. The server reads the switch too. */
   trickOrTreat: TrickOrTreatConfig
+  /** The Gift card (docs/64 §4.0): its switch and numbers. The server reads the switch too (0123). */
+  giftCard: GiftCardConfig
+  /** Pokémon posing as items (docs/61 §3): its switch. The server reads the same row (0111: side_quest_open). */
+  disguises: { access: EventAccess }
+  /** The Safari (docs/61 §4): its switch, its gauge's numbers, tiers and a round's price. The server reads the switch. */
+  safari: SafariConfig
+  /** Rivals' set meetings (docs/61 §5.2): the switch (the server reads it) and the meetings, the game's own. */
+  rivals: RivalsConfig
+  /** Gift Pokémon (docs/61 §5.3): the switch (the server reads it), an Egg's hours and the gifts, the game's own. */
+  giftMoments: GiftMomentsConfig
+  /** Hoenn's fixed weather (docs/62 §3): the switch (the server reads it) and each area's. */
+  hoennWeather: WeatherConfig
+  /** Galar's weather of the day (docs/62 §4): the switch (the server reads it), each area's odds and the pool shift. */
+  galarWeather: WeatherConfig
+  /** Kalos hordes (docs/62 §5). */
+  hordes: HordesConfig
+  /** Alola's island trials (docs/62 §6): the Totems instead of the captains' battles. */
+  trials: TrialsConfig
+  /** Paldea's Titans (docs/62 §7). */
+  titans: TitansConfig
   /** Day and night in Johto (docs/32): its switch. Migration 0061 inserts the same row. */
   dayNight: { access: EventAccess }
+  /** Idle mode and the play styles (docs/36): its switch. Migration 0068 inserts the same row. */
+  idleMode: { access: EventAccess }
+  /**
+   * The League heals the team between its battles (docs/42): each one won with another still to fight heals as a
+   * Pokémon Center would. Migration 0081 inserts the same row.
+   */
+  leagueHeal: { access: EventAccess }
+  /**
+   * A rival's set meeting lost heals the team and lets the area go on instead of a wipe (docs/61 §5.4). Migration 0136
+   * inserts the same row.
+   */
+  rivalLossHeal: { access: EventAccess }
+  /**
+   * A rival's team matched to the player (docs/61 §5.5): the switch, how the levels follow and how the species follow.
+   * Migration 0137 inserts the same row; a missing field keeps the game's default (engine/rivalMatch.ts).
+   */
+  rivalMatch?: Partial<RivalMatchConfig>
+  /**
+   * Hidden talents (docs/51): the switch, the odds of a wild Pokémon carrying its talent and of a locked family finding
+   * it on an evolution, and the admin's picks per family (by its lowest dex; the bundled ones otherwise). Migration
+   * 0094 inserts the same row.
+   */
+  hiddenTalents: HiddenTalentsConfig
+  /**
+   * The legends' own cinematics (docs/53): a raid legend's entrance and a mythical boss's, each in its own place. Only
+   * how they look and sound, so no server function reads it. Migration 0098 inserts the same row.
+   */
+  legendCinema: { access: EventAccess }
+  /**
+   * The gift calendar (docs/55): live events of type `calendar` open only with this on. The doors opened are in each
+   * player's save, on the server's clock, so no server function reads it. Migration 0100 inserts the same row.
+   */
+  giftCalendar: { access: EventAccess }
+  /**
+   * The champions' own cinematics (docs/56): a League Champion's entrance in its own place before its fight. Only how
+   * it looks and sounds, so no server function reads it. Migration 0101 inserts the same row.
+   */
+  championCinema: { access: EventAccess }
+  /**
+   * Friendship streaks and the Friend Market (docs/60): the switch, what a streak's day pays by tier, the day's cap
+   * across every friend, and the weekly market (items with a price and a weekly limit, and the shiny of the week drawn
+   * from a pool). The server prices and pays from the same row (migration 0107, friendship_cfg()).
+   */
+  friendship: FriendshipConfig
+  /**
+   * Friend Battles (docs/65): live 3 v 3 between two friends, Classic or Draft. The switch (beta testers allowed) and
+   * the timers; the server reads the same row (migration 0131, friend_battles_cfg()).
+   */
+  friendBattles?: Partial<FriendBattlesConfig>
+  /**
+   * Outfits (docs/59): Pokémon dressed up (Santa Pikachu), given as gifts. Off, an outfit Pokémon looks plain (it keeps
+   * its tag). Only looks and evolution in the player's own save, so no server function reads it. Migration 0105 inserts
+   * the same row.
+   */
+  outfits: { access: EventAccess }
+  /**
+   * The Unown Pokédex (docs/41): the 28 letters, once an area where Unown live is opened; `reward` ₽ for the last one.
+   * Migration 0080 inserts the same row.
+   */
+  unownDex: { access: EventAccess; reward: number }
+  /**
+   * Route 1's set opening (docs/46): its first rounds dealt in a set order, card by card, the rounds after them at
+   * random as before. Migration 0081 inserts the same row.
+   */
+  openingRounds: OpeningRoundsConfig
   /** Double battles (docs/33): their switch, the regions that have them and the wild odds. */
   doubleBattles: DoubleBattlesConfig
   /**
@@ -967,8 +1519,13 @@ export interface UndergroundConfig {
   prices: Record<OrbColour, Record<OrbSize, number>>
   /** The pickaxe: level 0 first; it starts at 0 each event. */
   pickaxe: PickaxeLevel[]
-  /** Orbs sell only once the team has all its seats (one per colour). */
+  /** Orbs sell at full price only once the team has all its seats (one per colour). */
   sellNeedsFull: boolean
+  /**
+   * With `sellNeedsFull`, the share (%) of their price orbs sell for outside a full team: players who don't team up
+   * can still sell, for a small part of it. 0 = no selling until the team is full.
+   */
+  soloShare: number
 }
 
 /** One thing buried in a wall, at (x, y) for w × h tiles. */
@@ -1071,8 +1628,225 @@ export interface TrickOrTreatConfig {
   areas: Record<string, TrickGhost[]>
 }
 
+/**
+ * The Safari (docs/61 §4): Trick or Treat's numbers (Bait is its Treat, the Safari Ball its Trick Ball) with their own
+ * values, each Safari area's tier overrides (`areas`: a Pokémon not listed takes its tier from its catch value), and the
+ * price of a round: the first rounds in each Safari area free, the next ones paid in the region's ₽.
+ */
+export interface SafariConfig extends TrickOrTreatConfig {
+  /** Rounds free in each Safari area, per save. */
+  freeRounds: number
+  /** ₽ for each round after them. */
+  roundPrice: number
+}
+
+/**
+ * A set moment's place (docs/61 §5): an area, the round it comes in (the rounds done there: 0 = the first) and how many
+ * cards of that round are turned over before it. It comes on top of the deck and uses no card.
+ */
+export interface MomentPoint {
+  areaId: string
+  round: number
+  after: number
+}
+
+/**
+ * A rival's meeting (docs/61 §5.2): one trainer per version, the player's starter picking it (`Trainer.rivalOf`), or one
+ * for everyone. Met once per save, only while the area isn't cleared.
+ */
+export interface RivalMeeting extends MomentPoint {
+  id: string
+  trainers: string[]
+}
+
+/**
+ * A gift Pokémon (docs/61 §5.3): the giver (a trainer's name, translated as one; its picture), what's given, and how.
+ * `dex`: one Pokémon, or several to pick one from; `byStarter`: the one for the player's starter instead (the Unova
+ * monkey); `egg`: an Egg hatching after `eggHours`, the Odd Egg (`dex` several) one of them at random; `price`: ₽ to pay
+ * (the Magikarp salesman). `level`: absent = the area's lowest. Met once per save, a cleared area's on the next visit.
+ */
+export interface GiftMoment extends MomentPoint {
+  id: string
+  giver: string
+  sprite: string
+  dex: number[]
+  byStarter?: Record<string, number>
+  level?: number
+  egg?: boolean
+  /** An Egg's own shiny odds (the Odd Egg's); absent = the wild odds. */
+  shinyChance?: number
+  price?: number
+}
+
+/** How a rival's levels follow the player's team (docs/61 §5.5): see `matchLevels`. */
+export type RivalLevelMode = 'asWritten' | 'cap' | 'mirror' | 'pairs'
+/** How a rival's species follow (docs/61 §5.5): see `matchStages`. */
+export type RivalStageMode = 'asWritten' | 'byLevel' | 'player'
+
+export interface RivalMatchConfig {
+  access: EventAccess
+  levels: RivalLevelMode
+  /** Levels above the player's (below when negative), under `cap`, `mirror` and `pairs`. */
+  margin: number
+  stages: RivalStageMode
+}
+
+export interface RivalsConfig {
+  access: EventAccess
+  meetings: RivalMeeting[]
+}
+
+export interface GiftMomentsConfig {
+  access: EventAccess
+  /** Hours a gift Egg takes to hatch (the user's call, 2026-11-01: 6). */
+  eggHours: number
+  gifts: GiftMoment[]
+}
+
+/** The region flavours' weather (docs/62 §2): what it does is the raids' own rules. */
+export const WEATHER_KINDS = ['clear', 'overcast', 'rain', 'thunderstorm', 'sun', 'sand', 'snow', 'fog', 'ash'] as const
+export type Weather = (typeof WEATHER_KINDS)[number]
+
+/** An area's weather (docs/62 §3–4): one that never changes, two taking turns a round each, or the odds of the day's. */
+export interface AreaWeather {
+  fixed?: Weather | null
+  alternate?: Weather[] | null
+  /** Weights of each weather of the day (UTC), the same for everyone. */
+  daily?: Partial<Record<Weather, number>> | null
+}
+
+/** Hoenn's or Galar's weather (docs/62): the switch (the server reads it) and each area's weather, by area id. */
+export interface WeatherConfig {
+  access: EventAccess
+  areas: Record<string, AreaWeather>
+  /** Galar: × the weight of the wild Pokémon of the day's weather's types (no species added or taken away). */
+  poolTimes?: number
+}
+
+/** Kalos hordes (docs/62 §5): the switch (the server reads it) and the numbers. */
+export interface HordesConfig {
+  access: EventAccess
+  /** % of the wild cards that come as a horde. */
+  chance: number
+  /** Hordes at most per visit to an area (the round's cards). */
+  perArea: number
+  /** How many come. */
+  size: number
+  /** Levels below the one rolled (never under Lv 2). */
+  levelDrop: number
+  /** % of hordes with one of another species. */
+  mixedChance: number
+  /** Pool entries up to this weight (the rarest) never make a horde. */
+  minWeight: number
+  regions: RegionId[]
+}
+
+/** An island trial (docs/62 §6): the Totem fought instead of a captain's battle, or a trial of its own. */
+export interface TrialDef {
+  id: string
+  /** The Z-Crystal it gives: Z-Moves of this type (docs/62 §6). */
+  crystal?: PokeType | null
+  areaId: string
+  /** The gym battle this trial replaces: a captain's, or (`own`) a row there only for the trial. */
+  trainerId: string
+  /** The gym exists only as this trial (Vast Poni Canyon's): with the switch off, the area doesn't have it. */
+  own?: boolean
+  /** Who greets the player ('Ilima', 'Hapu'). */
+  captain: string
+  /** The place said in the greeting ('the Verdant Cavern'). */
+  place: string
+  totem: number
+  level: number
+  /** The allies it calls, in turn. */
+  allies: number[]
+  allyLevel: number
+}
+
+export interface TrialsConfig {
+  access: EventAccess
+  /** × the Totem's max HP. */
+  hpTimes: number
+  /** Extra dice of its type: its aura. */
+  extraDice: number
+  /** Allies it calls in a fight, at most. */
+  calls: number
+  trials: TrialDef[]
+  /** The other battles that give a Z-Crystal (the kahunas', Mina's), by trainer id. */
+  crystals?: Record<string, PokeType>
+}
+
+/** The Titans (docs/62 §7): the switch (the server reads it), the second phase's numbers and the reward. */
+export interface TitansConfig {
+  access: EventAccess
+  hpTimes: number
+  extraDice: number
+  /** Dondozo with Tatsugiri in its mouth (Commander): its own numbers. */
+  commanderHpTimes: number
+  commanderExtraDice: number
+  gold: number
+  items: { key: string; qty: number }[]
+}
+
+/** The region flavours, each with its switch and its rules (docs/62). */
+export const FLAVOUR_KEYS = ['hoennWeather', 'galarWeather', 'hordes', 'trials', 'titans'] as const
+export type FlavourKey = (typeof FLAVOUR_KEYS)[number]
+
+export interface FlavoursSave {
+  /** The flavours whose rules have been shown once. */
+  seen?: FlavourKey[]
+}
+
+/** The set moments a save has met (docs/61 §5): each one's id, once. */
+export interface MomentsSave {
+  done: string[]
+}
+
+/** Trick or Treat's look: the haunted one (docs/29) or the Safari's (docs/61 §4). */
+export type LureTheme = 'trick' | 'safari'
+
 /** Trick or Treat in a save (docs/29): its rules pop-up shown. */
 export interface TrickSave {
+  rulesSeen?: boolean
+}
+
+/**
+ * What a Gift card's level gives (docs/64 §4.0), one part of a reward: the area's own ball (the best its finds hold)
+ * or the one above it, an item, Pokédollars (`qty` × the area's level) or an evolution item its Mart sells.
+ */
+export const GIFT_REWARD_KINDS = ['ball', 'betterBall', 'item', 'money', 'evolution'] as const
+export type GiftRewardKind = (typeof GIFT_REWARD_KINDS)[number]
+
+export interface GiftRewardPart {
+  kind: GiftRewardKind
+  /** The item, for `item`. */
+  key?: string
+  qty: number
+}
+
+/**
+ * The Gift card (docs/64 §4.0): a present to OPEN for its level's reward or MAKE BIGGER, each tap able to break it, a
+ * broken one a wild Pokémon of the area. Owning the helper (Delibird) makes every tap safer and adds a level.
+ */
+export interface GiftCardConfig {
+  /** The switch (docs/15 §20): off (the item card as before), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /**
+   * The % a MAKE IT BIGGER tap breaks the gift, by the level it is at (first = level 1). The level after the last is the
+   * top: it can't grow.
+   */
+  breakChances: number[]
+  /** Owning this Pokémon (team or Box): every tap `safer` % less likely to break, `extraLevels` more on top. */
+  helper: { dex: number; safer: number; extraLevels: number }
+  /** Each level's reward (first = level 1): its options, one drawn as the gift appears; a level past the list takes the last. */
+  rewards: GiftRewardPart[][][]
+  /** Poké Balls from worst to best: an area's ball is the best of these in its finds, its better ball the next one. */
+  balls: string[]
+  /** A boss that comes out of a present (`BossDef.present`): the taps until it bursts. */
+  bossTaps: number
+}
+
+/** The Gift card in a save (docs/64 §4.0): its rules pop-up shown. */
+export interface GiftCardSave {
   rulesSeen?: boolean
 }
 
@@ -1106,6 +1880,25 @@ export interface InviteTier {
   gifts: Gift[]
 }
 
+/**
+ * Welcome-back gifts (docs/58): a player back after days away gets a developer's message carrying the gifts of the
+ * highest tier their absence reached, at most once every `cooldownDays`. The server reads the same row (0103).
+ */
+export interface WelcomeBackConfig {
+  /** The switch (docs/15 §20): off (no message is sent), on for the admin only, on for everyone. Off by default. */
+  access: EventAccess
+  /** At most one welcome-back gift every this many days (the player's own calendar days). */
+  cooldownDays: number
+  /** The tiers, fewest days first (engine/welcomeBack.ts cleans them): only the highest one reached is given. */
+  tiers: WelcomeBackTier[]
+}
+
+/** One welcome-back tier: away at least `minDays` days (back the next day = 1), and what it gives. */
+export interface WelcomeBackTier {
+  minDays: number
+  gifts: Gift[]
+}
+
 /** The invite rewards a save has opened (docs/15 §25). */
 export interface InvitesSave {
   /** Tiers (by their number of friends) whose gifts are in this save already: a tier is put in once. */
@@ -1125,12 +1918,19 @@ export type GiftRegion = string
 
 /**
  * One gift on a message, as the admin set it (Admin → Messages, or a player's profile): an item and how many, a
- * Pokémon at a level, shiny or not, or Pokédollars. Each goes to its region's Bag, Box or ₽.
+ * Pokémon at a level, shiny or not, Pokédollars, or Heart Scales. Each goes to its region's Bag, Box or ₽, the Heart
+ * Scales to the player's wallet.
  */
 export type Gift =
   | { kind: 'item'; key: string; qty: number; region: GiftRegion }
-  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; region: GiftRegion }
+  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; region: GiftRegion }
   | { kind: 'gold'; amount: number; region: GiftRegion }
+  /**
+   * Heart Scales (docs/60), a message's only: the server adds them to the player's wallet as it hands the gifts over
+   * (migration 0121), so a message carrying them goes to an account. `region` is kept for the shape, never read.
+   */
+  | { kind: 'heartScales'; amount: number; region: GiftRegion }
 
 /** The gifts a save has opened (docs/15 §23). */
 export interface GiftsSave {
@@ -1151,10 +1951,19 @@ export interface GeneralConfig {
   luck: { chance: number; cost: number }[]
   /** Offline earnings, one row per level: ₽ per hour spent out of the game, and its price. */
   offline: { perHour: number; cost: number }[]
+  /** Offline earnings before any level is bought (level 0), ₽ per hour. 0: none. */
+  offlineBase: number
   /** An absence earns for this many hours at most. */
   offlineMaxHours: number
   /** "I am just rich": its price. A golden name in every social feature, nothing else. */
   richCost: number
+  /** The Shiny Charm's own switch (docs/15 §20), inside the General tab's: off, on for the admin only, on for everyone. */
+  charmAccess: EventAccess
+  /**
+   * The Shiny Charm, one row per level: the wild shiny odds it gives, as "1 in `oneIn`", and its price. It never makes
+   * them worse than game_config's `shinyChance`.
+   */
+  charm: { oneIn: number; cost: number }[]
 }
 
 /** Trades (docs/23-TRADING-PLAN.md): listings, like the games' GTS. The server reads the same row. */
@@ -1175,6 +1984,10 @@ export interface TradeConfig {
   evolveOnTrade: [number, number][]
   /** Never tradable, on top of legendaries and mythicals (the Ultra Beasts by default). */
   exclude: number[]
+  /** Listings the board picks for a player (docs/23 §2.1); a search still shows every match. */
+  boardPicks: number
+  /** NEW PICKS a player can ask for per UTC day: the board shows others. */
+  boardRerolls: number
 }
 
 /** One booster of a small world: every hit of this type, both sides', × `multiplier`. */
@@ -1252,6 +2065,38 @@ export interface ExtremeConfig {
   awayMinMinutes: number
   /** Potions and Revives can be used. */
   items: boolean
+}
+
+/**
+ * Extreme mode's Pokémon Centers (docs/47): no healing machine, a boon to pick out of `offers`, the team heal always one
+ * of them, the others drawn by weight as distinct kinds. Every number is the admin's.
+ */
+export interface ExtremeCentersConfig {
+  /** Off / On for admin / On for everyone; off by default. Off (or with `extreme.centers` on), Centers are as before. */
+  access: EventAccess
+  /** Boons on offer at each Center, the team heal included. */
+  offers: number
+  /** Always on offer: every Pokémon still standing, team and Box, heals this % of its max HP. */
+  heal: { percent: number }
+  /** One Pokémon the player picks back to full HP; a K.O. one is back at once. */
+  full: { weight: number }
+  /**
+   * One healing item into the bag: a potion (the best of `potions` the badges in the region allow), a Revive or a Max
+   * Revive, by these weights.
+   */
+  item: { weight: number; potion: number; revive: number; maxRevive: number; potions: { key: string; badges: number }[] }
+  /**
+   * +1 die of one of its types for a team member, for `hours` of real time; never past `maxDice` dice, and only once
+   * `badges` badges are won in the region being played.
+   */
+  buff: { weight: number; hours: number; maxDice: number; badges: number }
+  /** ₽: `trainers` × what an average trainer of the area pays. */
+  donor: { weight: number; trainers: number }
+  /**
+   * A team member for a random Pokémon of the region, `levels` higher, at full HP: the same evolution stage, its fight
+   * value (max HP × dice at that level) within `band` % when any is. Never a legendary or a mythical.
+   */
+  rocket: { weight: number; levels: number; band: number }
 }
 
 /**
@@ -1345,6 +2190,16 @@ export interface MegaConfig {
 
 // ---------------------------------------------------------------- save data (01-GAME-SPEC §9)
 
+export interface HiddenTalentsConfig {
+  access: EventAccess
+  /** A wild Pokémon (a ghost, an Egg, a gift…) carries its family's talent: 0–1. */
+  wildChance: number
+  /** A locked family finds its talent as one of its Pokémon evolves: 0–1. */
+  evolveChance: number
+  /** Family (its lowest dex) → talent key, over the bundled ones (src/data/talents.json). */
+  families: Record<string, string>
+}
+
 export interface PokemonInstance {
   id: string
   dex: number
@@ -1359,15 +2214,34 @@ export interface PokemonInstance {
   revivesAt?: number
   /** The fossil item it came from (for its picture while it revives). */
   fossil?: string
+  /** A gift Egg (docs/61 §5.3) waiting to hatch at `revivesAt`, in the Box as a fossil waits; `hatchShiny` when it hatches. */
+  egg?: boolean
+  hatchShiny?: boolean
   /** Extreme mode: when it was K.O. (ms, server time). It rests until `koHours` later. Absent = not on the clock. */
   koAt?: number
+  /** Extreme mode's Pokébuff (docs/47): one more die of this type in its battles until `until` (ms, real time). */
+  buff?: { type: PokeType; until: number }
   /** The name its trainer gave it (`engine/nickname.ts`). It goes with it in a trade; absent = its species' name. */
   nickname?: string
+  /** Unown only (docs/41): its letter, 'a'–'z', '!' or '?'. Absent = an A (`letterOf`). */
+  letter?: string
+  /**
+   * Its outfit (docs/59), a key of `OUTFITS` (src/engine/outfits.ts): 'santa'. Only its look: it evolves only into a
+   * species that wears the same outfit, an Egg it leaves hatches plain, and it goes with it in a trade. Absent = none.
+   */
+  outfit?: string
+  /**
+   * It carries its family's hidden talent (docs/51): set when its family is unlocked in its region (`syncTalents`), or
+   * when it arrives with it (a trade, a gift). Never taken off. Absent = no talent.
+   */
+  talent?: boolean
 }
 
 export interface AreaProgress {
   /** Rounds completed here (a round counts once its last card is dealt with; a wipe loses the round in progress). */
   roundsDone: number
+  /** A Safari (docs/61 §4): rounds begun here, the free ones included; a round is paid for as it's dealt. */
+  safariRounds?: number
   /** The current round has already been counted (its deck ran out): don't count it twice. */
   roundCounted?: boolean
   /** Exploration XP from before rounds replaced the gauge: converted to `roundsDone` on load, then dropped. */
@@ -1395,10 +2269,24 @@ export interface AreaProgress {
   drawn?: DeckCard[]
   /** The last encounter here was a Pokémon Center: the next one can't be (no two Centers in a row). */
   lastCenter?: boolean
+  /** The deck in play is the set opening's round of this index (docs/46), not a shuffled one. */
+  opening?: number
   /** A portal run here (docs/28): where it stands, its bonuses, whether it's won. */
   portal?: PortalState
   /** The nightmare here (docs/30): its round, Darkrai's strike due, the gifts given, whether it's over. */
   nightmare?: NightmareState
+  /** The race of time and space here (docs/64 §4.4): its clock, its gates, the legends it opened. */
+  timeRace?: TimeRaceState
+  /** The whiteout here (docs/64 §4.3): its wave, a bonfire, the boss next, whether it's over. */
+  whiteout?: WhiteoutState
+  /** Tracks in the Snow here (docs/64 §4.1): the rounds cleared, the glade being searched, whether it's over. */
+  tracks?: TracksState
+  /** Extreme mode (docs/47): a Pokémon Center has been met here (a secret area has only its first). */
+  centerMet?: boolean
+  /** Extreme mode (docs/47): the team was K.O. here; the round starts over at a Center that only swaps. */
+  wiped?: boolean
+  /** Kalos hordes met this round (docs/62 §5): the round and how many. */
+  hordes?: { round: number; n: number }
 }
 
 export interface SaveData {
@@ -1420,7 +2308,10 @@ export interface SaveData {
     reducedMotion: boolean
     animations?: 'full' | 'short'
     multiExp: boolean
+    /** Auto engaged: a cleared area's fights play themselves (and with the play styles on, the autopilot runs). */
     autoMode?: boolean
+    /** The play style (docs/36). Unset = from before the styles: "Auto on explored areas" (engine/autopilot). */
+    playStyle?: PlayStyle
     /** Raids: the ally sides' turns at 1.5× speed. */
     raidFast?: boolean
     lang?: Lang
@@ -1445,16 +2336,26 @@ export interface SaveData {
    * (`decideSync`). Absent on saves from before it: `updatedAt` stands in.
    */
   playedAt?: number
-  /** Energy held at `at` (ms); it refills from there (see engine/energy). Absent = full. */
-  energy?: { value: number; at: number }
   /** The player has opened the leaderboard (Prof. Oak sends them there once). */
   leaderboardVisited?: boolean
   /** Versus's rules pop-up has been shown (once, when Versus opens; its INFO button shows them again). */
   versusRulesSeen?: boolean
+  /** The weekly Versus league's rules card has been read (docs/44): its own flag, as players who had Versus see it too. */
+  versusLeagueRulesSeen?: boolean
+  /** Retired: real-player battles' rules pop-up was shown (it no longer opens by itself, 2026-11-02). Old saves keep it. */
+  areaVersusRulesSeen?: boolean
+  /** Friend Battles' rules card has been read on its page (docs/65; INFO shows them again). */
+  friendBattlesRulesSeen?: boolean
   /** The portal run's rules pop-up (docs/28) has been shown (once; INFO shows them again). */
   portalRulesSeen?: boolean
+  /** The same for a portal run dressed as the Stairway of Plates (docs/64 §4.5): its own, as its words are its own. */
+  platesRulesSeen?: boolean
   /** The nightmare's rules pop-up (docs/30) has been shown (once; INFO shows them again). */
   nightmareRulesSeen?: boolean
+  /** The whiteout's rules pop-up (docs/64 §4.3) has been shown (once; INFO shows them again). */
+  whiteoutRulesSeen?: boolean
+  /** Tracks in the Snow's rules (docs/64 §4.1) have been read on its way in (they show there every time). */
+  tracksRulesSeen?: boolean
   /** The region being played. Absent on saves from before the second region = 'kanto'. */
   region?: RegionId
   /** The regions not being played, each holding everything that region owns. */
@@ -1477,16 +2378,66 @@ export interface SaveData {
   extremeUnlockedAt?: number
   /** Main save: Extreme mode's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   extremeRulesSeen?: boolean
+  /** The Extreme page's rules card has been read in this save (docs/48; INFO shows them again). */
+  extremePageSeen?: boolean
+  /**
+   * The shiny Pokédex (docs/39): every species owned shiny in each region, kept when it leaves (a trade, a release)
+   * as the Pokédex keeps its catches. Filled whatever the switch says, so it's whole the day it opens.
+   */
+  shinyDex?: Partial<Record<RegionId, number[]>>
+  /** The shiny Pokédex's rules pop-up has been shown (once, at the first league beaten; INFO shows it again). */
+  shinyDexSeen?: boolean
+  /**
+   * The Pokémon wearing the heart (docs/67): instance ids, listed first in the raid team picker. Kept whatever the
+   * switch says; ids of Pokémon that left are dropped at the next toggle.
+   */
+  favourites?: string[]
+  /**
+   * The Unown Pokédex (docs/41): the letters found in each region, kept when the Unown leaves (one copy per species
+   * in the Box). Filled whatever the switch says.
+   */
+  unownDex?: Partial<Record<RegionId, string[]>>
+  /**
+   * Hidden talents (docs/51): the families whose talent is unlocked, by region (each family by its lowest dex). Every
+   * Pokémon of an unlocked family carries the talent there.
+   */
+  talents?: Partial<Record<RegionId, number[]>>
+  /** The families whose talent has been met (a talented one seen, or unlocked): the sheet names it from then on. */
+  talentsMet?: number[]
+  /** Retired: the hidden talents' rules pop-up was shown (it no longer opens by itself, 2026-11-01). Old saves keep it. */
+  talentRulesSeen?: boolean
+  /** Outfits (docs/59): their rules pop-up seen, once for good. */
+  outfitRulesSeen?: boolean
+  /** The regions whose Unown Pokédex prize was paid (once each). */
+  unownDexPaid?: RegionId[]
+  /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
+  unownDexSeen?: boolean
+  /** The dice tutorial after Route 1's first round (docs/46 §5): shown and not finished, or finished for good. */
+  diceTutorial?: 'started' | 'done'
+  /** The reroll lesson in a new player's first fight (docs/46 §6) has played. */
+  rerollLesson?: 'done'
+  /** The item tutorial (docs/46 §7) has shown: the Bag pointed at once, in a fight below half HP. */
+  itemLesson?: 'done'
   /** Trades (docs/23): listed Pokémon, the trades already applied, the last ones done. Absent = never traded. */
   trades?: TradesSave
   /** Gifts from the developer (docs/15 §23): the ones opened, and the rules seen. Absent = none yet. */
   gifts?: GiftsSave
   /** Friend invite rewards (docs/15 §25): the tiers opened, and the rules seen. Absent = none yet. */
   invites?: InvitesSave
+  /** Friendship streaks and the Friend Market (docs/60): the rules read, purchases put away. Absent = none yet. */
+  friendship?: FriendshipSave
   /** The General upgrades (docs/25), for every region of this save. Absent = none bought. */
   general?: GeneralSave
   /** Trick or Treat (docs/29): its rules seen. Absent = never met. */
   trickOrTreat?: TrickSave
+  /** The Gift card (docs/64 §4.0): its rules seen. Absent = never met. */
+  giftCard?: GiftCardSave
+  /** The Safari (docs/61 §4): its rules pop-up shown. */
+  safari?: TrickSave
+  /** The set moments met: rivals' meetings and gifts (docs/61 §5). */
+  moments?: MomentsSave
+  /** The region flavours (docs/62): the rules seen of each. */
+  flavours?: FlavoursSave
   /** The Underground (docs/34): the running event's kits, pickaxe, orbs and wall. Gone when the event ends. */
   underground?: UndergroundSave
   /** Arceus's plates found in the Underground, by type: kept for good. Each lets the player's Arceus take its type. */
@@ -1497,6 +2448,47 @@ export interface SaveData {
   dayNight?: { rulesSeen?: boolean }
   /** Mega Gems, and the battle powers' rules seen (docs/35), for every region of this save. Absent = none yet. */
   powers?: PowersSave
+  /** Idle mode (docs/36): its rules seen, and a lost round's detour under way. Absent = neither. */
+  idle?: IdleSave
+  /**
+   * An encounter under way when the page was left (src/store/resume.ts), so the next load picks it up where it stood.
+   * Only in this device's stored copy: the game's save in memory and the cloud copy never carry it.
+   */
+  resume?: ResumeSnapshot
+}
+
+/**
+ * Explored (the default): cleared areas play themselves when asked. Idle: every area does. (Classic, auto nowhere, was
+ * dropped on 2026-10-25: a save that has it reads as unset, so Explored.)
+ */
+export const PLAY_STYLES = ['explored', 'idle'] as const
+export type PlayStyle = (typeof PLAY_STYLES)[number]
+
+/**
+ * A lost round's detour (docs/36): one round in the area before (`to`), then back to the one lost (`from`). `rounds`
+ * is the rounds `to` had done when it began: one more, and the detour is over.
+ */
+export interface IdleDetour {
+  from: string
+  to: string
+  rounds: number
+}
+
+export interface IdleSave {
+  /** Written by builds that had Idle's rules pop-up (gone, docs/36): no longer read, kept so those saves load as ever. */
+  rulesSeen?: boolean
+  detour?: IdleDetour
+}
+
+/**
+ * The run and the battle as they stood, and where both dice streams were, so a reload rolls exactly what staying would
+ * have. Their shapes are the store's (RunState, BattleSlice): the engine never reads this, the store checks it.
+ */
+export interface ResumeSnapshot {
+  v: 1
+  run: Record<string, unknown>
+  battle: { id: number; state: Record<string, unknown>; log: unknown[] } | null
+  rng: { run: number; battle: number }
 }
 
 /** The three battle powers (docs/35). */
@@ -1521,6 +2513,8 @@ export interface LooksSave {
   /** Unlocked looks already seen in the menu: the red dot counts the others. */
   seen?: string[]
   rulesSeen?: boolean
+  /** Event looks granted outright, for good (docs/31 §7): written by SQL into the cloud save, kept by every sync. */
+  earned?: string[]
 }
 
 /** The General upgrades bought (docs/25), and the offline earnings' clock. */
@@ -1531,16 +2525,21 @@ export interface GeneralSave {
   offline?: number
   /** "I am just rich": a golden name in the social features. */
   rich?: boolean
+  /** The Shiny Charm's level (0 = none). */
+  charm?: number
   /** The page went hidden or closed here (server time, ms): offline earnings run from then until the return. */
   awayFrom?: number
   /** Time (ms) the last absence spent towards a ₽ it didn't reach: it counts in the next one. */
   carryMs?: number
   /** The General tab's rules pop-up has been shown (once; INFO shows it again). */
   rulesSeen?: boolean
+  /** The Shiny Charm's rules have been shown: in the General tab's pop-up, or its own once that was seen already. */
+  charmSeen?: boolean
 }
 
 /** What a listing asks for (docs/23 §1.1): one species, any the poster doesn't own, or anything. */
-export type TradeWant = { kind: 'species'; dex: number } | { kind: 'notOwned' } | { kind: 'any' }
+/** `talent`: that species, carrying its hidden talent (docs/51). */
+export type TradeWant = { kind: 'species'; dex: number; talent?: true } | { kind: 'notOwned' } | { kind: 'any' }
 
 export const TRADE_VISIBILITY = ['public', 'friends', 'private'] as const
 /** Who sees a listing: the trade board (every signed-in player), friends only, or only people with its link. */
@@ -1600,6 +2599,14 @@ export interface TradeLanding {
   dex: number
 }
 
+/** The board's picks today (docs/23 §2.1): NEW PICKS used, and the listings shown before them, least recently first. */
+export interface TradePicks {
+  /** The UTC day (days since 1970) these count for: a new day starts afresh. */
+  day: number
+  rerolls: number
+  skip: string[]
+}
+
 export interface TradesSave {
   out: TradeOut[]
   /** Trade ids already applied to this save (the last 50): a trade is applied exactly once. */
@@ -1612,6 +2619,8 @@ export interface TradesSave {
   landing?: TradeLanding[]
   /** The rules pop-up has been shown (once; INFO shows it again). */
   rulesSeen?: boolean
+  /** The board's NEW PICKS today. */
+  picks?: TradePicks
 }
 
 export type SaveMode = 'main' | 'extreme'
@@ -1622,16 +2631,51 @@ export interface ExtremeSave {
   awayFrom?: number
   /** Absences already over but not healed yet (the player came back mid-fight, or the real time wasn't known). */
   pending?: [number, number][]
+  /** A Pokémon Center's boons waiting for the pick (docs/47), so a reload can't draw them again. */
+  center?: { areaId: string; offers: CenterBoon[] }
+  /** The Centers' rules pop-up has been shown (docs/47; INFO shows it again). */
+  centerRulesSeen?: boolean
+  /** Each region's run (docs/48): its id, when it started and was won (ms, real time), the best time ever (ms). */
+  runs?: Partial<Record<RegionId, ExtremeRun>>
 }
+
+/** One region's run in Extreme mode (docs/48): a race from its starter to its League. */
+export interface ExtremeRun {
+  /** A new id at every start, so the server can tell a restart from the same run. */
+  id: string
+  startedAt: number
+  /** The League won: the timer stopped here. */
+  finishedAt?: number
+  /** The fastest League ever won in this region (ms), kept through restarts. */
+  best?: number
+  /** A region played before runs existed whose League was already won: no time to count until it's restarted. */
+  untimed?: boolean
+}
+
+/** One boon a Pokémon Center offers in Extreme mode (docs/47). Each names what it gives, but the Rocket Trade. */
+export type CenterBoon =
+  | { kind: 'heal'; percent: number }
+  | { kind: 'full' }
+  | { kind: 'item'; itemKey: string }
+  | { kind: 'buff'; uid: string; type: PokeType }
+  | { kind: 'donor'; gold: number }
+  | { kind: 'rocket' }
+export type CenterBoonKind = CenterBoon['kind']
 
 /** The special events' state in a save. Every field is optional: absent means "never". */
 export interface EventsSave {
   /** Events whose unlock pop-up has been shown (or that opened alongside the one that was). */
   seen?: EventId[]
-  /** The UTC day (yyyy-mm-dd) of the last Fortune Wheel spin. */
+  /** The UTC day of the last spin while the wheel was free once a day (before its tickets): read by nothing now. */
   wheelDay?: string
   /** That spin's prize until it's paid (when the wheel stops, or on the next start if the page closed mid-spin). */
   wheelPending?: WheelReward
+  /** Fortune Wheel tickets held; none yet = a full stack (the cap). */
+  wheelTickets?: number
+  /** When the next free ticket comes (ms); null or absent while the stack is full. */
+  wheelTicketAt?: number | null
+  /** The wheel's rules pop-up, shown once on its page since it takes tickets. */
+  wheelRulesSeen?: boolean
   /** The Elite Rebattle, per region. */
   rebattle?: Record<string, RebattleProgress>
   /** Today's raid, and the last week's (the repeat window reads it). */
@@ -1654,10 +2698,18 @@ export interface EventsSave {
    * progression raid's key), so a reload offers the same four; each try draws a new seed.
    */
   raidNpc?: { key: string; seed: number }
+  /** The raid overhaul's rules pop-up has been shown (docs/40): once; the raid pages' INFO shows it again. */
+  raidRulesSeen?: boolean
+  /** The legendaries whose raid entrance has played once (docs/40): from then on it has a Skip. */
+  raidIntrosSeen?: number[]
   /** Live events whose pop-up has been shown (ids). */
   liveSeen?: string[]
   /** Special Shop purchases, per live event id then item key: what counts against each item's limit. */
   liveBought?: Record<string, Record<string, number>>
+  /** Gift calendars' doors opened (docs/55), per live event id: the days (1 = the first). A door opens once. */
+  calendarOpened?: Record<string, number[]>
+  /** The gift calendar's rules card was read (GOT IT): once, for every calendar; INFO shows them again. */
+  calendarRulesSeen?: boolean
   /** The small world this save holds (its block is the live region or a parked one), or the one that just closed. */
   world?: WorldSave
   /** Small worlds whose opening pop-up has been shown (ids). */
@@ -1711,6 +2763,8 @@ export interface WorldHomer {
   from?: RegionId
   /** The trainer it came from in a trade (docs/23 §1.4), when it arrived above the region's best level. */
   tradedBy?: string
+  /** Bought at the Friend Market (docs/60): it waits in its species' region until one there reaches its level. */
+  market?: true
 }
 
 /** A shiny mythical won in a small world, waiting for its home region to be started. */
@@ -1795,11 +2849,84 @@ export interface DayCareGuest {
   addedAt: number
 }
 
+/** One step of the friendship streak (docs/60): from its first day on, each new day of the streak pays `coins`. */
+export interface FriendshipTier {
+  from: number
+  coins: number
+}
+
+/** A Friend Market item: its price in Heart Scales and how many a player can buy a week. */
+export interface FriendMarketItem {
+  key: string
+  price: number
+  limit: number
+}
+
+/** Friend Battles' numbers (docs/65), every time in seconds. */
+export interface FriendBattlesConfig {
+  access: EventAccess
+  /** A challenge waits this long for its answer. */
+  expiry: number
+  /** A draft pick, the team's order, a turn. */
+  pick: number
+  order: number
+  turn: number
+  /** A player not seen this long during a match loses it. */
+  grace: number
+  /** The Bonus Shield: the % of the first attack's damage the first picker's team takes. */
+  shield: number
+  classic: boolean
+  draft: boolean
+  /**
+   * Battle tickets (docs/65 §15): `ticketDaily` given at each UTC midnight while a player holds fewer than `ticketCap`
+   * (never past it); the Friend Market sells them at `ticketPrice` Heart Scales, `ticketWeekly` a week (bought ones can
+   * go past the cap). A fight costs each player one, taken as it starts.
+   */
+  ticketDaily: number
+  ticketCap: number
+  ticketPrice: number
+  ticketWeekly: number
+  /** Lv.100 battles offered beside Lv.50 (docs/65 §16). */
+  lv100: boolean
+}
+
+export interface FriendshipConfig {
+  access: EventAccess
+  tiers: FriendshipTier[]
+  dailyCap: number
+  market: FriendMarketItem[]
+  /** The shiny of the week: its price, its level and the pool it turns through, a species a week. */
+  shiny: { price: number; level: number; pool: number[] }
+  /**
+   * The Friend Ball's hidden-talent boost by the player's best live streak, one per tier (the first also below it):
+   * ×1, ×2, ×3, ×4, ×5. Read by the game only (the catch is the game's).
+   */
+  ballBoost: number[]
+}
+
+/** Friendship in a save (docs/60): the rules read, purchases put away, Eggs to tell the server about. */
+export interface FriendshipSave {
+  rulesSeen?: boolean
+  /** The last market purchases put in the save (their ids): one handed back twice is applied once. */
+  applied?: string[]
+  /** Friends (user ids) whose Pokémon helped make an Egg, not told to the server yet. */
+  eggs?: string[]
+}
+
 /** One parent of an Egg, for "Eevee and Ditto (Noor) left it": the species, and whose it is when it's a visitor. */
 export interface EggParent {
   dex: number
   /** The friend's name, for a guest. */
   owner?: string
+  /** The friend's user id, for a guest: the Egg keeps the friendship streak going (docs/60). */
+  ownerId?: string
+}
+
+/** What an Egg holds once it has hatched, before it reaches a Box: its species, and the shiny and talent rolls. */
+export interface Hatchling {
+  dex: number
+  shiny?: true
+  talent?: true
 }
 
 export interface DayCareState {
@@ -1814,8 +2941,11 @@ export interface DayCareState {
   breedAt?: number
   /** When the last Ditto check ran (ms). */
   dittoAt?: number
-  /** The Egg waiting to hatch: one at a time. `gift` is the free first one. */
-  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true }
+  /**
+   * The Egg waiting to hatch: one at a time. `gift` is the free first one. `hatchling` is what it holds, rolled the
+   * first time it hatches and kept until the player picks its Box, so closing the game mid-hatch rolls nothing again.
+   */
+  egg?: { at: number; parents?: [EggParent, EggParent]; gift?: true; hatchling?: Hatchling }
 }
 
 export type PlayerCharacter = 'red' | 'green'
@@ -1840,6 +2970,11 @@ export interface BundleRaw {
   regions?: Region[]
   /** Static canon, not content: src/config/bundle.ts adds it (src/data/egg-groups.json), the database never has it. */
   eggGroups?: Record<string, EggGroupEntry>
+  /**
+   * Each family's hidden talent, the game's own pick (docs/51: src/data/talents.json, `pnpm talents`), added like the
+   * Egg groups; the admin's picks (game_config `hiddenTalents.families`) go over it.
+   */
+  talentFamilies?: Record<string, string>
 }
 
 /**
@@ -1891,6 +3026,12 @@ export interface GameData {
   regions: Region[]
   /** Breeding data by dex (engine/daycare.ts): empty when a bundle came without it, and then nothing pairs. */
   eggGroups: Record<number, EggGroupEntry>
+  /** Family (its lowest dex) → its hidden talent, the game's own pick (docs/51). */
+  talentFamilies: Record<string, string>
   /** Who's playing, set by the store: the admin sees the events switched on for the admin only. Absent = a player. */
-  viewer?: { admin: boolean }
+  /**
+   * Who's playing: the admin (signed in), a beta tester (docs/65 §3: the server's list, read by friend_status), and the
+   * Extreme save's race (docs/48: its online features off).
+   */
+  viewer?: { admin: boolean; beta?: boolean; race?: boolean }
 }

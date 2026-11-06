@@ -597,8 +597,25 @@ const DRAW: Record<
 /** Particles with drag, gravity, homing and colour ramps: one list, updated with fixed steps. */
 export class Particles {
   list: Particle[] = []
+  /**
+   * How many particles each `add` makes (docs/38 F3a: a hit's power): below 1 some are dropped, above 1 jittered copies
+   * join them. Its own stream decides, so a timeline's draws (and so its look at density 1) never change.
+   */
+  density = 1
+  private more = rng(97)
   add(p: Partial<Particle> & { x: number; y: number }) {
-    this.list.push({ ...P_DEF, ...p })
+    if (this.density === 1) {
+      this.list.push({ ...P_DEF, ...p })
+      return
+    }
+    const r = this.more
+    const n = Math.floor(this.density) + (r() < this.density % 1 ? 1 : 0)
+    for (let i = 0; i < n; i++) {
+      // The first is the particle as asked; its copies fly a little faster or slower, so they spread.
+      const jx = i ? r.range(0.8, 1.2) : 1
+      const jy = i ? r.range(0.8, 1.2) : 1
+      this.list.push({ ...P_DEF, ...p, vx: (p.vx ?? 0) * jx, vy: (p.vy ?? 0) * jy })
+    }
   }
   clear() {
     this.list.length = 0

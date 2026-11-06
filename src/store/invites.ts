@@ -46,8 +46,7 @@ export async function openInviteRewards(): Promise<void> {
   try {
     const rows = await claimInviteRewards()
     const landed: GiftLanded[] = []
-    // Opening them is seeing what they are: the rules pop-up has nothing left to announce.
-    mutateSave(rulesSeen)
+    // The rules stay due: they're the Friends page's, the first time in (the user's call, 2026-10-25).
     for (const row of rows)
       mutateSave((s) => {
         const res = applyInviteReward(s, useGame.getState().data, row.friends, row.gifts, Date.now(), newId)

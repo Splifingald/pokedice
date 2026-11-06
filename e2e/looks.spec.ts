@@ -1,8 +1,8 @@
 // Trainer looks (docs/31) on a phone: switched off, the old free picker is still under the trainer card; on, a look
 // not unlocked comes off, the row's rules pop up once (Let's go! opens the menu), the red dot counts the new looks
 // on the avatar and the row, a look is worn from the grid, the list narrows to a region from a dropdown and shows the
-// unlocked looks with how each was won, closing the menu takes the dot away, and in dusk every text keeps its
-// contrast.
+// unlocked looks with how each was won, closing the menu takes the dot away, Halloween 2026's look shows once won
+// (docs/31 §7), and in dusk every text keeps its contrast.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { regionSpecies, type SaveData } from '../src/engine'
@@ -111,6 +111,34 @@ test('on: a look not unlocked comes off, the rules once, the menu and its red do
   await expect(page.getByRole('dialog', { name: 'Trainer looks' }).last()).toContainText(
     'Champions and collectors',
   )
+})
+
+test("Halloween 2026's look: not listed until won, then under Events with its goal, and worn", async ({
+  page,
+}) => {
+  const LOOK = 'events/halloween-2026-pokemaniac'
+  await boot(
+    page,
+    save({
+      looks: { rulesSeen: true },
+      events: { raidsDone: ['cfff57e0-5175-545c-9e68-a2e2e64d7d45:487'] },
+    }),
+  )
+  await page.goto('/home')
+  await page.getByRole('button', { name: /^Trainer menu/ }).click()
+  const card = page.getByRole('dialog', { name: 'Trainer card' })
+  await card.getByRole('button', { name: /^Trainer looks/ }).click()
+  const menu = page.getByRole('dialog', { name: 'Trainer looks' })
+  const grid = menu.getByRole('radiogroup', { name: 'Unlocked' })
+  // Never listed locked: the Locked list has no event look.
+  await expect(menu.getByText('Completed Haunted Hollow Halloween 2026 event')).toHaveCount(0)
+  await menu.getByRole('radio', { name: /^Unlocked/ }).click()
+  const events = menu.getByRole('region', { name: 'Events' })
+  await expect(events).toContainText('Halloween 26 Pokémaniac')
+  await expect(events).toContainText('Completed Haunted Hollow Halloween 2026 event')
+  await grid.getByRole('radio', { name: 'Halloween 26 Pokémaniac · NEW' }).click()
+  await expect.poll(async () => (await stored(page)).player?.avatar).toBe(LOOK)
+  await expect(menu.getByText('Halloween 26 Pokémaniac').first()).toBeVisible()
 })
 
 test('the menu in dusk keeps every text readable', async ({ page }) => {

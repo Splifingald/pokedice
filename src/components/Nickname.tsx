@@ -102,7 +102,7 @@ function NicknameForm({ inst, onDone }: { inst: PokemonInstance; onDone: () => v
         />
         <small
           id={hintId}
-          className="flex items-start gap-2 font-pixel-sm text-[15px] leading-tight text-muted"
+          className="flex items-start gap-2 font-pixel-sm text-[16px] leading-tight text-muted"
         >
           <span className="min-w-0 flex-1">
             {t('ui.nickname.hint', { name: species })}

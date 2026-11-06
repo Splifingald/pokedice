@@ -1,14 +1,21 @@
 // Kitchen sink: Trades (docs/23) — who can see a listing, what it wants, its time left, board rows in every state
-// (you can trade, a friend's, yours, greyed with why, shiny and NEW, a guest's view), the listing's sheet, the share
-// pop-up, the rules (unlock and INFO), the trade scene (plain, shiny, "Trade done!" back Home, a trade evolution) and
-// what it ends on (locked too), and the pick of the Box a traded Pokémon goes to (docs/23 §1.4).
+// (you can trade, a friend's, yours, greyed with why, shiny and NEW, a guest's view), NEW PICKS (§2.1), the listing's
+// sheet, the share pop-up, the rules (unlock and INFO), the trade scene (plain, shiny, "Trade done!" back Home, a trade
+// evolution) and what it ends on (locked too), and the pick of the Box a traded Pokémon goes to (docs/23 §1.4).
 import { useState } from 'react'
 import { encodeDexSet, type LandingOption, type RegionId, type TradeLogEntry } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
 import { ListingSheet } from '@/components/trades/ListingSheet'
 import { ShareListingModal, type Shared } from '@/components/trades/ShareListing'
-import { LandingPick, ListingRow, TimeLeft, VisChip, WantTile } from '@/components/trades/TradeBits'
+import {
+  LandingPick,
+  ListingRow,
+  NewPicksButton,
+  TimeLeft,
+  VisChip,
+  WantTile,
+} from '@/components/trades/TradeBits'
 import { TradesRulesModal } from '@/components/trades/TradeRules'
 import { LandingStepView, TradeResult, TradeScene } from '@/components/trades/TradeScene'
 import type { TradeListing } from '@/lib/trades'
@@ -28,6 +35,7 @@ const listing = (over: Partial<TradeListing>): TradeListing => ({
   dex: 4,
   level: 12,
   shiny: false,
+  talent: false,
   homeRegion: 'kanto',
   want: { kind: 'species', dex: 16 },
   visibility: 'public',
@@ -62,6 +70,43 @@ const entry = (over: Partial<TradeLogEntry>): TradeLogEntry => ({
   outcome: 'new',
   ...over,
 })
+
+// The share modal for each kind of want, and a shiny: its message names them all.
+const SHARES: { label: string; share: Shared }[] = [
+  {
+    label: 'Share (private, any new)',
+    share: {
+      code: 'K7QM4XD9',
+      dex: 4,
+      level: 12,
+      shiny: false,
+      want: { kind: 'notOwned' },
+      visibility: 'private',
+    },
+  },
+  {
+    label: 'Share (shiny, for a species)',
+    share: {
+      code: 'P3WX8NHT',
+      dex: 25,
+      level: 32,
+      shiny: true,
+      want: { kind: 'species', dex: 447 },
+      visibility: 'public',
+    },
+  },
+  {
+    label: 'Share (friends, any)',
+    share: {
+      code: 'B6RJ2ZQF',
+      dex: 133,
+      level: 20,
+      shiny: false,
+      want: { kind: 'any' },
+      visibility: 'friends',
+    },
+  },
+]
 
 const SCENES: { label: string; show: TradeShow }[] = [
   {
@@ -189,15 +234,24 @@ export function TradeKitBits() {
           <ListingRow key={l.id} listing={l} why={why} guest={guest} onOpen={() => setOpen(l)} />
         ))}
       </ul>
+      {/* NEW PICKS under the board's picks (docs/23 §2.1): ready, busy, every listing shown, none left today. */}
+      <div className="grid max-w-[460px] gap-2">
+        <NewPicksButton left={2} max={2} more onClick={() => {}} />
+        <NewPicksButton left={1} max={2} more busy onClick={() => {}} />
+        <NewPicksButton left={1} max={2} more={false} onClick={() => {}} />
+        <NewPicksButton left={0} max={2} more onClick={() => {}} />
+      </div>
       <div className="flex flex-wrap gap-2">
         {SCENES.map((s) => (
           <PixelButton key={s.label} size="sm" onClick={() => setScene(s.show)}>
             {s.label}
           </PixelButton>
         ))}
-        <PixelButton size="sm" onClick={() => setShare({ code: 'K7QM4XD9', dex: 4, visibility: 'private' })}>
-          Share (private)
-        </PixelButton>
+        {SHARES.map((s) => (
+          <PixelButton key={s.label} size="sm" onClick={() => setShare(s.share)}>
+            {s.label}
+          </PixelButton>
+        ))}
         <PixelButton size="sm" onClick={() => setRules('unlock')}>
           Trades open
         </PixelButton>
@@ -206,14 +260,14 @@ export function TradeKitBits() {
       <div className="grid gap-3 sm:grid-cols-3">
         {RESULTS.map((r) => (
           <div key={r.label} className="grid gap-1 bg-panel p-2 shadow-ring-line">
-            <small className="font-pixel-sm text-[13px] text-muted">{r.label}</small>
+            <small className="font-pixel-sm text-[16px] text-muted">{r.label}</small>
             <TradeResult show={r.show} />
           </div>
         ))}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="grid gap-1 bg-panel p-2 shadow-ring-line">
-          <small className="font-pixel-sm text-[13px] text-muted">Pick its Box (the scene's last step)</small>
+          <small className="font-pixel-sm text-[16px] text-muted">Pick its Box (the scene's last step)</small>
           <LandingStepView
             name="Pikachu"
             dex={25}
@@ -226,7 +280,7 @@ export function TradeKitBits() {
           />
         </div>
         <div className="grid content-start gap-2 bg-panel p-2 shadow-ring-line">
-          <small className="font-pixel-sm text-[13px] text-muted">
+          <small className="font-pixel-sm text-[16px] text-muted">
             A shiny, nothing picked; disabled (trading)
           </small>
           <LandingPick name="Eevee" level={25} options={SHINY_LANDINGS} value={null} onChange={() => {}} />

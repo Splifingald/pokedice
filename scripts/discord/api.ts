@@ -64,15 +64,36 @@ export function discordClient(token: string, reason = 'Pokédice server setup'):
   return { get: (path) => call('GET', path), send: (method, path, body) => call(method, path, body) }
 }
 
+/** A file sent with a webhook message: Discord shows a video or a picture under the message, and plays a video. */
+export interface WebhookFile {
+  name: string
+  data: Uint8Array
+  type: string
+}
+
 /** Posts a message through a webhook URL (no bot needed) and returns the message Discord stored. */
-export function postWebhook(url: string, payload: unknown): Promise<{ id: string; channel_id: string }> {
+export function postWebhook(
+  url: string,
+  payload: unknown,
+  file?: WebhookFile,
+): Promise<{ id: string; channel_id: string }> {
   const u = new URL(url)
   u.searchParams.set('wait', 'true')
-  return request(u.toString(), {
-    method: 'POST',
-    headers: { 'User-Agent': USER_AGENT, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
+  if (!file)
+    return request(u.toString(), {
+      method: 'POST',
+      headers: { 'User-Agent': USER_AGENT, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  // With a file, the message goes as multipart: the JSON in payload_json, the file as files[0] (fetch sets the
+  // boundary's Content-Type itself).
+  const form = new FormData()
+  form.set(
+    'payload_json',
+    JSON.stringify({ ...(payload as object), attachments: [{ id: 0, filename: file.name }] }),
+  )
+  form.set('files[0]', new Blob([file.data], { type: file.type }), file.name)
+  return request(u.toString(), { method: 'POST', headers: { 'User-Agent': USER_AGENT }, body: form })
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

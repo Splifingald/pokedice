@@ -2,6 +2,8 @@ import { getSpecies } from './data'
 import { expandDice } from './dice'
 import { evolutionsIn } from './forms'
 import type { Rng } from './rng'
+import { outfitAllowsEvolution } from './outfits'
+import { TALENT, talentOf, type TalentKey } from './talents'
 import type { DieType, Evolution, GameConfig, GameData, Milestone, PokeType, PokemonInstance, Species } from './types'
 
 /** xpToNext(L) = ceil(A × L^B) + C */
@@ -13,6 +15,17 @@ export function xpToNext(level: number, cfg: GameConfig): number {
 /** HP at level L = round(baseHp + (maxHp − baseHp) × (L − 1) / 99) */
 export function hpCurve(species: Species, level: number): number {
   return Math.round(species.baseHp + ((species.maxHp - species.baseHp) * (level - 1)) / 99)
+}
+
+/**
+ * Speed = the species' base Speed stat + `speedPerLevel` (1) × level (docs/52), so a Pokémon trained past its foe's
+ * level catches up with faster species. A tie still goes to the player (`startBattle`).
+ */
+export function battleSpeed(species: Species, level: number, data: GameData, talent?: TalentKey | null): number {
+  const speed = species.speed + Math.round((data.config.speedPerLevel ?? 1) * level)
+  // Quick and Ultra Speed (docs/51): a share more.
+  const up = talent === 'quick' ? TALENT.quick : talent === 'ultraSpeed' ? TALENT.ultraSpeed : 0
+  return up ? Math.round(speed * (1 + up)) : speed
 }
 
 export interface EffectiveStats {
@@ -29,7 +42,8 @@ export interface EffectiveStats {
  * below the level is applied in order, then HP is scaled by `hpMultiplier`. Nothing about the dice set is stored in
  * the save.
  */
-export function effectiveStats(species: Species, level: number, data: GameData): EffectiveStats {
+/** `talent`: Thick Hide's (docs/51) is more max HP. */
+export function effectiveStats(species: Species, level: number, data: GameData, talent?: TalentKey | null): EffectiveStats {
   const dice = expandDice(species.dice)
   let rerolls = species.rerolls
   let hpBonus = 0
@@ -71,17 +85,21 @@ export function effectiveStats(species: Species, level: number, data: GameData):
   return {
     dice,
     rerolls,
-    maxHp: Math.max(1, Math.round((hpCurve(species, level) + hpBonus) * data.config.hpMultiplier)),
+    maxHp: Math.max(
+      1,
+      Math.round((hpCurve(species, level) + hpBonus) * data.config.hpMultiplier * (talent === 'thickHide' ? 1 + TALENT.thickHide : 1)),
+    ),
     types: species.type2 ? [species.type1, species.type2] : [species.type1],
     applied,
   }
 }
 
-export function instanceStats(inst: Pick<PokemonInstance, 'dex' | 'level'>, data: GameData): EffectiveStats {
-  return effectiveStats(getSpecies(data, inst.dex), inst.level, data)
+/** A Pokémon's own: its hidden talent (docs/51) counts. */
+export function instanceStats(inst: Pick<PokemonInstance, 'dex' | 'level' | 'talent'>, data: GameData): EffectiveStats {
+  return effectiveStats(getSpecies(data, inst.dex), inst.level, data, talentOf(data, inst))
 }
 
-export function instanceMaxHp(inst: Pick<PokemonInstance, 'dex' | 'level'>, data: GameData): number {
+export function instanceMaxHp(inst: Pick<PokemonInstance, 'dex' | 'level' | 'talent'>, data: GameData): number {
   return instanceStats(inst, data).maxHp
 }
 
@@ -94,6 +112,11 @@ export type ProgressEvent =
   | { kind: 'level_up'; uid: string; dex: number; level: number; maxHp: number }
   | { kind: 'milestone'; uid: string; dex: number; level: number; milestone: Milestone }
   | { kind: 'evolve'; uid: string; fromDex: number; toDex: number; level: number }
+  /**
+   * A family's hidden talent unlocked (docs/51) through this Pokémon: `caught` with it, `passed` from a weaker one caught
+   * and let go, `evolved` as it evolved, `candy` given a Talent Candy.
+   */
+  | { kind: 'talent'; uid: string; dex: number; talent: TalentKey; how: 'caught' | 'passed' | 'evolved' | 'candy' }
 
 /**
  * Which species may be evolved into, and — for a regional evolution — the region the player stands in (see
@@ -112,7 +135,11 @@ export function stoneEvolution(
   allowDex?: EvolutionGateLike,
 ): number | null {
   const e = evolutionsIn(data.species[inst.dex]?.evolutions ?? [], allowDex?.region).find(
-    (x) => x.item === itemKey && data.species[x.toDex] && (allowDex?.(x.toDex) ?? true),
+    (x) =>
+      x.item === itemKey &&
+      data.species[x.toDex] &&
+      (allowDex?.(x.toDex) ?? true) &&
+      outfitAllowsEvolution(inst, x.toDex),
   )
   return e ? e.toDex : null
 }
@@ -158,9 +185,13 @@ export function tradeEvolutionOf(data: GameData, dex: number): number | null {
  * The Link Cable (docs/25): the trade evolution this Pokémon would have in a trade, without one — gated like
  * `stoneEvolution` on the region being played. Null when it has none.
  */
-export function linkEvolution(inst: Pick<PokemonInstance, 'dex'>, data: GameData, allowDex?: EvolutionGateLike): number | null {
+export function linkEvolution(
+  inst: Pick<PokemonInstance, 'dex' | 'outfit'>,
+  data: GameData,
+  allowDex?: EvolutionGateLike,
+): number | null {
   const to = tradeEvolutionOf(data, inst.dex)
-  return to != null && (allowDex?.(to) ?? true) ? to : null
+  return to != null && (allowDex?.(to) ?? true) && outfitAllowsEvolution(inst, to) ? to : null
 }
 
 /**
@@ -174,7 +205,9 @@ export function levelEvolutions(inst: PokemonInstance, data: GameData, allowDex?
       e.level <= inst.level &&
       data.species[e.toDex] &&
       (allowDex?.(e.toDex) ?? true) &&
-      !isTradeEvolution(data, inst.dex, e.toDex),
+      !isTradeEvolution(data, inst.dex, e.toDex) &&
+      // An outfit (docs/59) evolves only into a species wearing it too.
+      outfitAllowsEvolution(inst, e.toDex),
   )
 }
 

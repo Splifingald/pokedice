@@ -9,6 +9,7 @@
  * without knowing regions exist; switching region is a swap of those fields, and nothing else changes.
  */
 import { linearAreas } from './data'
+import { eventOpenTo, gameCornerOn } from './events'
 import { evolutionsIn } from './forms'
 import { isReviving } from './fossils'
 import type { BadgeInfo } from './run'
@@ -80,6 +81,17 @@ export function unlockedRegions(save: SaveData, data: GameData): Region[] {
 }
 
 /**
+ * Every species caught, in every region's Pokédex: the live one and the parked ones. A small world's catches don't
+ * count (they go home on their own, docs/26), as the Day Care's count leaves them out too.
+ */
+export function pokedexEverywhere(save: SaveData): Set<number> {
+  const world = worldRegionOf(save)
+  const all = new Set(regionOf(save) === world ? [] : save.pokedex)
+  for (const [id, block] of Object.entries(save.parked ?? {})) if (id !== world) for (const dex of block?.pokedex ?? []) all.add(dex)
+  return all
+}
+
+/**
  * The region a species *belongs* to — the region whose `dexRange` covers its number. Unlike `regionSpecies`, which
  * asks where you can catch something, this asks which generation it is from, and that is what decides whether a
  * Pokémon exists for you yet.
@@ -137,12 +149,13 @@ export function regionAreas(data: GameData, regionId: RegionId) {
 
 /**
  * Every species a region can give you, by any route: its wild pools, its legendaries, its starters, the Pokémon its
- * fossils revive into, the Game Corner prize where it has a Game Corner — and everything all of those evolve into.
+ * fossils revive into, the Game Corner prize where it has a Game Corner (while it's on), the Fortune Wheel's jackpot
+ * Pokémon where the wheel opens — and everything all of those evolve into.
  * This — not a dex number range — is what a region's Pokédex page counts, because a region's routes borrow freely
  * from earlier generations and a player should be able to see everything they can actually get here.
  *
  * Counting only the wild pools is what left holes in the page. Omanyte, Kabuto and Aerodactyl are wild nowhere (they
- * come out of a fossil, see engine/fossils.ts) and Porygon is won at the Game Corner, so #137, #138, #140 and #142
+ * come out of a fossil, see engine/fossils.ts) and Porygon is won on the Fortune Wheel, so #137, #138, #140 and #142
  * were missing from Kanto's Pokédex — and a revived Omanyte had nowhere to show up at all. Evolved forms went the
  * same way wherever the grass holds only the first stage: Cradily and Armaldo in Hoenn, and in Johto a long list of
  * Gen 1 finals — Pidgeot, Alakazam, Machamp, Gengar — whose families are all over the routes.
@@ -164,9 +177,20 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
     }
     if ((area.encounterWeights.casino ?? 0) > 0) hasGameCorner = true
   }
-  if (hasGameCorner && data.species[data.config.slotMachine.prizeDex]) out.add(data.config.slotMachine.prizeDex)
+  if (hasGameCorner && gameCornerOn(data) && data.species[data.config.slotMachine.prizeDex]) out.add(data.config.slotMachine.prizeDex)
+  // The Fortune Wheel's jackpot Pokémon belong to the region of the area that opens the wheel (Porygon: Kanto's).
+  const wheelArea = data.areas.find((a) => a.id === data.config.events.wheel.unlockAreaId)
+  if (wheelArea && regionOfArea(wheelArea) === regionId)
+    for (const j of data.config.events.wheel.jackpot ?? []) if (j.reward.kind === 'pokemon' && data.species[j.reward.dex]) out.add(j.reward.dex)
   // The roamers belong to their region without sitting in any one area (see engine/encounters.ts).
   for (const dex of data.config.roamers?.regionId === regionId ? (data.config.roamers?.dex ?? []) : []) out.add(dex)
+  // The gift Pokémon of its areas, while gifts are on (docs/61 §5.3): Platinum's Togepi, Eevee and Porygon in Sinnoh.
+  if (eventOpenTo(data.config.giftMoments?.access, data)) {
+    const here = new Set(data.areas.filter((a) => regionOfArea(a) === regionId).map((a) => a.id))
+    for (const g of data.config.giftMoments?.gifts ?? [])
+      if (here.has(g.areaId))
+        for (const dex of [...g.dex, ...Object.values(g.byStarter ?? {})]) if (data.species[dex]) out.add(dex)
+  }
   // So do the raid pool's mythicals: met in Raid Battles once their lair, an area of the region, is cleared.
   for (const p of data.config.events.raid.pool) {
     const lair = data.areas.find((a) => a.id === p.areaId)
@@ -184,6 +208,19 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
   return out
 }
 
+/** The Pokémon each real region has to offer (regionSpecies), built once per GameData. */
+const speciesByRegion = new WeakMap<GameData, Map<RegionId, Set<number>>>()
+
+/** The real regions whose Pokédex page lists a species (`regionSpecies`), in region order. */
+export function regionsHolding(data: GameData, dex: number): RegionId[] {
+  let map = speciesByRegion.get(data)
+  if (!map) {
+    map = new Map(realRegions(data).map((r) => [r.id, regionSpecies(data, r.id)]))
+    speciesByRegion.set(data, map)
+  }
+  return [...map].filter(([, set]) => set.has(dex)).map(([id]) => id)
+}
+
 /** Has this region's league been beaten? — its league area cleared. */
 export function leagueDone(save: SaveData, data: GameData, regionId = regionOf(save)): boolean {
   const region = getRegion(data, regionId)
@@ -197,6 +234,8 @@ export function leagueDone(save: SaveData, data: GameData, regionId = regionOf(s
  * Null the rest of the time — including before the first league, which is why nothing names Johto until then.
  */
 export function offeredRegion(save: SaveData, data: GameData): Region | null {
+  // Extreme mode's regions are runs of their own, started from its page (docs/48): no League offers the next one.
+  if (save.mode === 'extreme') return null
   const started = new Set<RegionId>([regionOf(save), ...Object.keys(save.parked ?? {})])
   for (const region of enabledRegions(data)) {
     if (!region.nextRegion || started.has(region.nextRegion)) continue
@@ -319,6 +358,8 @@ export function startRegion(save: SaveData, region: Region, block: RegionSave): 
  */
 export function sendTargets(save: SaveData, data: GameData): Region[] {
   const here = regionOf(save)
+  // Extreme mode's runs race apart (docs/48): nothing goes from one to another.
+  if (save.mode === 'extreme') return []
   // Nothing leaves a small world but its mythical (and nothing goes into one).
   if (isWorldRegion(data, here)) return []
   // It has to be a region being played: its parked block is the Box the Pokémon arrives in.

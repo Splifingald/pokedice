@@ -33,7 +33,8 @@ async function rename(page: Page, from: string, to: string) {
 test('a tap on its name gives a Pokémon a nickname, which its sheet and the team show', async ({ page }) => {
   await boot(page)
   await page.goto('/team')
-  await page.getByRole('button', { name: /^Charmander/ }).click()
+  // The team's card (the banner over it lists the same Pokémon for screen readers, first): the last match.
+  await page.getByRole('button', { name: /^Charmander/ }).last().click()
   const sheet = page.getByRole('dialog', { name: 'Charmander' })
   await expect(sheet).toBeVisible()
 
@@ -79,7 +80,8 @@ test('a tap on its name gives a Pokémon a nickname, which its sheet and the tea
   // The team card calls it by it too.
   await page.keyboard.press('Escape')
   await expect(named).toHaveCount(0)
-  const card = page.getByRole('button', { name: /^Blaze, Lv\./ })
+  // The team's card (the banner over it lists the same Pokémon for screen readers, first): the last match.
+  const card = page.getByRole('button', { name: /^Blaze, Lv\./ }).last()
   await expect(card).toBeVisible()
 
   // Changed, then taken away: empty means its species' name again.
@@ -103,7 +105,8 @@ test('dusk: the nicknamed sheet and the dialog keep their contrast', async ({ pa
   await page.addInitScript((s) => localStorage.setItem('pokedice.save', s), JSON.stringify(save))
   await page.goto('/team')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await page.getByRole('button', { name: /^Blaze, Lv\./ }).click()
+  // The team's card (the banner over it lists the same Pokémon for screen readers, first): the last match.
+  await page.getByRole('button', { name: /^Blaze, Lv\./ }).last().click()
   const sheet = page.getByRole('dialog', { name: 'Blaze' })
   await expect(sheet.getByText(/^Charmander · #004/)).toBeVisible()
   const contrast = async () =>

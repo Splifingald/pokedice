@@ -1,12 +1,13 @@
 // Versus: leave a team of three Lv.50 clones for other players to fight, fight theirs, and climb two boards — teams
 // beaten in attack, fights won in defense. Every fight is decided and recorded before it plays (engine/versus).
+// Layout (docs/43 §5.8): phones keep three tabs (Opponents, My team, the board) with the team's SAVE pinned at the foot;
+// PC puts the opponents (or the team being picked) on the left, your team and the board beside them.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
-  cloneForVersus,
   versusClosest,
   versusEdge,
   VERSUS_LEVEL,
+  versusSeedLevels,
   randomSeed,
   sameEvent,
   simulateVersus,
@@ -15,6 +16,8 @@ import {
   versusChoices,
   versusMoveAt,
   versusReadyCount,
+  versusRulesDue,
+  versusLeagueFor,
   versusUnlocked,
   VERSUS_TEAM_SIZE,
   POKE_TYPES,
@@ -26,7 +29,8 @@ import { BoardGap, BoardRow, TeamIcons } from '@/components/BoardRow'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { Chip } from '@/components/Chip'
 import { AccountButton } from '@/components/AccountButton'
-import { VersusRulesModal } from '@/components/FeatureRules'
+import { useVersusRules, VersusRulesModal } from '@/components/FeatureRules'
+import { RulesCard } from '@/components/RulesCard'
 import { InfoButton } from '@/components/RulesModal'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
@@ -38,12 +42,16 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { speciesTypes } from '@/components/TypeMatchups'
 import { TypeSelect } from '@/components/TypeSelect'
 import { avatarOf } from '@/lib/avatars'
+import { useSlotOrder } from '@/lib/useDragSwap'
 import { useSnapToMe } from '@/lib/useSnapToMe'
 import { getLang, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
+import { offlineOr } from '@/lib/online'
 import { boardWindow, friendsOnly } from '@/lib/leaderboard'
 import { useFriendsFilter } from '@/lib/useFriendsFilter'
+import { useMediaQuery } from '@/lib/useMediaQuery'
+import { SocialColumns, SocialDock } from '@/components/SocialTabs'
 import {
   fetchVersusBoard,
   opponentsOf,
@@ -60,6 +68,7 @@ import { holdReload, pushSaveNow } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { BattleView, type VersusReplay } from './battle/BattleView'
 import { useInWorld, WorldAwayPage } from '@/screens/events/world'
+import { LeagueScreen } from './versus/League'
 
 type Tab = 'fight' | 'team' | 'board'
 type Load =
@@ -68,12 +77,11 @@ type Load =
   | { state: 'offline' }
   | { state: 'error'; why: string }
 
-/** A refusal of the database, said in the player's language. */
-const errorText = (t: (k: string) => string, err: unknown) => t(`ui.versus.err.${versusErrorCode(err)}`)
+/** A refusal of the database, said in the player's language; "You're offline" when there's no connection. */
+const errorText = (t: (k: string) => string, err: unknown) => offlineOr(t(`ui.versus.err.${versusErrorCode(err)}`))
 
 function VersusScreenMain() {
   const { t } = useT()
-  const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   const auth = useGame((s) => s.auth)
@@ -83,11 +91,11 @@ function VersusScreenMain() {
   const fights = useRef(0)
   const [busy, setBusy] = useState(false)
   const [rules, setRules] = useState(false)
-  const open = versusUnlocked(save, data)
-  // Opening Versus is as good as its rules pop-up: it won't open by itself afterwards (the INFO button stays).
-  useEffect(() => {
-    if (open) markVersusRulesSeen()
-  }, [open])
+  const wide = useMediaQuery('(min-width: 1024px)')
+  // Its rules where they apply (docs/43 §7): a card at the top of the page until GOT IT, which sets the flag. Opening
+  // the page no longer counts as reading them.
+  const rulesDue = versusRulesDue(save, data)
+  const versusRules = useVersusRules()
 
   const refresh = useCallback(() => {
     let live = true
@@ -152,63 +160,125 @@ function VersusScreenMain() {
   if (!versusUnlocked(save, data) && !me) return <Locked />
 
   const toBeat = opponentsOf(rows).filter((r) => !r.beaten).length
+  // PC: the board lives beside the opponents, so the tabs are the two things you do (fight, pick your team).
+  const view: Tab = wide && tab === 'board' ? 'fight' : tab
+  const status =
+    load.state === 'loading' ? (
+      <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>
+    ) : load.state === 'error' ? (
+      <p className="m-0 p-4 text-center text-[20px] text-danger">{load.why}</p>
+    ) : load.state === 'offline' ? (
+      <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.versus.offline')}</p>
+    ) : null
+  const connect = !signedIn && (
+    <div className="flex flex-wrap items-center justify-between gap-2 bg-gold-pale p-2.5 shadow-card-gold">
+      <p className="m-0 min-w-0 flex-1 text-[19px] leading-tight">{t('ui.versus.connect')}</p>
+      <AccountButton size="sm" />
+    </div>
+  )
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3">
-      <PageHead title={t('ui.versus.title')} onBack={() => navigate('/home')}>
-        <Chip tone="dark">{t('ui.versus.auto')}</Chip>
-      </PageHead>
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.versus.intro')}</p>
-
-      {!signedIn && (
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-gold-pale p-3 shadow-card-gold">
-          <p className="m-0 text-[19px] leading-tight">{t('ui.versus.connect')}</p>
-          <AccountButton />
-        </div>
+    <div className="flex flex-col gap-3">
+      <PageHead title={t('ui.versus.title')} social="versus" />
+      {rulesDue && (
+        <RulesCard title={t('ui.versus.title')} icon="vs" rules={versusRules} onDone={markVersusRulesSeen} />
       )}
-
-      <Seg
-        tabs
-        idPrefix="vs"
-        label={t('ui.versus.title')}
-        value={tab}
-        onChange={setTab}
-        options={[
-          {
-            id: 'fight',
-            label: t('ui.versus.tabFight'),
-            count: load.state === 'ready' && toBeat ? toBeat : undefined,
-          },
-          { id: 'team', label: t('ui.versus.tabTeam') },
-          { id: 'board', label: t('ui.versus.tabBoard') },
-        ]}
+      <SocialColumns
+        main={
+          <>
+            <Seg
+              tabs
+              idPrefix="vs"
+              label={t('ui.versus.title')}
+              value={view}
+              onChange={setTab}
+              options={[
+                {
+                  id: 'fight' as Tab,
+                  label: t('ui.versus.tabFight'),
+                  count: load.state === 'ready' && toBeat ? toBeat : undefined,
+                },
+                { id: 'team' as Tab, label: t('ui.versus.tabTeam') },
+                ...(wide ? [] : [{ id: 'board' as Tab, label: t('ui.versus.tabBoard') }]),
+              ]}
+            />
+            <div role="tabpanel" aria-labelledby={`vs-${view}`} className="flex flex-col gap-2.5">
+              {status}
+              {load.state === 'ready' && view === 'fight' && (
+                <Opponents
+                  rows={rows}
+                  me={me}
+                  signedIn={signedIn}
+                  busy={busy}
+                  onFight={startFight}
+                  onSetTeam={() => setTab('team')}
+                  teamStrip={!wide}
+                />
+              )}
+              {load.state === 'ready' && view === 'team' && (
+                <TeamEditor me={me} signedIn={signedIn} reload={reload} />
+              )}
+              {load.state === 'ready' && view === 'board' && <Board rows={rows} />}
+            </div>
+          </>
+        }
+        side={
+          wide && (
+            <>
+              {connect}
+              <MyTeamCard me={me} onChange={() => setTab('team')} editing={view === 'team'} />
+              {load.state === 'ready' && (
+                <section aria-labelledby="vs-board-title" className="flex flex-col gap-2 bg-panel p-2 shadow-card">
+                  <h2 id="vs-board-title" className="m-0 flex items-center gap-2 text-[24px] font-normal leading-none">
+                    <PixelIcon name="navRanks" size={24} />
+                    {t('ui.versus.tabBoard')}
+                  </h2>
+                  <Board rows={rows} compact />
+                </section>
+              )}
+            </>
+          )
+        }
       />
-
-      <div role="tabpanel" aria-labelledby={`vs-${tab}`} className="flex flex-col gap-2.5">
-        {load.state === 'loading' && (
-          <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>
-        )}
-        {load.state === 'error' && <p className="m-0 p-4 text-center text-[20px] text-danger">{load.why}</p>}
-        {load.state === 'offline' && (
-          <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.versus.offline')}</p>
-        )}
-        {load.state === 'ready' && tab === 'fight' && (
-          <Opponents
-            rows={rows}
-            me={me}
-            signedIn={signedIn}
-            busy={busy}
-            onFight={startFight}
-            onSetTeam={() => setTab('team')}
-          />
-        )}
-        {load.state === 'ready' && tab === 'team' && (
-          <TeamEditor me={me} signedIn={signedIn} reload={reload} />
-        )}
-        {load.state === 'ready' && tab === 'board' && <Board rows={rows} />}
-      </div>
       <InfoButton name={t('ui.versus.title')} onClick={() => setRules(true)} />
+      {/* Phones: signed out, the way to take part pinned at the foot (the team editor pins its own SAVE). */}
+      {!wide && connect && view !== 'team' && <SocialDock>{connect}</SocialDock>}
       <VersusRulesModal open={rules} onClose={() => setRules(false)} />
     </div>
+  )
+}
+
+/** PC's side column: your Versus team, the rules' one line (auto, Lv.50) and Change. */
+export function MyTeamCard({ me, onChange, editing }: { me: VersusEntry | null; onChange: () => void; editing: boolean }) {
+  const { t } = useT()
+  return (
+    <section
+      aria-labelledby="vs-my-team"
+      className="flex flex-col gap-2 bg-[linear-gradient(rgb(var(--c-sky)),rgb(var(--c-paper))_70%)] p-2.5 shadow-card"
+    >
+      <div className="flex items-center gap-2">
+        <h2 id="vs-my-team" className="m-0 text-[24px] font-normal leading-none">
+          {t('ui.versus.yourTeam')}
+        </h2>
+        <Chip tone="dark">{t('ui.versus.auto')}</Chip>
+        {!editing && me && (
+          <PixelButton size="sm" className="ml-auto" onClick={onChange}>
+            {t('ui.versus.change')}
+          </PixelButton>
+        )}
+      </div>
+      {/* No team yet: three open slots (the opponents' column asks for one, with its button). */}
+      <ul className="m-0 grid list-none grid-cols-3 gap-1.5 p-0">
+        {Array.from({ length: VERSUS_TEAM_SIZE }, (_, i) => me?.team[i]).map((m, i) =>
+          m ? (
+            <li key={i} className="grid justify-items-center bg-paper pb-1 pt-1.5 shadow-ring-line">
+              <SpriteImg dex={m.dex} size={64} shiny={m.shiny} />
+            </li>
+          ) : (
+            <li key={i} aria-hidden className="h-[74px] border-2 border-dashed border-shadow" />
+          ),
+        )}
+      </ul>
+    </section>
   )
 }
 
@@ -226,24 +296,22 @@ function Meter({ value, className }: { value: number; className?: string }) {
 }
 
 /** Versus is closed: how far the player is from opening it, and the three Pokémon closest to Lv.50. */
-function Locked() {
+export function Locked() {
   const { t } = useT()
   const [rules, setRules] = useState(false)
-  const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)!
   const count = Math.min(versusReadyCount(save, data), VERSUS_TEAM_SIZE)
   const closest = versusClosest(save, data)
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-3">
-      <PageHead title={t('ui.versus.title')} onBack={() => navigate('/home')}>
-        <Chip tone="dark">{t('ui.versus.auto')}</Chip>
-      </PageHead>
+    <div className="flex flex-col gap-3">
+      <PageHead title={t('ui.versus.title')} social="versus" />
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-3">
       <div className="grid justify-items-center gap-2 bg-paper px-3.5 py-4 text-center shadow-card">
         <PixelIcon name="lock" size={36} />
         <b className="text-[21px] font-normal leading-[1.1]">{t('ui.versus.locked')}</b>
         <Meter value={count / VERSUS_TEAM_SIZE} className="h-2.5 w-[70%]" />
-        <small className="font-pixel-sm text-[15px] text-muted">
+        <small className="font-pixel-sm text-[16px] text-muted">
           {t('ui.versus.lockedCount', { n: count })}
         </small>
       </div>
@@ -262,7 +330,7 @@ function Locked() {
                   <MiniSprite dex={inst.dex} size={40} />
                   <b className="text-[18px] font-normal">{name}</b>
                   <Meter value={inst.level / VERSUS_LEVEL} />
-                  <small className="font-pixel-sm text-[15px] text-muted">
+                  <small className="font-pixel-sm text-[16px] text-muted">
                     {ready
                       ? t('ui.home.ready')
                       : t('ui.versus.toGo', {
@@ -276,8 +344,8 @@ function Locked() {
           </ul>
         </>
       )}
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">{t('ui.versus.intro')}</p>
       <InfoButton name={t('ui.versus.title')} onClick={() => setRules(true)} />
+      </div>
       <VersusRulesModal open={rules} onClose={() => setRules(false)} />
     </div>
   )
@@ -292,6 +360,7 @@ function Opponents({
   busy,
   onFight,
   onSetTeam,
+  teamStrip,
 }: {
   rows: VersusEntry[]
   me: VersusEntry | null
@@ -299,6 +368,8 @@ function Opponents({
   busy: boolean
   onFight: (foe: VersusEntry) => void
   onSetTeam: () => void
+  /** Phones: your team and Change on top (PC has them in the side column). */
+  teamStrip?: boolean
 }) {
   const { t, tPlural } = useT()
   const data = useGame((s) => s.data)
@@ -317,6 +388,17 @@ function Opponents({
         r.team.some((m) => searchFold(data.species[m.dex]?.name ?? '').includes(needle)),
     )
   const mine = me?.team.map((m) => m.dex) ?? []
+  const edgeOf = (r: VersusEntry) =>
+    versusEdge(
+      mine,
+      r.team.map((m) => m.dex),
+      data,
+    )
+  // One red FIGHT (docs/15 §6): the opponent to beat your team hits hardest, first in the list on a tie; the rest navy,
+  // as the Areas sheet's other GOs are.
+  const best = shown
+    .filter((r) => !r.beaten)
+    .reduce<VersusEntry | null>((b, r) => (!b || edgeOf(r) > edgeOf(b) ? r : b), null)
   if (signedIn && !me)
     return (
       <div className="grid gap-2.5 bg-gold-pale p-3.5 text-center shadow-card-gold">
@@ -328,10 +410,10 @@ function Opponents({
     )
   return (
     <>
-      {me && (
+      {me && teamStrip && (
         <div className="flex items-center gap-2 bg-paper py-1 pl-2.5 pr-1.5 shadow-ring-line">
-          <span className="font-pixel-sm text-[15px] text-muted">{t('ui.versus.yourTeam')}</span>
-          <TeamIcons team={me.team} owner={me.name} />
+          <span className="font-pixel-sm text-[16px] text-muted">{t('ui.versus.yourTeam')}</span>
+          <TeamIcons team={me.team} owner={me.name} size={38} spaced />
           <PixelButton size="sm" variant="ghost" className="ml-auto" onClick={onSetTeam}>
             {t('ui.versus.change')}
           </PixelButton>
@@ -366,11 +448,7 @@ function Opponents({
               </li>
             )}
             {shown.map((r) => {
-              const edge = versusEdge(
-                mine,
-                r.team.map((m) => m.dex),
-                data,
-              )
+              const edge = edgeOf(r)
               return (
                 <BoardRow
                   key={r.userId}
@@ -384,7 +462,7 @@ function Opponents({
                     me && (
                       <small
                         className={cx(
-                          'font-pixel-sm text-[13px] leading-[1.1]',
+                          'font-pixel-sm text-[16px] leading-[1.1]',
                           edge >= 2 ? 'text-good' : edge === 0 ? 'text-danger' : 'text-muted',
                         )}
                       >
@@ -401,7 +479,7 @@ function Opponents({
                     </span>
                   ) : (
                     <PixelButton
-                      variant="primary"
+                      variant={r === best ? 'primary' : 'dark'}
                       size="sm"
                       className="shrink-0 px-3"
                       disabled={!me || busy}
@@ -422,7 +500,7 @@ function Opponents({
 }
 
 /** Three numbered slots in fight order, the eligible Pokémon (Lv.50+, every region's Box), Clear and Save. */
-function TeamEditor({
+export function TeamEditor({
   me,
   signedIn,
   reload,
@@ -438,15 +516,16 @@ function TeamEditor({
   const [picks, setPicks] = useState<string[]>(() => me?.ids ?? [])
   const [saving, setSaving] = useState(false)
   const [q, setQ] = useState('')
-  const [sort, setSort] = useState<'dex' | 'az'>('dex')
+  // Highest level first: past Lv.50 a Pokémon fights with the dice and rerolls of its own level.
+  const [sort, setSort] = useState<'level' | 'dex' | 'az'>('level')
   const [type, setType] = useState<PokeType | 'all'>('all')
   // Every region's Box: the slots can show any of them.
   const candidates = useMemo(() => versusCandidates(save, data), [save, data])
   // A pick that has left the Box (released, or sent to the Day Care) is dropped.
   const valid = picks.filter((id) => candidates.some((c) => c.inst.id === id))
   const name = (dex: number) => data.species[dex]?.name ?? t('ui.common.pokemon')
-  // The list: each species once (its shiny apart), by National Dex number or by name. Everyone is Lv.50 here, so
-  // levels would only add noise. The search and the type narrow it; picks they hide stay picked.
+  // The list: each species once (its shiny apart, its highest level), by level, National Dex number or name. The search
+  // and the type narrow it; picks they hide stay picked.
   const choices = versusChoices(save, data, valid)
   const types = POKE_TYPES.filter((ty) => choices.some((c) => speciesTypes(data, c.inst.dex).includes(ty)))
   const collator = new Intl.Collator(getLang())
@@ -459,17 +538,26 @@ function TeamEditor({
     )
     .sort(
       (a, b) =>
+        (sort === 'level' ? b.inst.level - a.inst.level : 0) ||
         (sort === 'az' ? collator.compare(name(a.inst.dex), name(b.inst.dex)) : 0) ||
         a.inst.dex - b.inst.dex ||
         Number(!!a.inst.shiny) - Number(!!b.inst.shiny),
     )
-  // The picks are the team already saved: nothing to save.
-  const isSaved = !!me?.ids && me.ids.length === valid.length && me.ids.every((id, i) => valid[i] === id)
+  // The picks are the team already saved, at the levels saved: nothing to save. A Pokémon that has levelled up since
+  // (or a team saved while Versus capped the levels, before 0090) can be saved again for its new dice.
+  const levelOf = (id: string) => candidates.find((c) => c.inst.id === id)?.inst.level
+  const isSaved =
+    !!me?.ids &&
+    me.ids.length === valid.length &&
+    me.ids.every((id, i) => valid[i] === id && me.team[i]?.level === levelOf(id))
 
-  const toggle = (id: string) =>
+  const order = useSlotOrder(valid, setPicks)
+  const toggle = (id: string) => {
+    order.release()
     setPicks((cur) =>
       cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= VERSUS_TEAM_SIZE ? cur : [...cur, id],
     )
+  }
 
   const submit = async () => {
     if (valid.length !== VERSUS_TEAM_SIZE || saving) return
@@ -493,15 +581,16 @@ function TeamEditor({
 
   return (
     <>
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
-        {t('ui.versus.pickHint')} {t('ui.versus.rules')}
-      </p>
+      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.versus.pickHint')}</p>
       {!me && <p className="m-0 text-[18px] text-muted">{t('ui.versus.noTeam')}</p>}
+      {valid.length > 1 && (
+        <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">{t('ui.team.slotsTip')}</p>
+      )}
       <ol className="m-0 grid list-none grid-cols-3 gap-1.5 p-0" aria-label={t('ui.versus.yourTeam')}>
         {Array.from({ length: VERSUS_TEAM_SIZE }, (_, i) => {
           const c = candidates.find((x) => x.inst.id === valid[i])
           const n = (
-            <span className="light-scope absolute left-1.5 top-[5px] bg-night px-[5px] pb-0.5 pt-px font-pixel-sm text-[14px] leading-none text-gold-light">
+            <span className="light-scope absolute left-1.5 top-[5px] bg-night px-[5px] pb-0.5 pt-px font-pixel-sm text-[16px] leading-none text-gold-light">
               {i + 1}
             </span>
           )
@@ -509,27 +598,40 @@ function TeamEditor({
             return (
               <li
                 key={i}
-                className="relative grid min-h-[118px] place-content-center bg-well px-1 text-center font-pixel-sm text-[14px] text-ink shadow-ring-line"
+                className="relative grid min-h-[118px] place-content-center bg-well px-1 text-center font-pixel-sm text-[16px] text-ink shadow-ring-line"
               >
                 {n}
                 {t('ui.versus.slotEmpty')}
               </li>
             )
           const name = data.species[c.inst.dex]?.name ?? t('ui.common.pokemon')
-          const clone = cloneForVersus(c.inst)
+          const fights = versusSeedLevels(c.inst.level).level
           return (
-            <li
-              key={i}
-              className="relative grid min-h-[118px] justify-items-center gap-0.5 bg-paper px-1 pb-2 pt-[18px] text-center shadow-card"
-            >
-              {n}
-              <SpriteImg dex={c.inst.dex} size={64} shiny={c.inst.shiny} />
-              <b className="max-w-full truncate text-[17px] font-normal leading-none">{name}</b>
-              <small className="font-pixel-sm text-[13px] text-muted">
-                {c.inst.level > clone.level
-                  ? `${t('ui.common.level.short', { n: c.inst.level })} → ${clone.level}`
-                  : t('ui.common.level.short', { n: clone.level })}
-              </small>
+            <li key={i} className={cx('relative', order.lifted === i && 'z-10')}>
+              {/* Drag it onto another slot, or tap it then the other: the two swap places. */}
+              <button
+                type="button"
+                {...order.handlers(i)}
+                onClick={() => order.tap(i)}
+                aria-pressed={order.held === i}
+                aria-label={t('ui.team.slotN', { n: i + 1, name })}
+                title={t('ui.team.slotsTip')}
+                className={cx(
+                  'relative grid h-full min-h-[118px] w-full cursor-grab touch-pan-y select-none justify-items-center gap-0.5 px-1 pb-2 pt-[18px] text-center',
+                  order.held === i ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-card',
+                  order.lifted === i && 'cursor-grabbing',
+                  order.over === i && 'outline-dashed outline-[3px] outline-offset-2 outline-danger',
+                )}
+              >
+                {n}
+                <SpriteImg dex={c.inst.dex} size={64} shiny={c.inst.shiny} />
+                <b className="max-w-full truncate text-[17px] font-normal leading-none">{name}</b>
+                <small className="font-pixel-sm text-[16px] text-muted">
+                  {c.inst.level > fights
+                    ? `${t('ui.common.level.short', { n: c.inst.level })} → ${fights}`
+                    : t('ui.common.level.short', { n: fights })}
+                </small>
+              </button>
             </li>
           )
         })}
@@ -549,6 +651,7 @@ function TeamEditor({
           value={sort}
           onChange={setSort}
           options={[
+            { id: 'level', label: t('ui.team.sortLevel') },
             { id: 'dex', label: t('ui.team.sortDex') },
             { id: 'az', label: t('ui.versus.sortAz') },
           ]}
@@ -560,16 +663,16 @@ function TeamEditor({
       )}
       <ul className="m-0 grid list-none gap-1.5 p-0 sm:grid-cols-2">
         {shown.map(({ inst: p }) => {
-          const order = valid.indexOf(p.id)
+          const place = valid.indexOf(p.id)
           return (
             <li key={p.id}>
               <button
                 type="button"
-                aria-pressed={order >= 0}
+                aria-pressed={place >= 0}
                 onClick={() => toggle(p.id)}
                 className={cx(
                   'flex min-h-[52px] w-full items-center gap-2 py-1.5 pl-1.5 pr-2.5 text-left',
-                  order >= 0 ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-card',
+                  place >= 0 ? 'bg-gold-pale shadow-card-gold' : 'bg-paper shadow-card',
                 )}
               >
                 <MiniSprite dex={p.dex} size={40} className="-my-1" />
@@ -578,15 +681,19 @@ function TeamEditor({
                     <b className="truncate text-[18px] font-normal">{name(p.dex)}</b>
                     {p.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
                   </span>
-                  <span className="flex gap-1">
+                  <span className="flex items-center gap-1">
                     {speciesTypes(data, p.dex).map((ty) => (
                       <TypeBadge key={ty} type={ty} size="sm" />
                     ))}
+                    {/* Its own level: the dice and rerolls it brings. */}
+                    <small className="ml-0.5 font-pixel-sm text-[16px] leading-none text-muted">
+                      {t('ui.common.level.short', { n: p.level })}
+                    </small>
                   </span>
                 </span>
-                {order >= 0 && (
+                {place >= 0 && (
                   <span className="grid h-7 w-7 light-scope shrink-0 place-items-center bg-night text-[18px] leading-none text-gold-light">
-                    {order + 1}
+                    {place + 1}
                   </span>
                 )}
               </button>
@@ -595,24 +702,27 @@ function TeamEditor({
         })}
       </ul>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-2.5">
-        <PixelButton disabled={!valid.length || saving} onClick={() => setPicks([])}>
-          {t('ui.versus.clear')}
-        </PixelButton>
-        <PixelButton
-          variant="primary"
-          disabled={!signedIn || valid.length !== VERSUS_TEAM_SIZE || saving || isSaved}
-          onClick={() => void submit()}
-        >
-          {saving ? t('ui.common.loading') : isSaved ? t('ui.versus.isSaved') : t('ui.versus.save')}
-        </PixelButton>
-      </div>
+      {/* Pinned at the foot on a phone, at the bottom of the column on PC: the picks scroll behind it. */}
+      <SocialDock>
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-2.5">
+          <PixelButton disabled={!valid.length || saving} onClick={() => setPicks([])}>
+            {t('ui.versus.clear')}
+          </PixelButton>
+          <PixelButton
+            variant="primary"
+            disabled={!signedIn || valid.length !== VERSUS_TEAM_SIZE || saving || isSaved}
+            onClick={() => void submit()}
+          >
+            {saving ? t('ui.common.loading') : isSaved ? t('ui.versus.isSaved') : t('ui.versus.save')}
+          </PixelButton>
+        </div>
+      </SocialDock>
     </>
   )
 }
 
 /** The two Versus boards: teams beaten in attack (each counts once), fights won in defense. */
-function Board({ rows }: { rows: VersusEntry[] }) {
+function Board({ rows, compact }: { rows: VersusEntry[]; compact?: boolean }) {
   const { t, tPlural } = useT()
   const [tab, setTab] = useState<VersusBoardTab>('attack')
   const friends = useFriends((s) => s.ids)
@@ -640,7 +750,7 @@ function Board({ rows }: { rows: VersusEntry[] }) {
           { id: 'defense', label: t('ui.versus.tabDefense') },
         ]}
       />
-      <p className="m-0 font-pixel-sm text-[15px] leading-[1.15] text-muted">
+      <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted">
         {t(tab === 'attack' ? 'ui.versus.boardAttack' : 'ui.versus.boardDefense')}
       </p>
       {friends.size > 0 && (
@@ -667,7 +777,8 @@ function Board({ rows }: { rows: VersusEntry[] }) {
           return (
             <BoardRow
               key={r.userId}
-              rowRef={r.isMe ? meRef : undefined}
+              // Beside the opponents (PC) the board opens on its top: snapping to your row would scroll the page too.
+              rowRef={r.isMe && !compact ? meRef : undefined}
               rank={r.rank}
               look={avatarOf(r.avatar).src}
               name={r.name}
@@ -676,6 +787,7 @@ function Board({ rows }: { rows: VersusEntry[] }) {
               isFriend={!!r.friendId}
               onOpen={r.friendId ? () => setCard({ id: r.userId, name: r.name }) : undefined}
               team={r.team}
+              compact={compact}
               value={
                 // The count and what it counts, as the sword (attack) or the shield (defense).
                 <span
@@ -780,5 +892,8 @@ function VersusFightView({
 export function VersusScreen() {
   const { t } = useT()
   const inside = useInWorld().inside
-  return inside ? <WorldAwayPage title={t('ui.versus.title')} kind="main" /> : <VersusScreenMain />
+  // The weekly league (docs/44), when it's on: Versus's matches, fought, and a group to climb.
+  const league = useGame((s) => !!s.save && versusLeagueFor(s.save, s.data))
+  if (inside) return <WorldAwayPage title={t('ui.versus.title')} kind="main" />
+  return league ? <LeagueScreen /> : <VersusScreenMain />
 }

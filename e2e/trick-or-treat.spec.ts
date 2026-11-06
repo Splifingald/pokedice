@@ -120,9 +120,9 @@ test('a Trick or Treat card: the preview, the rules once, a Treat, Trick Balls, 
     )
     expect(saved.pokedex).toContain(92)
   } else await expect(page.getByText('Gastly fled')).toBeVisible()
-  // The card was the round's: its icon on the gauge over the bar.
+  // Straight on to the next card (the user's call, 2026-11-02: no stop on the area's page): the wild one under it.
   await next.click()
-  await expect(page.getByText('Back on the trail')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: /^Battle: .* against a wild / })).toBeAttached({ timeout: 15_000 })
 
   // A second ghost: no rules pop-up this time, and INFO shows them again.
   const later = await page.evaluate(
@@ -188,7 +188,8 @@ test('switched off, the card is never played: the next card comes instead', asyn
   await boot(page, withCard(), EVENTS_ON)
   await page.goto('/home')
   await page.getByRole('button', { name: 'CONTINUE', exact: true }).first().click()
-  await expect(page.getByRole('dialog', { name: /wild Pokémon/i })).toBeVisible()
+  // A wild Pokémon instead, straight into its fight (the rework: no preview).
+  await expect(page.getByRole('heading', { level: 1, name: /^Battle: .* against a wild / })).toBeAttached({ timeout: 15_000 })
   await expect(page.getByRole('dialog', { name: /trick or treat/i })).toHaveCount(0)
 })
 
@@ -211,9 +212,10 @@ test('a 360 × 640 phone: the stage, the gauge and both buttons fit, nothing scr
     expect(box!.y + box!.height).toBeLessThanOrEqual(640)
     if (!name.endsWith('gauge')) expect(box!.height).toBeGreaterThanOrEqual(44)
   }
-  // The stage on top, as wide as the screen, as the battle's.
+  // The stage on top, as wide as the screen, as the battle's: its 3:2 picture from the top (no sky added over it).
   const stage = await page.getByRole('img', { name: /floats over the area/ }).boundingBox()
   expect(stage!.y).toBeLessThan(4)
+  expect(Math.abs(stage!.height - (stage!.width * 2) / 3)).toBeLessThan(4)
   expect(stage!.width).toBeGreaterThanOrEqual(355)
   // INFO at the foot, still on screen.
   const info = await page.getByRole('button', { name: /Info/ }).last().boundingBox()
@@ -241,6 +243,10 @@ test('the kitchen sink shows every piece, with no error', async ({ page }) => {
   await page.goto('/kitchen-sink')
   await expect(page.getByText(/^Trick or Treat: the gauge of each tier/)).toBeVisible({ timeout: 30_000 })
   expect(await page.getByRole('meter', { name: 'Trick or Treat gauge' }).count()).toBeGreaterThanOrEqual(12)
+  // Its own panel only: the Safari's (docs/61 §4, the same engine) and others above it have an "Idle" and rules too.
+  const sink = page
+    .getByRole('heading', { name: /^Trick or Treat: the gauge of each tier/ })
+    .locator('xpath=ancestor::*[contains(concat(" ", @class, " "), " mb-5 ")][1]')
   // The screen in each of its states, and the result cards.
   for (const state of [
     'Idle',
@@ -248,13 +254,13 @@ test('the kitchen sink shows every piece, with no error', async ({ page }) => {
     'A throw playing: wobbles, Gotcha! (loops)',
     'Fled after a miss',
   ])
-    await expect(page.getByText(state, { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'The caught result card' }).click()
+    await expect(sink.getByText(state, { exact: true })).toBeVisible()
+  await sink.getByRole('button', { name: 'The caught result card' }).click()
   const card = page.getByRole('dialog', { name: 'Gastly caught!' })
   await expect(card).toBeVisible()
   await card.getByRole('button', { name: 'CONTINUE', exact: true }).click()
   await expect(card).toHaveCount(0)
-  await page.getByRole('button', { name: 'Rules (first time)' }).click()
+  await sink.getByRole('button', { name: 'Rules (first time)' }).click()
   await expect(page.getByRole('dialog', { name: 'Trick or Treat' })).toBeVisible()
   expect(errors).toEqual([])
 })

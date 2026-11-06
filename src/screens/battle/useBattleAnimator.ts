@@ -2,18 +2,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   activeBattler,
+  hitPower,
   type BattleState,
   type DieType,
+  type HitPower,
   type LogEntry,
   type RolledDie,
   type Side,
   type StatusKind,
+  type TalentKey,
 } from '@/engine'
 import { t } from '@/i18n'
-import { comboName, typeName } from '@/lib/format'
-import { hasOwnCry } from '@/audio/cries'
+import { chancePercent, comboName, typeName } from '@/lib/format'
+import { haptic } from '@/lib/haptics'
+import { hasOwnCry, playCry } from '@/audio/cries'
+import { feelSound } from '@/audio/feel'
 import { sfx, type SfxName } from '@/audio/sfx'
 import type { BattleSlice } from '@/store/game'
+import { talentLogText } from '@/components/Talent'
+import { plateKey, plateType } from '@/components/portalSkin'
 
 export interface Fx {
   cursor: number
@@ -50,6 +57,11 @@ export interface Fx {
   cry: { id: number; dex: number } | null
   /** Pokémon away after a Flying, Ground or Water Z-Move (docs/35): the stage doesn't draw them until they strike. */
   away?: Record<string, 'fly' | 'dig' | 'dive'>
+  /**
+   * A hidden talent at work (docs/51): its plaque slides in on its owner's side, its gem bursts on the Pokémon.
+   * `entry`: one that works on its own, said as it first acts (its text on the plaque).
+   */
+  talent?: { id: number; side: Side; uid: string; key: TalentKey; name: string; entry?: boolean } | null
 }
 
 /** What the battle stage plays for a log entry (src/fx timelines). */
@@ -57,7 +69,7 @@ export interface Scene {
   id: number
   /** The log entry it belongs to. */
   cursor: number
-  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash' | 'zmove' | 'zstrike' | 'zaway'
+  kind: 'attack' | 'mega' | 'gmax' | 'gmaxEnd' | 'unleash' | 'plate' | 'zmove' | 'zstrike' | 'zaway'
   /** A Z-Move's going away, or the strike's coming back (docs/35). */
   how?: 'fly' | 'dig' | 'dive'
   /** Who acts: the attacker, or the Pokémon whose form changes. */
@@ -69,11 +81,53 @@ export interface Scene {
   toDex?: number
   /** Played this many times faster: a raid's sped-up turns (absent = as drawn). */
   speed?: number
+  /** An attack's hit: how it sounds when it lands, and how hard the stage plays it (docs/38). */
+  hit?: SceneHit
+}
+
+/** A hit, as the log decided it: what the stage and the speakers make of it when it lands. */
+export interface SceneHit {
+  tone: 'super' | 'weak' | 'normal'
+  /** How hard it lands (docs/38 F3a): the stage scales its shake, particles and hit-stop with it. */
+  power: HitPower
+  /** The sound it has always made on landing (with a scene, at its contact). */
+  sound: SfxName
+}
+
+/**
+ * A hit landing, heard and felt: at the scene's contact, or at once without a scene. Its own sound (a bug fixed in
+ * docs/38 B2: with a scene it was never heard), super effective and resisted their own (F3b). A vibration by how hard
+ * it lands (the K.O.'s comes with its boss stop, `finalBlow`).
+ */
+export function landHit(hit: SceneHit) {
+  if (hit.tone === 'normal') sfx(hit.sound)
+  else feelSound(hit.tone === 'super' ? 'hit.super' : 'hit.resisted')
+  const { tier } = hit.power
+  haptic(tier >= 3 ? 'hit3' : tier === 2 ? 'hit2' : 'hit1')
+}
+
+/** The final blow (docs/38 F4a), as its boss stop holds the stage: the K.O.'s thud and its vibration. */
+export function finalBlow() {
+  feelSound('hit.ko')
+  haptic('ko')
 }
 
 export interface AnimatorContext {
   kind: BattleState['kind']
   trainerName: string | null
+  /** The boss is a roadblock (docs/61 §2): said as a wild Pokémon, not a legendary. */
+  roadblock?: boolean
+  /** A rival's set meeting (docs/61 §5.2): the fight opens with their line. */
+  rival?: boolean
+  /** …whose team was fitted to the player's (docs/61 §5.5): their line says so. */
+  rivalMatched?: boolean
+  /**
+   * A trainer's next Pokémon in the same fight (the user's call, 2026-11-04): the line says only who was sent out, not
+   * the opening (nor a rival's line) again. 'go': yours had fallen, so the one picked goes out too.
+   */
+  next?: 'stay' | 'go'
+  /** A region flavour's fight (docs/62): a Kalos horde, an island trial (the Totem's), a Titan's. */
+  flavour?: 'horde' | 'trial' | 'titan' | null
   /**
    * The foe goes to the catch throw once it's K.O.'d (wild or legendary, and a catch on offer). A double battle asks per
    * foe: a wild pair's first K.O. waits, worn out on its spot, for the other's (docs/33).
@@ -87,6 +141,10 @@ export interface AnimatorContext {
   /** How many turns a Gigantamax lasts (config). */
   gmaxTurns: number
 }
+
+/** The pause on each reroll; the foe's is shorter (docs/38 F1d). */
+export const REROLL_MS = 700
+export const FOE_REROLL_MS = 450
 
 let seq = 0
 const nextId = () => ++seq
@@ -121,7 +179,23 @@ function initFx(b: BattleSlice): Fx {
     chip: null,
     cry: null,
     away: {},
+    talent: null,
   }
+}
+
+/**
+ * A fight picked up as it stands (store/resume.ts: a reload, a return): its whole log applied at once, with no sound,
+ * no scene and no delay, so the stage, the plates and the message box open where the fight was left. The moment's
+ * flourishes (a damage number, a banner, a shake…) are dropped: they belonged to a moment already over.
+ */
+export function caughtUpFx(b: BattleSlice, ctx: AnimatorContext): Fx {
+  let f = initFx(b)
+  for (const entry of b.log) {
+    const step = describe(entry, b.state, ctx)
+    const applied = step.apply(f)
+    f = step.land ? step.land(applied, false) : applied
+  }
+  return { ...f, cursor: b.log.length, pop: null, banner: null, shake: null, flash: null, status: null, fly: null, scene: null, cry: null, talent: null }
 }
 
 export interface Step {
@@ -131,16 +205,19 @@ export interface Step {
   effect?: () => void
   /** Played on the stage; `land` then applies when the hit lands (the HP drains with it), the rest when it ends. */
   scene?: Omit<Scene, 'id' | 'cursor'>
+  /** A hit: heard (`landHit`) when it lands, in place of `sound`. */
+  hit?: SceneHit
   /** What changes when the scene's hit lands — or right away when there is no scene. `staged`: a scene drew it. */
   land?: (f: Fx, staged: boolean) => Fx
 }
 
-const STATUS_TEXT: Record<StatusKind, (n: string, stacks?: number) => string> = {
+/** `n`: Burn's stacks, or how confused (1 a bit, 2, 3 very). */
+const STATUS_TEXT: Record<StatusKind, (name: string, n?: number) => string> = {
   burn: (name, s) => t('ui.log.burned', { name, stacks: s && s > 1 ? t('ui.log.stacks', { n: s }) : '' }),
   poison: (name) => t('ui.log.poisoned', { name }),
   frozen: (name) => t('ui.log.frozen', { name }),
   paralyze: (name) => t('ui.log.paralyzed', { name }),
-  confuse: (name) => t('ui.log.confused', { name }),
+  confuse: (name, lv = 2) => t(lv <= 1 ? 'ui.log.confusedBit' : lv >= 3 ? 'ui.log.confusedVery' : 'ui.log.confused', { name }),
   heal: (name) => t('ui.log.healing', { name }),
 }
 
@@ -158,18 +235,32 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         const [lead = '', lead2] = names(e.double.own)
         const go = lead2 ? t('ui.log.goPair', { a: lead, b: lead2 }) : t('ui.log.goName', { name: lead })
         const text =
-          ctx.kind === 'wild'
-            ? t('ui.log.startWildPair', { foe, foe2, go })
-            : t('ui.log.startTrainerPair', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe, foe2, go })
+          ctx.flavour === 'horde'
+            ? t('ui.log.startHorde', { foe, go })
+            : ctx.flavour === 'trial'
+              ? t('ui.log.startTotem', { foe, go })
+              : ctx.flavour === 'titan'
+                ? t('ui.log.startTitan', { foe, go })
+                : ctx.kind === 'wild'
+                  ? t('ui.log.startWildPair', { foe, foe2, go })
+                  : t('ui.log.startTrainerPair', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe, foe2, go })
         return { delay: 1300, apply: (f) => ({ ...f, message: text }) }
       }
       const lead = activeBattler(st).name
-      const text =
-        ctx.kind === 'wild'
+      const trainer = ctx.trainerName ?? t('ui.log.theTrainer')
+      const text = ctx.next
+        ? ctx.next === 'go'
+          ? t('ui.log.foeSentOutGo', { trainer, name: st.enemy.name, go: t('ui.log.goName', { name: lead }) })
+          : t('ui.log.foeSentOut', { trainer, name: st.enemy.name })
+        : ctx.kind === 'wild'
           ? t('ui.log.startWild', { foe: st.enemy.name, lead })
           : ctx.kind === 'boss'
-            ? t('ui.log.startBoss', { foe: st.enemy.name, lead })
-            : t('ui.log.startTrainer', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), foe: st.enemy.name, lead })
+            ? t(ctx.roadblock ? 'ui.log.startWild' : 'ui.log.startBoss', { foe: st.enemy.name, lead })
+            : t(ctx.rival ? (ctx.rivalMatched ? 'ui.log.startRivalMatched' : 'ui.log.startRival') : 'ui.log.startTrainer', {
+                trainer: ctx.trainerName ?? t('ui.log.theTrainer'),
+                foe: st.enemy.name,
+                lead,
+              })
       return { delay: 1100, apply: (f) => ({ ...f, message: text }) }
     }
     case 'turn':
@@ -192,7 +283,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       }
     case 'reroll':
       return {
-        delay: 700,
+        delay: e.side === 'enemy' ? FOE_REROLL_MS : REROLL_MS,
         sound: 'rattle',
         apply: (f) => ({
           ...f,
@@ -225,9 +316,27 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
               ? t('ui.log.noEffectBanner')
               : null
       const power = tone === 'super' ? (eff >= 3 ? 10 : 7) : tone === 'weak' ? 2 : tone === 'immune' ? 0 : 4
+      const sound: SfxName = tone === 'super' ? 'super' : tone === 'immune' ? 'error' : 'hit'
+      const struck = foes.find((f) => f.uid === e.targetUid) ?? st.player.find((p) => p.uid === e.targetUid)
+      // How hard it lands (docs/38): the log's numbers, read for the stage and the speakers. No effect: no hit at all.
+      const hit: SceneHit | undefined =
+        tone === 'immune'
+          ? undefined
+          : {
+              tone,
+              sound,
+              power: hitPower({
+                effectiveness: eff,
+                combo: r.combo?.key,
+                damage: e.amount,
+                maxHp: struck?.maxHp ?? 0,
+                ko: e.hpAfter <= 0,
+              }),
+            }
       return {
         delay: 1300,
-        sound: tone === 'super' ? 'super' : tone === 'immune' ? 'error' : 'hit',
+        sound,
+        hit,
         // The dice fly at the target as the move starts; the HP waits for the hit. A Z-Move's strike brings back an
         // attacker that went away.
         apply: (f) => {
@@ -239,8 +348,8 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         scene: r.immune
           ? undefined
           : e.z
-            ? { kind: 'zstrike', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount, how: e.z.from }
-            : { kind: 'attack', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount },
+            ? { kind: 'zstrike', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount, how: e.z.from, hit }
+            : { kind: 'attack', side: e.side, type: r.attackType ?? r.perDie[0]?.type ?? 'base', damage: e.amount, hit },
         land: (f, staged) => ({
           ...f,
           message: textFor(f),
@@ -257,8 +366,50 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
         delay: 850,
         apply: (f) => ({
           ...f,
-          message: STATUS_TEXT[e.status](nameOf(e.targetUid), e.stacks),
+          message: STATUS_TEXT[e.status](nameOf(e.targetUid), e.status === 'confuse' ? e.level : e.stacks),
           status: { id: nextId(), target: e.target, status: e.status },
+        }),
+      }
+    case 'talent':
+      return {
+        // Long enough to read the plaque; one that only says what works on its own reads its line too. Mirror waits
+        // for its die to land.
+        delay: e.entry ? 1300 : e.dice ? 1500 : 1050,
+        sound: 'talent',
+        apply: (f) => ({
+          ...f,
+          // Mirror: the roll stays, and only its lowest die is thrown again, landing on the highest's face.
+          ...(e.dice &&
+            e.index != null && {
+              tray: {
+                side: e.side,
+                dice: e.dice,
+                keys: e.dice.map((_, i) => (i === e.index ? `m${nextId()}-${i}` : (f.tray?.keys[i] ?? `k-${i}`))),
+              },
+            }),
+          message: talentLogText(e.name ?? nameOf(e.uid), e, e.ally ? nameOf(e.ally) : undefined),
+          talent: { id: nextId(), side: e.side, uid: e.uid, key: e.talent, name: e.name ?? nameOf(e.uid), ...(e.entry && { entry: true }) },
+          ...(e.hpAfter != null && {
+            hp: { ...f.hp, [e.uid]: e.hpAfter },
+            pop: { id: nextId(), target: e.side, amount: e.amount ?? 0, tone: 'heal' as const },
+          }),
+          // Rough Skin (docs/51): the attacker it hurt back.
+          ...(e.hurt && {
+            hp: { ...f.hp, [e.hurt.uid]: e.hurt.hpAfter },
+            pop: { id: nextId(), target: e.hurt.side, amount: e.hurt.amount, tone: 'normal' as const },
+            shake: { id: nextId(), power: 2 },
+          }),
+        }),
+      }
+    case 'status_resisted':
+      return {
+        delay: 850,
+        apply: (f) => ({
+          ...f,
+          message: t(e.status === 'frozen' ? 'ui.log.resistedFrozen' : 'ui.log.resistedParalyze', {
+            name: nameOf(e.targetUid),
+            pct: chancePercent(e.chance),
+          }),
         }),
       }
     case 'status_tick':
@@ -277,6 +428,7 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           pop: { id: nextId(), target: e.target, amount: e.amount, tone: 'normal' },
         }),
       }
+
     case 'stunned':
       return {
         delay: 1000,
@@ -296,10 +448,12 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       if (e.side === 'enemy' && (typeof ctx.catchable === 'function' ? ctx.catchable(e.uid) : ctx.catchable))
         return {
           delay: 1200,
+          // The K.O. opens the catch (docs/38 F4b): a sting, where there was silence.
+          effect: () => feelSound('ko.sting'),
           apply: (f) => ({
             ...f,
             message: t('ui.catch.wornOut', {
-              who: t(ctx.kind === 'boss' ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
+              who: t(ctx.kind === 'boss' && !ctx.roadblock ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
               name: nameOf(e.uid),
             }),
             wornOut: { ...f.wornOut, [e.uid]: true },
@@ -309,6 +463,8 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       return {
         delay: 1200,
         sound: 'faint',
+        // Its cry, slower and lower, as it falls (docs/38 F4a).
+        effect: () => playCry(e.dex, { rate: 0.75 }),
         apply: (f) => ({
           ...f,
           message: t('ui.log.fainted', { name: nameOf(e.uid) }),
@@ -330,8 +486,51 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           // It takes the spot of the first one K.O.'d.
           field: f.field && { ...f.field, foes: takeSpot(f.field.foes, e.uid, (u) => !!f.fainted[u]) },
           fainted: { ...f.fainted, [e.uid]: false },
-          message: t('ui.log.foeSentOut', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), name: nameOf(e.uid) }),
+          // A horde's next one comes on its own; a called ally or a Titan's return was said by the entry before.
+          message:
+            ctx.flavour === 'horde'
+              ? t('ui.log.hordeNext', { name: nameOf(e.uid) })
+              : ctx.flavour === 'trial' || ctx.flavour === 'titan'
+                ? f.message
+                : t('ui.log.foeSentOut', { trainer: ctx.trainerName ?? t('ui.log.theTrainer'), name: nameOf(e.uid) }),
           tray: null,
+        }),
+      }
+    case 'sos':
+      return {
+        delay: 1100,
+        apply: (f) => ({ ...f, message: t('ui.log.sos', { name: nameOf(e.from), ally: nameOf(e.uid) }), tray: null }),
+      }
+    case 'titan_rise':
+      return {
+        delay: 1700,
+        sound: 'faint',
+        apply: (f) => ({
+          ...f,
+          message: t(e.commander ? 'ui.log.titanCommander' : 'ui.log.titanRise', { name: nameOf(e.uid) }),
+          shake: { id: nextId(), power: 3 },
+          tray: null,
+        }),
+      }
+    case 'foe_fled':
+      return {
+        delay: 900,
+        apply: (f) => ({
+          ...f,
+          message: t('ui.log.allyFled', { name: nameOf(e.uid) }),
+          fainted: { ...f.fainted, [e.uid]: true },
+          tray: null,
+        }),
+      }
+    case 'weather_tick':
+      return {
+        delay: 850,
+        sound: 'hit',
+        apply: (f) => ({
+          ...f,
+          message: t(`ui.raid.x.tick.${e.weather === 'snow' ? 'snow' : 'sand'}`, { name: nameOf(e.targetUid) }),
+          hp: { ...f.hp, [e.targetUid]: e.hpAfter },
+          pop: { id: nextId(), target: e.target, amount: e.amount, tone: 'normal' },
         }),
       }
     case 'switch':
@@ -382,7 +581,13 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
                     form: t(`ui.raid.form.${e.toDex}`),
                     type: typeName(e.die ?? 'normal'),
                   })
-                : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
+                : e.reason === 'plate'
+                  ? t('ui.raid.log.plate', {
+                      name: nameOf(e.uid),
+                      plate: t(plateKey(plateType(e.dice))),
+                      type: typeName(plateType(e.dice)),
+                    })
+                  : t('ui.log.typeChange', { name: nameOf(e.uid), type: typeName(e.dice[0] ?? 'normal') })
       // Your Pokémon's new die, said under the dice until its next roll.
       const gained =
         e.side === 'player' && !e.revert && e.die && (e.reason === 'mega' || e.reason === 'gmax')
@@ -404,9 +609,15 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
       const unleash = e.reason === 'unleash'
       const cryDex = unleash || (e.reason === 'mega' && !e.revert && hasOwnCry(e.toDex)) ? e.toDex : null
       const cry = (f: Fx) => (cryDex ? { id: nextId(), dex: cryDex } : f.cry)
+      // A raid's Arceus taking its bar's Plate (docs/64 §4.5): its own short scene and word.
+      const plate = e.reason === 'plate'
       // The raid's word over the stage, like BREAK!.
       const banner = (f: Fx) =>
-        unleash ? { id: nextId(), text: t('ui.raid.unleash'), tone: 'super' as const } : f.banner
+        unleash
+          ? { id: nextId(), text: t('ui.raid.unleash'), tone: 'super' as const }
+          : plate
+            ? { id: nextId(), text: t('ui.raid.plateBanner'), tone: 'super' as const }
+            : f.banner
       // A timed Mega changing back (the gem rules) has no scene of its own: the flash, like a form going back.
       const scene: Step['scene'] =
         e.reason === 'mega' && e.revert
@@ -417,7 +628,9 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
             ? { kind: e.revert ? 'gmaxEnd' : 'gmax', side: e.side, fromDex: e.fromDex, toDex: e.toDex }
             : unleash
               ? { kind: 'unleash', side: e.side, fromDex: e.fromDex, toDex: e.toDex, type: e.die }
-              : undefined
+              : plate
+                ? { kind: 'plate', side: e.side, fromDex: e.fromDex, toDex: e.toDex, type: plateType(e.dice) }
+                : undefined
       const formed = (f: Fx) => ({ ...f.dex, [e.uid]: e.toDex })
       // Dice gained mid-turn land in your hand: only they tumble, the others keep their keys (and stay still).
       const hand = e.hand
@@ -467,6 +680,16 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           ...f,
           message: t(`ui.log.zDodge.${e.how}`, { name: nameOf(e.uid) }),
           banner: { id: nextId(), text: t('ui.log.missBanner'), tone: 'immune' },
+        }),
+      }
+    case 'shield':
+      // The Bonus Shield (docs/65) cuts the hit that follows: said first, as a talent's pop-up is.
+      return {
+        delay: 900,
+        apply: (f) => ({
+          ...f,
+          message: t('ui.log.shield', { name: nameOf(e.uid), before: e.before, after: e.after }),
+          banner: { id: nextId(), text: t('ui.log.shieldBanner'), tone: 'info' },
         }),
       }
     case 'cleansed':
@@ -580,7 +803,7 @@ export function useBattleAnimator(
   /** An entrance is playing: the opening line shows, the rest of the log waits. */
   hold = false,
 ): { fx: Fx; ready: boolean; sceneContact: () => void; sceneDone: () => void } {
-  const [fx, setFx] = useState(() => initFx(battle))
+  const [fx, setFx] = useState(() => (battle.resumed ? caughtUpFx(battle, ctx) : initFx(battle)))
   const ctxRef = useRef(ctx)
   ctxRef.current = ctx
   // What the scene playing now will apply when its hit lands.
@@ -615,7 +838,10 @@ export function useBattleAnimator(
       const applied = step.apply(f)
       return step.land ? step.land(applied, false) : applied
     })
-    if (step.sound) sfx(step.sound)
+    if (step.hit) {
+      landHit(step.hit)
+      if (step.hit.power.ko) finalBlow()
+    } else if (step.sound) sfx(step.sound)
     step.effect?.()
     const t = setTimeout(
       () => setFx((f) => (f.cursor === cursor ? { ...f, cursor: cursor + 1 } : f)),

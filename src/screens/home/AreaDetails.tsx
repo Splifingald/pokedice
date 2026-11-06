@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  areaVersusHere,
   bossCaught,
   asSeenBy,
   dueBoss,
@@ -14,9 +15,12 @@ import {
   progressRaidState,
   portalModeOf,
   nightmareModeOf,
+  timeRaceModeOf,
   raidRules,
   teamAverageLevel,
   trickDealable,
+  giftDealable,
+  gameCornerOn,
   uniqueFindChances,
   type Area,
   type BossDef,
@@ -25,9 +29,11 @@ import {
   speciesTime,
   wildShare,
   type DayTime,
+  shinyDexOf,
 } from '@/engine'
 import { useT } from '@/i18n/react'
 import { BadgeIcon } from '@/components/BadgeIcon'
+import { skinKey, skinOfArea } from '@/components/portalSkin'
 import { Chip } from '@/components/Chip'
 import { DayNightTag } from '@/components/DayNight'
 import { rarity } from '@/components/DexEntry'
@@ -41,8 +47,10 @@ import { Sheet } from '@/components/Sheet'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { MiniSprite } from '@/components/SpriteImg'
 import { money } from '@/lib/format'
+import { useDetails } from '@/store/hooks'
 import { useAreaDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
+import { useAreaVersus } from '@/store/areaVersus'
 import { cx } from '@/theme/util'
 import { RoundGauge } from '../area/RoundGauge'
 import { levelText, useLevelSpan } from './AreaPlate'
@@ -58,6 +66,8 @@ const MIX: Record<EncounterKind, string> = {
   trainer: '#5b8def',
   casino: '#9b5de5',
   trick: '#ff8a3d',
+  versus: '#3d7bd9',
+  gift: '#e2364a',
 }
 
 function Fact({
@@ -84,9 +94,9 @@ function Fact({
     >
       <span className="flex shrink-0 items-center">{icon}</span>
       <span className="grid min-w-0 flex-1 gap-0.5 leading-[1.05]">
-        <small className="font-pixel-sm text-[13px] uppercase tracking-[0.08em] text-muted">{small}</small>
+        <small className="font-pixel-sm text-[16px] uppercase tracking-[0.08em] text-muted">{small}</small>
         <b className="text-[20px] font-normal">{title}</b>
-        {note && <em className="font-pixel-sm text-[15px] not-italic text-muted">{note}</em>}
+        {note && <em className="font-pixel-sm text-[16px] not-italic text-muted">{note}</em>}
       </span>
       {tag}
     </div>
@@ -116,10 +126,12 @@ function RaidFact({ area, boss }: { area: Area; boss: BossDef }) {
       note={t(
         state === 'locked'
           ? portalModeOf(area, data)
-            ? 'ui.portal.factLocked'
+            ? skinKey(skinOfArea(area, data), 'ui.portal.factLocked')
             : nightmareModeOf(area, data)
               ? 'ui.nightmare.factLocked'
-              : 'ui.raid.progress.factLocked'
+              : timeRaceModeOf(area, data)
+                ? 'ui.timeRace.factLocked'
+                : 'ui.raid.progress.factLocked'
           : state === 'done'
             ? 'ui.raid.progress.factDone'
             : 'ui.raid.progress.factOpen',
@@ -143,10 +155,24 @@ function RaidFact({ area, boss }: { area: Area; boss: BossDef }) {
   )
 }
 
+/** A closed area (a league area once every member is beaten: nothing left to meet) has no button at all. */
+export function useDetailsClosed(area: Area | null): boolean {
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  return (
+    !!save &&
+    !!area &&
+    area.id !== save.currentAreaId &&
+    areaStatus(save, data, area) !== 'locked' &&
+    !playable(save, data, area)
+  )
+}
+
 /**
- * An area's details, in a sheet: its gym and legendary (and when the legendary shows up), the one-time finds still
- * there, the Pokémon to catch with rarity, odds, levels and a caught mark, what a round brings, and what turns up any
- * time. The footer continues here, travels here, or says why it's locked; a closed area has none.
+ * An area's details, in a sheet of their own: the area screen's header opens it (Home shows the same details as the
+ * Areas sheet's first view, `AreasSheet`). Its gym and legendary (and when the legendary shows up), the one-time finds
+ * still there, the Pokémon to catch, and what turns up any time. The footer continues here, travels here, or says why
+ * it's locked; a closed area has none.
  */
 export function AreaDetails({
   area,
@@ -160,15 +186,7 @@ export function AreaDetails({
   onPlay?: () => void
   onTravel?: (area: Area) => void
 }) {
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  // A closed area (a league area once every member is beaten: nothing left to meet) has no button at all.
-  const closed =
-    !!save &&
-    !!area &&
-    area.id !== save.currentAreaId &&
-    areaStatus(save, data, area) !== 'locked' &&
-    !playable(save, data, area)
+  const closed = useDetailsClosed(area)
   return (
     <Sheet
       open={!!area}
@@ -182,7 +200,7 @@ export function AreaDetails({
   )
 }
 
-function DetailsSub({ area }: { area: Area }) {
+export function DetailsSub({ area }: { area: Area }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
@@ -207,14 +225,17 @@ function DetailsSub({ area }: { area: Area }) {
   )
 }
 
-function DetailsFoot({
+export function DetailsFoot({
   area,
   onPlay,
   onTravel,
+  quiet = false,
 }: {
   area: Area
   onPlay: () => void
   onTravel: (area: Area) => void
+  /** Navy, not red: beside the Areas list, whose lead GO is the sheet's one red action (docs/15 §12). */
+  quiet?: boolean
 }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
@@ -229,7 +250,7 @@ function DetailsFoot({
     )
   return (
     <PixelButton
-      variant="primary"
+      variant={quiet ? 'dark' : 'primary'}
       size="lg"
       className="w-full"
       onClick={() => (st === 'here' ? onPlay() : onTravel(area))}
@@ -244,10 +265,16 @@ function DetailsFoot({
   )
 }
 
-function DetailsBody({ area }: { area: Area }) {
+/**
+ * The details themselves. What only an invested player studies (each Pokémon's odds, the round's mix) waits behind
+ * More details (docs/42); the rarity word stays, so a newcomer still sees what's hard to find.
+ */
+export function DetailsBody({ area }: { area: Area }) {
   const { t } = useT()
   const save = useGame((s) => s.save)!
   const data = useGame((s) => s.data)
+  const foe = useAreaVersus((s) => s.foes[area.id])
+  const details = useDetails()
   const [view, setView] = useState<SheetView | null>(null)
   const [itemKey, setItemKey] = useState<string | null>(null)
   const p = progressOf(save, area.id)
@@ -256,6 +283,8 @@ function DetailsBody({ area }: { area: Area }) {
   const locked = st === 'locked'
   const side = playerSideOf(save)
   const avg = teamAverageLevel(save)
+  // The species already in this region's shiny Pokédex (docs/67, Ceurana's ask): a star on their cards.
+  const shinyOwned = new Set(shinyDexOf(save))
 
   // The gym, or the League's battles.
   const gyms = gymsFor(area, data, side)
@@ -293,8 +322,18 @@ function DetailsBody({ area }: { area: Area }) {
   const findChance = uniqueFindChances(area, p, data)
   const common = area.lootPool.filter((e) => !e.unique && e.weight > 0)
   const kinds = (Object.entries(area.encounterWeights) as [EncounterKind, number][]).filter(
-    // Trick or Treat only where it is dealt (its switch on, the area's ghosts listed: docs/29).
-    ([k, v]) => v > 0 && MIX[k] && (k !== 'trick' || trickDealable(data, area)),
+    // Trick or Treat only where it is dealt (its switch on, the area's ghosts listed: docs/29); the Game Corner only
+    // while it's on.
+    // A real player (docs/54) only while a team waits for the area. The Gift card (docs/64 §4.0) only while it's on,
+    // and then in place of the item card.
+    ([k, v]) =>
+      v > 0 &&
+      MIX[k] &&
+      (k !== 'trick' || trickDealable(data, area)) &&
+      (k !== 'gift' || giftDealable(data, area)) &&
+      (k !== 'item' || !giftDealable(data, area)) &&
+      (k !== 'casino' || gameCornerOn(data)) &&
+      (k !== 'versus' || (areaVersusHere(save, area, data) && !!foe)),
   )
   const sum = kinds.reduce((n, [, v]) => n + v, 0)
   const pct = kinds.map(([k, v]) => [k, Math.round((v / sum) * 100)] as const).sort((x, y) => y[1] - x[1])
@@ -363,7 +402,7 @@ function DetailsBody({ area }: { area: Area }) {
                 key={b.dex}
                 gold
                 icon={<MiniSprite dex={b.dex} size={40} silhouette={!caught && !beaten} />}
-                small={t('ui.map.legendary')}
+                small={t(b.roadblock ? 'ui.map.roadblock' : 'ui.map.legendary')}
                 title={`${caught || beaten ? (data.species[b.dex]?.name ?? '???') : t('ui.common.unknown')} · ${t('ui.common.level.short', { n: b.level })}`}
                 note={when}
                 tag={
@@ -405,7 +444,7 @@ function DetailsBody({ area }: { area: Area }) {
                   )}
                   <span className="grid min-w-0 flex-1 leading-[1.05]">
                     <b className="text-[19px] font-normal">{itemName(e.itemKey, e.maxQty)}</b>
-                    <small className="font-pixel-sm text-[14px] text-muted">
+                    <small className="font-pixel-sm text-[16px] text-muted">
                       {e.itemKey === MONEY
                         ? t('ui.home.moneyStash')
                         : g.length > 1
@@ -483,7 +522,7 @@ function DetailsBody({ area }: { area: Area }) {
                     </b>
                     <span
                       className={cx(
-                        'whitespace-nowrap px-1 pb-0.5 font-pixel-sm text-[13px] leading-none',
+                        'whitespace-nowrap px-1 pb-0.5 font-pixel-sm text-[16px] leading-none',
                         r === 'rare'
                           ? 'bg-gold text-ink shadow-ring-thin'
                           : r === 'unc'
@@ -491,7 +530,8 @@ function DetailsBody({ area }: { area: Area }) {
                             : 'bg-sky text-ink',
                       )}
                     >
-                      {rarity(m.share)} · {Math.round(m.share * 100)}%
+                      {rarity(m.share)}
+                      {details && ` · ${Math.round(m.share * 100)}%`}
                     </span>
                     {got && (
                       <PixelIcon
@@ -499,6 +539,15 @@ function DetailsBody({ area }: { area: Area }) {
                         size={12}
                         title={t('ui.enc.caught')}
                         className="absolute right-1.5 top-1.5"
+                      />
+                    )}
+                    {/* Under the ball: a shiny of it is in the shiny Pokédex, so a hunt can skip it. */}
+                    {shinyOwned.has(m.dex) && (
+                      <PixelIcon
+                        name="star"
+                        size={12}
+                        title={t('ui.home.shinyOwned')}
+                        className="absolute right-1.5 top-[24px]"
                       />
                     )}
                     {m.time && (
@@ -514,7 +563,7 @@ function DetailsBody({ area }: { area: Area }) {
         )}
       </SheetSection>
 
-      {sum > 0 && (
+      {details && sum > 0 && (
         <SheetSection title={t('ui.home.eachRound')}>
           <div
             className="flex h-4 gap-0.5 bg-night p-0.5"
@@ -525,7 +574,7 @@ function DetailsBody({ area }: { area: Area }) {
               <i key={k} className="block min-w-1" style={{ flex: n, background: MIX[k] }} />
             ))}
           </div>
-          <ul className="flex flex-wrap gap-x-3.5 gap-y-1 font-pixel-sm text-[15px] text-muted" aria-hidden>
+          <ul className="flex flex-wrap gap-x-3.5 gap-y-1 font-pixel-sm text-[16px] text-muted" aria-hidden>
             {pct.map(([k, n]) => (
               <li key={k} className="inline-flex items-center gap-1">
                 <i className="block h-2.5 w-2.5 shadow-ring-thin" style={{ background: MIX[k] }} />
@@ -543,7 +592,7 @@ function DetailsBody({ area }: { area: Area }) {
             {common.map((e) => (
               <li key={e.id}>
                 {e.itemKey === MONEY ? (
-                  <span className="flex min-h-[44px] items-center gap-1 px-1 font-pixel-sm text-[15px] leading-tight">
+                  <span className="flex min-h-[44px] items-center gap-1 px-1 font-pixel-sm text-[16px] leading-tight">
                     <PixelIcon name="coin" size={16} />
                     {t('ui.home.pokedollars')}
                   </span>
@@ -551,7 +600,7 @@ function DetailsBody({ area }: { area: Area }) {
                   <button
                     type="button"
                     onClick={() => setItemKey(e.itemKey)}
-                    className="flex min-h-[44px] w-full min-w-0 items-center gap-1 bg-paper px-1 text-left font-pixel-sm text-[15px] leading-tight shadow-ring-line"
+                    className="flex min-h-[44px] w-full min-w-0 items-center gap-1 bg-paper px-1 text-left font-pixel-sm text-[16px] leading-tight shadow-ring-line"
                   >
                     <ItemSprite item={data.items[e.itemKey]} size={26} />
                     <span className="min-w-0">{itemName(e.itemKey)}</span>

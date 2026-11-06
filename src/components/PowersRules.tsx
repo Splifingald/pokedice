@@ -1,27 +1,15 @@
 // The battle powers' rules (docs/15 §20, docs/35): Mega Evolution's gems, Gigantamax and Z-Moves. Each pops up once,
-// when its badge is won with its switch on (queued behind the other one-time pop-ups), then from its INFO button (the
+// when its badge is won with its switch on (its turn in the one-time pop-ups' queue), then from its INFO button (the
 // Mart's Mega Gems for Mega Evolution, the Pokémon sheet for all three). The numbers come from the config.
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  dayCareTutorialDue,
-  donationDue,
-  eventUnlockDue,
-  extremeRulesDue,
-  generalRulesDue,
   getRegion,
-  giftRulesDue,
-  inviteRulesDue,
-  leaderboardTutorialDue,
   powerHome,
   powerLeader,
-  portalRulesDue,
   powerRulesDue,
   regionCaseOf,
-  regionOfferDue,
-  trickRulesDue,
-  tradeRulesDue,
-  versusRulesDue,
+  zCrystalsOn,
   type GameData,
   type PowerKind,
 } from '@/engine'
@@ -31,6 +19,8 @@ import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { markPowerRulesSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
+import { SmallInfo } from './SmallInfo'
+import { useMyTurn, useOnScreen } from './popupTurn'
 import { InfoButton, RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
 const TITLE: Record<PowerKind, string> = {
@@ -110,8 +100,10 @@ export function usePowerRules(kind: PowerKind): RuleRow[] {
     ]
   }
   const z = data.config.zMove
+  // With Z-Crystals (docs/62 §6), what opens them is a crystal per type, not Lana's badge.
+  const crystals: RuleRow = { icon: 'badge', title: t('ui.rules.z.crystals.title'), text: t('ui.rules.z.crystals.text') }
   return [
-    open,
+    zCrystalsOn(data) ? crystals : open,
     {
       icon: 'sword',
       title: t('ui.rules.z.types.title'),
@@ -157,13 +149,17 @@ export function PowerRulesModal({
   )
 }
 
-/** INFO under a power (the Mart's Mega Gems, the Pokémon sheet): its rules again. */
-export function PowerInfo({ kind, className }: { kind: PowerKind; className?: string }) {
+/**
+ * INFO under a power (the Mart's Mega Gems, the Pokémon sheet): its rules again. `small` at the foot of a shelf (the
+ * Mart's gems), where the big blue button would outweigh what it sits under.
+ */
+export function PowerInfo({ kind, className, small }: { kind: PowerKind; className?: string; small?: boolean }) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
+  const Info = small ? SmallInfo : InfoButton
   return (
     <>
-      <InfoButton name={t(TITLE[kind])} onClick={() => setOpen(true)} className={className} />
+      <Info name={t(TITLE[kind])} onClick={() => setOpen(true)} className={className} />
       <PowerRulesModal kind={kind} open={open} onClose={() => setOpen(false)} />
     </>
   )
@@ -171,35 +167,21 @@ export function PowerInfo({ kind, className }: { kind: PowerKind; className?: st
 
 /**
  * A power has opened (its badge won, its switch on): once, between fights, its rules. Mega Evolution's Let's go! leads
- * to the Mart, where the gems are; the others' close it. It waits behind every other one-time pop-up.
+ * to the Mart, where the gems are; the others' close it. It takes its turn in the one-time pop-ups' queue
+ * (engine/popups.ts), after the features' rules: the gifts' and Trick or Treat's open at their own moment and no longer
+ * hold it back (they only clear at the first gift or the first ghost, so the powers' never opened while either was on).
  */
 export function PowersUnlockPopup() {
   const navigate = useNavigate()
-  const kind = useGame((s) =>
-    !s.save ||
-    dayCareTutorialDue(s.save, s.data) ||
-    leaderboardTutorialDue(s.save, s.data) ||
-    donationDue(s.save, s.data) ||
-    regionOfferDue(s.save, s.data) ||
-    eventUnlockDue(s.save, s.data) ||
-    versusRulesDue(s.save, s.data) ||
-    extremeRulesDue(s.save, s.data) ||
-    generalRulesDue(s.save, s.data) ||
-    !!portalRulesDue(s.save, s.data) ||
-    trickRulesDue(s.save, s.data) ||
-    giftRulesDue(s.save, s.data) ||
-    inviteRulesDue(s.save, s.data) ||
-    (s.auth.status === 'signed_in' && tradeRulesDue(s.save, s.data))
-      ? null
-      : powerRulesDue(s.save, s.data),
-  )
-  const idle = useGame((s) => s.run.phase === 'idle')
+  const kind = useGame((s) => (s.save ? powerRulesDue(s.save, s.data) : null))
+  const open = useMyTurn('powers') && !!kind
+  useOnScreen('powers', open)
   if (!kind) return null
   const seen = () => markPowerRulesSeen(kind)
   return (
     <PowerRulesModal
       kind={kind}
-      open={idle}
+      open={open}
       onClose={seen}
       onGo={() => {
         seen()

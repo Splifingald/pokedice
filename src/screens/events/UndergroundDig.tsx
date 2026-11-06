@@ -1,7 +1,7 @@
 // Digging a wall (docs/34; docs/15 §32), full screen: the crack gauge, the wall, what's still buried, the pickaxe's
 // roll. A tap on a tile strikes it (the engine rolls the die and digs); at the end the wall collapses or is cleared,
 // and the haul shows where each thing went. Leaving keeps the wall: it waits in the save.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { kitsHeld, pickaxeFaces, thingDone, ugCfg, wallStatus, type HaulLine, type Wall } from '@/engine'
 import { fxSound } from '@/audio/sfx'
@@ -15,13 +15,16 @@ import {
   PickaxeDie,
   PickaxeFaces,
   PlateArt,
+  UG_IMPACT_MS,
   UgWall,
   thingName,
+  type FoundFx,
   type StrikeFx,
 } from '@/components/Underground'
 import { useT } from '@/i18n/react'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, useGame } from '@/store/game'
 import { ugOpenWall, ugStrike, ugTakeHaul, useUnderground } from '@/store/underground'
 import { cx } from '@/theme/util'
@@ -36,8 +39,10 @@ export function UndergroundDig() {
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
   const { level, calm } = useMotion()
+  const wide = useMediaQuery('(min-width: 1024px)')
   const { live, now, u } = useUnderground(5000)
   const [fx, setFx] = useState<StrikeFx | null>(null)
+  const [freed, setFreed] = useState<FoundFx | null>(null)
   const [roll, setRoll] = useState<{ face: number; roll: number } | null>(null)
   const [haul, setHaul] = useState<HaulLine[] | null>(null)
   const keyRef = useRef(0)
@@ -48,6 +53,7 @@ export function UndergroundDig() {
   const wallId = wall?.id
   useEffect(() => {
     setFx(null)
+    setFreed(null)
     setRoll(null)
   }, [wallId])
 
@@ -58,17 +64,27 @@ export function UndergroundDig() {
   const cfg = ugCfg(data)
   const faces = pickaxeFaces(cfg, u.pickaxe)
 
-  const onStrike = (tile: number) => {
+  const onStrike = (tile: number, at?: { x: number; y: number }) => {
     if (!wall || status !== 'digging') return
-    const before = doneCount(wall)
     const r = ugStrike(tile)
     if (!r) return
+    const key = ++keyRef.current
     setRoll(r)
-    setFx({ tile, roll: r.roll, key: ++keyRef.current })
-    fxSound('ug.strike', r.roll)
+    setFx({ tile, roll: r.roll, key, at })
     const after = useGame.getState().save?.underground?.wall
-    if (after && doneCount(after) > before) fxSound('ug.found')
-    if (after && wallStatus(after) === 'collapsed') fxSound('ug.collapse')
+    // The things this strike finished digging out: the first one's name pops over it.
+    const first = after
+      ? after.things.findIndex((th, k) => thingDone(after, th) && !thingDone(wall, wall.things[k]!))
+      : -1
+    setFreed(first >= 0 ? { thing: first, key } : null)
+    // The sounds land with the pickaxe, not with the finger.
+    const sounds = () => {
+      fxSound('ug.strike', r.roll)
+      if (first >= 0) fxSound('ug.found')
+      if (after && wallStatus(after) === 'collapsed') fxSound('ug.collapse')
+    }
+    if (level === 'full') setTimeout(sounds, UG_IMPACT_MS)
+    else sounds()
   }
 
   const takeHaul = () => {
@@ -88,21 +104,28 @@ export function UndergroundDig() {
   }
 
   const message =
-    roll == null
-      ? t('ui.ug.tap')
-      : roll.roll === 1
-        ? t('ui.ug.rolled1')
-        : wall && roll.roll - wall.neighbourLoss <= 0
-          ? t('ui.ug.rolledHere', { n: roll.roll })
-          : wall && wall.neighbourLoss === 0
-            ? t('ui.ug.rolledAll', { n: roll.roll })
-            : t('ui.ug.rolledN', { n: roll.roll, side: roll.roll - (wall?.neighbourLoss ?? 1) })
+    freed && wall?.things[freed.thing]
+      ? t('ui.ug.dugOut', { thing: thingName(wall.things[freed.thing]!, data) })
+      : roll == null
+        ? t('ui.ug.tap')
+        : roll.roll === 1
+          ? t('ui.ug.rolled1')
+          : wall && roll.roll - wall.neighbourLoss <= 0
+            ? t('ui.ug.rolledHere', { n: roll.roll })
+            : wall && wall.neighbourLoss === 0
+              ? t('ui.ug.rolledAll', { n: roll.roll })
+              : t('ui.ug.rolledN', { n: roll.roll, side: roll.roll - (wall?.neighbourLoss ?? 1) })
 
   const left = wall ? wall.strikes - wall.used : 0
+  const hot = left <= 3
   const found = wall ? doneCount(wall) : 0
 
   return (
-    <div className="ug-dig flex min-h-dvh flex-col bg-[#2b211a]">
+    <div
+      className="ug-dig flex min-h-dvh flex-col bg-[#2b211a]"
+      // The gauge's mark waits for the pickaxe's impact too (underground.css).
+      style={{ '--ug-impact': level === 'full' ? `${UG_IMPACT_MS}ms` : '0ms' } as CSSProperties}
+    >
       <header className="flex items-center gap-2 border-b-2 border-edge bg-panel px-3 py-2">
         <h1 className="m-0 min-w-0 flex-1 truncate text-[26px] font-normal leading-none">
           {t('ui.ug.wallTitle')}
@@ -120,36 +143,62 @@ export function UndergroundDig() {
         )}
       </header>
 
-      {wall && (
-        <main className="mx-auto flex w-full max-w-[440px] flex-1 flex-col gap-2.5 px-3 pt-2.5">
-          <div className="grid gap-1">
-            <div className="flex items-baseline justify-between text-panel">
-              <span className="text-[19px] leading-none text-[#fbfdff]">
+      {/* Phones: the gauge, the wall, what's buried, the die pinned at the foot. PC (docs/43 §5.11): the wall large on
+          the left, as tall as the screen allows; the gauge, what's buried and the die docked at its right. */}
+      <main
+        className={cx(
+          'mx-auto flex w-full max-w-[440px] flex-1 flex-col gap-2.5 px-3 pt-2.5',
+          'lg:grid lg:max-w-[1240px] lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_auto_1fr] lg:items-start lg:gap-x-8 lg:gap-y-4 lg:px-6 lg:pt-6',
+        )}
+      >
+        {wall && (
+          <div className="grid gap-1.5 lg:col-start-2 lg:row-start-1">
+            <div className="flex items-end justify-between gap-2">
+              <span className={cx('text-[19px] leading-none', hot ? 'text-[#ff9a6a]' : 'text-[#fbfdff]')}>
                 {status === 'collapsed'
                   ? t('ui.ug.collapsedShort')
-                  : left <= 3 && status === 'digging'
+                  : hot && status === 'digging'
                     ? t('ui.ug.shaking')
                     : t('ui.ug.holds')}
               </span>
-              <span className="font-pixel-sm text-[16px] text-gold-light">
+              <span
+                key={wall.used}
+                className={cx(
+                  'ug-count light-scope font-pixel-sm text-[20px] leading-none tabular-nums',
+                  hot ? 'text-[#ff9a6a]' : 'text-gold-light',
+                  fx && level === 'full' && !calm && 'bump',
+                )}
+              >
                 {t(`ui.ug.strikesLeft.${left === 1 ? 'one' : 'other'}`, { count: left })}
               </span>
             </div>
-            <CrackGauge strikes={wall.strikes} used={wall.used} calm={calm} />
+            <CrackGauge strikes={wall.strikes} used={wall.used} calm={calm} hitKey={fx?.key} motion={level} />
           </div>
+        )}
 
-          <UgWall
-            wall={wall}
-            data={data}
-            onStrike={onStrike}
-            disabled={status !== 'digging'}
-            fx={fx}
-            motion={level}
-            collapsing={status === 'collapsed'}
-          />
+        {wall && (
+          <div
+            className="w-full lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:justify-self-center"
+            // As wide as the window's height allows for the wall's shape, so it's never cut by the fold.
+            style={wide ? { maxWidth: `calc((100dvh - 150px) * ${wall.cols / wall.rows})` } : undefined}
+          >
+            <UgWall
+              wall={wall}
+              data={data}
+              onStrike={onStrike}
+              disabled={status !== 'digging'}
+              fx={fx}
+              found={freed}
+              motion={level}
+              calm={calm}
+              collapsing={status === 'collapsed'}
+            />
+          </div>
+        )}
 
-          <div className="grid gap-1">
-            <span className="flex items-center justify-between gap-2 font-pixel-sm text-[15px] text-gold-light">
+        {wall && (
+          <div className="grid gap-1 lg:col-start-2 lg:row-start-2">
+            <span className="light-scope flex items-center justify-between gap-2 font-pixel-sm text-[16px] text-gold-light">
               <span>{t('ui.ug.buried', { n: wall.things.length, found })}</span>
               <span className="inline-flex shrink-0 items-center gap-1">
                 <PixelIcon name="kit" size={14} />
@@ -163,7 +212,7 @@ export function UndergroundDig() {
                   <li
                     key={k}
                     className={cx(
-                      'flex min-w-0 items-center gap-1.5 px-1.5 py-0.5 font-pixel-sm text-[14px]',
+                      'flex min-w-0 items-center gap-1.5 px-1.5 py-0.5 font-pixel-sm text-[16px]',
                       done
                         ? 'bg-paper text-ink shadow-ring-thin'
                         : 'bg-well-deep text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-shadow))]',
@@ -175,7 +224,7 @@ export function UndergroundDig() {
                       ) : th.colour ? (
                         <OrbArt colour={th.colour} px={12} />
                       ) : (
-                        <PixelIcon name="pickaxe" size={12} />
+                        <PixelIcon name="pickaxeSm" size={12} />
                       )
                     ) : (
                       <span aria-hidden>?</span>
@@ -186,11 +235,10 @@ export function UndergroundDig() {
               })}
             </ul>
           </div>
-        </main>
-      )}
+        )}
 
-      <footer className="mt-auto border-t-2 border-edge bg-panel px-3 pb-4 pt-2.5">
-        <div className="mx-auto max-w-[440px]">
+        {/* The die and its line, or the end: pinned at a phone's foot, the panel's last card on PC. */}
+        <footer className="sticky bottom-0 z-10 -mx-3 mt-auto border-t-2 border-edge bg-panel px-3 pb-4 pt-2.5 lg:static lg:col-start-2 lg:row-start-3 lg:mx-0 lg:mt-0 lg:border-0 lg:p-3 lg:shadow-card">
           {status === 'digging' || !wall ? (
             <div className="flex items-center gap-3">
               <PickaxeDie roll={roll?.roll ?? null} rollKey={fx?.key} />
@@ -198,7 +246,7 @@ export function UndergroundDig() {
                 <span className="text-[19px] leading-tight" aria-live="polite">
                   {message}
                 </span>
-                <span className="font-pixel-sm text-[14px] text-muted">
+                <span className="font-pixel-sm text-[16px] text-muted">
                   {t('ui.ug.dieLabel', { level: u.pickaxe })}
                 </span>
                 <PickaxeFaces faces={faces} face={roll?.face} size={26} />
@@ -217,8 +265,8 @@ export function UndergroundDig() {
               </PixelButton>
             </div>
           )}
-        </div>
-      </footer>
+        </footer>
+      </main>
 
       <Modal
         open={!!haul}

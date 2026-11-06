@@ -74,7 +74,7 @@ export function TypeMatchups({
     <dl className={cx('grid grid-cols-2 gap-1.5', className)}>
       {rows.map((r) => (
         <div key={r.label} className="flex min-w-0 flex-col gap-1 bg-paper px-1.5 pb-1.5 pt-1 shadow-ring-line">
-          <dt className="font-pixel-sm text-[14px] leading-none text-muted first-letter:uppercase">{r.label}</dt>
+          <dt className="font-pixel-sm text-[16px] leading-none text-muted first-letter:uppercase">{r.label}</dt>
           <dd className="m-0 flex flex-wrap gap-0.5">
             {r.list.map((x) => (
               <TypeBadge key={x} type={x} size="sm" />

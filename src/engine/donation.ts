@@ -1,6 +1,6 @@
-// "Support me": the developer's pop-up (Discord, invite, PayPal) behind the SUPPORT ME button, also shown once per
+// "Support me": the developer's pop-up (Discord, invite, Ko-fi) behind the SUPPORT ME button, also shown once per
 // region, when its 5th badge is won.
-// The admin switches it on, sets the PayPal link and can reset it (bumping `round`), which shows it once more to
+// The admin switches it on, sets the Ko-fi link and can reset it (bumping `round`), which shows it once more to
 // everyone who has already seen it.
 import { regionCases } from './regions'
 import type { GameData, RegionId, SaveData } from './types'
@@ -8,12 +8,12 @@ import type { GameData, RegionId, SaveData } from './types'
 /** Badges a region needs before its pop-up shows. */
 export const DONATION_BADGES = 5
 
-/** A web address the PayPal (or Discord) button may open (nothing else: no javascript: or data: links). */
+/** A web address the Ko-fi (or Discord) button may open (nothing else: no javascript: or data: links). */
 export const isDonationUrl = (url: string): boolean => /^https?:\/\/\S+$/i.test(url.trim())
 
-/** The PayPal link, when it is a web address the button may open; null otherwise. */
+/** The Ko-fi link, when it is a web address the button may open; null otherwise. */
 export function donationUrl(data: GameData): string | null {
-  const url = String(data.config.donation.paypalUrl ?? '').trim()
+  const url = String(data.config.donation.kofiUrl ?? '').trim()
   return isDonationUrl(url) ? url : null
 }
 

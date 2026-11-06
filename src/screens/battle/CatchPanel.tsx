@@ -3,11 +3,25 @@
 // plays the catch timeline on the stage (BattleView); the die and the result show here as it lands. A throw that fell
 // short with a Bait in the bag asks first (docs/25): its die, its odds, Keep it / Throw the Bait. Capture Luck's second
 // chance ends on Throw again instead of Continue.
-import { useState } from 'react'
-import { baitChance, baitFaces, ballBonus, catchChance, catchValueOf, sureThrow } from '@/engine'
+import { TalentGem, talentName } from '@/components/Talent'
+import { AutoButton } from '@/components/AutoButton'
+import { BottomDock } from '@/components/BottomDock'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  baitChance,
+  baitFaces,
+  ballBonus,
+  catchChance,
+  catchValueOf,
+  friendBallHelps,
+  isBallFor,
+  isTalentBall,
+  sureThrow,
+  roadblockOf,
+} from '@/engine'
+import { useFriendBallBoost } from '@/lib/itemText'
 import { Die } from '@/components/Die'
 import { ItemSprite } from '@/components/ItemSprite'
-import { OakTip, useOneTimeTip } from '@/components/OakTip'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
 import { joinList, t as tr } from '@/i18n'
@@ -17,12 +31,17 @@ import { finishCatch } from '@/store/run'
 import { cx } from '@/theme/util'
 
 // Professor Oak's one-time tip on the first catch (per device).
-const CATCH_TIP_KEY = 'pokedice.tip.catch'
 
 type Catch = NonNullable<RunState['catch']>
 
 /** The Bait's die on the panel: its berry's colour, as the stage draws it (art, not a theme colour). */
 const BAIT_COLOR = '#e8506a'
+
+/** The boss being caught is a roadblock (docs/61 §2): "The wild Snorlax", not "The legendary". */
+const roadblockHere = (dex: number): boolean => {
+  const { data, run } = useGame.getState()
+  return !!roadblockOf(data.areas.find((a) => a.id === run.areaId), dex)
+}
 
 /** What the message box says during the catch. */
 export function catchMessage(c: Catch, name: string, thrown: { revealed: boolean }): string {
@@ -31,7 +50,7 @@ export function catchMessage(c: Catch, name: string, thrown: { revealed: boolean
     return c.retried
       ? tr('ui.catch.again', { name })
       : tr('ui.catch.wornOut', {
-          who: tr(c.kind === 'boss' ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
+          who: tr(c.kind === 'boss' && !roadblockHere(c.dex) ? 'ui.catch.theLegendary' : 'ui.catch.theWild'),
           name,
         })
   if (thrown.revealed) {
@@ -50,13 +69,19 @@ export function catchMessage(c: Catch, name: string, thrown: { revealed: boolean
 /** The ball picker, the catch math and the throw; after it, the die and CONTINUE. */
 export function CatchPanel({
   c,
+  picked,
   onThrow,
   revealed,
   onContinue = finishCatch,
   onBait,
   onRetry,
+  docked = false,
+  raid = false,
+  onPass,
 }: {
   c: Catch
+  /** The ball Idle picked for this throw (docs/36; null: none): shown chosen, whatever was tapped. */
+  picked?: string | null
   onThrow: (ballKey: string | null) => void
   /** The result is out. */
   revealed: boolean
@@ -66,17 +91,26 @@ export function CatchPanel({
   onBait?: (use: boolean) => void
   /** THROW AGAIN, once Capture Luck has kept it on the spot. */
   onRetry?: () => void
+  /** In a battle's panel: the buttons go in its BottomDock (on phones, at the screen's foot). */
+  docked?: boolean
+  /** A raid's catch: the Raid Ball (docs/44) is offered too. */
+  raid?: boolean
+  /**
+   * PASS (docs/67): set for a Pokémon already owned (`canPassCatch`), leaving it without a throw. With a choice to
+   * make, no button presses itself.
+   */
+  onPass?: () => void
 }) {
+  const Dock = docked ? BottomDock : Plain
   const { t } = useT()
   const data = useGame((s) => s.data)
   const inventory = useGame((s) => s.save?.inventory)
   const [ball, setBall] = useState<string | null>(null)
-  const [tip, closeTip] = useOneTimeTip(CATCH_TIP_KEY)
   const result = c.result
   const value = catchValueOf(data, c.dex)
   const balls = Object.entries(inventory ?? {})
     .map(([k, n]) => ({ item: data.items[k], n }))
-    .filter((b) => b.n > 0 && b.item?.effect.kind === 'ball')
+    .filter((b) => b.n > 0 && isBallFor(b.item, !!raid))
     .sort((a, b) => ballBonus(a.item) - ballBonus(b.item))
   const options = [
     { key: null as string | null, label: t('ui.catch.noBall'), bonus: 0, n: null as number | null },
@@ -87,12 +121,29 @@ export function CatchPanel({
       n: b.n as number | null,
     })),
   ]
-  const chosen = options.find((o) => o.key === ball) ?? options[0]!
-  const pct = (bonus: number) => Math.round(catchChance(value, bonus) * 100)
+  const chosen = options.find((o) => o.key === (picked !== undefined ? picked : ball)) ?? options[0]!
+  // False Swipe (docs/51): + the catch die from the Pokémon that landed the K.O., in every ball's chance.
+  const swipe = c.bonus ?? 0
+  const pct = (bonus: number) => Math.round(catchChance(value, bonus + swipe) * 100)
   // A ball adds nothing once a weaker option (or no ball) is already certain.
-  const sure = catchChance(value, 0) >= 1
+  const sure = catchChance(value, swipe) >= 1
+  // The Friend Ball (docs/60): its hidden-talent boost, while it can still find this one's talent.
+  const boost = useFriendBallBoost()
+  const talentUp = (o: (typeof options)[number]) =>
+    o.key != null && isTalentBall(data.items[o.key]) && friendBallHelps(data, c.dex, !!c.talent, boost)
   const notNeeded = (o: (typeof options)[number]) =>
-    o.key != null && options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus) >= 1)
+    o.key != null &&
+    !talentUp(o) &&
+    options.some((w) => w.bonus < o.bonus && catchChance(value, w.bonus + swipe) >= 1)
+
+  // A throw that couldn't miss has no die and nothing to read once the ball has landed: on at once, no CONTINUE (the
+  // user's call, 2026-10-26). A throw with a die keeps its CONTINUE, which loads and goes by itself.
+  const sureDone = !!result && revealed && sureThrow(result) && !result.baitOffer && !result.stays
+  const onwards = useRef(onContinue)
+  onwards.current = onContinue
+  useEffect(() => {
+    if (sureDone) onwards.current()
+  }, [sureDone])
 
   if (result) {
     // A throw that couldn't miss has no die: only the ball is thrown.
@@ -131,6 +182,7 @@ export function CatchPanel({
             </>
           )}
         </div>
+        <Dock>
         <div className="min-h-[56px]">
           {revealed && result.baitOffer ? (
             <div className="grid gap-1.5">
@@ -154,72 +206,38 @@ export function CatchPanel({
               {t('ui.catch.throwAgain')}
             </PixelButton>
           ) : (
-            revealed && (
-              <PixelButton variant="primary" size="lg" className="w-full" onClick={onContinue}>
+            revealed &&
+            !sureDone && (
+              // The throw's only way on: it loads and goes by itself (the rework).
+              <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={onContinue}>
                 {t('ui.common.continue')}
-              </PixelButton>
+              </AutoButton>
             )
           )}
         </div>
+        </Dock>
       </>
     )
   }
 
+  // One ball or none in the bag, or a catch that can't miss: nothing to pick, the throw is the only way on, so it
+  // loads and goes by itself (the rework).
+  const single = sure || options.length === 1
+  const foeName = data.species[c.dex]?.name ?? t('ui.common.pokemon')
+  const pass = onPass && (
+    <PixelButton size="sm" className="shrink-0" title={t('ui.catch.passTitle', { name: foeName })} onClick={onPass}>
+      {t('ui.catch.pass')}
+    </PixelButton>
+  )
   return (
     <>
-      {!sure && (
-        <div
-          role="radiogroup"
-          aria-label={t('ui.catch.ballLegend')}
-          className="grid grid-cols-[repeat(auto-fit,minmax(60px,1fr))] gap-1.5"
-        >
-          {options.map((o) => {
-            const item = o.key ? data.items[o.key] : null
-            const useless = notNeeded(o)
-            const on = chosen.key === o.key
-            return (
-              <button
-                key={o.key ?? 'none'}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                aria-label={t('ui.catch.ballLabel', {
-                  label: o.label,
-                  left: o.n != null ? t('ui.catch.ballLeft', { n: o.n }) : '',
-                  pct: pct(o.bonus),
-                  useless: useless ? t('ui.catch.notNeededSuffix') : '',
-                })}
-                title={useless ? t('ui.catch.notNeededTitle', { label: o.label }) : o.label}
-                onClick={() => setBall(o.key)}
-                className={cx(
-                  'relative grid min-h-[72px] content-start justify-items-center gap-0.5 px-0.5 pb-1.5 pt-1.5 text-ink',
-                  on
-                    ? 'bg-gold-pale shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_4px_#f07a2a]'
-                    : 'bg-paper shadow-card',
-                  useless && !on && 'opacity-60',
-                )}
-              >
-                <span className="grid h-[26px] w-[26px] place-items-center">
-                  {item ? <ItemSprite item={item} size={26} /> : <PixelIcon name="dice" size={20} />}
-                </span>
-                <b className="font-pixel text-[20px] font-normal leading-none tabular-nums">
-                  {pct(o.bonus)}%
-                </b>
-                <small className="font-pixel-sm text-[14px] leading-none text-muted">
-                  {useless ? t('ui.catch.notNeeded') : o.n != null ? `×${o.n}` : t('ui.catch.noBall')}
-                </small>
-              </button>
-            )
-          })}
-        </div>
+      {/* Each ball says its own chance: no formula line, no tip (the rework). */}
+      {swipe > 0 && (
+        <p className="m-0 flex items-center justify-center gap-1.5 text-center font-pixel-sm text-[16px] leading-tight text-ink">
+          <TalentGem talent="falseSwipe" size={16} />
+          {t('ui.talent.catchBonus', { talent: talentName('falseSwipe'), n: swipe })}
+        </p>
       )}
-      <p
-        className="m-0 min-h-[30px] text-center font-pixel-sm text-[18px] leading-tight text-ink"
-        aria-live="polite"
-      >
-        {sure ? t('ui.catch.noBallNeeded') : t('ui.battle.catchMath', { bonus: chosen.bonus, need: value })}
-      </p>
-      {tip && <OakTip onClose={closeTip}>{t('ui.catch.tip')}</OakTip>}
       {c.target.mode === 'replace' && (
         <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-muted">
           {t('ui.catch.replaces', {
@@ -228,14 +246,98 @@ export function CatchPanel({
           })}
         </p>
       )}
-      <PixelButton
-        variant="primary"
-        size="lg"
-        className="w-full"
-        onClick={() => onThrow(sure ? null : chosen.key)}
-      >
-        {sure ? t('ui.catch.catch') : t('ui.catch.roll')}
-      </PixelButton>
+      <Dock>
+        {single && pass ? (
+          // Owned already: the throw or PASS, the player's pick, so neither goes by itself.
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-stretch gap-2">
+            <PixelButton size="lg" title={t('ui.catch.passTitle', { name: foeName })} onClick={onPass}>
+              {t('ui.catch.pass')}
+            </PixelButton>
+            <PixelButton variant="primary" size="lg" onClick={() => onThrow(null)}>
+              {sure ? t('ui.catch.catch') : t('ui.catch.roll')}
+            </PixelButton>
+          </div>
+        ) : single ? (
+          <AutoButton paused="byDialogs" variant="primary" size="lg" className="w-full" onClick={() => onThrow(null)}>
+            {sure ? t('ui.catch.catch') : t('ui.catch.roll')}
+          </AutoButton>
+        ) : (
+          // A choice of balls (docs/42): each one is the throw, in the thumb's reach. No ball picked first and a
+          // ROLL TO CATCH after it: the tap that chooses is the tap that throws.
+          <div className="grid gap-1.5" role="group" aria-label={t('ui.catch.ballLegend')}>
+            {pass ? (
+              <div className="flex items-center justify-between gap-2">
+                <p className="m-0 font-pixel-sm text-[16px] leading-none text-muted">{t('ui.catch.tapBall')}</p>
+                {pass}
+              </div>
+            ) : (
+              <p className="m-0 text-center font-pixel-sm text-[16px] leading-none text-muted">{t('ui.catch.tapBall')}</p>
+            )}
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(64px,1fr))] gap-1.5">
+              {options.map((o) => {
+                const item = o.key ? data.items[o.key] : null
+                const useless = notNeeded(o)
+                // Idle's pick (docs/36), shown chosen while it waits to throw it.
+                const on = picked !== undefined && chosen.key === o.key
+                return (
+                  <button
+                    key={o.key ?? 'none'}
+                    type="button"
+                    aria-label={`${t('ui.catch.throwLabel', {
+                      label: o.label,
+                      left: o.n != null ? t('ui.catch.ballLeft', { n: o.n }) : '',
+                      pct: pct(o.bonus),
+                      useless: useless ? t('ui.catch.notNeededSuffix') : '',
+                    })}${talentUp(o) ? `, ${t('ui.catch.talentBoost', { x: boost })}` : ''}`}
+                    title={useless ? t('ui.catch.notNeededTitle', { label: o.label }) : o.label}
+                    onClick={() => {
+                      setBall(o.key)
+                      onThrow(o.key)
+                    }}
+                    className={cx(
+                      'pixel-btn relative grid min-h-[84px] content-center justify-items-center gap-1 px-0.5 py-1.5 text-ink',
+                      on ? 'bg-gold-pale outline outline-[3px] outline-offset-2 outline-gold' : 'bg-paper',
+                      useless && !on && 'opacity-60',
+                    )}
+                  >
+                    <span className="grid h-[28px] w-[28px] place-items-center">
+                      {item ? <ItemSprite item={item} size={28} /> : <PixelIcon name="dice" size={22} />}
+                    </span>
+                    {talentUp(o) && <FriendBallTag boost={boost} className="absolute -right-1 -top-2.5 z-[1]" />}
+                    <b className="font-pixel text-[22px] font-normal leading-none tabular-nums">{pct(o.bonus)}%</b>
+                    <small className="font-pixel-sm text-[16px] leading-none text-muted">
+                      {useless ? t('ui.catch.notNeeded') : o.n != null ? `×${o.n}` : t('ui.catch.noBall')}
+                    </small>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </Dock>
     </>
+  )
+}
+
+/** Outside a battle's panel (a raid, the kitchen sink): the buttons in the flow, as before. */
+function Plain({ children }: { children?: ReactNode }) {
+  return <>{children}</>
+}
+
+/**
+ * The Friend Ball's corner tag on its throw button (docs/60): the unknown talent's gem and the boost, while it can
+ * still find this Pokémon's hidden talent. The button's name says it in words.
+ */
+export function FriendBallTag({ boost, className }: { boost: number; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cx(
+        'light-scope flex items-center gap-0.5 bg-gold px-1 font-pixel-sm text-tag leading-none text-ink shadow-ring-thin',
+        className,
+      )}
+    >
+      <TalentGem talent="extraReroll" unknown size={12} />×{boost}
+    </span>
   )
 }

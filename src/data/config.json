@@ -19,30 +19,25 @@
    "threshold": 1,
    "percentPerStack": 4
   },
-  "heal": {
-   "amount": "rollTotal",
-   "threshold": 2
+  "poison": {
+   "percent": 5,
+   "duration": 5
   },
   "frozen": {
-   "stunTurns": 2,
-   "threshold": 3
-  },
-  "poison": {
-   "percent": 10,
-   "duration": 3,
-   "threshold": 2
-  },
-  "confuse": {
-   "threshold": 2,
-   "recoilPercent": 20
+   "sureAt": 3,
+   "stunTurns": 2
   },
   "paralyze": {
-   "stunTurns": 1,
-   "threshold": 2
+   "sureAt": 2,
+   "stunTurns": 1
+  },
+  "confuse": {
+   "recoilPercentPerFace": 10,
+   "maxFaces": 3
   }
  },
  "dayCare": {
-  "unlockPokedex": 20,
+  "unlockPokedex": 10,
   "slots": 2,
   "friendSlots": 4,
   "xpPerTick": 1,
@@ -104,11 +99,6 @@
  },
  "shinyChance": 0.00375,
  "configVersion": 77,
- "energy": {
-  "max": 50,
-  "enabled": false,
-  "minutesPerEnergy": 30
- },
  "roamers": {
   "dex": [
    243,
@@ -416,7 +406,9 @@
  "donation": {
   "round": 1,
   "enabled": true,
-  "paypalUrl": "https://paypal.me/GregoireFontaine"
+  "kofiUrl": "https://ko-fi.com/gregoirefontaine",
+  "monthlyGoal": 0,
+  "currency": "EUR"
  },
  "discordUrl": "https://discord.gg/XKJQYw3p9",
  "maxFriends": 30,

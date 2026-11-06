@@ -85,7 +85,7 @@ export function NightmareRaidBits() {
           <NightmareRaidBanner className="-mx-3 -mt-3 h-[132px]">
             <div className="pixel-plate absolute left-2 top-2 z-[1] grid gap-0.5 px-2.5 pb-1.5 pt-1 leading-normal">
               <b className="text-[24px] font-normal leading-none">Legendary raid</b>
-              <small className="font-pixel-sm text-[14px] leading-none text-muted">
+              <small className="font-pixel-sm text-[16px] leading-none text-muted">
                 Newmoon Island · Haunted Hollow
               </small>
             </div>
@@ -102,7 +102,7 @@ export function NightmareRaidBits() {
               <b className="text-[19px] font-normal leading-none">
                 Wake up from Newmoon Island&apos;s nightmare
               </b>
-              <small className="font-pixel-sm text-[15px] text-ink">
+              <small className="font-pixel-sm text-[16px] text-ink">
                 The lock, before the nightmare is over.
               </small>
             </span>

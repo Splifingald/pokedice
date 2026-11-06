@@ -1,8 +1,10 @@
-// Phones and tablets play upright (docs/15 §6): turned sideways, the whole game waits behind this card until the
-// device is upright again. Nothing to dismiss: turning the device back is the only way on.
+// Phones play upright (docs/15 §6): turned sideways, the whole game waits behind this card until the phone is upright
+// again. Nothing to dismiss: turning the phone back is the only way on. A tablet turned sideways plays on (the wide
+// layout), and a computer never sees it.
 import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '@/i18n/react'
+import { holdInert } from '@/lib/inert'
 import { lockPortrait, useSideways } from '@/lib/orientation'
 
 /** A pixel phone that tips from sideways to upright, in steps; still and upright under reduced motion. */
@@ -41,7 +43,7 @@ export function RotateView({ titleId }: { titleId?: string }) {
   )
 }
 
-/** Over everything, while a phone or a tablet is held sideways; the game behind it can't be reached meanwhile. */
+/** Over everything, while a phone is held sideways; the game behind it (dialogs, toasts) can't be reached meanwhile. */
 export function RotateCover() {
   const sideways = useSideways()
   const ref = useRef<HTMLDivElement>(null)
@@ -50,13 +52,11 @@ export function RotateCover() {
   useEffect(() => lockPortrait(), [])
 
   useEffect(() => {
-    const root = document.getElementById('root')
-    if (!sideways || !root) return
-    root.inert = true
+    if (!sideways) return
+    // Everything else, the dialogs opened after it included: the cover is the one way on.
+    const wake = holdInert(ref.current, { all: true })
     ref.current?.focus()
-    return () => {
-      root.inert = false
-    }
+    return wake
   }, [sideways])
 
   if (!sideways || typeof document === 'undefined') return null

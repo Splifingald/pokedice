@@ -225,7 +225,7 @@ export function background(W: number, H: number): Background {
 }
 
 // ------------------------------------------------------------------ Poké Balls
-export type BallKind = 'poke' | 'great' | 'ultra' | 'master' | 'trick'
+export type BallKind = 'poke' | 'great' | 'ultra' | 'master' | 'trick' | 'raid' | 'friend' | 'safari'
 export const BALLS: Record<BallKind, { top: readonly string[]; mark?: readonly string[] }> = {
   poke: { top: ['#ff8a78', '#ec3b33', '#a8231f'] },
   great: { top: ['#7fb3ff', '#3474e0', '#1f4aa0'], mark: ['#ff6b5e', '#d8312a'] },
@@ -233,10 +233,21 @@ export const BALLS: Record<BallKind, { top: readonly string[]; mark?: readonly s
   master: { top: ['#b88af0', '#7d3fc4', '#4f2388'], mark: ['#ff8fc8', '#e0438f'] },
   // Trick or Treat's ball (docs/29): drawn from its picture once loaded (loadTrickBall); these stand in until then.
   trick: { top: ['#a15fda', '#8e40d2', '#6726a0'] },
+  // The Raid Ball (docs/44): drawn from its picture once loaded (loadRaidBall); these stand in until then.
+  raid: { top: ['#ff7a9e', '#e8336b', '#8c1238'], mark: ['#fff6c2', '#ffd23f'] },
+  // The Friend Ball (docs/60): the games' green top with its red band.
+  friend: { top: ['#8fdc6a', '#4aa93a', '#2a6e24'], mark: ['#ff8a5c', '#e2452a'] },
+  // The Safari Ball (docs/61 §4): drawn from its picture once loaded (loadSafariBall); its camouflage green until then.
+  safari: { top: ['#8fcf72', '#5a9c43', '#33652a'] },
 }
 
 /** Trick or Treat's ball picture (30 × 30, the ball in its middle 18 × 18): the file its buttons show. */
 export const TRICK_BALL_URL = '/items/trick-ball.png'
+/** The Raid Ball's picture (docs/44), the same frame as Trick or Treat's ball. */
+export const RAID_BALL_URL = '/items/raid-ball.png'
+/** The Safari's two pictures (docs/61 §4, scripts/safari-sprites.ts), the same frame as Trick or Treat's. */
+export const SAFARI_BALL_URL = '/items/safari-ball.png'
+export const SAFARI_BAIT_URL = '/items/safari-bait.png'
 
 /** A ball picture's pixels, cropped to the ball, and the row its two halves part at. */
 interface BallArt {
@@ -298,6 +309,8 @@ export function loadBallArt(kind: BallKind, url: string, split: number): Promise
 
 /** The Trick Ball's picture for the catch timeline (its halves part under the purple top, at the ball's row 11). */
 export const loadTrickBall = () => loadBallArt('trick', TRICK_BALL_URL, 11)
+export const loadRaidBall = () => loadBallArt('raid', RAID_BALL_URL, 11)
+export const loadSafariBall = () => loadBallArt('safari', SAFARI_BALL_URL, 11)
 
 /** The picture's button (its two oranges), which `button` recolours while the ball wobbles. */
 const isButton = (r: number, g: number, b: number) => r > 220 && g > 110 && g < 190 && b < 110
@@ -355,7 +368,17 @@ function artBall(kind: BallKind, art: BallArt, deg: number, open: number, btn: s
 }
 /** The game's ball item keys → how the ball is drawn. */
 export const ballOfItem = (key: string | null | undefined): BallKind =>
-  key === 'great-ball' ? 'great' : key === 'ultra-ball' ? 'ultra' : key === 'master-ball' ? 'master' : 'poke'
+  key === 'great-ball'
+    ? 'great'
+    : key === 'ultra-ball'
+      ? 'ultra'
+      : key === 'master-ball'
+        ? 'master'
+        : key === 'raid-ball'
+          ? 'raid'
+          : key === 'friend-ball'
+            ? 'friend'
+            : 'poke'
 const BOTTOM = ['#ffffff', '#e9e9f2', '#b9b9cc']
 const OUT = '#1b1626'
 

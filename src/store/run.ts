@@ -1,5 +1,17 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
+import { friendBallBoostNow } from './friendship'
 import {
+  areaVersusHere,
+  foeGoldMultiplier,
+  foeLevels,
+  isPlayerFoe,
+  matchFoe,
+  type AreaFoe,
+  autoLevel,
+  autoOffersLead,
+  catchTalentBonus,
+  getInstance,
+  talentOf,
   noteBossCaught,
   arriveAtPortal,
   applyCatch,
@@ -17,26 +29,33 @@ import {
   applyVictory,
   applyWipe,
   ballBonus,
+  isBallFor,
   battleOutcome,
   canSkip,
   catchTarget,
   catchValueOf,
   centerHeal,
   centersOn,
-  centerWouldHelp,
+  boonCenters,
+  boonCentersHere,
+  buffDiceFor,
+  dropBoons,
+  markCenterRulesSeen,
+  openBoonCenter,
+  pendingBoons,
+  pickCenterBoon,
+  wipeCenterDue,
+  type BoonPicked,
   challengeEncounter,
-  centerIsNext,
-  encounterEnergyCost,
   finishRound,
-  energyNow,
-  spendEnergy,
+  type Encounter,
+  type GameData,
   type EncounterContext,
   playerSideOf,
   consumeItem,
-  earnedGold,
-  MONEY,
   pickUpItem,
   shinyBoost,
+  wildShinyChance,
   recordDraws,
   rollCatch,
   spinSlots,
@@ -63,7 +82,11 @@ import {
   swapIntoTeam,
   teamAverageLevel,
   teamOf,
+  starterFainted,
+  trainerPrize,
   uniformLevels,
+  UNOWN_DEX,
+  unownLetterFor,
   withWorldBoost,
   drawPortalCard,
   inPortalRun,
@@ -77,13 +100,28 @@ import {
   portalLevels,
   portalLock,
   portalNoCatch,
+  portalModeOf,
+  nightmareModeOf,
+  timeRaceModeOf,
+  whiteoutModeOf,
+  portalSkin,
   portalNextCard,
   portalStateOf,
   startPortalRun,
   applyNightmareStrike,
   asDouble,
+  fitWildPair,
   isDoubleEncounter,
   type FoeSeed,
+  type CreateBattleOptions,
+  asHorde,
+  hordesOn,
+  hordeThrowAt,
+  noteHorde,
+  titanFight,
+  titanReward,
+  trialById,
+  trialFoes,
   type DoubleKo,
   arriveAtNightmare,
   inNightmare,
@@ -95,10 +133,41 @@ import {
   nightmareVictoryToRaid,
   startNightmare,
   winNightmareRound,
+  arriveAtTimeRace,
+  inTimeRace,
+  markTimeRaceWonSeen,
+  openTimeRaceFork,
+  pickTimeRaceGate,
+  startTimeRace,
+  timeRaceEncounter,
+  timeRaceForkDue,
+  timeRaceLock,
+  timeRaceNoCatch,
+  timeRacePlanAt,
+  timeRaceStateOf,
+  timeRaceTimeUp,
+  timeRaceVictoryDue,
+  timeRaceVictoryToRaid,
+  winTimeRaceFight,
+  arriveAtWhiteout,
+  inWhiteout,
+  leaveBonfire,
+  markWhiteoutWonSeen,
+  startWhiteout,
+  warmAtBonfire,
+  whiteoutBossGotAway,
+  whiteoutEncounter,
+  whiteoutLock,
+  whiteoutNoCatch,
+  whiteoutStateOf,
+  whiteoutWeather,
+  winWhiteout,
+  winWhiteoutFoe,
   type BattleEvent,
   type BattleKind,
   type ForceKind,
   type PlayerProfile,
+  type OwedGold,
   type RunEvent,
   type SaveData,
   type SpinResult,
@@ -109,22 +178,86 @@ import {
   throwTrickBall as throwTrickBallIn,
   trickCfg,
   type TrickStep,
+  applyGiftOpen,
+  bossInPresent,
+  giftCfg,
+  growGift,
+  openGift,
+  rollGiftWild,
+  startBossPresent,
+  startGift,
+  type GiftItem,
+  type GiftStep,
   type ProgressRaid,
+  friendBallTalent,
+  isTalentBall,
+  outfitOf,
+  finishRerollLesson,
+  rerollLessonDue,
+  gentleFoeMax,
+  arriveAtTracks,
+  canStartTracks,
+  inTracks,
+  markTracksWonSeen,
+  openBush,
+  startTracks,
+  tracksBolt,
+  tracksCaught,
+  tracksEncounter,
+  tracksField,
+  tracksFound,
+  tracksModeOf,
+  tracksOutroDue,
+  tracksQuarryDown,
+  disguisesOn,
+  isDisguisedFind,
+  declineGift,
+  dueGift,
+  dueRival,
+  giftChoices,
+  giftMomentsOn,
+  giftRng,
+  markMomentDone,
+  receiveGift,
+  applyRivalLoss,
+  rivalEncounter,
+  rivalLossForgiven,
+  rivalsOn,
+  wipeHeals,
+  isExtreme,
+  lureCfg,
+  safariDealable,
+  safariOn,
+  safariRoundDue,
+  safariCfg,
+  safariRoundPrice,
+  startSafariRound,
 } from '@/engine'
 import { activeSlot } from '@/save/storage'
 import { commitSave, initialRun, mutateSave, pushToast, useGame, type CatchState, type RunState } from './game'
+import { areaFoeFor, noteMeet } from './areaVersus'
 import { localHour } from './dayTime'
+import { resumedRngs, trackRngs } from './resume'
 import { currentLive } from './live'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
+import { giftAllowed } from './giftCard'
+import { tracksAllowed } from './tracks'
+import { sideQuestAllowed, sideQuestCached, sideQuestKnown } from './sideQuests'
+import { askSafari, closeSafariAsk, useSafariAsk } from './safariAsk'
+import { weatherHere } from './flavours'
 import { t } from '@/i18n'
-import { money } from '@/lib/format'
 
-let runRng = createRng(randomSeed())
-let battleRng = createRng(randomSeed())
-let battleSeq = 0
-let trickSeq = 0
+// An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
+// throws the same dice staying would have; its ids carry on too, so the next battle or ghost is a new screen.
+const resumed = resumedRngs()
+let runRng = createRng(resumed?.run ?? randomSeed())
+let battleRng = createRng(resumed?.battle ?? randomSeed())
+let battleSeq = useGame.getState().battle?.id ?? 0
+let trickSeq = useGame.getState().run.trick?.id ?? 0
+let giftSeq = useGame.getState().run.present?.id ?? 0
+trackRngs(() => ({ run: runRng.getState(), battle: battleRng.getState() }))
 
 export const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -155,8 +288,9 @@ export function deleteSave() {
 export function enterArea(areaId: string): boolean {
   const { save, data } = useGame.getState()
   if (!save || !isAreaUnlocked(save, areaId, data) || isAreaClosed(save, areaId, data)) return false
-  // Inside a portal run (docs/28) there is no other area to go to, nor in the nightmare (docs/30).
-  const locked = portalLock(save, data) ?? nightmareLock(save, data)
+  // Inside a portal run (docs/28) there is no other area to go to, nor in the nightmare (docs/30), nor in the race of
+  // time and space (docs/64 §4.4) or the whiteout (§4.3).
+  const locked = portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data) ?? whiteoutLock(save, data)
   if (locked && locked.id !== areaId) return false
   // A small world's area may also wait for its date (docs/21), on the server's clock.
   if (!areaOpenAt(data, areaId, serverNow())) return false
@@ -169,6 +303,18 @@ export function enterArea(areaId: string): boolean {
       areaProgress: visited ? save.areaProgress : { ...save.areaProgress, [areaId]: emptyProgress() },
     })
   useGame.setState({ run: { ...initialRun(), areaId, firstInArea: true, forceNext: useGame.getState().run.forceNext }, battle: null })
+  return true
+}
+
+/**
+ * A region begun (a new game, or a new region on its starter): straight into its first area and the first encounter,
+ * never Home first (the rework). False when the area can't be entered; the caller then stays where it is.
+ */
+export function exploreFirstArea(areaId?: string): boolean {
+  const { save } = useGame.getState()
+  const id = areaId ?? save?.currentAreaId
+  if (!id || !enterArea(id)) return false
+  rollNext()
   return true
 }
 
@@ -211,8 +357,10 @@ function settleRound(quiet = false): Extract<RunEvent, { kind: 'area_cleared' }>
 
 /** Back to the area screen after an encounter: the round may be complete. */
 function backToArea() {
-  setRun({ phase: 'idle', encounter: null })
+  setRun({ phase: 'idle', encounter: null, duel: null, rivalLost: null })
   settleRound()
+  // Tracks in the Snow (docs/64 §4.1): back on the glade with Stantler found but not taken, it bolts to another bush.
+  boltIfFound()
   // In a portal run, a distortion next is turned over at once: its boons, with no stop on the area's page first (the
   // user, 2026-10-15).
   const { save, data, run } = useGame.getState()
@@ -220,11 +368,30 @@ function backToArea() {
     rollNext()
 }
 
+/**
+ * Back on the trail and straight on to the next encounter, as Home's CONTINUE: a flee, a skip, the Game Corner left,
+ * Trick or Treat over, a stalemate. No stop on the area's page in between (the user's call, 2026-11-02). An area with a
+ * mode of its own (a portal, the nightmare, the race, the whiteout, the glade) keeps its own page between cards, as
+ * the Area screen tells them apart, and a rebattle its own.
+ */
+function onToNext() {
+  backToArea()
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || run.phase !== 'idle' || run.rebattle) return
+  const area = data.areas.find((a) => a.id === run.areaId)
+  if (!area) return
+  const own = [portalModeOf, nightmareModeOf, timeRaceModeOf, whiteoutModeOf, tracksModeOf].some((m) => m(area, data))
+  // A Safari's next round is never begun on the way (a player's report, 2026-11-03: round after round paid by itself):
+  // rollNext asks first, its pop-up over the area's page (the price, or that it's free; HOME beside it).
+  if (!own) continueExploring()
+}
+
 /** Everything `nextEncounter` needs about the save and the area, as things stand. */
 function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind | null): EncounterContext | null {
   const { data, run } = useGame.getState()
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return null
+  const foe = areaVersusHere(save, area, data) ? areaFoeFor(area.id) : null
   return {
     area,
     progress: progressOf(save, area.id),
@@ -232,33 +399,27 @@ function encounterContext(save: SaveData, areaId: string, forceKind: ForceKind |
     teamAvgLevel: teamAverageLevel(save),
     teamHurt: isTeamHurt(save, data),
     teamFainted: hasFaintedMember(save),
+    starterFainted: starterFainted(save),
     isFirstInArea: run.firstInArea,
     pokedex: save.pokedex,
     forceKind,
-    centerUseful: centerWouldHelp(save, data),
     player: playerSideOf(save),
-    noCenters: !centersOn(save, data),
+    // Extreme mode (docs/22): none, unless its boon Centers are on (docs/47) and this area still has some.
+    noCenters: !centersOn(save, data) && !boonCentersHere(save, area, data),
+    boonCenters: boonCenters(save, data),
+    wipeCenter: wipeCenterDue(save, area.id, data),
     // A Shiny Parade covering this area: wild Pokémon are more often shiny.
     shinyBoost: shinyBoost(currentLive(), area),
+    // The Shiny Charm (docs/25): the player's own wild odds.
+    shinyChance: wildShinyChance(save, data),
     // Day and night (docs/32): in Johto, only the hour's wild Pokémon come.
     hour: localHour(),
+    // Real-player battles (docs/54): the team the server has for this area, if the save meets them here.
+    // …brought down to the player's level while the level match is on (the user's ask, 2026-11-03).
+    versusFoe: foe && matchFoe(foe, save, area, data),
+    // The weather (docs/62 §4): Galar's of the day brings its types out more.
+    weather: weatherHere(save, data, area),
   }
-}
-
-/**
- * The next encounter (CONTINUE) needs energy, unless what comes next is free anyway (a Pokémon Center, or nobody can fight).
- * False when the energy system is off.
- */
-export function outOfEnergy(): boolean {
-  const { save, data, run } = useGame.getState()
-  if (!save || !data.config.energy.enabled || energyNow(save, data.config.energy, Date.now()).value >= 1) return false
-  if (!hasAbleTeam(save) || !run.areaId) return false
-  // A portal run deals no Center: only a distortion waiting to be picked is free.
-  if (inPortalRun(save, data, run.areaId)) return !portalStateOf(save, run.areaId).offers?.length
-  // Nor does the nightmare (docs/30): only Darkrai's strike, due after a round, is free.
-  if (inNightmare(save, data, run.areaId)) return !nightmareStateOf(save, run.areaId).strike
-  const ctx = encounterContext(save, run.areaId, null)
-  return !ctx || !centerIsNext(ctx)
 }
 
 /**
@@ -278,17 +439,15 @@ function rollPortal(save: SaveData, areaId: string) {
   if (drawn.card === 'distortion') {
     const opened = openDistortion(drawn.save, data, areaId, runRng)
     if (opened) commitSave(opened.save)
-    if (opened?.closedAtOnce) pushToast(t('ui.portal.closedToast', { n: portalStateOf(opened.save, areaId).closed }), 'good')
+    if (opened?.closedAtOnce)
+      pushToast(t(closedToastKey(data, areaId), { n: portalStateOf(opened.save, areaId).closed }), 'good')
     setRun({ phase: 'idle', encounter: null, firstInArea: false })
     return
   }
   const ctx = encounterContext(drawn.save, areaId, null)
   const roll = ctx ? portalEncounter(ctx, drawn.card, runRng) : null
   if (!roll) return commitSave(drawn.save)
-  let recorded = recordDraws(drawn.save, areaId, { encounter: roll.encounter, deck: null, lootDeck: roll.lootDeck })
-  const cost = data.config.energy.enabled ? encounterEnergyCost(roll.encounter) : 0
-  if (cost > 0) recorded = spendEnergy(recorded, data.config.energy, Date.now(), cost) ?? recorded
-  commitSave(recorded)
+  commitSave(recordDraws(drawn.save, areaId, { encounter: roll.encounter, deck: null, lootDeck: roll.lootDeck }))
   setRun({ phase: 'preview', encounter: roll.encounter, firstInArea: false })
 }
 
@@ -327,8 +486,14 @@ export function pickDistortionOffer(index: number) {
   commitSave(res.save)
   const n = portalStateOf(res.save, run.areaId).closed
   if (res.itemKey) pushToast(t('ui.portal.gotItem', { item: data.items[res.itemKey]?.name ?? res.itemKey }), 'good')
-  pushToast(t('ui.portal.closedToast', { n }), 'good')
+  pushToast(t(closedToastKey(data, run.areaId), { n }), 'good')
 }
+
+/** A portal closed, or an altar lit (the Stairway of Plates, docs/64 §4.5). */
+const closedToastKey = (data: GameData, areaId: string) =>
+  portalSkin(portalModeOf(data.areas.find((a) => a.id === areaId), data)) === 'plates'
+    ? 'ui.plates.closedToast'
+    : 'ui.portal.closedToast'
 
 /** The victory's moment is over: back to the world's Home, where the area is its raid now. */
 export function finishPortalVictory() {
@@ -369,8 +534,6 @@ function rollNightmare(save: SaveData, areaId: string) {
   }
   const encounter = nightmareEncounter(save, data, areaId)
   if (!encounter) return setRun({ phase: 'idle', encounter: null, nightmareStruck: false })
-  const cost = data.config.energy.enabled ? encounterEnergyCost(encounter) : 0
-  if (cost > 0) commitSave(spendEnergy(save, data.config.energy, Date.now(), cost) ?? save)
   setRun({ phase: 'preview', encounter, firstInArea: false, nightmareStruck: false })
 }
 
@@ -449,75 +612,550 @@ export function healAndStartNightmareRaid(): ProgressRaid | null {
   return openRaidIn(next, data, area)
 }
 
+/**
+ * The race's clock (docs/64 §4.4): the server's time; until it has been read once (the page offline from the start), the
+ * device's, so a try is never stuck. READY! itself waits for the server's (beginTimeRace).
+ */
+const raceNow = () => serverNow() ?? Date.now()
+
+/** A full K.O. in a try (docs/64 §4.4): what the wipe card says it lost. */
+function raceLostOf(save: SaveData, areaId: string): { reason: 'wipe'; fights: number; total: number } {
+  const { data } = useGame.getState()
+  return {
+    reason: 'wipe',
+    fights: timeRaceStateOf(save, areaId).fights,
+    total: timeRacePlanAt(save, data, areaId)?.total ?? 0,
+  }
+}
+
+/** A try of the race ended without a win: the wipe card says why (the clock, or a full K.O.) and what it had won. */
+function raceLostCard(areaId: string, reason: 'time' | 'wipe', fights: number, total: number) {
+  useGame.setState({ battle: null })
+  // In its area, whatever the run held (the clock may run out before the page has entered it, on a reload).
+  setRun({ areaId, phase: 'wipe', encounter: null, trainer: null, events: [], raceLost: { reason, fights, total } })
+}
+
+/**
+ * The race's next step (docs/64 §4.4): past the clock, back to the start (its card says so); a fork due opens and its
+ * gates wait on the area's page; otherwise the next foe of the gate's type, straight into the fight (a time trial: no
+ * preview card to stop on). A team with nobody standing goes back to the start too.
+ */
+function rollTimeRace(save: SaveData, areaId: string) {
+  const { data } = useGame.getState()
+  const up = timeRaceTimeUp(save, data, areaId, raceNow())
+  if (up) {
+    commitSave(up.save)
+    return raceLostCard(areaId, 'time', up.fights, up.total)
+  }
+  if (timeRaceStateOf(save, areaId).gates?.length) return setRun({ phase: 'idle', encounter: null })
+  if (!hasAbleTeam(save)) {
+    const lost = raceLostOf(save, areaId)
+    commitSave(applyWipe(save, areaId, data))
+    return raceLostCard(areaId, 'wipe', lost.fights, lost.total)
+  }
+  if (timeRaceForkDue(save, data, areaId)) {
+    const opened = openTimeRaceFork(save, data, areaId, runRng)
+    if (opened) commitSave(opened)
+    return setRun({ phase: 'idle', encounter: null, firstInArea: false })
+  }
+  const res = timeRaceEncounter(save, data, areaId, runRng)
+  if (!res) return setRun({ phase: 'idle', encounter: null })
+  commitSave(res.save)
+  setRun({ phase: 'preview', encounter: res.encounter, firstInArea: false })
+  beginFight()
+}
+
+/**
+ * READY! on the race's way in (docs/64 §4.4): into a try, the team healed, the clock started on the server's time, the
+ * first fork next. False when it can't start here, or while the server's time is still unknown (a toast says so).
+ */
+export function beginTimeRace(areaId: string): boolean {
+  const { save, data, run } = useGame.getState()
+  if (!save || run.phase !== 'idle') return false
+  const now = serverNow()
+  if (now == null) {
+    pushToast(t('ui.common.offline'), 'bad')
+    return false
+  }
+  if (run.areaId !== areaId && !enterArea(areaId)) return false
+  const started = startTimeRace(useGame.getState().save!, data, areaId, now)
+  if (!started) return false
+  commitSave(started)
+  setRun({ raceLost: null })
+  rollNext()
+  return true
+}
+
+/**
+ * The whiteout's next foe (docs/64 §4.3): the wave's foe, or the boss after the last bonfire, its preview first. Nothing
+ * while a bonfire is lit (the area shows it); a team with nobody standing is the wipe (back to wave 1).
+ */
+function rollWhiteout(save: SaveData, areaId: string) {
+  const { data } = useGame.getState()
+  if (whiteoutStateOf(save, areaId).bonfire) return setRun({ phase: 'idle', encounter: null })
+  if (!hasAbleTeam(save)) {
+    const lost = whiteoutStateOf(save, areaId).wave
+    commitSave(applyWipe(save, areaId, data))
+    setRun({ phase: 'wipe', trainer: null, events: [], whiteoutLost: lost })
+    return
+  }
+  const encounter = whiteoutEncounter(save, data, areaId)
+  if (!encounter) return setRun({ phase: 'idle', encounter: null })
+  setRun({ phase: 'preview', encounter, firstInArea: false })
+}
+
+/**
+ * BEGIN on the whiteout's way in (docs/64 §4.3): into the blizzard, wave 1's first foe next (its intro has played
+ * already, as the nightmare's). False when it can't begin here.
+ */
+export function beginWhiteout(areaId: string): boolean {
+  const { save, data, run } = useGame.getState()
+  if (!save || run.phase !== 'idle') return false
+  if (run.areaId !== areaId && !enterArea(areaId)) return false
+  const started = startWhiteout(useGame.getState().save!, data, areaId)
+  if (!started) return false
+  commitSave(started)
+  setRun({ whiteoutLost: null })
+  rollNext()
+  return true
+}
+
+/**
+ * A fork due but not dealt yet (the page opened between a fight and its fork, a reload): it is dealt now. Nothing
+ * when it isn't due any more by the time this runs (the clock ran out meanwhile, a fight began).
+ */
+export function openDueTimeRaceFork() {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || run.phase !== 'idle' || !timeRaceForkDue(save, data, run.areaId)) return
+  rollTimeRace(save, run.areaId)
+}
+
+/** The way in shows: the team and the Box are healed as at a Pokémon Center (the engine's). */
+export function arriveAtTimeRaceWayIn(areaId: string) {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const next = arriveAtTimeRace(save, data, areaId)
+  if (next !== save) commitSave(next)
+}
+
+/** The way in's pop-up is up: back from the Team screen, it shows again at once. */
+export function markTimeRacePopup() {
+  if (!useGame.getState().run.racePopup) setRun({ racePopup: true })
+}
+
+/** Through a gate (docs/64 §4.4): its find is taken (a shard's time, an item), and its first foe comes at once. */
+export function pickRaceGate(index: number) {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId) return
+  const res = pickTimeRaceGate(save, data, run.areaId, index)
+  if (!res) return
+  commitSave(res.save)
+  const find = res.gate.find
+  if (find?.kind === 'shard') pushToast(t('ui.timeRace.shardToast', { s: find.seconds }), 'good')
+  else if (find?.kind === 'item')
+    pushToast(t('ui.timeRace.itemToast', { item: data.items[find.key]?.name ?? find.key, n: find.qty }), 'good')
+  rollNext()
+}
+
+/**
+ * The clock reached 0:00 while the player was on the area's page or in a fight (the screen's timer asks): back to the
+ * start, its card says so. False while there is time left.
+ */
+export function timeRaceExpired(): boolean {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (!save || !areaId) return false
+  const up = timeRaceTimeUp(save, data, areaId, raceNow())
+  if (!up) return false
+  commitSave(up.save)
+  raceLostCard(areaId, 'time', up.fights, up.total)
+  return true
+}
+
+/** The win's moment is over: back to the world's Home, where the area is its raid now. */
+export function finishTimeRaceVictory() {
+  const { save, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (save && areaId) commitSave(markTimeRaceWonSeen(save, areaId))
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+}
+
+/**
+ * HEAL & START RAID on the race's win (as the portal run's victory): the team and the Box healed as at a Pokémon Center,
+ * the moment seen (the engine's timeRaceVictoryToRaid), and the raid the race just opened, its page next. Null when there
+ * is none (the screen goes Home then).
+ */
+export function healAndStartTimeRaceRaid(): ProgressRaid | null {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  const area = data.areas.find((a) => a.id === areaId)
+  if (!save || !area) return null
+  const next = timeRaceVictoryToRaid(save, data, area.id)
+  if (next !== save) commitSave(next)
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+  return openRaidIn(next, data, area)
+}
+
+/** The whiteout's way-in pop-up is up: back from the Team screen, it shows again at once. */
+export function markWhiteoutPopup() {
+  if (!useGame.getState().run.whiteoutPopup) setRun({ whiteoutPopup: true })
+}
+
+/** The whiteout's way in shows: the team and the Box are healed as at a Pokémon Center (the engine's). */
+export function arriveAtWhiteoutWayIn(areaId: string) {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const next = arriveAtWhiteout(save, data, areaId)
+  if (next !== save) commitSave(next)
+}
+
+// ---------------------------------------------------------------- Tracks in the Snow (docs/64 §4.1)
+
+let bushSeq = 0
+
+/** Stantler found but not taken (fled, a missed throw, a draw): it bolts, a fresh glade of the same round. */
+function boltIfFound() {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || !tracksFound(save, data, run.areaId)) return
+  commitSave(tracksBolt(save, data, run.areaId))
+}
+
+/**
+ * Between bushes the glade waits on the area's page: nothing is dealt. A Stantler left behind bolts; a team with
+ * nobody standing is back at the glade's edge (the wipe).
+ */
+function rollTracks(save: SaveData, areaId: string) {
+  const { data } = useGame.getState()
+  if (inTracks(save, data, areaId) && !hasAbleTeam(save)) {
+    commitSave(applyWipe(save, areaId, data))
+    setRun({ phase: 'wipe', trainer: null, events: [], tracksWiped: true, tracksBush: null })
+    return
+  }
+  boltIfFound()
+  setRun({ phase: 'idle', encounter: null })
+}
+
+/**
+ * BEGIN on the way in's pop-up (docs/64 §4.1): into the glade, the team healed, the round the player had reached, a
+ * fresh glade. The server says yes first for a signed-in player (tracks_open). False when it can't begin here.
+ */
+export async function beginTracks(areaId: string): Promise<boolean> {
+  const { save, data, run } = useGame.getState()
+  if (!save || run.phase !== 'idle' || !canStartTracks(save, data, areaId)) return false
+  if (!(await tracksAllowed())) {
+    pushToast(t('ui.tracks.closed'), 'bad')
+    return false
+  }
+  if (useGame.getState().run.areaId !== areaId && !enterArea(areaId)) return false
+  const started = startTracks(useGame.getState().save!, data, areaId)
+  if (!started) return false
+  commitSave(started)
+  setRun({ tracksWiped: false, tracksBush: null })
+  return true
+}
+
+/** The way in's pop-up is up: back from the Team screen, it shows again at once. */
+export function markTracksPopup() {
+  if (!useGame.getState().run.tracksPopup) setRun({ tracksPopup: true })
+}
+
+/** The way in shows: the team and the Box are healed as at a Pokémon Center (the engine's). */
+export function arriveAtTracksWayIn(areaId: string) {
+  const { save, data } = useGame.getState()
+  if (!save) return
+  const next = arriveAtTracks(save, data, areaId)
+  if (next !== save) commitSave(next)
+}
+
+/**
+ * The bonfire warms the team (its scene has lit): the engine gives each one its share, once. Who got what, or null
+ * when it was given already (a reload, a second call).
+ */
+export function warmBonfire(): { uid: string; from: number; to: number }[] | null {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (!save || !areaId) return null
+  const res = warmAtBonfire(save, data, areaId)
+  if (!res) return null
+  commitSave(res.save)
+  return res.heals
+}
+
+/** MOVE ON from a bonfire: the next wave's first foe, or the boss after the last one. */
+export function moveOnFromBonfire() {
+  const { save, data, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (!save || !areaId || run.phase !== 'idle') return
+  const next = leaveBonfire(save, data, areaId)
+  if (!next) return
+  commitSave(next)
+  rollNext()
+}
+
+/** The outro is over: back to the world's Home, where the shrine is closed now. */
+export function finishWhiteoutVictory() {
+  const { save, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (save && areaId) commitSave(markWhiteoutWonSeen(save, areaId))
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+}
+
+/**
+ * A bush tapped: the engine opens it (Stantler hidden first on a glade's first bush, the snow after the last tap) and
+ * says what it brings. The glade shows the bush's moment; an encounter waits in 'preview' until `meetBush`. Null when
+ * it can't be opened.
+ */
+export function tapBush(index: number): NonNullable<RunState['tracksBush']> | null {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId || run.phase !== 'idle' || !inTracks(save, data, run.areaId)) return null
+  const at = tracksField(save, data, run.areaId)
+  const res = openBush(save, data, run.areaId, index, runRng)
+  if (!res || !at) return null
+  const reveal = { id: ++bushSeq, index, bush: res.bush, print: res.print, snowfall: res.snowfall }
+  const ctx = encounterContext(res.save, run.areaId, null)
+  const met = ctx ? tracksEncounter(ctx, res.bush, at.last, runRng) : null
+  if (!met) {
+    commitSave(res.save)
+    setRun({ tracksBush: reveal })
+    return reveal
+  }
+  commitSave(recordDraws(res.save, run.areaId, { encounter: met.encounter, deck: null, lootDeck: met.lootDeck }))
+  setRun({ phase: 'preview', encounter: met.encounter, firstInArea: false, tracksBush: reveal })
+  return reveal
+}
+
+/**
+ * The bush's moment is over: what it held comes, as a card dealt does (a fight on the battle screen, the find's
+ * step, the cabin's heal). An empty bush's moment just closes.
+ */
+export function meetBush() {
+  const { run } = useGame.getState()
+  if (!run.tracksBush) return
+  setRun({ tracksBush: null })
+  const enc = run.encounter
+  if (run.phase !== 'preview' || !enc) return
+  if (enc.kind === 'center') engage()
+  else if (enc.kind !== 'item' && directFight(enc)) beginFight()
+}
+
+/** The outro is over: the glade is closed for good, back to the world's Home. */
+export function finishTracksOutro() {
+  const { save, run } = useGame.getState()
+  const areaId = run.areaId ?? save?.currentAreaId
+  if (save && areaId) commitSave(markTracksWonSeen(save, areaId))
+  useGame.setState((s) => ({ run: { ...initialRun(), forceNext: s.run.forceNext }, battle: null }))
+}
+
 /** Roll the next encounter and show its preview card. */
+/** The player said yes to the Safari round about to begin (its pop-up): the next rollNext begins it. */
+let safariYes = false
+
+/** The Safari pop-up's START / PAY: the round begins (paid if it costs), its first card dealt. */
+export function confirmSafariRound() {
+  const { run } = useGame.getState()
+  const ask = useSafariAsk.getState().ask
+  closeSafariAsk()
+  if (!ask || run.areaId !== ask.areaId) return
+  safariYes = true
+  rollNext()
+  safariYes = false
+}
+
 export function rollNext() {
   settleRound()
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId) return
+  // Pickup's find after the last win (docs/51): shown first, as a find of its own, before any card is dealt.
+  if (run.pickup) return setRun({ phase: 'preview', encounter: run.pickup, pickup: null, firstInArea: false })
   // A won portal run or nightmare leaves only its raid: whatever asked (the map's CONTINUE HERE, a result card's
   // CONTINUE), no card is dealt there, or the next stop on its page would find CONTINUE shut (a player’s report, 2026-10-21).
   if (isAreaSealed(save, data, run.areaId)) return setRun({ phase: 'idle', encounter: null })
-  if (inNightmare(save, data, run.areaId)) {
-    if (outOfEnergy()) {
-      setRun({ phase: 'idle', encounter: null })
-      pushToast(t('ui.toast.outOfEnergy'), 'bad')
-      return
-    }
-    return rollNightmare(save, run.areaId)
-  }
-  if (inPortalRun(save, data, run.areaId)) {
-    if (outOfEnergy()) {
-      setRun({ phase: 'idle', encounter: null })
-      pushToast(t('ui.toast.outOfEnergy'), 'bad')
-      return
-    }
-    return rollPortal(save, run.areaId)
-  }
-  if (outOfEnergy()) {
-    setRun({ phase: 'idle', encounter: null })
-    pushToast(t('ui.toast.outOfEnergy'), 'bad')
+  if (inNightmare(save, data, run.areaId)) return rollNightmare(save, run.areaId)
+  if (inTimeRace(save, data, run.areaId)) return rollTimeRace(save, run.areaId)
+  if (inWhiteout(save, data, run.areaId)) return rollWhiteout(save, run.areaId)
+  // Tracks in the Snow (docs/64 §4.1): the glade deals nothing; its bushes are opened on its page (tapBush).
+  if (tracksModeOf(data.areas.find((a) => a.id === run.areaId), data)) return rollTracks(save, run.areaId)
+  if (inPortalRun(save, data, run.areaId)) return rollPortal(save, run.areaId)
+  // A Center's boons still waiting (a reload, HOME before the pick: docs/47): back in that Center. Boons drawn in
+  // another area go: the player walked out without picking.
+  if (pendingBoons(save, run.areaId)) {
+    setRun({ phase: 'center', encounter: { kind: 'center', forced: true, reason: 'round' }, healShown: true })
     return
   }
+  if (save.extreme?.center) commitSave(dropBoons(save))
   // Nobody able to fight (e.g. after a stalemate) → the Center is the only sensible next stop. Extreme mode has none:
-  // the team rests (Home and the area say until when).
+  // the team rests (Home and the area say until when); with its boon Centers, a K.O. here sends the one that swaps.
   const noneAble = !hasAbleTeam(save)
-  if (noneAble && !centersOn(save, data)) {
+  // A set moment due here (docs/61 §5) comes on top of the deck, using no card: a gift, then a rival (one able to fight).
+  if (dealMoment(save, run.areaId, noneAble)) return
+  const wipeCenter = wipeCenterDue(save, run.areaId, data)
+  if (noneAble && !centersOn(save, data) && !wipeCenter) {
     setRun({ phase: 'idle', encounter: null })
     pushToast(t('ui.extreme.restingToast'), 'bad')
     return
   }
-  const forceKind = noneAble ? 'center' : run.forceNext
-  const ctx = encounterContext(save, run.areaId, forceKind)
+  // A Safari (docs/61 §4): nobody fights there, so a team unable to fight still plays it; a new round is paid first.
+  const safari = data.areas.find((a) => a.id === run.areaId)
+  const forceKind = noneAble && !wipeCenter && !(safari && safariDealable(data, safari)) ? 'center' : run.forceNext
+  if (safari && safariRoundDue(data, safari, progressOf(save, safari.id))) {
+    const price = safariRoundPrice(data, safari, progressOf(save, safari.id))
+    // Never begun without the player's yes (a player's report, 2026-11-03): the pop-up says the price, or that it's
+    // free, with HOME beside it; its button comes back here (confirmSafariRound).
+    if (!safariYes) {
+      setRun({ phase: 'idle', encounter: null })
+      askSafari({ areaId: safari.id, price, next: Math.max(0, Math.round(Number(safariCfg(data).roundPrice) || 0)) })
+      return
+    }
+    safariYes = false
+    closeSafariAsk()
+    const paid = startSafariRound(save, data, safari)
+    if (!paid) {
+      setRun({ phase: 'idle', encounter: null })
+      pushToast(t('ui.safari.tooPoor', { price }), 'bad')
+      return
+    }
+    commitSave(paid)
+    if (price > 0) pushToast(t('ui.safari.paid', { price }), 'info')
+  }
+  const ctx = encounterContext(useGame.getState().save!, run.areaId, forceKind)
   if (!ctx) return
   const area = ctx.area
   const roll = nextEncounter(ctx, runRng)
+  // A Kalos horde (docs/62 §5), once the server allows it: rolled before a pair, which it is a double of its own.
+  const dealt = hordesOn(ctx.data) && sideQuestKnown('hordes', true) ? asHorde(roll.encounter, ctx, save, runRng) : roll.encounter
   // A wild pair or a duo trainer is fought 2 v 2 (docs/33): decided now, so the preview says so.
-  const encounter = asDouble(roll.encounter, ctx, save, runRng)
+  const encounter = asDouble(dealt, ctx, save, runRng)
   // The decks live in the save, so reloading the page can't reshuffle them.
   // Always recorded: besides the decks, the area notes whether this was a Center (never two in a row).
-  let recorded = recordDraws(save, area.id, roll)
-  const cost = data.config.energy.enabled && !noneAble ? encounterEnergyCost(encounter) : 0
-  if (cost > 0) recorded = spendEnergy(recorded, data.config.energy, Date.now(), cost) ?? recorded
-  if (recorded !== save) commitSave(recorded)
-  setRun({ phase: 'preview', encounter, firstInArea: false, forceNext: forceKind === run.forceNext ? null : run.forceNext })
+  const before = useGame.getState().save!
+  const recorded = recordDraws(before, area.id, roll)
+  // …and a horde met this round counts towards its limit.
+  const noted = encounter.kind === 'wild' && encounter.horde ? noteHorde(recorded, area.id) : recorded
+  if (noted !== before) commitSave(noted)
+  setRun({
+    phase: 'preview',
+    encounter,
+    firstInArea: false,
+    forceNext: forceKind === run.forceNext ? null : run.forceNext,
+    sprung: false,
+  })
   // A Pokémon Center is never a choice (no skipping it, nothing to pick): straight in, no preview card.
   if (encounter.kind === 'center') engage()
+  // A find is a step of its own (FindView: the item on the stage, PICK IT UP loading and pressing itself), not a toast
+  // the trail runs past (the user's call, 2026-10-28): it waits in 'preview' for pickUpFind.
+  else if (encounter.kind === 'item' || isDisguisedFind(encounter)) return
+  // A Gift card is a step of its own too (PresentView): the present comes out at once, nothing to pick before it.
+  else if (encounter.kind === 'gift') engage()
+  else if (directFight(encounter)) beginFight()
+}
+
+/**
+ * The rework: a fight starts on the battle screen itself, with no preview card. The foe is out, the player's side not
+ * yet: one tap on a Pokémon sends it (BattleView's send-out step). A team with one Pokémon able, or a wild fight on auto,
+ * goes in at once; a trainer's on auto loads GO! and sends the first able by itself unless a Pokémon is tapped. A
+ * double battle keeps its preview (two to pick).
+ */
+const directFight = (enc: Encounter) =>
+  (enc.kind === 'wild' || enc.kind === 'boss' || enc.kind === 'trainer' || enc.kind === 'gym') &&
+  !isDoubleEncounter(enc) &&
+  // A real player's card shows their team first, FIGHT or SKIP (docs/54).
+  !isPlayerFoe(enc)
+function beginFight() {
+  const { save, data, settings, run } = useGame.getState()
+  if (!save) return
+  const able = teamOf(save).filter((p) => p.currentHp > 0)
+  const auto = autoLevel(save, data, settings, run) !== 'off'
+  // On auto, a trainer's send-out still waits a moment for a pick (autoOffersLead); a wild Pokémon's goes in at once.
+  const pick = able.length > 1 && (!auto || autoOffersLead(run.encounter?.kind))
+  setRun({ pickLead: pick })
+  engage(able[0]?.id, pick)
+}
+/** A Pokémon picked at the send-out step: out it goes. Another than the lead: the same untouched fight, it in front. */
+export function sendOutLead(uid: string) {
+  const { battle } = useGame.getState()
+  const lead = battle?.state.player[battle.state.activeIndex]?.uid
+  setRun({ pickLead: false })
+  if (!battle) return
+  // A trainer's next Pokémon (sendNextFoe): the fight is engaged already; another lead restages only this one.
+  if (battle.next) {
+    const { run } = useGame.getState()
+    const enc = run.encounter
+    if (uid === lead || !run.trainer || (enc?.kind !== 'trainer' && enc?.kind !== 'gym')) return
+    startBattle('trainer', enc.team[run.trainer.index]!, uid)
+    useGame.setState((s) => (s.battle ? { battle: { ...s.battle, next: 'go', sendLater: true } } : {}))
+    return
+  }
+  if (uid === lead) return commitEngage()
+  engage(uid)
+  useGame.setState((s) => (s.battle ? { battle: { ...s.battle, sendLater: true } } : {}))
+}
+/** FLEE / AVOID at the send-out step: the staged fight is put away, then the usual skip. */
+export function fleeAtSendOut() {
+  useGame.setState({ battle: null })
+  setRun({ pickLead: false })
+  skipEncounter()
+}
+/** NOT YET on a challenge, at the send-out step: back on the trail, nothing used up. */
+export function notYet() {
+  useGame.setState({ battle: null })
+  setRun({ pickLead: false })
+  declineChallenge()
 }
 
 /** CHALLENGE: bring on the gym battle (or legendary) waiting at the full gauge — only when the player chooses to. */
-export function challenge() {
+export function challenge(): void | Promise<void> {
   const { save, data, run } = useGame.getState()
   if (!save || !run.areaId || run.phase !== 'idle') return
   // A portal run has no challenge: its cards come one after the other (docs/28); nor has the nightmare (docs/30), nor
   // either once won.
-  if (inPortalRun(save, data, run.areaId) || inNightmare(save, data, run.areaId) || isAreaSealed(save, data, run.areaId))
+  if (
+    inPortalRun(save, data, run.areaId) ||
+    inNightmare(save, data, run.areaId) ||
+    inTimeRace(save, data, run.areaId) ||
+    inWhiteout(save, data, run.areaId) ||
+    isAreaSealed(save, data, run.areaId)
+  )
     return
+  // Nor has Tracks in the Snow (docs/64 §4.1): its Stantler is found in a bush, its boss in the last glade.
+  if (tracksModeOf(data.areas.find((a) => a.id === run.areaId), data)) return
   const area = data.areas.find((a) => a.id === run.areaId)
-  const found = area ? challengeEncounter(area, progressOf(save, area.id), data, teamAverageLevel(save), playerSideOf(save), runRng) : null
+  const found = area
+    ? challengeEncounter(
+        area,
+        progressOf(save, area.id),
+        data,
+        teamAverageLevel(save),
+        playerSideOf(save),
+        runRng,
+        wildShinyChance(save, data),
+        save,
+      )
+    : null
+  // A boss that comes out of a present (docs/64 §4.2: Evergreen Hill's Delibird), while the Gift card is on: its
+  // present first, the fight once it bursts. A returning one (it fled the catch) is a plain card of the deck.
+  const def = found?.kind === 'boss' ? area?.legendaryBoss?.find((b) => b.dex === found.dex) : null
+  if (found?.kind === 'boss' && bossInPresent(data, def)) return void beginBossPresent(found)
   // Tate & Liza fight 2 v 2 where double battles are on (docs/33).
   const ctx = found && run.areaId ? encounterContext(save, run.areaId, null) : null
   const encounter = found && ctx ? asDouble(found, ctx, save, runRng) : found
-  if (encounter) setRun({ phase: 'preview', encounter, firstInArea: false, skipsUsed: 0 })
+  // An island trial or a Titan (docs/62): only once the server allows it. A trial it doesn't is the captain's battle,
+  // a Titan it doesn't waits. Known already (a guest's, an answer kept), it's settled now; else once the server answers.
+  const key = encounter?.kind === 'gym' && encounter.trial ? 'trials' : encounter?.kind === 'boss' && encounter.titan ? 'titans' : null
+  const present = (ok: boolean) => {
+    // The run may have moved on while the server answered.
+    if (useGame.getState().run.phase !== 'idle') return
+    let shown = encounter
+    if (!ok && shown?.kind === 'gym') {
+      const t = data.trainers[shown.trainerId]
+      const { trial: _trial, ...plain } = shown
+      shown = t ? { ...plain, team: t.team } : null
+    } else if (!ok) shown = null
+    if (shown) setRun({ phase: 'preview', encounter: shown, firstInArea: false, skipsUsed: 0 })
+    if (shown && directFight(shown)) beginFight()
+  }
+  const known = key ? sideQuestCached(key, true) : true
+  if (known != null) return present(known)
+  return sideQuestAllowed(key!, true).then(present)
 }
 
 /** NOT YET: back out of a challenge you picked. Nothing is used up; the gauge stays full. */
@@ -529,27 +1167,36 @@ export function declineChallenge() {
 
 export function canSkipCurrent(): boolean {
   const { run, data } = useGame.getState()
+  // A real player's card is always the player's choice (docs/54): SKIP, and no ₽.
+  if (isPlayerFoe(run.encounter)) return true
   return !!run.encounter && !data.config.noEscape && canSkip(run.encounter, data.config.skipPolicy, run.skipsUsed)
 }
 
-/** FLEE / AVOID: back to the area screen (heal, check the team…); the next encounter waits for CONTINUE. */
+/** FLEE / AVOID: on to the next encounter (the user's call, 2026-11-02: no stop on the area's page). */
 export function skipEncounter() {
   if (!canSkipCurrent()) return
   const { run } = useGame.getState()
+  const enc = run.encounter
+  // SKIP a real player's team (docs/54): the card is used, no ₽, and the server hears of the meet (offered last next).
+  if (isPlayerFoe(enc)) {
+    if (run.areaId) noteMeet(enc.player, run.areaId, 'skipped')
+    onToNext()
+    pushToast(t('ui.areaVersus.skippedToast', { name: enc.player.name }))
+    return
+  }
   const trainer = run.encounter?.kind === 'trainer'
   // skipsUsed survives until a fight is engaged, so skipPolicy 'once' still allows one skip in a row.
   setRun({ skipsUsed: run.skipsUsed + 1 })
-  backToArea()
+  onToNext()
   pushToast(t(trainer ? 'ui.toast.slippedPast' : 'ui.toast.gotAway'))
 }
 
-/** `double`: a double battle's foes, all of them (two out at once), and the two leads picked (docs/33). */
-function startBattle(
-  kind: BattleKind,
-  enemy: FoeSeed,
-  leadUid?: string,
-  double?: { foes: FoeSeed[]; leadUids: string[] },
-) {
+/**
+ * `double`: a double battle's foes, all of them (two out at once), and the two leads picked (docs/33); an island
+ * trial's leader and its calls, a Titan's one-on-one field (docs/62).
+ */
+type StartDouble = NonNullable<CreateBattleOptions['double']> & { leadUids: string[] }
+function startBattle(kind: BattleKind, enemy: FoeSeed, leadUid?: string, double?: StartDouble) {
   const { save, data, run } = useGame.getState()
   if (!save) return
   const area = data.areas.find((a) => a.id === run.areaId)
@@ -560,14 +1207,18 @@ function startBattle(
     level: p.level,
     hp: p.currentHp,
     shiny: p.shiny,
+    // Its outfit (docs/59), while the switch is on.
+    outfit: outfitOf(data, p),
     nickname: p.nickname,
-    // A portal run's extra dice (docs/28).
-    ...portalDiceFor(save, data, run.areaId, p.id),
+    // Its hidden talent (docs/51), while the switch is on.
+    talent: talentOf(data, p),
+    // A portal run's extra dice (docs/28), or an Extreme Pokébuff's die (docs/47).
+    ...(portalDiceFor(save, data, run.areaId, p.id) ?? buffDiceFor(save, data, p.id, serverNow() ?? Date.now())),
   }))
-  // Auto-mode (a cleared area) fights without Mega Evolution or Gigantamax under their older rules, on both sides —
-  // with the powers whose newer rules are on (docs/35); type changers (Arceus…) on both sides take a better type by
-  // themselves.
-  const auto = !!useGame.getState().settings.autoMode && !!run.areaId && progressOf(save, run.areaId).cleared
+  // Auto-mode (a cleared area; with the play styles, where the style allows: docs/36) fights without Mega Evolution or
+  // Gigantamax under their older rules, on both sides — with the powers whose newer rules are on (docs/35); type
+  // changers (Arceus…) on both sides take a better type by themselves.
+  const auto = autoLevel(save, data, useGame.getState().settings, run) !== 'off'
   // A trainer's ace — its strongest, the last of them if several — may Mega Evolve or Gigantamax (see enemyPlanFor).
   const enc = run.encounter
   const trainerAt = (index: number) =>
@@ -578,6 +1229,8 @@ function startBattle(
             regionId: area ? regionOfArea(area) : regionOf(save),
             role: enc.kind === 'gym' ? enc.role : (data.trainers[enc.trainerId]?.role ?? 'trainer'),
             ace: index === levels.lastIndexOf(Math.max(...levels)),
+            // A gem among its items makes its ace Mega Evolve (enemyPlanFor).
+            items: data.trainers[enc.trainerId]?.items ?? null,
           }
         })()
       : null
@@ -597,15 +1250,28 @@ function startBattle(
         data,
         run.areaId,
       ),
-      enemyLevels: withWorldBoost(uniformLevels(upgradeLevel), data, area),
+      // A real player's team fights with their own dice and combo upgrades (docs/54).
+      enemyLevels: withWorldBoost(isPlayerFoe(run.encounter) ? foeLevels(run.encounter.player) : uniformLevels(upgradeLevel), data, area),
       ...battlePowersFor(save, data),
       noHealItems: !healItemsOn(save, data),
+      // The whiteout (docs/64 §4.3): the bag shut (its blizzard is the fight's weather, below).
+      noBag: inWhiteout(save, data, run.areaId),
       // Arceus takes only the types of its plates while the Underground is on (docs/34).
       plates: plateTypes(save, data),
       enemyPlan: enemyPlanFor(save, data, enemy, trainer),
       auto,
+      // The area's weather (docs/62 §2), on both sides alike; the whiteout's blizzard (docs/64 §4.3) is its snow.
+      weather: whiteoutWeather(save, data, run.areaId) ?? weatherHere(save, data, area),
+      // A new player's first fight teaches the reroll and the combo (docs/46 §6): played by hand, one foe.
+      rerollLesson: !auto && !double && rerollLessonDue(save, data, run.areaId),
+      // …and once the item tutorial has shown, its foes hit softly until the first round is won (docs/46 §7).
+      foeDiceMax: gentleFoeMax(save, data, run.areaId),
       ...(double && {
-        double: { foes: double.foes, leadUids: double.leadUids, plans: double.foes.map((f, i) => enemyPlanFor(save, data, f, trainerAt(i))) },
+        // A Totem uses no Z-Move nor any power (docs/62 §6, the user's call): its aura is its own.
+        double: {
+          ...double,
+          plans: double.foes.map((f, i) => (double.leader != null ? null : enemyPlanFor(save, data, f, trainerAt(i)))),
+        },
       }),
     },
     data,
@@ -613,11 +1279,9 @@ function startBattle(
   useGame.setState((s) => ({ battle: { state, log, id: ++battleSeq }, run: { ...s.run, phase: 'battle' } }))
 }
 
-/** ENGAGE the previewed encounter (with the chosen lead for fights, or a double battle's two). */
-export function engage(lead?: string | string[]) {
-  const leadUids = typeof lead === 'string' ? [lead] : (lead ?? [])
-  const leadUid = leadUids[0]
-  const { run, save, data } = useGame.getState()
+/** What ENGAGE settles once the fight is really on: the skips start over, a challenge goes on the area's record. */
+function commitEngage() {
+  const { run, save } = useGame.getState()
   const enc = run.encounter
   if (!enc || !save) return
   setRun({ skipsUsed: 0 })
@@ -626,9 +1290,25 @@ export function engage(lead?: string | string[]) {
     const recorded = recordDraws(save, run.areaId, { encounter: enc, deck: null })
     if (recorded !== save) commitSave(recorded)
   }
+}
+
+/**
+ * ENGAGE the previewed encounter (with the chosen lead for fights, or a double battle's two). `staged`: the fight is
+ * only shown, at the send-out step (the rework); nothing is settled until a Pokémon goes out (sendOutLead).
+ */
+export function engage(lead?: string | string[], staged?: boolean) {
+  const leadUids = typeof lead === 'string' ? [lead] : (lead ?? [])
+  const leadUid = leadUids[0]
+  const { run, save, data } = useGame.getState()
+  if (!run.encounter || !save) return
+  // A wild pair needs two able (docs/33): with one left since the card was drawn, the first comes alone.
+  const enc = fitWildPair(run.encounter, save)
+  if (enc !== run.encounter) setRun({ encounter: enc })
+  if (!staged) commitEngage()
   switch (enc.kind) {
     case 'center':
-      commitSave(centerHeal(save, data))
+      // Extreme mode's boon Centers (docs/47) heal nobody: their boons are drawn instead, waiting for the pick.
+      commitSave(run.areaId ? openBoonCenter(centerHeal(save, data), data, run.areaId, enc.reason, runRng) : centerHeal(save, data))
       setRun({ phase: 'center', healShown: false })
       return
     case 'casino':
@@ -637,17 +1317,44 @@ export function engage(lead?: string | string[]) {
     case 'trick':
       void beginTrick(enc)
       return
+    case 'gift':
+      void beginGift(enc)
+      return
+    case 'safari':
+      void beginSafari(enc)
+      return
     case 'wild': {
-      const foe = { dex: enc.dex, level: enc.level, shiny: enc.shiny }
-      const partner = enc.partner && { dex: enc.partner.dex, level: enc.partner.level, shiny: enc.partner.shiny }
+      const foe = { dex: enc.dex, level: enc.level, shiny: enc.shiny, talent: enc.talent }
+      // A Kalos horde (docs/62 §5): all of it, two out at a time.
+      if (enc.horde?.length) {
+        const foes = [foe, ...enc.horde.map((h) => ({ dex: h.dex, level: h.level, shiny: h.shiny, talent: h.talent }))]
+        return startBattle('wild', foe, leadUid, { foes, leadUids })
+      }
+      const partner = enc.partner && { dex: enc.partner.dex, level: enc.partner.level, shiny: enc.partner.shiny, talent: enc.partner.talent }
       return startBattle('wild', foe, leadUid, partner ? { foes: [foe, partner], leadUids } : undefined)
     }
-    case 'boss':
-      return startBattle('boss', { dex: enc.dex, level: enc.level, shiny: enc.shiny }, leadUid)
+    case 'boss': {
+      // A Titan (docs/62 §7): its two phases in one fight.
+      const def = enc.titan ? data.areas.find((a) => a.id === run.areaId)?.legendaryBoss?.find((b) => b.dex === enc.dex && b.titan) : null
+      if (def) {
+        const f = titanFight(def, data, playerSideOf(save))
+        return startBattle('boss', f.foes[0]!, leadUid, { foes: f.foes, leadUids, foeField: f.foeField, ownField: f.ownField })
+      }
+      return startBattle('boss', { dex: enc.dex, level: enc.level, shiny: enc.shiny, talent: enc.talent }, leadUid)
+    }
     case 'trainer':
     case 'gym': {
       const first = enc.team[0]
       if (!first) return
+      // A real player's fight (docs/54): the team is healed first, as at a Pokémon Center.
+      if (isPlayerFoe(enc)) commitSave(centerHeal(useGame.getState().save!, data))
+      // An island trial (docs/62 §6): the Totem with its aura, calling its allies; won when it falls.
+      const trial = enc.kind === 'gym' ? trialById(data, enc.trial) : null
+      if (trial) {
+        const foes = trialFoes(trial, data, enc.team)
+        setRun({ trainer: { index: enc.team.length - 1, gold: 0 } })
+        return startBattle('trainer', foes[0]!, leadUid, { foes, leadUids, leader: 0, calls: true })
+      }
       // A double battle is the whole team at once (docs/33): no next Pokémon after it.
       if (isDoubleEncounter(enc) && enc.team.length > 1) {
         setRun({ trainer: { index: enc.team.length - 1, gold: 0 } })
@@ -656,27 +1363,34 @@ export function engage(lead?: string | string[]) {
       setRun({ trainer: { index: 0, gold: 0 } })
       return startBattle('trainer', first, leadUid)
     }
-    case 'item': {
+    case 'item':
+      // Its step said what it is (FindView): into the bag, quietly, and back on the trail.
       if (!run.areaId) return
-      const live = currentLive()
-      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId, live))
-      const item = data.items[enc.itemKey]
-      const what = enc.itemKey === MONEY ? money(earnedGold(enc.qty, live).amount) : `${item?.name ?? enc.itemKey}${enc.qty > 1 ? ` ×${enc.qty}` : ''}`
-      if (item?.effect.kind === 'fossil')
-        pushToast(
-          t('ui.toast.foundFossil', {
-            item: item.name,
-            name: data.species[item.effect.dex]?.name ?? t('ui.toast.itsPokemon'),
-            hours: item.effect.hours,
-          }),
-          'good',
-          6000,
-        )
-      else pushToast(t('ui.toast.found', { what }), 'good')
+      commitSave(pickUpItem(save, run.areaId, enc, data, Date.now(), newId, currentLive()))
       backToArea()
       return
-    }
   }
+}
+
+/**
+ * PICK IT UP on a find's step (docs/43): the item goes in the bag (the gold in the purse, a fossil to the lab) and the
+ * next encounter comes at once, as after a fight.
+ */
+export function pickUpFind() {
+  const { run } = useGame.getState()
+  if (run.phase !== 'preview' || run.encounter?.kind !== 'item') return
+  engage()
+  // A portal run (docs/28) goes back to its own page between cards, as it always did after a find.
+  const after = useGame.getState()
+  if (after.run.phase === 'idle' && after.save && after.run.areaId && !inPortalRun(after.save, after.data, after.run.areaId))
+    rollNext()
+}
+
+/** Pickup (docs/51): a find after the win waits for the next CONTINUE, which shows it on its own step (FindView). */
+function queuePickup(events: readonly RunEvent[]) {
+  const e = events.find((x) => x.kind === 'pickup')
+  if (e?.kind !== 'pickup') return
+  setRun({ pickup: { kind: 'item', entryId: e.entryId, itemKey: e.key, qty: e.qty, pickup: { uid: e.uid, dex: e.dex } } })
 }
 
 /** Every battle input goes through the engine reducer; rewards are settled the moment the battle ends. */
@@ -688,8 +1402,29 @@ export function dispatchBattle(e: BattleEvent) {
   if (r.state === battle.state) return
   if (e.t === 'USE_ITEM' && r.log.some((l) => l.kind === 'item')) mutateSave((s) => consumeItem(s, e.key))
   useGame.setState({ battle: { ...battle, state: r.state, log: [...battle.log, ...r.log] } })
+  // The reroll lesson's ATTACK: it has played, for good (a fight that ends before it carries it to the next one).
+  if (r.state.lesson?.step === 'done' && battle.state.lesson?.step !== 'done') mutateSave(finishRerollLesson)
   const phase = r.state.phase
   if (phase === 'won' || phase === 'lost' || phase === 'fled') settleBattle(r.log.some((l) => l.kind === 'end' && l.reason === 'stalemate'))
+}
+
+/**
+ * A trainer's K.O. settled. Another Pokémon to come: its rewards are carried to the fight's one result card (its
+ * evolutions play now, between the two, so they aren't carried) and its ₽ held back (`owed`, the engine's: paid with
+ * the last K.O.). The last: the card shows the whole fight's.
+ */
+function trainerRewards(trainer: NonNullable<RunState['trainer']>, events: RunEvent[], gold: number, owed?: OwedGold) {
+  const next = trainerHasNext()
+  const carried = trainer.carried ?? []
+  return {
+    events: next ? events : [...carried, ...events],
+    trainer: {
+      ...trainer,
+      gold: trainer.gold + gold,
+      carried: next ? [...carried, ...events.filter((e) => e.kind !== 'evolve')] : [],
+      owed: next ? owed : undefined,
+    },
+  }
 }
 
 function settleBattle(stalemate: boolean) {
@@ -715,6 +1450,7 @@ function settleBattle(stalemate: boolean) {
           last: run.trainer.index + 1 >= enc.team.length,
           enemyLevel: s.enemy.level,
           fighterUid: out.fighterUid,
+          owed: run.trainer.owed,
         },
         data,
         runRng,
@@ -724,7 +1460,7 @@ function settleBattle(stalemate: boolean) {
       const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
       if (res.events.some((e) => e.kind === 'rebattle_cleared'))
         useRebattleMedal.setState({ medal: { regionId: run.rebattle.regionId, tier, gold } })
-      setRun({ phase: 'victory', events: res.events, pendingCatchId: null, catch: null, trainer: { ...run.trainer, gold: run.trainer.gold + gold } })
+      setRun({ phase: 'victory', pendingCatchId: null, catch: null, ...trainerRewards(run.trainer, res.events, gold, res.owed) })
       return
     }
     if (out.result === 'won') return
@@ -749,6 +1485,12 @@ function settleBattle(stalemate: boolean) {
         fighterUid: out.fighterUid,
         gymTrainerId: gym ? enc.trainerId : undefined,
         gymComplete: gym && !!run.trainer && run.trainer.index + 1 >= enc.team.length,
+        prize: trainerPrize(enc, enc?.kind !== 'trainer' || !run.trainer || run.trainer.index + 1 >= enc.team.length),
+        // A trainer's last Pokémon ends the fight (the talents that act after a win, docs/51).
+        ...((enc?.kind === 'trainer' || gym) && { last: !run.trainer || run.trainer.index + 1 >= enc.team.length }),
+        // A real player's team pays more for each K.O. (docs/54).
+        ...(isPlayerFoe(enc) && { goldMultiplier: foeGoldMultiplier(data) }),
+        owed: run.trainer?.owed,
       },
       data,
       runRng,
@@ -759,39 +1501,97 @@ function settleBattle(stalemate: boolean) {
     // A round of the nightmare won (docs/30): it counts, its gift goes into the bag, Darkrai's strike is due (or, the
     // last one, the player wakes up). The result card says so.
     const dream = inNightmare(res.save, data, run.areaId) ? winNightmareRound(res.save, data, run.areaId) : null
-    commitSave(dream?.save ?? res.save)
+    // A fight of the race of time and space (docs/64 §4.4): it counts if won in time, the last one opens its legend's
+    // raid; past the clock it counts for nothing and the try ends (the wipe card says so, the XP kept).
+    const raced = inTimeRace(res.save, data, run.areaId) ? winTimeRaceFight(res.save, data, run.areaId, raceNow()) : null
+    if (raced?.outOfTime) {
+      commitSave(raced.save)
+      return raceLostCard(run.areaId, 'time', raced.fights, raced.total)
+    }
+    // A wave foe of the whiteout (docs/64 §4.3): the next one is due, or its wave is cleared and a bonfire is lit.
+    const white = s.kind === 'wild' && !dream && !raced ? winWhiteoutFoe(res.save, data, run.areaId) : null
+    // Tracks in the Snow (docs/64 §4.1): the Stantler found is down. Before the last round, the round is cleared (the
+    // result card says so); in the last, its catch decides.
+    const glade = tracksFound(res.save, data, run.areaId) ? tracksQuarryDown(res.save, data, run.areaId) : null
+    // A rival's set meeting (docs/61 §5.2) is met once its last Pokémon falls.
+    const meeting = enc?.kind === 'trainer' && enc.moment && !trainerHasNext() ? enc.moment : null
+    const won = raced?.save ?? dream?.save ?? white?.save ?? glade?.save ?? res.save
+    commitSave(meeting ? markMomentDone(won, meeting) : won)
+    queuePickup(res.events)
     const dreamEvents: RunEvent[] = dream
       ? [
           { kind: 'nightmare_round', round: dream.round, total: dream.total },
           ...(dream.gift ? [{ kind: 'nightmare_gift' as const, ...dream.gift }] : []),
         ]
-      : []
+      : raced
+        ? [{ kind: 'time_race_fight', fight: raced.fights, total: raced.total }]
+      : white?.cleared
+        ? [{ kind: 'whiteout_wave', wave: white.wave, waves: white.waves }]
+        : []
     // The round's last card was this fight: count it now, so "AREA CLEARED" is part of the rewards.
     const cleared = trainerHasNext() ? null : settleRound(true)
-    const events = [...(cleared ? [...res.events, cleared] : res.events), ...dreamEvents]
+    // A real player's fight is over (docs/54): won once their last Pokémon falls (a mutual K.O. before it is a loss);
+    // the team is healed again, the server hears of the meet, and the result card says so.
+    const duel = isPlayerFoe(enc) && !trainerHasNext() ? duelOver(enc.player, !!run.trainer && run.trainer.index + 1 >= enc.team.length) : null
+    const gladeEvents: RunEvent[] =
+      glade && !glade.last ? [{ kind: 'tracks_round', round: glade.round, total: glade.total }] : []
+    const events = [...(cleared ? [...res.events, cleared] : res.events), ...dreamEvents, ...gladeEvents]
     const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
     // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.
     const kind = s.kind === 'wild' || s.kind === 'boss' ? s.kind : null
     const foeDex = s.enemy.baseDex ?? s.enemy.dex
     // A portal run's wild Pokémon can't be caught (docs/28), nor the nightmare's (docs/30).
-    const noCatch = portalNoCatch(save, data, run.areaId) || nightmareNoCatch(save, data, run.areaId)
-    const target = kind && !noCatch ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny) : null
+    const noCatch =
+      portalNoCatch(save, data, run.areaId) ||
+      nightmareNoCatch(save, data, run.areaId) ||
+      // Nor the race's (docs/64 §4.4), nor the whiteout's (§4.3): all are met elsewhere.
+      timeRaceNoCatch(save, data, run.areaId) ||
+      whiteoutNoCatch(save, data, run.areaId)
+    const talent = !!s.enemy.talent
+    const target =
+      kind && !noCatch ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny, run.areaId, talent) : null
+    // The whiteout's boss beaten with nothing to throw at (it can't be caught again): the blizzard ends here.
+    if (kind === 'boss' && !target && inWhiteout(res.save, data, run.areaId))
+      commitSave(winWhiteout(useGame.getState().save!, data, run.areaId))
+    const bonus = catchTalentBonus(data, getInstance(res.save, out.fighterUid))
     setRun({
       phase: target ? 'catch' : 'victory',
-      events,
       pendingCatchId: null,
-      catch: target && kind ? { dex: foeDex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null } : null,
+      catch:
+        target && kind
+          ? { dex: foeDex, level: s.enemy.level, shiny: s.enemy.shiny, kind, target, result: null, ...(talent && { talent }), ...(bonus && { bonus }) }
+          : null,
       catchQueue: [],
       catchPending: [],
-      trainer: run.trainer ? { ...run.trainer, gold: run.trainer.gold + gold } : null,
+      ...(run.trainer ? trainerRewards(run.trainer, events, gold, res.owed) : { events, trainer: null }),
+      duel,
     })
     return
   }
+  // Lost to a real player's team, or neither side could win (docs/54): no wipe, the team healed, the round goes on.
+  if (isPlayerFoe(run.encounter)) {
+    commitSave(withHp)
+    setRun({ phase: 'stalemate', trainer: null, events: [], duel: duelOver(run.encounter.player, false) })
+    return
+  }
   if (out.result === 'lost') {
+    if (loseToRival(withHp)) return
     const lost = inPortalRun(withHp, data, run.areaId) ? portalStateOf(withHp, run.areaId).closed : null
     const dream = inNightmare(withHp, data, run.areaId) ? nightmareStateOf(withHp, run.areaId).round : null
+    const race = inTimeRace(withHp, data, run.areaId) ? raceLostOf(withHp, run.areaId) : null
+    const white = inWhiteout(withHp, data, run.areaId) ? whiteoutStateOf(withHp, run.areaId).wave : null
+    const glade = inTracks(withHp, data, run.areaId)
     commitSave(applyWipe(withHp, run.areaId, data))
-    setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream })
+    setRun({
+      phase: 'wipe',
+      trainer: null,
+      events: [],
+      portalLost: lost,
+      nightmareLost: dream,
+      raceLost: race,
+      whiteoutLost: white,
+      tracksWiped: glade,
+    })
     return
   }
   // fled / stalemate: damage is kept, no rewards
@@ -817,6 +1617,8 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
   const enc = run.encounter
   const gym = enc?.kind === 'gym'
   const kind = battle.state.kind
+  // A Titan (docs/62 §7): each phase is the boss it stands for (Iron Treads is Great Tusk's), and never caught.
+  const titan = enc?.kind === 'boss' && enc.titan ? enc.dex : null
   let next = save
   let events: RunEvent[] = []
   let gold = 0
@@ -826,12 +1628,15 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
       {
         areaId: run.areaId!,
         kind: gym ? 'gym' : kind,
-        enemyDex: ko.dex,
+        enemyDex: titan ?? ko.dex,
         enemyLevel: ko.level,
         fighterUid: ko.fighters[0] ?? '',
         fighterUids: ko.fighters,
         gymTrainerId: gym ? enc.trainerId : undefined,
         gymComplete: gym && result === 'won' && i === kos.length - 1,
+        prize: trainerPrize(enc, result === 'won' && i === kos.length - 1),
+        // The fight's last K.O.: the talents that act after a win act once (docs/51).
+        last: result === 'won' && i === kos.length - 1,
       },
       data,
       runRng,
@@ -844,6 +1649,7 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
     gold += res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
   })
   if (result === 'lost') {
+    if (loseToRival(next)) return
     commitSave(applyWipe(next, run.areaId, data))
     setRun({ phase: 'wipe', trainer: null, events: [], portalLost: null, nightmareLost: null })
     return
@@ -861,14 +1667,28 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
     rollNext()
     return
   }
+  // A Titan beaten leaves its ₽ and items (docs/62 §7).
+  if (titan != null) {
+    const r = titanReward(next, data)
+    next = r.save
+    gold += r.gold
+    events = [...events, ...(r.gold > 0 ? [{ kind: 'gold' as const, amount: r.gold }] : []), { kind: 'titan_reward', dex: titan, gold: r.gold, items: r.items }]
+  }
   commitSave(next)
+  queuePickup(events)
   const cleared = settleRound(true)
   if (cleared) events = [...events, cleared]
-  const catchKind = kind === 'wild' || kind === 'boss' ? kind : null
+  const catchKind = (kind === 'wild' || kind === 'boss') && titan == null ? kind : null
+  // A horde's one throw (docs/62 §5): at its shiny one, else the last one K.O.'d.
+  const horde = enc?.kind === 'wild' && !!enc.horde?.length
+  const thrownAt = horde ? hordeThrowAt(kos) : null
   const catches: CatchState[] = catchKind
-    ? kos.flatMap((ko) => {
-        const target = catchTarget(next, ko.dex, ko.level, catchKind, data, ko.shiny)
-        return target ? [{ uid: ko.uid, dex: ko.dex, level: ko.level, shiny: ko.shiny, kind: catchKind, target, result: null }] : []
+    ? (thrownAt ? [thrownAt] : kos).flatMap((ko) => {
+        const target = catchTarget(next, ko.dex, ko.level, catchKind, data, ko.shiny, run.areaId!, !!ko.talent)
+        const bonus = Math.max(0, ...ko.fighters.map((uid) => catchTalentBonus(data, getInstance(next, uid))))
+        return target
+          ? [{ uid: ko.uid, dex: ko.dex, level: ko.level, shiny: ko.shiny, kind: catchKind, target, result: null, ...(ko.talent && { talent: true }), ...(bonus && { bonus }) }]
+          : []
       })
     : []
   setRun({
@@ -891,9 +1711,9 @@ export function throwBall(ballKey: string | null) {
   const c = run.catch
   if (!c || c.result || !save) return
   const ball = ballKey ? data.items[ballKey] : undefined
-  if (ballKey && (!ball || ball.effect.kind !== 'ball' || (save.inventory[ballKey] ?? 0) <= 0)) return
+  if (ballKey && (!ball || !isBallFor(ball, false) || (save.inventory[ballKey] ?? 0) <= 0)) return
   const next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
-  const roll = rollCatch(catchValueOf(data, c.dex), ballBonus(ball), runRng)
+  const roll = rollCatch(catchValueOf(data, c.dex), ballBonus(ball) + (c.bonus ?? 0), runRng)
   const bait = baitFor(roll, next, data)
   if (bait) {
     commitSave(next)
@@ -936,9 +1756,17 @@ function settleThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, ba
       next = mythical.save
       events = mythical.events
     } else {
-      const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny }, c.target, data, Date.now(), newId)
+      // An Unown's letter is drawn as it's caught (docs/41): one the page is missing.
+      const letter = c.dex === UNOWN_DEX ? unownLetterFor(next, runRng) : undefined
+      // The Friend Ball (docs/59): more chances of its hidden talent, by the player's best friendship streak.
+      const talent = isTalentBall(ballKey ? data.items[ballKey] : undefined)
+        ? friendBallTalent(data, c.dex, !!c.talent, friendBallBoostNow(), runRng)
+        : c.talent
+      const res = applyCatch(next, { dex: c.dex, level: c.level, shiny: c.shiny, letter, talent }, c.target, data, Date.now(), newId)
       // A boss is noted as caught in its area: a small world's goes by that, not the Pokédex (docs/26 §2.5).
       next = c.kind === 'boss' && run.areaId ? noteBossCaught(res.save, run.areaId, c.dex) : res.save
+      // Tracks in the Snow (docs/64 §4.1): the shiny Stantler caught, the glade is won (its outro next).
+      if (c.kind === 'boss' && run.areaId && tracksFound(next, data, run.areaId)) next = tracksCaught(next, data, run.areaId)
       events = res.events
       if (res.needsTeamChoice) pendingCatchId = res.caughtId
     }
@@ -960,17 +1788,44 @@ export function retryCatch() {
  * the rewards screen, in the order they were caught.
  */
 export function finishCatch() {
-  const { run, save, data } = useGame.getState()
+  const { run } = useGame.getState()
   const r = run.catch?.result
   if (!r || r.baitOffer || r.stays) return
-  const events = [...run.events, ...r.events]
-  const pending = [...(run.catchPending ?? []), ...(r.pendingCatchId ? [r.pendingCatchId] : [])]
+  afterCatch([...run.events, ...r.events], r.pendingCatchId)
+}
+
+/**
+ * No throw at all (Idle's rule, docs/36: a Pokémon already owned, or no ball that could catch it): on as after a catch
+ * not on offer — the other one's throw after a wild pair, else the rewards screen, nothing added to it.
+ */
+export function passCatch() {
+  const { run } = useGame.getState()
+  if (!run.catch || run.catch.result) return
+  afterCatch(run.events, null)
+}
+
+/** Out of this throw: the next one queued (after a wild pair), else the rewards screen with every "Add to team?". */
+function afterCatch(events: RunEvent[], caughtId: string | null) {
+  // The whiteout's boss (docs/64 §4.3): caught, the blizzard lifts for good; got away, back to wave 1.
+  const before = useGame.getState()
+  const c = before.run.catch
+  if (c?.kind === 'boss' && before.save && before.run.areaId && inWhiteout(before.save, before.data, before.run.areaId)) {
+    commitSave(
+      c.result?.caught
+        ? winWhiteout(before.save, before.data, before.run.areaId)
+        : whiteoutBossGotAway(before.save, before.data, before.run.areaId),
+    )
+    if (!c.result?.caught)
+      pushToast(t('ui.whiteout.bossAway', { name: before.data.species[c.dex]?.name ?? '' }), 'bad')
+  }
+  const { run, save, data } = useGame.getState()
+  const pending = [...(run.catchPending ?? []), ...(caughtId ? [caughtId] : [])]
   // The next throw's target as the save stands now, not as it stood before the first: a pair of one species, the first
   // just caught, leaves the second replacing it if stronger, else not on offer, as in a single wild battle. A second
   // copy taken as new would be let go at once (one copy per species), its "Add to team?" asking about nobody.
   const queue = (run.catchQueue ?? []).flatMap((c) => {
     if (!save) return [c]
-    const target = catchTarget(save, c.dex, c.level, c.kind, data, c.shiny)
+    const target = catchTarget(save, c.dex, c.level, c.kind, data, c.shiny, run.areaId ?? save.currentAreaId, !!c.talent)
     return target ? [{ ...c, target }] : []
   })
   const [next, ...rest] = queue
@@ -994,14 +1849,34 @@ export function trainerHasNext(): boolean {
   return !!save && teamOf(save).some((p) => p.currentHp > 0 && data.species[p.dex])
 }
 
+/**
+ * A trainer's next Pokémon, sent out straight into the fight view (the user's call, 2026-11-04: no result card between
+ * them). Then the send-out step, the foe out already: yours that fought stays out and picked unless another is tapped
+ * (the user's call, the same day); K.O.'d, the first able is picked. One able: it goes, no pick.
+ */
+export function sendNextFoe(leadUid?: string) {
+  const { run, battle, save, data, settings } = useGame.getState()
+  const enc = run.encounter
+  if (!save || run.pendingCatchId || !run.trainer || (enc?.kind !== 'trainer' && enc?.kind !== 'gym') || !trainerHasNext()) return
+  const fought = battle?.state.player[battle.state.activeIndex]
+  const able = teamOf(save).filter((p) => p.currentHp > 0)
+  const kept = fought && fought.hp > 0 ? fought.uid : undefined
+  const lead = (leadUid && able.find((p) => p.id === leadUid)?.id) ?? kept ?? able[0]?.id
+  const auto = autoLevel(save, data, settings, run) !== 'off'
+  const pick = able.length > 1 && (!auto || autoOffersLead(enc.kind))
+  const index = run.trainer.index + 1
+  setRun({ trainer: { ...run.trainer, index }, events: [], pickLead: pick })
+  startBattle('trainer', enc.team[index]!, lead)
+  const next = lead && lead === kept ? 'stay' : 'go'
+  useGame.setState((s) => (s.battle ? { battle: { ...s.battle, next } } : {}))
+}
+
 /** Leave the victory screen: next trainer Pokémon (with a freely chosen lead) or back to the area. */
 export function continueAfterVictory(leadUid?: string) {
   const { run } = useGame.getState()
   if (run.pendingCatchId) return
   if (trainerHasNext() && (run.encounter?.kind === 'trainer' || run.encounter?.kind === 'gym') && run.trainer) {
-    const index = run.trainer.index + 1
-    setRun({ trainer: { ...run.trainer, index }, events: [] })
-    startBattle('trainer', run.encounter.team[index]!, leadUid)
+    sendNextFoe(leadUid)
     return
   }
   if (run.trainer && run.trainer.gold > 0) pushToast(t('ui.toast.trainerBeaten', { gold: run.trainer.gold }), 'good')
@@ -1022,7 +1897,8 @@ export function continueAfterVictory(leadUid?: string) {
 export function closeVictoryLeftOpen(): boolean {
   const { save, data, run } = useGame.getState()
   if (run.phase !== 'victory' || run.rebattle || trainerHasNext()) return false
-  if (save && (portalLock(save, data) ?? nightmareLock(save, data))) return false
+  if (save && (portalLock(save, data) ?? nightmareLock(save, data) ?? timeRaceLock(save, data) ?? whiteoutLock(save, data)))
+    return false
   while (useGame.getState().run.pendingCatchId) resolveCatch(null)
   continueAfterVictory()
   return useGame.getState().run.phase === 'idle'
@@ -1039,8 +1915,20 @@ export function continueExploring() {
   // The nightmare (docs/30): the waking shows first, or Darkrai's strike after a round; the area's page plays them.
   const dream = save && run.areaId ? nightmareStateOf(save, run.areaId) : null
   if (dream && ((dream.won && !dream.wonSeen) || (dream.active && dream.strike))) return
-  challenge()
-  if (useGame.getState().run.phase === 'idle') rollNext()
+  // The race (docs/64 §4.4): its win shows first, on the area's page.
+  if (save && run.areaId && timeRaceVictoryDue(save, useGame.getState().data, run.areaId)) return
+  // The whiteout (docs/64 §4.3): its outro first, or the bonfire after a wave; the area's page plays them.
+  const white = save && run.areaId ? whiteoutStateOf(save, run.areaId) : null
+  if (white && ((white.won && !white.wonSeen) || (white.active && white.bonfire))) return
+  // Tracks in the Snow (docs/64 §4.1): its outro shows first, on the area's page.
+  if (save && run.areaId && tracksOutroDue(save, useGame.getState().data, run.areaId)) return
+  // A trial's or a Titan's server answer may be on its way (docs/62): the next card waits for it.
+  const next = () => {
+    if (useGame.getState().run.phase === 'idle') rollNext()
+  }
+  const asked = challenge()
+  if (asked) void asked.then(next)
+  else next()
 }
 
 /** "Add to team?" — swap the new catch in for `replaceId`, or send it to the Box (null). */
@@ -1065,10 +1953,28 @@ export function forfeit() {
     return
   }
   if (run.phase !== 'victory' || !trainerHasNext()) return
+  // Giving up a real player's fight is a loss, not a wipe (docs/54).
+  if (isPlayerFoe(run.encounter)) {
+    setRun({ phase: 'stalemate', trainer: null, events: [], duel: duelOver(run.encounter.player, false) })
+    return
+  }
+  if (!run.rebattle && loseToRival(save)) return
   const lost = inPortalRun(save, data, run.areaId) ? portalStateOf(save, run.areaId).closed : null
   const dream = inNightmare(save, data, run.areaId) ? nightmareStateOf(save, run.areaId).round : null
+  const race = inTimeRace(save, data, run.areaId) ? raceLostOf(save, run.areaId) : null
+  const white = inWhiteout(save, data, run.areaId) ? whiteoutStateOf(save, run.areaId).wave : null
+  const glade = inTracks(save, data, run.areaId)
   commitSave(run.rebattle ? applyRebattleLoss(save, data, run.rebattle.regionId) : applyWipe(save, run.areaId, data))
-  setRun({ phase: 'wipe', trainer: null, events: [], portalLost: lost, nightmareLost: dream })
+  setRun({
+    phase: 'wipe',
+    trainer: null,
+    events: [],
+    portalLost: lost,
+    nightmareLost: dream,
+    raceLost: race,
+    whiteoutLost: white,
+    tracksWiped: glade,
+  })
 }
 
 /** After a full K.O. the run is over: Home (where CONTINUE starts the area afresh), or the rebattle page. */
@@ -1080,13 +1986,57 @@ export function afterWipe() {
   )
 }
 
+/**
+ * The end of a real player's fight (docs/54): the team is healed (it was before the fight too), the server hears of
+ * the meet, and the area gets its next team. What the result card shows.
+ */
+function duelOver(foe: AreaFoe, won: boolean | null): NonNullable<RunState['duel']> {
+  const { save, data, run } = useGame.getState()
+  if (save) commitSave(centerHeal(save, data))
+  const outcome = won ? 'won' : 'lost'
+  if (run.areaId) noteMeet(foe, run.areaId, outcome)
+  return { outcome, foe }
+}
+
+/**
+ * Lost to a rival's set meeting, its switch on (docs/61 §5.4): no wipe. The team healed as a lost round heals it, the
+ * meeting met, and the stalemate's card says so: CONTINUE goes on with the area. False for any other loss.
+ */
+function loseToRival(save: SaveData): boolean {
+  const { run, data } = useGame.getState()
+  const enc = run.encounter
+  if (!run.areaId || enc?.kind !== 'trainer' || !rivalLossForgiven(data, enc.moment)) return false
+  commitSave(applyRivalLoss(save, data, enc.moment))
+  setRun({ phase: 'stalemate', trainer: null, events: [], rivalLost: { name: enc.name, healed: wipeHeals(save, data) } })
+  return true
+}
+
 export function afterStalemate() {
   useGame.setState({ battle: null })
-  backToArea()
+  onToNext()
 }
 
 export function finishCenter() {
   backToArea()
+}
+
+/**
+ * The player takes one of the Center's boons (docs/47): `target` names who a full heal or Team Rocket's trade is for.
+ * Null when it can't be taken (nothing on offer, a target it can't go to).
+ */
+export function pickBoon(index: number, target: string | null = null): BoonPicked | null {
+  const { save, data, run } = useGame.getState()
+  if (!save || !run.areaId) return null
+  const res = pickCenterBoon(save, data, run.areaId, index, target, runRng, serverNow() ?? Date.now(), newId, wildShinyChance(save, data))
+  if (!res) return null
+  commitSave(res.save)
+  return res
+}
+
+/** The Centers' rules pop-up has been shown (docs/47). */
+export function seeCenterRules() {
+  const { save } = useGame.getState()
+  if (save && !save.extreme?.centerRulesSeen) commitSave(markCenterRulesSeen(save))
 }
 
 /** The healing has started playing: leaving for Home and coming back won't play it again. */
@@ -1108,7 +2058,113 @@ export function spinSlotMachine(): SpinResult | null {
 }
 
 export function leaveCasino() {
-  backToArea()
+  onToNext()
+}
+
+// ---------------------------------------------------------------- set moments: rivals and gifts (docs/61 §5)
+
+/**
+ * The gift or the rival meeting due in this area, dealt now (true) instead of a card: a gift opens its screen (phase
+ * 'gift'); a rival's fight starts as a trainer's does. Only once the server's answer is known (sideQuestKnown): asked
+ * the first time, the moment comes with the next card.
+ */
+function dealMoment(save: SaveData, areaId: string, noneAble: boolean): boolean {
+  const { data } = useGame.getState()
+  const area = data.areas.find((a) => a.id === areaId)
+  if (!area || isExtreme(save)) return false
+  const progress = progressOf(save, area.id)
+  const gift = dueGift(save, area, progress, data)
+  if (gift && sideQuestKnown('giftMoments', giftMomentsOn(data))) {
+    setRun({ phase: 'gift', encounter: null, gift: { id: gift.id, received: null }, firstInArea: false })
+    return true
+  }
+  const meeting = noneAble ? null : dueRival(save, area, progress, data)
+  if (!meeting || !sideQuestKnown('rivals', rivalsOn(data))) return false
+  // Fitted to the team the player brings while the match is on (docs/61 §5.5).
+  const encounter = rivalEncounter(meeting, data, playerSideOf(save), save)
+  if (!encounter) return false
+  setRun({ phase: 'preview', encounter, firstInArea: false, sprung: false })
+  beginFight()
+  return true
+}
+
+/** The gift on screen (phase 'gift'), its area, and the save; null when there's none. */
+function currentGift() {
+  const { run, save, data } = useGame.getState()
+  const g = run.gift ? data.config.giftMoments?.gifts.find((x) => x.id === run.gift!.id) : undefined
+  const area = g ? data.areas.find((a) => a.id === g.areaId) : undefined
+  return run.phase === 'gift' && g && area && save ? { g, area, save, data } : null
+}
+
+/** TAKE IT (a gift's choice, `pick`): the engine places it; the screen shows what came of it. False when ₽ are short. */
+export function takeGift(pick: number): boolean {
+  const cur = currentGift()
+  if (!cur || useGame.getState().run.gift?.received) return false
+  const res = receiveGift(cur.save, cur.data, cur.g, cur.area, pick, Date.now(), newId, giftRng(cur.save, cur.g))
+  if (!res) {
+    pushToast(t('ui.gift.tooPoor', { price: cur.g.price ?? 0 }), 'bad')
+    return false
+  }
+  commitSave(res.save)
+  const { save: _s, ...received } = res
+  setRun({ gift: { id: cur.g.id, received } })
+  return true
+}
+
+/** NO THANKS (a paid gift turned down): met, nothing taken, on with the trail. */
+export function declineGiftHere() {
+  const cur = currentGift()
+  if (!cur) return
+  commitSave(declineGift(cur.save, cur.g))
+  finishGift()
+}
+
+/** CONTINUE after a gift: on with the trail. */
+export function finishGift() {
+  setRun({ phase: 'idle', gift: null })
+  rollNext()
+}
+
+/** Auto-mode and Idle (docs/36): a free gift taken (its first choice), a paid one turned down; then on. */
+export function autoGift() {
+  const cur = currentGift()
+  if (!cur) return
+  const run = useGame.getState().run
+  if (run.gift?.received) return finishGift()
+  if ((cur.g.price ?? 0) > 0) return declineGiftHere()
+  const pick = giftChoices(cur.g, cur.save)[0]
+  if (pick != null) takeGift(pick)
+}
+
+// ---------------------------------------------------------------- Pokémon posing as items (docs/61 §3)
+
+/**
+ * PICK IT UP on a find that is a Pokémon in disguise: once the server agrees (a signed-in player: side_quest_open), it
+ * springs out (`run.sprung`: the find's screen shows it and FIGHT). Switched off meanwhile, the card is spent and the
+ * player is back on the trail, as with Trick or Treat. True when it sprang out.
+ */
+export async function revealDisguise(): Promise<boolean> {
+  const { run, data } = useGame.getState()
+  const enc = run.encounter
+  if (run.phase !== 'preview' || !isDisguisedFind(enc) || run.sprung) return false
+  const ok = await sideQuestAllowed('disguises', disguisesOn(data))
+  const now = useGame.getState().run
+  if (now.phase !== 'preview' || now.encounter !== enc) return false
+  if (!ok) {
+    pushToast(t('ui.disguise.closed'), 'bad')
+    backToArea()
+    return false
+  }
+  setRun({ sprung: true })
+  return true
+}
+
+/** FIGHT once it has sprung out: the wild battle begins on the battle screen, as any wild one's does. */
+export function fightSprung() {
+  const { run } = useGame.getState()
+  if (run.phase !== 'preview' || !isDisguisedFind(run.encounter) || !run.sprung) return
+  setRun({ sprung: false })
+  beginFight()
 }
 
 // ---------------------------------------------------------------- Trick or Treat (docs/29)
@@ -1123,18 +2179,35 @@ async function beginTrick(enc: Extract<NonNullable<RunState['encounter']>, { kin
   if (run.phase !== 'preview' || run.encounter !== enc) return
   if (!ok) {
     pushToast(t('ui.trick.closed'), 'bad')
-    backToArea()
+    onToNext()
     return
   }
   setRun({ phase: 'trick', trick: { id: ++trickSeq, state: startTrick(enc, trickCfg(useGame.getState().data), runRng), last: null, caught: null } })
 }
 
-/** One step of Trick or Treat, decided by the engine; a catch goes into the save at once. */
+/**
+ * A Safari encounter (docs/61 §4) once the server agrees (a signed-in player: side_quest_open): Trick or Treat's screen
+ * with the Safari's look and numbers. Switched off meanwhile, the card is spent and the player is back in the area.
+ */
+async function beginSafari(enc: Extract<NonNullable<RunState['encounter']>, { kind: 'safari' }>) {
+  const ok = await sideQuestAllowed('safari', safariOn(useGame.getState().data))
+  const run = useGame.getState().run
+  if (run.phase !== 'preview' || run.encounter !== enc) return
+  if (!ok) {
+    pushToast(t('ui.safari.closed'), 'bad')
+    backToArea()
+    return
+  }
+  const cfg = lureCfg(useGame.getState().data, 'safari')
+  setRun({ phase: 'trick', trick: { id: ++trickSeq, state: startTrick(enc, cfg, runRng, 'safari'), last: null, caught: null } })
+}
+
+/** One step of Trick or Treat (or the Safari), decided by the engine; a catch goes into the save at once. */
 function trickStep(step: (cfg: ReturnType<typeof trickCfg>) => TrickStep | null): TrickStep | null {
   const { run, save, data } = useGame.getState()
   const tr = run.trick
   if (run.phase !== 'trick' || !tr || tr.state.end || !save) return null
-  const res = step(trickCfg(data))
+  const res = step(lureCfg(data, tr.state.theme))
   if (!res) return null
   let caught = tr.caught
   if (res.caught) {
@@ -1173,11 +2246,122 @@ export function fleeTrick() {
   pushToast(t('ui.toast.gotAway'))
 }
 
-/** Caught or fled: back on the trail (the round may be complete). */
+/** HOME on the result card: back on the trail, no card dealt; Home's CONTINUE goes on from there. */
+export function leaveTrickHome() {
+  const tr = useGame.getState().run.trick
+  if (tr && !tr.state.end) return
+  setRun({ trick: null })
+  backToArea()
+}
+
+/** Caught or fled: back on the trail and on to the next card (the round may be complete). */
 export function leaveTrick() {
   const tr = useGame.getState().run.trick
   if (tr && !tr.state.end) return
   setRun({ trick: null })
+  onToNext()
+}
+
+// ---------------------------------------------------------------- the Gift card (docs/64 §4.0, §4.2)
+
+/** A present waiting on the server's answer: a second tap doesn't ask twice. */
+let giftAsking = false
+
+/**
+ * The present appears once the server agrees (a signed-in player: gift_card_open), its rewards drawn. Switched off
+ * meanwhile, the card is spent and the player is back on the trail. Either way the card was used when it was turned
+ * over.
+ */
+async function beginGift(enc: Extract<NonNullable<RunState['encounter']>, { kind: 'gift' }>) {
+  if (giftAsking) return
+  giftAsking = true
+  const ok = await giftAllowed().finally(() => (giftAsking = false))
+  const { run, save, data } = useGame.getState()
+  if (run.phase !== 'preview' || run.encounter !== enc || !save) return
+  const area = data.areas.find((a) => a.id === run.areaId)
+  if (!ok || !area) {
+    pushToast(t('ui.giftCard.closed'), 'bad')
+    backToArea()
+    return
+  }
+  setRun({
+    phase: 'present',
+    present: { id: ++giftSeq, state: startGift(save, area, data, runRng), last: null, got: null, out: null },
+  })
+}
+
+/**
+ * CHALLENGE on a boss that comes out of a present: the present at once (the page follows the phase), then the server's
+ * word; said no (or not reachable), the plain fight instead, the boss as it always came. The present changes only how
+ * the boss comes out, so nothing waits on the answer.
+ */
+async function beginBossPresent(enc: Extract<Encounter, { kind: 'boss' }>) {
+  const { data } = useGame.getState()
+  const id = ++giftSeq
+  setRun({
+    phase: 'present',
+    encounter: enc,
+    firstInArea: false,
+    skipsUsed: 0,
+    present: { id, state: startBossPresent(giftCfg(data), enc), last: null, got: null, out: enc },
+  })
+  if (await giftAllowed()) return
+  const { run } = useGame.getState()
+  if (run.phase !== 'present' || run.present?.id !== id) return
+  setRun({ phase: 'preview', encounter: enc, present: null })
+  beginFight()
+}
+
+/**
+ * MAKE IT BIGGER: the engine grows the present a level, or breaks it (a wild Pokémon of the area comes out, drawn now
+ * so the screen can show it), or bursts a boss's on its last tap. Null when nothing happened.
+ */
+export function growPresent(): GiftStep | null {
+  const { run, save, data } = useGame.getState()
+  const g = run.present
+  if (run.phase !== 'present' || !g || g.state.end || !save || !run.areaId) return null
+  const step = growGift(g.state, giftCfg(data), runRng)
+  if (!step) return null
+  let out = g.out
+  if (step.broke) {
+    const ctx = encounterContext(save, run.areaId, null)
+    out = ctx ? rollGiftWild(ctx, runRng) : null
+  }
+  setRun({ present: { ...g, state: step.state, last: step, out } })
+  return step
+}
+
+/** OPEN: the level's reward goes into the bag at once; the result card says what it was. */
+export function openPresent(): GiftItem[] | null {
+  const { run, save, data } = useGame.getState()
+  const g = run.present
+  if (run.phase !== 'present' || !g || !save || !run.areaId) return null
+  const opened = openGift(g.state)
+  if (!opened) return null
+  const res = applyGiftOpen(save, data, run.areaId, opened, Date.now(), newId, currentLive())
+  commitSave(res.save)
+  setRun({ present: { ...g, state: opened, last: null, got: res.items } })
+  return res.items
+}
+
+/**
+ * The present broke (or burst) and what came out has had its moment: the fight, as a wild Pokémon's (or the boss's)
+ * always is, caught as any. Nothing came out (an area with no wild Pokémon left): back on the trail.
+ */
+export function fightFromPresent() {
+  const { run } = useGame.getState()
+  const g = run.present
+  if (run.phase !== 'present' || !g || (g.state.end !== 'broken' && g.state.end !== 'burst')) return
+  if (!g.out) return leavePresent()
+  setRun({ phase: 'preview', encounter: g.out, present: null, firstInArea: false, skipsUsed: 0 })
+  beginFight()
+}
+
+/** Opened (or nothing came out): back on the trail (the round may be complete). */
+export function leavePresent() {
+  const g = useGame.getState().run.present
+  if (g && !g.state.end) return
+  setRun({ present: null })
   backToArea()
 }
 

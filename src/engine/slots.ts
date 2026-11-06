@@ -1,10 +1,10 @@
 // Game Corner slot machine (Rocket Hideout). The result is drawn from the configured weights first, then the three reels
 // are laid out to show it — so the odds are exactly what the admin set, whatever the reels look like.
 import { applyCatch, catchTarget } from './catching'
-import { earnedGold } from './liveEvents'
+import { earnedGold, type LiveSet } from './liveEvents'
 import type { Rng } from './rng'
 import type { RunEvent } from './run'
-import type { GameData, LiveEvent, SaveData, SlotMachineConfig } from './types'
+import type { GameData, SaveData, SlotMachineConfig } from './types'
 
 export type SlotSymbol = 'ball' | 'prize'
 export type SlotOutcomeKey = 'oneBall' | 'twoBalls' | 'threeBalls' | 'jackpot'
@@ -47,7 +47,7 @@ export function spinSlots(
   rng: Rng,
   now: number,
   newId: () => string,
-  live: LiveEvent | null = null,
+  live: LiveSet = null,
 ): SpinResult | null {
   const cfg = data.config.slotMachine
   const cost = Math.max(0, Math.round(cfg.cost))

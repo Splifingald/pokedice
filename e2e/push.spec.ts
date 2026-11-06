@@ -1,6 +1,6 @@
 // Push notifications (docs/27): each feature asks once, a No on one leaves the others to ask, Enable subscribes and
 // hands the server a schedule, Settings shows what's on. A headless browser can't reach a real push service, so the
-// browser's subscription is stood in for (PushManager); the permission is granted as a player's tap would.
+// browser's subscription and permission are stood in for (PushManager, Notification): granted as a player's tap would.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG, type SaveData } from '../src/engine'
@@ -52,6 +52,13 @@ async function boot(page: Page, save: SaveData, settings = FAST) {
         (sessionStorage.getItem('e2e.sub') ? fake : null) as unknown as PushSubscription
       PushManager.prototype.subscribe = async () =>
         (sessionStorage.setItem('e2e.sub', '1'), fake) as unknown as PushSubscription
+      // The browser's permission too: some headless builds say 'denied' whatever grantPermissions gave. Unasked until
+      // the tap, then granted, kept across pages as the browser keeps it.
+      Object.defineProperty(Notification, 'permission', {
+        configurable: true,
+        get: () => (sessionStorage.getItem('e2e.perm') ?? 'default') as NotificationPermission,
+      })
+      Notification.requestPermission = async () => (sessionStorage.setItem('e2e.perm', 'granted'), 'granted')
     },
     [
       JSON.stringify(save),
@@ -61,6 +68,21 @@ async function boot(page: Page, save: SaveData, settings = FAST) {
   )
   return sent
 }
+
+test("the Day Care's first visit: its question waits while the rules card is up, then comes (docs/43 §7)", async ({
+  page,
+}) => {
+  // Twenty species and never been in: the rules are a card on the page; the question would be a modal over them.
+  await boot(page, { ...player(), dayCare: undefined })
+  await page.goto('/daycare')
+  const card = page.getByRole('region', { name: 'How Day Care works' })
+  await expect(card).toBeVisible()
+  await page.waitForTimeout(2000)
+  await expect(page.getByRole('dialog', { name: 'Notifications' })).toHaveCount(0)
+  // Read: then the page asks, once.
+  await card.getByRole('button', { name: 'GOT IT' }).click()
+  await expect(page.getByRole('dialog', { name: 'Notifications' })).toBeVisible()
+})
 
 test('each feature asks once; No thanks is for good there; Enable subscribes and sends the schedule', async ({
   page,

@@ -1,12 +1,13 @@
 // Trainer looks (docs/31): every region's set, what unlocks each look (Pokémon caught in the region's Pokédex, an
-// area reached, its League, its full Pokédex), the red dot's count, and a look not unlocked coming off while the
-// admin's switch is on.
+// area reached, its League, its full Pokédex, an event's prize), the red dot's count, a look not unlocked coming off
+// while the admin's switch is on, and a granted look kept by whichever copy of the save wins.
 import { describe, expect, it } from 'vitest'
 import {
   createInstance,
   getRegion,
   linearAreas,
   lookStates,
+  keepLooksEarned,
   LOOKS,
   looksOn,
   markLooksSeen,
@@ -54,9 +55,12 @@ const caught = (save: SaveData, region: string, n: number): SaveData => ({
 })
 
 describe('the sets', () => {
-  it('are Red and Leaf, then 10 to 20 looks per region, 138 in all, each id once', () => {
+  it('are Red and Leaf, then 10 to 20 looks per region, then the events, 139 in all, each id once', () => {
     expect(LOOKS.slice(0, 2).map((l) => l.id)).toEqual(['red', 'green'])
-    expect(LOOKS.length).toBe(138)
+    expect(LOOKS.length).toBe(139)
+    expect(LOOKS.filter((l) => l.unlock.kind === 'event').map((l) => [l.id, l.region])).toEqual([
+      ['events/halloween-2026-pokemaniac', null],
+    ])
     expect(new Set(LOOKS.map((l) => l.id)).size).toBe(LOOKS.length)
     const per = Object.fromEntries(
       data.regions.map((r) => [r.id, LOOKS.filter((l) => l.region === r.id).length]),
@@ -207,5 +211,45 @@ describe('wearing a look', () => {
     }
     expect(settleLook(extreme, main, data)).toBe(extreme)
     expect(settleLook(extreme, extreme, data).player?.avatar).toBeUndefined()
+  })
+})
+
+describe("an event's look (§7): Halloween 2026", () => {
+  const LOOK = 'events/halloween-2026-pokemaniac'
+  const RAID = 'cfff57e0-5175-545c-9e68-a2e2e64d7d45:487'
+  const won = (save: SaveData): SaveData => ({ ...save, events: { ...save.events, raidsDone: [RAID] } })
+  const granted = (save: SaveData): SaveData => ({ ...save, looks: { ...save.looks, earned: [LOOK] } })
+
+  it("isn't listed until won: nothing to work towards after the event", () => {
+    const save = kanto()
+    expect(lookStates(save, data).some((s) => s.def.id === LOOK)).toBe(false)
+    expect(lookStates(save, data).length).toBe(LOOKS.length - 1)
+  })
+
+  it("is won with Haunted Hollow's Giratina raid, or granted in the save, and then counts as new", () => {
+    for (const save of [won(kanto()), granted(kanto())]) {
+      expect(state(save, LOOK)).toMatchObject({ open: true, started: true })
+      expect(lookStates(save, data).length).toBe(LOOKS.length)
+      expect(newLooks(save, save, data)).toContain(LOOK)
+    }
+    // Another raid won isn't it.
+    expect(unlockedLooks({ ...kanto(), events: { raidsDone: ['x:487'] } }, data).has(LOOK)).toBe(false)
+  })
+
+  it('is worn like any look, and stays on', () => {
+    const save = won(kanto())
+    const on = wearLook(save, save, data, LOOK)!
+    expect(on.player?.avatar).toBe(LOOK)
+    expect(settleLook(on, on, data)).toBe(on)
+    expect(wearLook(kanto(), kanto(), data, LOOK)).toBeNull()
+  })
+
+  it('granted to either copy of the save, is kept by the one that wins', () => {
+    const mine = { ...kanto(), looks: { seen: ['kanto/lass'] } }
+    expect(keepLooksEarned(mine, granted(kanto())).looks).toEqual({ seen: ['kanto/lass'], earned: [LOOK] })
+    // Nothing to add: the same save back.
+    expect(keepLooksEarned(mine, kanto())).toBe(mine)
+    expect(keepLooksEarned(granted(mine), granted(kanto()))).toEqual(granted(mine))
+    expect(keepLooksEarned(mine, null)).toBe(mine)
   })
 })

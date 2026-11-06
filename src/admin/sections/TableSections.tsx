@@ -7,6 +7,7 @@ import {
   COMBO_NAMES,
   POKE_TYPES,
   BATTLE_BACKGROUNDS,
+  type BattleBackground,
   STATUS_KINDS,
   trainerSpecialty,
   type CurableStatus,
@@ -23,6 +24,7 @@ import { SpriteImg } from '@/components/SpriteImg'
 import { TypeBadge } from '@/components/TypeBadge'
 import { cx } from '@/theme/util'
 import { DataTable } from '../DataTable'
+import { BATTLE_SCENE_NAMES } from '../pictureNames'
 import { newUuid, rowKey, setTable, updateRow, useAdmin, useAdminData } from '../store'
 import { Field, NumInput, PokemonPicker, TextInput, n, s, useNumberField } from '../widgets'
 import { effectText } from '@/i18n/text'
@@ -154,7 +156,15 @@ export function TrainersSection() {
           { key: 'upgrade_level', label: 'Upgrade Lv (empty = area)', kind: 'number', nullable: true, width: 110 },
           { key: 'rival_of', label: "Rival of player's starter (dex)", kind: 'number', nullable: true, width: 110 },
           { key: 'duo', label: 'Duo (2 v 2)', kind: 'bool', width: 80 },
-          { key: 'battle_background', label: 'Scene (— = area)', kind: 'enum', options: [...BATTLE_BACKGROUNDS], nullable: true, width: 110 },
+          {
+            key: 'battle_background',
+            label: 'Scene (— = area)',
+            kind: 'enum',
+            options: [...BATTLE_BACKGROUNDS],
+            optionLabel: (o) => BATTLE_SCENE_NAMES[o as BattleBackground],
+            nullable: true,
+            width: 170,
+          },
           {
             key: 'specialty',
             label: 'Type',
@@ -214,6 +224,7 @@ const EFFECT_DEFAULTS: Record<ItemEffect['kind'], ItemEffect> = {
   level: { kind: 'level', amount: 1 },
   ball: { kind: 'ball', bonus: 1 },
   link: { kind: 'link' },
+  talent: { kind: 'talent' },
   bait: { kind: 'bait', faces: [1, 1, 1, 2, 2, 3] },
   megaGem: { kind: 'megaGem', mega: 10059 },
 }
@@ -258,7 +269,7 @@ function EffectEditor({ value, onDone }: { value: ItemEffect | undefined; onDone
         </div>
       ) : draft.kind === 'revive' ? (
         <NumInput value={draft.percent} min={1} max={100} onChange={(v) => setDraft({ kind: 'revive', percent: v ?? 50 })} />
-      ) : draft.kind === 'stone' || draft.kind === 'link' ? null : draft.kind === 'bait' ? (
+      ) : draft.kind === 'stone' || draft.kind === 'link' || draft.kind === 'talent' ? null : draft.kind === 'bait' ? (
         <div className="flex flex-wrap gap-1 text-base">
           {draft.faces.map((f, i) => (
             <NumInput

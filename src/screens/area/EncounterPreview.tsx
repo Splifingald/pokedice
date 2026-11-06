@@ -1,9 +1,10 @@
 import { HauntSprite } from '@/components/Nightmare'
 import { GlitchSprite } from '@/components/Portal'
+import { skinKey, skinOfArea } from '@/components/portalSkin'
 import { motion } from 'framer-motion'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, MONEY, paidKey, rebattleProgress, rebattleTiers, type Encounter, portalNoCatch, nightmareFoe } from '@/engine'
+import { catchTarget, catchValueOf, effectiveStats, getSpecies, isDoubleEncounter, isPlayerFoe, MONEY, paidKey, rebattleProgress, rebattleTiers, teamOf, type Encounter, portalNoCatch, nightmareFoe, whiteoutFoe, familyTalent, familyUnlocked, noteTalentMet, talentMet, talentsOn, roadblockOf } from '@/engine'
 import { joinList } from '@/i18n'
 import { effectText } from '@/i18n/text'
 import { money } from '@/lib/format'
@@ -14,6 +15,8 @@ import { DiceSet } from '@/components/DiceSet'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelIcon } from '@/components/icons'
 import { LeadPicker, defaultLead, pickedPair } from '@/components/LeadPicker'
+import { AutoButton, PILOT_PICK_MS } from '@/components/AutoButton'
+import { useAutoLevel } from '@/store/autopilot'
 import { PixelButton } from '@/components/PixelButton'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { StatChip } from '@/components/StatChip'
@@ -22,9 +25,13 @@ import { TypeBadge } from '@/components/TypeBadge'
 import { foeTypes } from '@/components/TypeMatchups'
 import { ShinyParadeChip } from '@/screens/events/live'
 import { TrickCard } from '@/components/TrickOrTreat'
-import { useGame } from '@/store/game'
+import { GiftCardPreview } from '@/components/GiftCard'
+import { mutateSave, useGame } from '@/store/game'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
 import { cx } from '@/theme/util'
+import { TalentGem, talentName } from '@/components/Talent'
+import { PlayerFoeCard } from '@/components/AreaVersus'
+import { HordeBanner, TitanCard, TrialCard } from './FlavourCards'
 
 function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> }) {
   const { t } = useT()
@@ -36,11 +43,15 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
   const area = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
   // A portal run's wild Pokémon (docs/28): distorted, and never caught.
   const distorted = useGame((s) => !boss && !!s.save && portalNoCatch(s.save, s.data, s.run.areaId))
+  // The Stairway of Plates' Pokémon wear light instead, and say so in its words (docs/64 §4.5).
+  const skin = skinOfArea(area, data)
   // The nightmare's foe (docs/30): its round, and never caught either.
   // (Its store values picked one by one: a selector must not build a new object on every call.)
   const save = useGame((s) => s.save)
   const runArea = useGame((s) => s.run.areaId)
   const dream = !boss && save && runArea ? nightmareFoe(save, data, runArea) : null
+  // The whiteout's wave foe (docs/64 §4.3): its wave and place, lost in the blizzard, never caught.
+  const storm = !boss && !dream && save && runArea ? whiteoutFoe(save, data, runArea) : null
   return (
     <div className="flex items-center gap-3 sm:gap-4">
       <motion.div
@@ -52,11 +63,13 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
             ? 'bg-night shadow-[inset_0_0_0_3px_#ffbe2e]'
             : dream
               ? 'light-scope bg-[#080b1f] shadow-[inset_0_0_0_3px_#5a3aa8]'
-              : 'bg-paper shadow-ring',
+              : storm
+                ? 'light-scope bg-[#16264a] shadow-[inset_0_0_0_3px_#a6c2db]'
+                : 'bg-paper shadow-ring',
         )}
       >
         {distorted ? (
-          <GlitchSprite dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
+          <GlitchSprite dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} look={skin} />
         ) : dream ? (
           <HauntSprite dex={enc.dex} size={desktop ? 144 : 104} shiny={enc.shiny} />
         ) : (
@@ -64,10 +77,19 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
         )}
       </motion.div>
       <div className="flex min-w-0 flex-col gap-1">
-        {boss && <div className="text-lg leading-none tracking-[0.35em] text-gold">{t('ui.enc.legendaryTag')}</div>}
+        {boss && (
+          <div className="text-lg leading-none tracking-[0.35em] text-gold">
+            {t(roadblockOf(area, enc.dex) ? 'ui.enc.roadblockTag' : 'ui.enc.legendaryTag')}
+          </div>
+        )}
         {dream && (
           <div className="text-lg leading-none tracking-[0.2em] text-muted">
             {t('ui.nightmare.roundTag', { n: dream.round, total: dream.total })}
+          </div>
+        )}
+        {storm && (
+          <div className="text-lg leading-none tracking-[0.2em] text-muted">
+            {t('ui.whiteout.waveTag', { n: storm.wave, total: storm.waves, i: storm.index, size: storm.size })}
           </div>
         )}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -81,6 +103,7 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           {enc.kind === 'wild' &&
             !distorted &&
             !dream &&
+            !storm &&
             (enc.isNew ? (
               <span className="bg-gold px-1.5 text-lg leading-tight text-ink shadow-ring">{t('ui.enc.new')}</span>
             ) : (
@@ -98,18 +121,24 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
           <DiceSet dice={stats.dice} size={22} />
           <StatChip stat="rerolls" value={stats.rerolls} size={18} className="text-lg" />
         </div>
+        {enc.talent && <TalentNews dex={enc.dex} name={sp.name} catchable={!distorted && !dream && !storm} />}
         {distorted ? (
-          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="sparkle" size={14} />
-            {t('ui.portal.noCatch')}
+            {t(skinKey(skin, 'ui.portal.noCatch'))}
           </p>
         ) : dream ? (
-          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[15px] leading-tight text-muted">
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <PixelIcon name="moon" size={14} />
             {t('ui.nightmare.noCatch')}
           </p>
+        ) : storm ? (
+          <p className="m-0 flex items-center gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
+            <PixelIcon name="frozen" size={14} />
+            {t('ui.whiteout.noCatch')}
+          </p>
         ) : (
-          <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.shiny} />
+          <CatchHint dex={enc.dex} level={enc.level} kind={boss ? 'boss' : 'wild'} shiny={enc.shiny} talent={enc.talent} />
         )}
       </div>
     </div>
@@ -117,12 +146,48 @@ function WildCard({ enc }: { enc: Extract<Encounter, { kind: 'wild' | 'boss' }> 
 }
 
 /** What a catch would mean here: its catch value, and whether it's new, an upgrade, or not catchable. */
-function CatchHint({ dex, level, kind, shiny }: { dex: number; level: number; kind: 'wild' | 'boss'; shiny?: boolean }) {
+/**
+ * A wild Pokémon carrying its hidden talent (docs/51): its name, and whether catching it teaches the family (still
+ * locked here) or it's one more that has it. Seeing it notes the talent as met: the sheets name it from now on.
+ */
+function TalentNews({ dex, name, catchable }: { dex: number; name: string; catchable: boolean }) {
+  const { t } = useT()
+  const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
+  useEffect(() => {
+    if (talentsOn(data)) mutateSave((s) => (talentMet(s, data, dex) ? null : noteTalentMet(s, data, dex)))
+  }, [data, dex])
+  if (!talentsOn(data) || !save) return null
+  const talent = familyTalent(data, dex)
+  const learn = catchable && !familyUnlocked(save, data, dex)
+  return (
+    <p className="m-0 flex items-start gap-1.5 bg-gold-pale px-2 py-1 text-[17px] leading-tight shadow-ring-line">
+      <TalentGem talent={talent} size={16} className="mt-0.5" />
+      <span>
+        {t(learn ? 'ui.talent.preview.learn' : 'ui.talent.preview.has', { name, talent: talentName(talent) })}
+      </span>
+    </p>
+  )
+}
+
+function CatchHint({
+  dex,
+  level,
+  kind,
+  shiny,
+  talent,
+}: {
+  dex: number
+  level: number
+  kind: 'wild' | 'boss'
+  shiny?: boolean
+  talent?: boolean
+}) {
   const { t } = useT()
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   if (!save) return null
-  const target = catchTarget(save, dex, level, kind, data, shiny)
+  const target = catchTarget(save, dex, level, kind, data, shiny, save.currentAreaId, !!talent)
   return (
     <div className="flex flex-wrap items-center gap-x-1 text-lg leading-tight">
       <StatChip stat="catch" value={catchValueOf(data, dex)} size={18} />
@@ -190,7 +255,8 @@ function TrainerCard({ enc }: { enc: Extract<Encounter, { kind: 'trainer' }> }) 
           ))}
         </div>
         <div className="text-base leading-tight text-muted">
-          {t('ui.enc.paysPerKo')}
+          {/* A set opening's trainer (docs/46) pays a set prize for the win. */}
+          {enc.prize != null ? t('ui.enc.paysPrize', { gold: enc.prize }) : t('ui.enc.paysPerKo')}
           {/* Only worth saying when wild battles can be fled. */}
           {!data.config.noEscape && t('ui.enc.noRunning')}
         </div>
@@ -309,6 +375,8 @@ const TITLES: Record<Encounter['kind'], string> = {
   center: 'ui.enc.titleCenter',
   casino: 'ui.enc.titleCasino',
   trick: 'ui.enc.titleTrick',
+  gift: 'ui.enc.titleGift',
+  safari: 'ui.enc.titleSafari',
 }
 
 /** The encounter, in a pop-up (a bottom sheet on phones): the opponent, who to send out, FIGHT or FLEE (AVOID a trainer). */
@@ -317,13 +385,33 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
   const [lead, setLead] = useState<string | null>(null)
   // A double battle sends two out (docs/33).
   const [leads, setLeads] = useState<string[]>([])
-  const double = isDoubleEncounter(enc)
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
+  // A roadblock boss (docs/61 §2) is a Pokémon across the road, not a legendary: its own words.
+  const runArea = useGame((s) => s.data.areas.find((a) => a.id === s.run.areaId))
+  // A Titan alone is one on one (docs/62 §7): one to send out; Dondozo with Tatsugiri asks for two.
+  const lonelyTitan =
+    enc.kind === 'boss' && !!enc.titan && !runArea?.legendaryBoss?.find((b) => b.dex === enc.dex && b.titan)?.titan?.partner
+  const double = isDoubleEncounter(enc) && !lonelyTitan
+  const roadblock = enc.kind === 'boss' ? roadblockOf(runArea, enc.dex) : null
   const titleId = useId()
   const skippable = canSkipCurrent()
-  const fight = enc.kind !== 'center' && enc.kind !== 'item' && enc.kind !== 'casino' && enc.kind !== 'trick'
+  const fight =
+    enc.kind !== 'center' &&
+    enc.kind !== 'item' &&
+    enc.kind !== 'casino' &&
+    enc.kind !== 'trick' &&
+    enc.kind !== 'gift' &&
+    enc.kind !== 'safari'
   const dark = enc.kind === 'boss' || enc.kind === 'gym'
+  // A card whose one way on is its button (the Game Corner, Trick or Treat with no skipping it): it loads and presses
+  // itself (the user's rule: no step that is only a button). A fight, or a card with a second choice, waits.
+  const waits = enc.kind === 'gym' || (enc.kind === 'boss' && !enc.returning)
+  // The autopilot leaves a trainer's card on the table (engine pilotShowsCard): FIGHT loads and goes by itself with the
+  // lead it would pick, and a Pokémon tapped holds it for the player's own FIGHT.
+  const pilot = useAutoLevel() === 'full' && (enc.kind === 'trainer' || enc.kind === 'gym')
+  const picked = lead != null || leads.length > 0
+  const Primary = pilot || (!fight && !skippable && !waits) ? AutoButton : PixelButton
   if (typeof document === 'undefined') return null
 
   return createPortal(
@@ -343,36 +431,66 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
       >
         {/* Gym and legendary cards carry their own banner, so their title is for screen readers only. */}
         <h2 id={titleId} className={dark ? 'sr-only' : 'border-b-[3px] border-edge px-3 py-2 text-center text-2xl leading-tight sm:text-3xl'}>
-          {t(enc.kind === 'wild' && enc.partner ? 'ui.enc.titleWildPair' : TITLES[enc.kind])}
+          {t(
+            enc.kind === 'wild' && enc.horde?.length
+              ? 'ui.horde.title'
+              : enc.kind === 'wild' && enc.partner
+              ? 'ui.enc.titleWildPair'
+              : isPlayerFoe(enc)
+                ? 'ui.areaVersus.title'
+                : roadblock
+                  ? 'ui.enc.titleRoadblock'
+                  : TITLES[enc.kind],
+          )}
         </h2>
         <div className="pixel-scroll flex flex-col gap-3 overflow-y-auto p-3 sm:p-4">
-          {enc.kind === 'gym' && <GymCard enc={enc} />}
+          {enc.kind === 'gym' && (enc.trial ? <TrialCard enc={enc} /> : <GymCard enc={enc} />)}
+          {/* A Kalos horde (docs/62 §5): its banner, then the one in front. */}
+          {enc.kind === 'wild' && enc.horde?.length && <HordeBanner enc={enc} />}
           {enc.kind === 'wild' && <WildCard enc={enc} />}
           {enc.kind === 'wild' && enc.partner && <WildCard enc={{ kind: 'wild', ...enc.partner }} />}
-          {enc.kind === 'boss' && (
+          {enc.kind === 'boss' && enc.titan && <TitanCard enc={enc} />}
+          {enc.kind === 'boss' && !enc.titan && (
             <>
               <div className="text-center text-2xl leading-tight text-gold">
                 {enc.returning
                   ? t('ui.enc.legendaryBack', { name: data.species[enc.dex]?.name ?? t('ui.enc.theLegendary') })
-                  : t('ui.enc.legendaryBlocks')}
+                  : roadblock
+                    ? t(`ui.enc.roadblock.${roadblock}`)
+                    : t('ui.enc.legendaryBlocks')}
               </div>
               <div className="bg-panel p-3 text-ink">
                 <WildCard enc={enc} />
               </div>
             </>
           )}
-          {enc.kind === 'trainer' && <TrainerCard enc={enc} />}
+          {/* A real player's team (docs/54): who, their team and what it pays, after its intro. */}
+          {enc.kind === 'trainer' && (isPlayerFoe(enc) ? <PlayerFoeCard enc={enc} /> : <TrainerCard enc={enc} />)}
           {enc.kind === 'item' && <ItemCard enc={enc} />}
           {enc.kind === 'center' && <CenterCard enc={enc} />}
           {enc.kind === 'casino' && <CasinoCard />}
           {enc.kind === 'trick' && <TrickCard dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />}
+          {/* The Gift card (docs/64 §4.0): only while the server says yes, the present itself comes at once. */}
+          {enc.kind === 'gift' && <GiftCardPreview />}
+          {enc.kind === 'safari' && (
+            <TrickCard theme="safari" dex={enc.dex} level={enc.level} tier={enc.tier} isNew={enc.isNew} shiny={enc.shiny} />
+          )}
 
-          {fight && save && (
-            <div className={dark ? 'bg-panel p-2 text-ink' : undefined}>
+          {/* A team of one has no one to pick: no "Send out" at all (LeadPicker draws nothing either). */}
+          {fight && save && teamOf(save).length > 1 && (
+            <div className={cx(dark && 'bg-panel p-2 text-ink', pilot && 'grid gap-1.5')}>
+              {pilot && !picked && (
+                <p className="m-0 font-pixel-sm text-[16px] leading-[1.15] text-muted" role="status">
+                  {t('ui.idle.pickLead')}
+                </p>
+              )}
+              {/* The send-out's cards (one design for "pick a Pokémon", docs/43 §5.3): a tap picks (two, a double
+                  battle's pair), INFO opens one. */}
               <LeadPicker
                 value={lead}
                 onChange={setLead}
                 foe={foeTypes(data, enc)}
+                go
                 {...(double && { pair: { value: leads, onChange: setLeads } })}
               />
             </div>
@@ -383,15 +501,20 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
           className={cx('flex gap-2 border-t-[3px] p-3', dark ? 'border-shadow' : 'border-edge')}
           style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
         >
-          <PixelButton
+          {/* min-w-0: the buttons share the row evenly, a long label shrinking to fit rather than pushing its
+              neighbour off the screen. */}
+          <Primary
             variant="primary"
             size="lg"
-            className="flex-1"
+            className="min-w-0 flex-1"
             autoFocus
+            {...(pilot && { ms: PILOT_PICK_MS, hold: picked })}
             onClick={() => engage(!fight ? undefined : double ? pickedPair(leads) : (lead ?? defaultLead()))}
           >
             {fight && <PixelIcon name="sword" size={22} />}
             {enc.kind === 'trick' && <PixelIcon name="pumpkin" size={22} />}
+            {enc.kind === 'gift' && <PixelIcon name="gift" size={22} />}
+            {enc.kind === 'safari' && <PixelIcon name="ball" size={22} />}
             {t(
               enc.kind === 'center' || enc.kind === 'casino'
                 ? 'ui.enc.enter'
@@ -399,19 +522,32 @@ export function EncounterPreview({ enc }: { enc: Encounter }) {
                   ? 'ui.enc.pickUp'
                   : enc.kind === 'trick'
                     ? 'ui.trick.start'
-                    : 'ui.enc.fight',
+                    : enc.kind === 'gift'
+                      ? 'ui.giftCard.start'
+                    : enc.kind === 'safari'
+                      ? 'ui.safari.start'
+                      : 'ui.enc.fight',
             )}
-          </PixelButton>
+          </Primary>
           {skippable && (
-            <PixelButton size="lg" className="flex-1" onClick={skipEncounter}>
+            <PixelButton size="lg" className="min-w-0 flex-1" onClick={skipEncounter}>
               {fight && <PixelIcon name="run" size={20} />}
-              {t(enc.kind === 'trainer' ? 'ui.enc.avoid' : fight ? 'ui.enc.flee' : 'ui.enc.skip')}
-              {data.config.skipPolicy === 'once' && <span className="text-base"> (1)</span>}
+              {/* A real player's is plain SKIP: the gold box above already says skipping pays nothing. */}
+              {t(
+                isPlayerFoe(enc)
+                  ? 'ui.enc.skip'
+                  : enc.kind === 'trainer'
+                    ? 'ui.enc.avoid'
+                    : fight
+                      ? 'ui.enc.flee'
+                      : 'ui.enc.skip',
+              )}
+              {data.config.skipPolicy === 'once' && !isPlayerFoe(enc) && <span className="text-base"> (1)</span>}
             </PixelButton>
           )}
           {/* A challenge the player picked (gym, or a legendary due once every round is done) can wait. */}
           {(enc.kind === 'gym' || (enc.kind === 'boss' && !enc.returning)) && (
-            <PixelButton size="lg" className="flex-1" onClick={declineChallenge}>
+            <PixelButton size="lg" className="min-w-0 flex-1" onClick={declineChallenge}>
               {t('ui.enc.notYet')}
             </PixelButton>
           )}

@@ -2,7 +2,7 @@
 // main one, the resting team, a resting Pokémon's countdown, healing for the time away, deleting the Extreme save, and
 // the database told which world it is talking about.
 import { expect, test, type Page } from '@playwright/test'
-import { instanceMaxHp } from '../src/engine'
+import { instanceMaxHp, progressOf } from '../src/engine'
 import { EXTREME_ON, FAST, fakeSession, gameData, makeSave, mockSupabase, STORAGE_KEY, withBadge } from './helpers'
 
 const H = 3_600_000
@@ -43,33 +43,47 @@ const now = Date.now()
 const main = () => makeSave(4, { player: { name: 'Sam', character: 'red' }, extremeUnlockedAt: now - H, extremeRulesSeen: true })
 const extreme = (patch: object = {}) => makeSave(7, { mode: 'extreme', player: { name: 'Sam', character: 'red' }, ...patch })
 
-test('the league opens it: the rules, then a new Extreme game beside the main save', async ({ page }) => {
+test('the league opens it: the rules, its page, then a run started beside the main save', async ({ page }) => {
   await mockSupabase(page)
-  await seed(page, { main: { ...main(), extremeRulesSeen: false } })
+  // Kanto's League won in the main save: Extreme mode and Kanto's run are open (docs/48).
+  const kanto = gameData().regions.find((r) => r.id === 'kanto')!
+  const base = main()
+  const won = {
+    ...base,
+    extremeRulesSeen: false,
+    // Johto's offer has had its turn in the one-time pop-ups (it comes before Extreme mode's).
+    regionOfferSeen: ['johto'],
+    areaProgress: { ...base.areaProgress, [kanto.leagueAreaId]: { ...progressOf(base, kanto.leagueAreaId), cleared: true } },
+  }
+  await seed(page, { main: won })
   await page.goto('/home')
 
   const rules = page.getByRole('dialog', { name: 'Extreme mode' })
+  await expect(rules).toContainText('A race per region')
   await expect(rules).toContainText('No Pokémon Centers')
   await expect(rules).toContainText('K.O. lasts 12 h')
   await expect(rules).toContainText('heal 10% an hour')
   await rules.getByRole('button', { name: "Let's go!" }).click()
 
-  // No Extreme save on this device yet: the title, playing the Extreme slot.
-  await expect(page).toHaveURL(/\/$/)
-  expect(await page.evaluate(() => localStorage.getItem('pokedice.slot'))).toBe('extreme')
-  await expect(page.getByRole('button', { name: 'Continue the main game' })).toBeVisible()
-  await page.getByRole('button', { name: 'NEW GAME' }).click()
-  await page.getByRole('button', { name: 'Skip intro' }).click()
-  await page.getByRole('radio', { name: 'Character 2' }).click()
-  await page.getByLabel('Your name').fill('Sam')
-  await page.getByRole('button', { name: 'NEXT ▸' }).click()
+  // Its page: Kanto open, Johto not yet.
+  await expect(page).toHaveURL(/\/extreme$/)
+  await expect(page.getByText('Race each region from its starter to its League. The clock never stops.')).toBeVisible()
+  await expect(page.getByText('Beat the Johto League in your main game to open this run.')).toBeVisible()
+  await page.getByRole('button', { name: 'Start' }).first().click()
+  // The lab, then the page switches to the Extreme save and goes into the run.
   await page.getByRole('button', { name: 'Poké Ball 3 of 3' }).click()
   await page.getByRole('button', { name: 'Pick Squirtle' }).click()
-  await page.getByRole('button', { name: /let's go/i }).click()
+  await page.getByRole('button', { name: /^let's go/i }).click()
+  await expect(page).toHaveURL(/\/area$/)
+  expect(await page.evaluate(() => localStorage.getItem('pokedice.slot'))).toBe('extreme')
 
-  await expect(page.getByText('Extreme mode · no Pokémon Centers')).toBeVisible()
-  // Written a moment later (saves are written after a short pause).
+  // The band under the top bar: the mode's name alone.
+  await expect(page.locator('.bg-crimson', { hasText: 'Extreme mode' }).first()).toBeVisible()
+  // Written a moment later (saves are written after a short pause), with Kanto's run on the clock.
   await expect.poll(async () => (await stored(page, 'pokedice.save.extreme'))?.mode).toBe('extreme')
+  const x = await stored(page, 'pokedice.save.extreme')
+  expect(x.extreme.runs.kanto.startedAt).toBeGreaterThan(0)
+  expect(x.box[0].dex).toBe(7)
   // The main save is as it was: its own starter, the rules seen.
   const m = await stored(page, 'pokedice.save')
   expect(m.box[0].dex).toBe(4)
@@ -108,7 +122,8 @@ test('the whole team resting: CONTINUE waits, says when, and points to the Team 
   // Its sheet: the rest on a 12-hour track.
   await page.getByRole('main').getByRole('button', { name: 'Team' }).click()
   await expect(page).toHaveURL(/\/team$/)
-  await page.getByRole('button', { name: /Squirtle/ }).first().click()
+  // The team's card (the banner over it lists the same Pokémon for screen readers, first): the last match.
+  await page.getByRole('button', { name: /Squirtle/ }).last().click()
   await expect(page.getByText('Resting after a K.O.')).toBeVisible()
   await expect(page.getByText(/Back at 1 HP in 9h 5\dm/)).toBeVisible()
 })
@@ -151,7 +166,9 @@ test('Delete my Extreme save: two pop-ups, and the main save stays', async ({ pa
   await mockSupabase(page)
   await seed(page, { main: main(), extreme: extreme(), slot: 'extreme' })
   await page.goto('/settings')
-  await page.getByRole('button', { name: 'Delete my Extreme save' }).click()
+  // The one Delete asks what goes (docs/38 U8b).
+  await page.getByRole('button', { name: 'Delete a save or my data' }).click()
+  await page.getByRole('dialog', { name: 'What do you want to delete?' }).getByRole('button', { name: 'Delete my Extreme save' }).click()
   await expect(page.getByRole('dialog', { name: 'Delete your Extreme save?' })).toContainText('Your main save stays as it is.')
   await page.getByRole('dialog').getByRole('button', { name: 'Continue' }).click()
   await page.getByRole('dialog', { name: 'Really delete everything?' }).getByRole('button', { name: 'Delete everything' }).click()
@@ -176,9 +193,10 @@ test('signed in, the Extreme save talks to its own world', async ({ page }) => {
   // The cloud copy read and written in the Extreme row.
   await expect.poll(() => calls.some((c) => c.startsWith('GET /rest/v1/saves') && c.includes('realm=eq.extreme'))).toBe(true)
   await expect.poll(() => bodies.some((b) => b.startsWith('POST /rest/v1/saves') && b.includes('"realm":"extreme"'))).toBe(true)
-  // Friends and the leaderboard asked about the Extreme world.
+  // Friends asked about the Extreme world; its board is the Extreme one (docs/48), never the main game's.
   await page.goto('/leaderboard')
-  await expect.poll(() => bodies.some((b) => b.includes('/rpc/leaderboard') && b.includes('"p_realm":"extreme"'))).toBe(true)
+  await expect.poll(() => bodies.some((b) => b.includes('/rpc/extreme_board'))).toBe(true)
+  expect(bodies.some((b) => b.includes('/rpc/leaderboard'))).toBe(false)
   await expect.poll(() => bodies.some((b) => b.includes('/rpc/friend_status') && b.includes('"p_realm":"extreme"'))).toBe(true)
   // Never the main row.
   expect(bodies.some((b) => b.startsWith('POST /rest/v1/saves') && !b.includes('"realm":"extreme"'))).toBe(false)

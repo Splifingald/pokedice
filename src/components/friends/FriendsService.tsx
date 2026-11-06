@@ -4,7 +4,7 @@
 // - an invite link that was opened (/f/<code>): signed in, the two players become friends at once and a pop-up says
 //   so; signed out, a pop-up asks to connect first, and the add happens on the way back.
 import { useEffect, useRef, useState } from 'react'
-import { dayCareTutorialDue, inviteRewardsOn, leaderboardTutorialDue } from '@/engine'
+import { friendshipOf, friendshipOn, inviteRewardsOn } from '@/engine'
 import { useT } from '@/i18n/react'
 import { clearInvite, readInvite } from '@/lib/friendInvite'
 import {
@@ -22,10 +22,14 @@ import { useFullscreen } from '@/lib/fullscreen'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 import { countInvite } from '@/store/invites'
+import { loadFriendship, putAwayWaiting, sendEggReports, useFriendship } from '@/store/friendship'
+import { useCloudSync } from '@/store/sync'
+import { useGiftMoment } from '@/store/gifts'
 import { useConnect } from '../AccountButton'
 import { PixelIcon } from '../icons'
 import { Modal } from '../Modal'
 import { PixelButton } from '../PixelButton'
+import { usePopupTurn } from '../popupTurn'
 import { useAddText } from './AddFriendModal'
 import { FriendPreview } from './FriendBits'
 import { FriendProfileSheet } from './FriendProfileSheet'
@@ -50,6 +54,25 @@ export function FriendsService() {
     if (isSupabaseConfigured && status === 'signed_in' && invitesOn) void loadInviteStatus()
   }, [status, userId, invitesOn])
 
+  // Friendship streaks (docs/60): the status once signed in and the switch on; an Egg made with a friend's Pokémon is
+  // told as soon as it's laid.
+  const friendshipOpen = useGame((s) => friendshipOn(s.data))
+  const eggsToTell = useGame((s) => (s.save ? (friendshipOf(s.save).eggs?.length ?? 0) : 0))
+  useEffect(() => {
+    if (isSupabaseConfigured && status === 'signed_in' && friendshipOpen) void loadFriendship(true)
+  }, [status, userId, friendshipOpen])
+  // A purchase a closed tab left behind: put away between fights, once the sign-in's sync has settled.
+  const synced = useCloudSync((s) => s.settled)
+  const waitingBuys = useFriendship((s) => s.status?.pending.length ?? 0)
+  const giftOpen = useGiftMoment((s) => !!s.opening)
+  useEffect(() => {
+    if (synced && idle && waitingBuys && !giftOpen) putAwayWaiting()
+  }, [synced, idle, waitingBuys, giftOpen])
+  useEffect(() => {
+    if (isSupabaseConfigured && status === 'signed_in' && friendshipOpen && eggsToTell)
+      void sendEggReports().then(() => loadFriendship(true))
+  }, [status, friendshipOpen, eggsToTell])
+
   // New friends, said once on this device, between fights.
   useEffect(() => {
     if (!idle || !userId || !unseen.length) return
@@ -67,12 +90,12 @@ function InviteHandler() {
   const { t } = useT()
   const addText = useAddText()
   const status = useGame((s) => s.auth.status)
-  // Between fights, after Prof. Oak's tutorials, and never over a full-screen moment (a battle, a hatching, the lab).
+  // Between fights, once no one-time pop-up is due (engine/popups.ts), and never over a full-screen moment (a battle, a
+  // hatching, the lab).
   const full = useFullscreen()
-  const calm = useGame(
-    (s) => s.run.phase === 'idle' && !!s.save && !dayCareTutorialDue(s.save, s.data) && !leaderboardTutorialDue(s.save, s.data),
-  )
-  const ready = calm && !full
+  const popup = usePopupTurn()
+  const calm = useGame((s) => s.run.phase === 'idle' && !!s.save)
+  const ready = calm && !full && !popup
   const [code, setCode] = useState(() => readInvite())
   const [who, setWho] = useState<Who | null>(null)
   const [added, setAdded] = useState<FriendNotice | null>(null)

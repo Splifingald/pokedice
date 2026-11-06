@@ -1,17 +1,24 @@
-import type { ReactNode } from 'react'
-import { instanceStats, xpToNext, type PokemonInstance } from '@/engine'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { instanceStats, xpToNext, type PokemonInstance, outfitOf } from '@/engine'
+import { feelSound } from '@/audio/feel'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
+import { haptic } from '@/lib/haptics'
+import { useMotion } from '@/lib/motion'
+import { xpFillFrames, type XpFrame } from '@/lib/xpFill'
 import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { DiceSet } from './DiceSet'
 import { KoTag } from './Extreme'
-import { HpBar } from './HpBar'
+import { HpBar, XpGauge } from './HpBar'
 import { PixelIcon } from './icons'
+import { EggSprite } from './EggSprite'
 import { ItemSprite } from './ItemSprite'
 import { MiniSprite } from './SpriteImg'
 import { TypeBadge } from './TypeBadge'
+import { InstTalentGem } from './Talent'
+import { outfitName } from './Outfit'
 
 /** A fossil being revived: a timer gauge in place of HP, full when it wakes up. */
 export function RevivalBar({ inst, className }: { inst: PokemonInstance; className?: string }) {
@@ -21,8 +28,13 @@ export function RevivalBar({ inst, className }: { inst: PokemonInstance; classNa
   const left = Math.max(0, (inst.revivesAt ?? 0) - now)
   const pct = 1 - left / total
   return (
-    <div className={cx('flex items-center gap-2', className)} role="img" aria-label={t('ui.mon.revivesIn', { time: countdown(left) })}>
-      <span className="text-sm leading-none">{t('ui.mon.reviving')}</span>
+    <div
+      className={cx('flex items-center gap-2', className)}
+      role="img"
+      aria-label={t(inst.egg ? 'ui.mon.hatchesIn' : 'ui.mon.revivesIn', { time: countdown(left) })}
+    >
+      {/* A gift Egg (docs/61 §5.3) hatches; a fossil revives. */}
+      <span className="text-sm leading-none">{t(inst.egg ? 'ui.mon.hatching' : 'ui.mon.reviving')}</span>
       <div className="h-2 flex-1 border border-edge bg-night" style={{ borderRadius: 1 }}>
         <div className="h-full bg-gold" style={{ width: `${pct * 100}%` }} />
       </div>
@@ -31,20 +43,98 @@ export function RevivalBar({ inst, className }: { inst: PokemonInstance; classNa
   )
 }
 
-export function XpBar({ inst, className }: { inst: PokemonInstance; className?: string }) {
+/** One step of the XP bar filling (docs/38 F5c), and the wait before it starts once the row is on screen. */
+const XP_STEP_MS = 50
+const XP_START_MS = 300
+// Two bars filling at once (a team's XP) share one run of ticks, never a click on top of a click.
+let lastXpTick = 0
+
+/**
+ * The result card's XP bar filling in steps from where it stood before the battle (`from`, the engine's; docs/38
+ * F5c): a rising tick per step; a level-up rolls over with two white frames (not when calm), its sound and a buzz, and
+ * calls `onRoll` with the new level. The frame to draw, or null once it is done (or when there's nothing to play:
+ * animations off, no `from`).
+ */
+export function useXpFill(
+  inst: PokemonInstance | undefined,
+  from: { level: number; xp: number } | null | undefined,
+  onRoll?: (level: number) => void,
+): XpFrame | null {
+  const cfg = useGame((s) => s.data.config)
+  const { level: motion, calm } = useMotion()
+  const roll = useRef(onRoll)
+  roll.current = onRoll
+  const lv = inst?.level
+  const xp = inst?.xp
+  const frames = useMemo(
+    () =>
+      from && lv != null && xp != null && motion !== 'off'
+        ? xpFillFrames(from, { level: lv, xp }, cfg, !calm)
+        : [],
+    // Played once: a later change to the Pokémon (the next K.O.) doesn't replay the old fill.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [from, motion === 'off', calm, cfg],
+  )
+  const [at, setAt] = useState(-1)
+  useEffect(() => {
+    if (!frames.length) return
+    setAt(-1)
+    let i = -1
+    let n = 0
+    let timer = 0
+    const step = () => {
+      i += 1
+      setAt(i)
+      const f = frames[i]
+      if (f?.roll) {
+        n = 0
+        feelSound('level.roll')
+        haptic('reward')
+        roll.current?.(f.level)
+      } else if (f && !f.white && performance.now() - lastXpTick > XP_STEP_MS * 0.8) {
+        lastXpTick = performance.now()
+        feelSound('xp.tick', n++)
+      }
+      if (i < frames.length) timer = window.setTimeout(step, XP_STEP_MS)
+    }
+    timer = window.setTimeout(step, XP_START_MS)
+    return () => window.clearTimeout(timer)
+  }, [frames])
+  if (!frames.length || at >= frames.length) return null
+  return at < 0 && from ? from : (frames[at] ?? null)
+}
+
+/**
+ * The XP bar. `shown` draws a step of `useXpFill` in place of the Pokémon's own level and XP; given (the result card's
+ * fill, null once it's done), the bar moves frame by frame instead of gliding.
+ */
+export function XpBar({
+  inst,
+  className,
+  shown,
+  numbers = true,
+}: {
+  inst: PokemonInstance
+  className?: string
+  shown?: XpFrame | null
+  /** The "12/30" after the bar (the result card shows it with More details only, docs/42). */
+  numbers?: boolean
+}) {
   const { t } = useT()
   const cfg = useGame((s) => s.data.config)
-  const need = xpToNext(inst.level, cfg)
-  const pct = inst.level >= cfg.maxLevel ? 1 : Math.min(1, inst.xp / need)
+  const level = shown?.level ?? inst.level
+  const xp = shown?.xp ?? inst.xp
+  const need = xpToNext(level, cfg)
+  const pct = level >= cfg.maxLevel ? 1 : Math.min(1, xp / need)
   return (
     <div className={cx('flex items-center gap-2', className)}>
       <span className="text-sm leading-none">{t('ui.mon.xp')}</span>
-      <div className="h-1.5 flex-1 border border-edge bg-night" style={{ borderRadius: 1 }}>
-        <div className="h-full bg-type-water" style={{ width: `${pct * 100}%`, transition: 'width 700ms ease-out' }} />
-      </div>
-      <span className="min-w-[4.5ch] text-right font-mono text-xs tabular-nums leading-none">
-        {inst.level >= cfg.maxLevel ? t('ui.mon.xpMax') : `${inst.xp}/${need}`}
-      </span>
+      <XpGauge pct={pct} white={!!shown?.white} animate={shown === undefined} className="flex-1" />
+      {numbers && (
+        <span className="min-w-[4.5ch] text-right font-mono text-xs tabular-nums leading-none">
+          {level >= cfg.maxLevel ? t('ui.mon.xpMax') : `${xp}/${need}`}
+        </span>
+      )}
     </div>
   )
 }
@@ -97,14 +187,23 @@ export function MonCard({
         <div className="flex items-start gap-2">
           {/* Party icons sit low in their box: pull it up so the creature lines up with the name. */}
           {reviving ? (
-            <ItemSprite item={fossil} size={32} className="-mt-1" />
+            inst.egg ? (
+              <EggSprite size={28} className="-mt-1 shrink-0" />
+            ) : (
+              <ItemSprite item={fossil} size={32} className="-mt-1" />
+            )
           ) : (
             <MiniSprite dex={inst.dex} size={40} className={cx('-mb-2 -ml-1 -mt-4 shrink-0', fainted && 'grayscale')} />
           )}
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="flex min-w-0 items-center gap-1">
-              <span className="truncate text-xl leading-none">{inst.nickname || species.name}</span>
+              <span className="truncate text-xl leading-none">{inst.egg ? t('ui.mon.egg') : inst.nickname || species.name}</span>
               {inst.shiny && <PixelIcon name="star" size={12} title={t('ui.mon.shiny')} className="shrink-0" />}
+              {/* Its outfit (docs/59): the menu icon is the plain one, so its hat beside the name says it. */}
+              {outfitOf(data, inst) && (
+                <PixelIcon name="santaHat" size={14} title={outfitName(inst.outfit!)} className="shrink-0" />
+              )}
+              <InstTalentGem inst={inst} />
             </span>
             <span className="flex flex-wrap items-center gap-1">
               <TypeBadge type={species.type1} size="sm" />

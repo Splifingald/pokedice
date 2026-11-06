@@ -1,5 +1,6 @@
 // Friend invite rewards (docs/15 §25), against the mocked Supabase: the gauge at the top of the Friends page and in Prof.
-// Oak's invite, a reward opened with the gifts' own opening (into the save), the rules once and from INFO, the reward's
+// Oak's invite, a reward opened with the gifts' own opening (into the save), the rules at the top of the Friends page
+// until GOT IT (never elsewhere) and from INFO, the reward's
 // pop-up between fights, an invite link counting for its owner, and the switch off.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
@@ -90,7 +91,7 @@ test('the Friends page: the gauge on top, a reward opened like a gift, then INFO
   })
   await page.goto('/friends')
 
-  const card = page.getByRole('region', { name: 'Invite rewards' })
+  const card = page.getByRole('region', { name: /^Invite rewards/ })
   await expect(card).toBeVisible()
   await expect(card).toContainText('3/4')
   await expect(card).toContainText('2 rewards are ready to open!')
@@ -104,8 +105,11 @@ test('the Friends page: the gauge on top, a reward opened like a gift, then INFO
   const cardTop = (await card.boundingBox())!.y
   const idTop = (await page.getByTestId('friend-code').boundingBox())!.y
   expect(cardTop).toBeLessThan(idTop)
-  // On the page, the rules pop-up has nothing to announce.
+  // No rules on the page, nor a pop-up (the user's call, 2026-11-01): they wait behind INFO, and the visit is enough
+  // for Home's notice.
+  await expect(page.getByRole('region', { name: 'How invite rewards works' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect.poll(async () => (await stored(page)).invites?.rulesSeen).toBe(true)
 
   await card.getByRole('button', { name: 'Open it' }).click()
   const moment = page.getByRole('dialog', { name: 'An invite reward' })
@@ -126,14 +130,16 @@ test('the Friends page: the gauge on top, a reward opened like a gift, then INFO
   await expect(card).toContainText('1 more friend for Master Ball')
   await expect(card.getByRole('button', { name: 'Open it' })).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Info: how invite rewards works' }).click()
-  const rules = page.getByRole('dialog', { name: 'Invite rewards' })
+  await page.getByRole('button', { name: 'Info: how the Friends page works' }).click()
+  const rules = page.getByRole('dialog', { name: 'Friends' }).getByRole('region', { name: 'Invite rewards' })
   await expect(rules).toContainText('Invite new players')
   await expect(rules).toContainText('1 → Rare Candy · 2 → ₽1,000 · 3 → Ditto Lv.10 ✦ Shiny · 4 → Master Ball')
-  await rules.getByRole('button', { name: 'OK' }).click()
+  await page.getByRole('dialog', { name: 'Friends' }).getByRole('button', { name: 'OK', exact: true }).click()
 })
 
-test('between fights: the rules once, then the reward’s pop-up, opened from Home', async ({ page }) => {
+test('between fights: never the rules (the Friends page has them), the reward’s pop-up, opened from Home', async ({
+  page,
+}) => {
   const status = { count: 1, pending: 0, claimed: [] as number[], latest: { name: 'Misty', avatar: 'green' } }
   await boot(page, makeSave(4), {
     invite_status: () => status,
@@ -143,9 +149,7 @@ test('between fights: the rules once, then the reward’s pop-up, opened from Ho
     },
   })
   await page.goto('/home')
-  const rules = page.getByRole('dialog', { name: 'Invite rewards' })
-  await expect(rules).toContainText('Now open')
-  await rules.getByRole('button', { name: 'Later' }).click()
+  await expect(page.getByRole('dialog', { name: 'Invite rewards' })).toHaveCount(0)
 
   const ready = page.getByRole('dialog', { name: 'Invite reward!' })
   await expect(ready).toContainText('Misty won their first badge! Your invite gauge moved up.')
@@ -156,11 +160,11 @@ test('between fights: the rules once, then the reward’s pop-up, opened from Ho
   await expect(moment.getByText('Rare Candy')).toBeVisible()
   await moment.getByRole('button', { name: 'Done' }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  // The save is written a moment later.
-  await expect.poll(async () => (await stored(page)).invites).toEqual({ done: [1], rulesSeen: true })
+  // The save is written a moment later; the rules still wait for the Friends page.
+  await expect.poll(async () => (await stored(page)).invites).toEqual({ done: [1] })
 })
 
-test('Later keeps the reward on the Friends page, with the menu’s dot', async ({ page }) => {
+test('Later keeps the reward on the Friends page, with the Social tab’s dot', async ({ page }) => {
   const save = { ...makeSave(4), invites: { done: [], rulesSeen: true } }
   await boot(page, save, { invite_status: { count: 1, pending: 0, claimed: [], latest: null } })
   await page.goto('/home')
@@ -168,20 +172,29 @@ test('Later keeps the reward on the Friends page, with the menu’s dot', async 
   await expect(ready).toContainText('A friend you invited won their first badge!')
   await ready.getByRole('button', { name: 'Later' }).click()
   await expect(ready).toHaveCount(0)
-  // The avatar's dot and the trainer menu's Friends row count it.
-  await page.getByRole('button', { name: 'Trainer menu, something new: 1' }).click()
-  await expect(page.getByRole('navigation').getByRole('button', { name: 'Friends' })).toContainText('1')
+  // The Social tab's dot counts it, and opens on Friends, whose strip tab counts it too (docs/43 §3).
+  await page.getByRole('link', { name: 'Social · 1 new' }).click()
+  await expect(page).toHaveURL(/\/friends$/)
+  await expect(page.getByRole('link', { name: 'Friends (1)' })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('region', { name: /^Invite rewards/ }).getByRole('button', { name: 'Open it' })).toBeVisible()
 })
 
-test('Prof. Oak’s invite shows the gauge', async ({ page }) => {
-  // Two badges in Kanto: Prof. Oak asks to invite a friend.
+test('Prof. Oak’s invite waits behind the Friends page’s INFO; not on Home', async ({ page }) => {
+  // No note on top of Friends any more (the user's call, 2026-11-01): the invite is a line of the page's INFO, the
+  // gauge on its own card.
   const save = { ...withBadges(makeSave(4), 2), invites: { done: [], rulesSeen: true } }
   await boot(page, save, { invite_status: { count: 0, pending: 1, claimed: [], latest: null } })
   await page.goto('/home')
-  const oak = page.getByRole('dialog', { name: 'Invite a friend' })
-  await expect(oak).toBeVisible()
-  await expect(oak.getByTestId('invite-gauge')).toBeVisible()
-  await expect(oak).toContainText('1 more friend for Rare Candy')
+  await expect(page.getByRole('region', { name: 'Invite a friend' })).toHaveCount(0)
+  await page.goto('/friends')
+  await expect(page.getByTestId('friend-code')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Invite a friend' })).toHaveCount(0)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('region', { name: /^Invite rewards/ })).toContainText('1 more friend for Rare Candy')
+  await page.getByRole('button', { name: 'Info: how the Friends page works' }).click()
+  await expect(page.getByRole('dialog', { name: 'Friends' })).toContainText(
+    'You like the game? Invite a friend to play with you!',
+  )
 })
 
 test('an invite link counts for its owner: the new friend hears the first badge matters', async ({
@@ -212,8 +225,9 @@ test('switched off: no gauge, no pop-up, nothing asked', async ({ page }) => {
   )
   await page.goto('/friends')
   await expect(page.getByTestId('friend-code')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Invite rewards' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Info: how invite rewards works' })).toHaveCount(0)
+  await expect(page.getByRole('region', { name: /^Invite rewards/ })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Info: how the Friends page works' }).click()
+  await expect(page.getByRole('dialog', { name: 'Friends' }).getByRole('region', { name: 'Invite rewards' })).toHaveCount(0)
   expect(calls.filter((c) => c.includes('invite_'))).toEqual([])
 })
 
@@ -228,7 +242,7 @@ for (const theme of ['light', 'dark'] as const) {
     }
     await boot(page, save, { invite_status: { count: 3, pending: 2, claimed: [1], latest: null } })
     await page.goto('/friends')
-    await expect(page.getByRole('region', { name: 'Invite rewards' })).toContainText(
+    await expect(page.getByRole('region', { name: /^Invite rewards/ })).toContainText(
       '2 rewards are ready to open!',
     )
     expect(

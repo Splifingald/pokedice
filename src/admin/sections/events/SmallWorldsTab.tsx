@@ -3,8 +3,8 @@
 // goes into the list only when nothing is wrong with it. Its region and its areas are rows of their own: this tab makes
 // the region, adds or copies areas into it and sets their opening dates; the areas' pools, trainers and pictures are
 // edited in Areas (and Trainers), like any region's.
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   POKE_TYPES,
   PREVIEW_HOURS,
@@ -28,7 +28,6 @@ import {
 import type { Row } from '@/config/mapping'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelButton } from '@/components/PixelButton'
-import { ART_GEOMETRY } from '@/fx/areaArtMap'
 import { LANGS } from '@/i18n/langs'
 import { money } from '@/lib/format'
 import { WorldSquareView } from '@/screens/events/world'
@@ -36,9 +35,8 @@ import { WorldPreviewSquareView } from '@/screens/events/worldPreview'
 import { useNow } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { addRows, newUuid, rowKey, updateRow, useAdmin, useAdminData } from '../../store'
-import { AccessSwitch, Box, Field, NumInput, PokemonPicker, TextInput, TypePicker, inputCls, n, s } from '../../widgets'
+import { AccessSwitch, Box, Field, NumInput, PicturePicker, PokemonPicker, TextInput, TypePicker, inputCls, n, s } from '../../widgets'
 import { useConfigRow } from '../ConfigSection'
-import { EVENT_BANNERS } from '../EventsSection'
 
 const STATE_CLS = { live: 'bg-good text-white', scheduled: 'bg-[#2f4f8f] text-white', ended: 'bg-shadow text-muted' }
 const HOUR = 3_600_000
@@ -144,6 +142,22 @@ export function SmallWorldsTab() {
   const list = useMemo(() => (raw?.list ?? []).map((w) => normaliseWorld(w)), [raw])
   const now = useNow(30_000)
   const [draft, setDraft] = useState<SmallWorld | null>(null)
+  // Opened on a world from the live events' calendar (?tab=worlds&edit=<id>): its editor, once the list has it.
+  const [params, setParams] = useSearchParams()
+  const editId = params.get('edit')
+  useEffect(() => {
+    const w = editId ? list.find((x) => x.id === editId) : null
+    if (!w) return
+    setDraft(w)
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p)
+        next.delete('edit')
+        return next
+      },
+      { replace: true },
+    )
+  }, [editId, list, setParams])
   const access = raw?.access ?? 'off'
   const previewAccess = raw?.previewAccess ?? 'off'
   const finishAccess = raw?.finishAccess ?? 'off'
@@ -307,7 +321,6 @@ function WorldEditor({
   onCancel: () => void
 }) {
   const patch = (p: Partial<SmallWorld>) => set({ ...draft, ...p })
-  const pictures = [...EVENT_BANNERS, ...Object.keys(ART_GEOMETRY).sort()]
   const span = Date.parse(draft.end) - Date.parse(draft.start)
   return (
     <Box
@@ -331,15 +344,7 @@ function WorldEditor({
             <input className={inputCls} maxLength={24} value={draft.title.en ?? ''} onChange={(e) => patch({ title: { ...draft.title, en: e.target.value } })} />
           </Field>
           <Field label="Picture" hint="Home's square, the pop-ups, the Mart.">
-            <select className={inputCls} value={draft.banner} onChange={(e) => patch({ banner: e.target.value })}>
-              <option value="">— pick one —</option>
-              {!pictures.includes(draft.banner) && draft.banner && <option value={draft.banner}>{draft.banner}</option>}
-              {pictures.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+            <PicturePicker value={draft.banner} placeholder="— pick one —" onChange={(banner) => patch({ banner })} />
           </Field>
           <Field label="Starts (UTC)" hint={`${yourTime(draft.start)} your time`}>
             <input

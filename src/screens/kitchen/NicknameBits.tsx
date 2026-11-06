@@ -38,7 +38,7 @@ export function NicknameBits() {
           <h3 className="m-0 min-w-0 text-title leading-none">
             <NicknameButton name={r.name} onClick={() => setOpen(r.inst)} />
           </h3>
-          <p className="mt-0.5 font-pixel-sm text-[15px] leading-tight text-muted">{r.sub}</p>
+          <p className="mt-0.5 font-pixel-sm text-[16px] leading-tight text-muted">{r.sub}</p>
         </div>
       ))}
       <div className="flex flex-wrap gap-2">

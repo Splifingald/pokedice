@@ -11,7 +11,7 @@ export function TypeBadge({ type, size = 'md', className }: { type: DieType; siz
     <span
       className={cx(
         'pixel-corners inline-flex items-center whitespace-nowrap font-pixel-sm uppercase leading-none tracking-[0.04em]',
-        size === 'sm' ? 'h-4 px-1 text-[13px]' : 'h-5 px-1.5 pb-px text-[15px]',
+        size === 'sm' ? 'h-4 px-1 text-[16px]' : 'h-5 px-1.5 pb-px text-[16px]',
         className,
       )}
       style={{ background: bg, color: fg, boxShadow: `inset 0 0 0 2px ${ring}` }}

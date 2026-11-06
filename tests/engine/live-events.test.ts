@@ -1,6 +1,8 @@
-// Live events (docs/20): scheduled by the admin, the same for everyone, one at a time. A Shiny Parade boosts wild shiny
-// odds where it runs, a Special Shop sells items for a while (some never sold, some limited per player), Cash Flow
-// multiplies every ₽ earned but selling. A player sees and gets it from the event's badge count.
+// Live events (docs/20): scheduled by the admin, the same for everyone, several at once if need be, once or coming back
+// (every year on a date, every week on a weekday, some weeks of the month). A Shiny Parade boosts wild shiny odds where
+// it runs, a Special Shop sells items for a while (some never sold, some limited per player), Cash Flow multiplies
+// every ₽ earned but selling. A player sees and gets it from the event's badge count.
+import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   applyRebattleKO,
@@ -13,9 +15,19 @@ import {
   earnedGold,
   emptyProgress,
   leagueArea,
+  LIVE_BANNERS,
   liveCovers,
+  liveDefaultBanner,
   liveEventAt,
-  liveFor,
+  liveById,
+  liveEventsAt,
+  livesFor,
+  liveNextRun,
+  livePopupNext,
+  liveRuns,
+  liveStartsBetween,
+  normaliseLiveEvent,
+  repeatsOn,
   liveLeft,
   liveOverlap,
   livePopupDue,
@@ -122,8 +134,8 @@ describe('when a live event runs', () => {
   it('shows (and works) from its badge count, every region’s badges counted', () => {
     const d = withLive(cash(2, { minBadges: 3 }))
     expect(badgesHeld(withBadges(2), d)).toBe(2)
-    expect(liveFor(withBadges(2), d, T0)).toBeNull()
-    expect(liveFor(withBadges(3), d, T0)?.type).toBe('cash')
+    expect(livesFor(withBadges(2), d, T0)).toEqual([])
+    expect(livesFor(withBadges(3), d, T0)[0]?.type).toBe('cash')
   })
 
   it('counts down: time left and the gauge’s share', () => {
@@ -184,7 +196,7 @@ describe('Cash Flow', () => {
     const champ = { ...s, areaProgress: { ...s.areaProgress, [league.id]: { ...emptyProgress(), cleared: true } } }
     const enc = rebattleEncounter(champ, data, 'kanto')
     if (enc?.kind !== 'gym') throw new Error('no rebattle fight')
-    const ko = { regionId: 'kanto', tier: 0, trainerId: enc.trainerId, index: 0, last: false, enemyLevel: enc.team[0]!.level, fighterUid: champ.team[0]! }
+    const ko = { regionId: 'kanto', tier: 0, trainerId: enc.trainerId, index: 0, last: true, enemyLevel: enc.team[0]!.level, fighterUid: champ.team[0]! }
     const plain = applyRebattleKO(champ, ko, data, createRng(1)).events.find((e) => e.kind === 'gold') as { amount: number }
     const more = applyRebattleKO(champ, ko, data, createRng(1), cash(1.5)).events.find((e) => e.kind === 'gold')
     expect(more).toEqual({ kind: 'gold', amount: Math.round(plain.amount * 1.5), bonus: Math.round(plain.amount * 1.5) - plain.amount })
@@ -306,20 +318,209 @@ describe('Special Shop', () => {
 })
 
 describe('the admin', () => {
-  it('refuses two live events at once, and an event that makes no sense', () => {
+  it('lets live events overlap, but not two Undergrounds; and refuses an event that makes no sense', () => {
     const a = cash(1.5, { id: 'a' })
     const b = ev({ id: 'b', start: iso(T0 + 71 * H), end: iso(T0 + 80 * H) })
-    const c = ev({ id: 'c', start: iso(T0 + 72 * H), end: iso(T0 + 80 * H) })
-    expect(liveOverlap([a], b)?.id).toBe('a')
-    expect(liveOverlap([a], c)).toBeNull()
-    expect(liveOverlap([a], a)).toBeNull()
-    expect(liveProblems([a], b, data)).toHaveLength(1)
-    expect(liveProblems([a], c, data)).toEqual([])
-    expect(liveProblems([], ev({ end: iso(T0 - H) }), data)[0]).toMatch(/ends before/)
-    expect(liveProblems([], shiny({ scope: 'areas', areaIds: [] }), data)).toEqual(['No area picked.'])
-    expect(liveProblems([], shiny({ scope: 'region', regionId: null }), data)).toEqual(['No region picked.'])
-    expect(liveProblems([], cash(1), data)).toHaveLength(1)
-    expect(liveProblems([], shop([]), data)).toEqual(['The shop has no item.'])
-    expect(liveProblems([], shop([{ key: 'nope', price: 1, limit: null, regions: 'all' }]), data)).toEqual(['Unknown item: nope.'])
+    expect(liveOverlap([a], b, T0)).toBeNull()
+    expect(liveProblems([a], b, data, T0)).toEqual([])
+    const ugA = ev({ id: 'ugA', type: 'underground' })
+    const ugB = ev({ id: 'ugB', type: 'underground', start: iso(T0 + 71 * H), end: iso(T0 + 80 * H) })
+    const ugC = ev({ id: 'ugC', type: 'underground', start: iso(T0 + 72 * H), end: iso(T0 + 80 * H) })
+    expect(liveOverlap([ugA], ugB, T0)?.id).toBe('ugA')
+    expect(liveOverlap([ugA], ugC, T0)).toBeNull()
+    expect(liveOverlap([ugA], ugA, T0)).toBeNull()
+    expect(liveProblems([ugA], ugB, data, T0)).toHaveLength(1)
+    // A weekly Underground on Mondays clashes with a one-off one on a Monday a few weeks later.
+    const weeklyUg = ev({ id: 'w', type: 'underground', repeat: { kind: 'weekly', weekday: 1, weeks: [], time: '10:00', hours: 4 } })
+    const mon = ev({ id: 'm', type: 'underground', start: '2026-11-23T12:00:00.000Z', end: '2026-11-23T13:00:00.000Z' })
+    expect(liveOverlap([weeklyUg], mon, T0)?.id).toBe('w@2026-11-23')
+    expect(liveProblems([], ev({ end: iso(T0 - H) }), data, T0)[0]).toMatch(/ends before/)
+    expect(liveProblems([], shiny({ scope: 'areas', areaIds: [] }), data, T0)).toEqual(['No area picked.'])
+    expect(liveProblems([], shiny({ scope: 'region', regionId: null }), data, T0)).toEqual(['No region picked.'])
+    expect(liveProblems([], cash(1), data, T0)).toHaveLength(1)
+    expect(liveProblems([], shop([]), data, T0)).toEqual(['The shop has no item.'])
+    expect(liveProblems([], shop([{ key: 'nope', price: 1, limit: null, regions: 'all' }]), data, T0)).toEqual(['Unknown item: nope.'])
+  })
+
+  it('checks a recurring event: its date exists, its time is one, it lasts no longer than till the next time', () => {
+    const yearly = (r: Partial<{ month: number; day: number; time: string; hours: number }>) =>
+      cash(1.5, { repeat: { kind: 'yearly', month: 10, day: 31, time: '18:00', hours: 72, ...r } })
+    const weekly = (hours: number) => cash(1.5, { repeat: { kind: 'weekly', weekday: 6, weeks: [], time: '18:00', hours } })
+    expect(liveProblems([], yearly({}), data, T0)).toEqual([])
+    // Its own start and end don't count: a recurring event takes them from its rule.
+    expect(liveProblems([], { ...yearly({}), end: iso(0) }, data, T0)).toEqual([])
+    expect(liveProblems([], yearly({ month: 2, day: 30 }), data, T0)).toEqual(['That date doesn’t exist.'])
+    expect(liveProblems([], yearly({ month: 2, day: 29 }), data, T0)).toEqual([])
+    expect(liveProblems([], yearly({ time: '25:00' }), data, T0)[0]).toMatch(/time/)
+    expect(liveProblems([], yearly({ hours: 745 }), data, T0)[0]).toMatch(/1 to 744/)
+    expect(liveProblems([], weekly(168), data, T0)).toEqual([])
+    expect(liveProblems([], weekly(169), data, T0)[0]).toMatch(/1 to 168/)
+  })
+})
+
+describe('recurring live events', () => {
+  const halloween = cash(1.5, { id: 'hw', repeat: { kind: 'yearly', month: 10, day: 31, time: '18:00', hours: 72 } })
+  // Saturdays, 1st and 3rd of the month, 20:00 → 02:00 (6 h, over midnight).
+  const sat = shiny({ scope: 'all', multiplier: 3 }, { id: 'sat', repeat: { kind: 'weekly', weekday: 6, weeks: [1, 3], time: '20:00', hours: 6 } })
+
+  it('runs every year on its date, at its time, for its hours, each run an event of its own', () => {
+    const runs = liveRuns(halloween, Date.parse('2026-01-01T00:00:00Z'), Date.parse('2029-01-01T00:00:00Z'))
+    expect(runs.map((r) => [r.id, r.start, r.end])).toEqual([
+      ['hw@2026-10-31', '2026-10-31T18:00:00.000Z', '2026-11-03T18:00:00.000Z'],
+      ['hw@2027-10-31', '2027-10-31T18:00:00.000Z', '2027-11-03T18:00:00.000Z'],
+      ['hw@2028-10-31', '2028-10-31T18:00:00.000Z', '2028-11-03T18:00:00.000Z'],
+    ])
+    expect(runs[0]!.ruleId).toBe('hw')
+    expect(runs[0]!.repeat).toBeNull()
+    const d = withLive(halloween)
+    expect(liveEventAt(d, Date.parse('2026-10-31T17:59:59Z'))).toBeNull()
+    expect(liveEventAt(d, Date.parse('2026-10-31T18:00:00Z'))?.id).toBe('hw@2026-10-31')
+    // Still on two days later: a run that started before the day asked for is found.
+    expect(liveEventAt(d, Date.parse('2026-11-02T12:00:00Z'))?.id).toBe('hw@2026-10-31')
+    expect(liveEventAt(d, Date.parse('2026-11-03T18:00:00Z'))).toBeNull()
+    expect(liveState(halloween, Date.parse('2026-11-04T00:00:00Z'))).toBe('scheduled')
+    expect(liveState(halloween, Date.parse('2026-11-01T00:00:00Z'))).toBe('live')
+  })
+
+  it('a 29 February comes in leap years only', () => {
+    const leap = cash(1.5, { id: 'lp', repeat: { kind: 'yearly', month: 2, day: 29, time: '00:00', hours: 24 } })
+    expect(liveNextRun(leap, Date.parse('2026-10-24T00:00:00Z'))?.id).toBe('lp@2028-02-29')
+  })
+
+  it('runs on its weekday, every week or on the weeks of the month picked, the last one included', () => {
+    const r = sat.repeat!
+    const day = (s: string) => Date.parse(`${s}T00:00:00Z`)
+    // November 2026: Saturdays 7, 14, 21, 28.
+    expect(['2026-11-07', '2026-11-14', '2026-11-21', '2026-11-28'].map((s) => repeatsOn(r, day(s)))).toEqual([true, false, true, false])
+    expect(repeatsOn(r, day('2026-11-08'))).toBe(false)
+    const every = { ...r, weeks: [] }
+    expect(['2026-11-07', '2026-11-14', '2026-11-21', '2026-11-28'].every((s) => repeatsOn(every, day(s)))).toBe(true)
+    const last = { ...r, weeks: ['last' as const] }
+    // October 2026 has five Saturdays: the 31st is the last; November's last is the 28th.
+    expect(['2026-10-24', '2026-10-31', '2026-11-21', '2026-11-28'].map((s) => repeatsOn(last, day(s)))).toEqual([false, true, false, true])
+    const d = withLive(sat)
+    expect(liveEventAt(d, Date.parse('2026-11-07T19:59:00Z'))).toBeNull()
+    expect(liveEventAt(d, Date.parse('2026-11-08T01:59:00Z'))?.id).toBe('sat@2026-11-07')
+    expect(liveEventAt(d, Date.parse('2026-11-08T02:00:00Z'))).toBeNull()
+    expect(liveEventAt(d, Date.parse('2026-11-14T21:00:00Z'))).toBeNull()
+  })
+
+  it('"End now" ends one run: the next comes back', () => {
+    const stopped = { ...sat, stops: { '2026-11-07': '2026-11-07T21:00:00.000Z' } }
+    const d = withLive(stopped)
+    expect(liveEventAt(d, Date.parse('2026-11-07T20:30:00Z'))?.end).toBe('2026-11-07T21:00:00.000Z')
+    expect(liveEventAt(d, Date.parse('2026-11-07T21:00:00Z'))).toBeNull()
+    expect(liveEventAt(d, Date.parse('2026-11-21T21:00:00Z'))?.id).toBe('sat@2026-11-21')
+    expect(liveById(d, 'sat@2026-11-07')?.end).toBe('2026-11-07T21:00:00.000Z')
+    // A date the rule doesn't run on is no run of it.
+    expect(liveById(d, 'sat@2026-11-14')).toBeNull()
+    expect(liveById(d, 'sat')).toBeNull()
+  })
+
+  it('each run has its own pop-up and its own shop limits', () => {
+    const weeklyShop = shop([{ key: 'master-ball', price: 5000, limit: 1, regions: 'all' }], {
+      id: 'ws',
+      repeat: { kind: 'weekly', weekday: 0, weeks: [], time: '00:00', hours: 24 },
+    })
+    const d = withLive(weeklyShop)
+    const first = liveEventAt(d, Date.parse('2026-11-01T12:00:00Z'))!
+    const s = markLiveSeen(buyLiveItem(rich(), d, first, 'master-ball', 1, 0, newId)!, first)
+    expect(liveShopRows(s, d, first)[0]!.left).toBe(0)
+    const next = liveEventAt(d, Date.parse('2026-11-08T12:00:00Z'))!
+    expect(next.id).toBe('ws@2026-11-08')
+    expect(livePopupDue(s, next)).toBe(true)
+    expect(liveShopRows(s, d, next)[0]!.left).toBe(1)
+  })
+
+  it('reads a rule saved with missing or odd settings', () => {
+    const e = normaliseLiveEvent({ id: 'x', type: 'cash', start: iso(T0), end: iso(T0 + H), repeat: { kind: 'weekly' } as LiveEvent['repeat'] })
+    expect(e.repeat).toEqual({ kind: 'weekly', weekday: 0, weeks: [], time: '00:00', hours: 24 })
+    expect(normaliseLiveEvent({ id: 'y', repeat: { kind: 'monthly' } as unknown as LiveEvent['repeat'] }).repeat).toBeNull()
+  })
+
+  it('announces each run as it comes', () => {
+    const d = withLive(sat, cash(1.5, { id: 'once', start: '2026-11-10T09:00:00.000Z', end: '2026-11-11T09:00:00.000Z' }))
+    expect(liveStartsBetween(d, Date.parse('2026-11-01T00:00:00Z'), Date.parse('2026-11-30T00:00:00Z')).map((e) => e.id)).toEqual([
+      'sat@2026-11-07',
+      'once',
+      'sat@2026-11-21',
+    ])
+  })
+})
+
+describe('several live events at once', () => {
+  const cashA = cash(1.5, { id: 'ca' })
+  const cashB = cash(2, { id: 'cb', start: iso(T0 + H), end: iso(T0 + 10 * H) })
+  const parade = shiny({ scope: 'all', multiplier: 5 }, { id: 'p' })
+  const kantoParade = shiny({ scope: 'region', regionId: 'kanto', multiplier: 3 }, { id: 'pk' })
+  const sale = shop([{ key: 'master-ball', price: 5000, limit: 1, regions: 'all' }], { id: 's1' })
+
+  it('all run, each its own, the earliest started first, each from its own badge count', () => {
+    const d = withLive(cashB, cashA, parade, sale, cash(3, { id: 'gated', minBadges: 5 }))
+    expect(liveEventsAt(d, T0 + 2 * H).map((e) => e.id)).toEqual(['ca', 'gated', 'p', 's1', 'cb'])
+    expect(livesFor(withBadges(0), d, T0 + 2 * H).map((e) => e.id)).toEqual(['ca', 'p', 's1', 'cb'])
+    expect(liveEventsAt(d, T0).map((e) => e.id)).not.toContain('cb')
+  })
+
+  it('two of a kind add up: Cash Flows add their bonuses, Shiny Parades their boosts where they cover', () => {
+    expect(cashMultiplier([cashA, cashB])).toBe(2.5)
+    expect(earnedGold(100, [cashA, cashB])).toEqual({ amount: 250, bonus: 150 })
+    expect(earnedGold(100, [cashA, parade])).toEqual({ amount: 150, bonus: 50 })
+    expect(cashReward({ kind: 'gold', amount: 10 }, [cashA, cashB])).toEqual({ kind: 'gold', amount: 25 })
+    expect(shinyBoost([parade, kantoParade], FOREST)).toBe(7)
+    const johto = data.areas.find((a) => regionOfArea(a) === 'johto')!
+    expect(shinyBoost([parade, kantoParade], johto)).toBe(5)
+    expect(liveCovers([cashA, kantoParade], FOREST)).toBe(true)
+    expect(liveCovers([cashA], FOREST)).toBe(false)
+    expect(shinyBoost([], FOREST)).toBe(1)
+  })
+
+  it('pop-ups come one after the other, the earliest first', () => {
+    const lives = [cashA, parade]
+    expect(livePopupNext(fresh(), lives)?.id).toBe('ca')
+    const s = markLiveSeen(fresh(), cashA)
+    expect(livePopupNext(s, lives)?.id).toBe('p')
+    expect(livePopupDue(markLiveSeen(s, parade), lives)).toBe(false)
+  })
+})
+
+describe('the default picture', () => {
+  const once = (start: string, end: string, type: LiveEvent['type'] = 'shiny') => ({ ...newLiveEvent('d', start, end), type })
+
+  it("is the occasion of the day halfway through a one-off event, else its type's own", () => {
+    expect(liveDefaultBanner(once('2026-10-29T18:00:00Z', '2026-11-01T18:00:00Z'))).toBe(LIVE_BANNERS.halloween)
+    // Starts before Halloween's window, but is mostly in it.
+    expect(liveDefaultBanner(once('2026-10-10T00:00:00Z', '2026-10-30T00:00:00Z', 'cash'))).toBe(LIVE_BANNERS.halloween)
+    expect(liveDefaultBanner(once('2026-12-10T00:00:00Z', '2026-12-13T00:00:00Z', 'shop'))).toBe(LIVE_BANNERS.winter)
+    expect(liveDefaultBanner(once('2026-12-30T00:00:00Z', '2027-01-03T00:00:00Z'))).toBe(LIVE_BANNERS.newyear)
+    expect(liveDefaultBanner(once('2027-04-10T00:00:00Z', '2027-04-13T00:00:00Z'))).toBe(LIVE_BANNERS.spring)
+    expect(liveDefaultBanner(once('2027-07-01T00:00:00Z', '2027-07-04T00:00:00Z'))).toBe(LIVE_BANNERS.summer)
+    expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z'))).toBe(LIVE_BANNERS.shiny)
+    expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z', 'cash'))).toBe(LIVE_BANNERS.cash)
+    expect(liveDefaultBanner(once('2027-02-01T00:00:00Z', '2027-02-04T00:00:00Z', 'shop'))).toBe(LIVE_BANNERS.shop)
+  })
+
+  it("takes a yearly event's date, and gives a weekly one its type's", () => {
+    const base = once('2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z')
+    expect(liveDefaultBanner({ ...base, repeat: { kind: 'yearly', month: 10, day: 31, time: '18:00', hours: 24 } })).toBe(
+      LIVE_BANNERS.halloween,
+    )
+    expect(liveDefaultBanner({ ...base, repeat: { kind: 'yearly', month: 2, day: 29, time: '00:00', hours: 24 } })).toBe(
+      LIVE_BANNERS.shiny,
+    )
+    expect(liveDefaultBanner({ ...base, repeat: { kind: 'weekly', weekday: 6, weeks: [], time: '20:00', hours: 6 } })).toBe(
+      LIVE_BANNERS.shiny,
+    )
+  })
+
+  it('keeps the Underground in its cave, and copes with unset dates', () => {
+    expect(liveDefaultBanner(once('2026-10-31T00:00:00Z', '2026-11-01T00:00:00Z', 'underground'))).toBe(
+      LIVE_BANNERS.underground,
+    )
+    expect(liveDefaultBanner(once('', '', 'cash'))).toBe(LIVE_BANNERS.cash)
+  })
+
+  it('has a file for every picture', () => {
+    for (const url of Object.values(LIVE_BANNERS)) expect(existsSync(`public${url}`), url).toBe(true)
   })
 })

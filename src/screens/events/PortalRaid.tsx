@@ -2,7 +2,7 @@
 // raid whose area is in portal mode. Its page and pop-ups wear the violet night (`.dw-scope`), the portal turning as
 // their banner, Giratina distorted on its card; the effects themselves are PortalFx's. Nothing here decides a rule.
 import { useEffect, useState, type ReactNode } from 'react'
-import { catchValueOf, portalModeOf, type RaidRules, type TodayRaid } from '@/engine'
+import { catchValueOf, portalModeOf, portalSkin, type RaidRules, type TodayRaid } from '@/engine'
 import { GlitchSprite, PortalScene, RaidStageArt } from '@/components/Portal'
 import { PixelIcon } from '@/components/icons'
 import { SpriteImg } from '@/components/SpriteImg'
@@ -13,15 +13,18 @@ import { distortionLevel } from '@/fx/timelines/portal'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 
-/** The raid's area is in portal mode (Distortion World's Giratina): its page, pop-ups and fight are themed. */
+/**
+ * The raid's area is in portal mode in Distortion World's look (its Giratina): its page, pop-ups and fight are themed.
+ * The Stairway of Plates' Arceus (docs/64 §4.5) is a raid of the usual look: its Plates are its show.
+ */
 export function usePortalRaid(areaId: string | null | undefined): boolean {
-  return useGame(
-    (s) =>
-      !!portalModeOf(
-        s.data.areas.find((a) => a.id === areaId),
-        s.data,
-      ),
-  )
+  return useGame((s) => {
+    const mode = portalModeOf(
+      s.data.areas.find((a) => a.id === areaId),
+      s.data,
+    )
+    return !!mode && portalSkin(mode) === 'distortion'
+  })
 }
 
 /**
@@ -105,12 +108,12 @@ export function PortalRaidCard({
         }}
       />
       {areaName && (
-        <span className="absolute left-2 top-2 bg-panel/90 px-1.5 pb-0.5 font-pixel-sm text-[15px] text-ink shadow-ring-line">
+        <span className="absolute left-2 top-2 bg-panel/90 px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line">
           {areaName}
         </span>
       )}
       <span
-        className="absolute left-2 top-[34px] flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 font-pixel-sm text-[15px] text-ink shadow-ring-line"
+        className="absolute left-2 top-[34px] flex items-center gap-1 bg-paper/95 px-1.5 pb-0.5 font-pixel-sm text-[16px] text-ink shadow-ring-line"
         title={statHint('catch')}
       >
         <PixelIcon name="ball" size={14} />
@@ -127,7 +130,7 @@ export function PortalRaidCard({
         <b className="text-[28px] font-normal">
           {raid.shiny ? t('ui.events.raid.shinyName', { name }) : name}
         </b>
-        <small className="font-pixel-sm text-[15px] text-[#ffc94a]">
+        <small className="font-pixel-sm text-[16px] text-[#ffc94a]">
           {t('ui.events.raid.sub', { level: rules.level, bars: rules.bars })}
         </small>
       </span>

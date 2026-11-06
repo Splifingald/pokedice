@@ -58,7 +58,7 @@ export function PushBits() {
       <div className="grid gap-3 lg:grid-cols-2">
         {panels.map((p, i) => (
           <div key={p.label} className="grid gap-1">
-            <span className="font-pixel-sm text-[13px] text-muted">{p.label}</span>
+            <span className="font-pixel-sm text-[16px] text-muted">{p.label}</span>
             <PushSettingsView
               support={p.support}
               push={p.push}

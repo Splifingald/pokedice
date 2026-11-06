@@ -2,8 +2,8 @@
 import {
   COMBO_KEYS,
   COMBO_MIN_DICE,
-  GENERAL_IDS,
   generalOn,
+  generalShown,
   inWorldRegion,
   nextGeneralCost,
   instanceStats,
@@ -46,9 +46,25 @@ export function affordableUpgrades(save: SaveData, data: GameData): number {
   }
   // The General tab's (docs/25), while the admin has it on.
   if (generalOn(data) && !inWorldRegion(save, data))
-    for (const id of GENERAL_IDS) {
+    for (const id of generalShown(data)) {
       const cost = nextGeneralCost(save, data, id)
       if (cost != null && cost <= save.gold) n++
     }
   return n
+}
+
+/**
+ * The best buy on a list of upgrades (docs/15 §13): the cheapest one open and within your gold — the quickest step up —
+ * the first listed on a tie (dice come by how many of your Pokémon throw them). Its button is gold, the others navy.
+ * Null when nothing there is affordable.
+ */
+export function bestBuy(
+  ups: readonly { id: string; cost: number | null; locked: string | null }[],
+  gold: number,
+): string | null {
+  let best: { id: string; cost: number } | null = null
+  for (const u of ups)
+    if (!u.locked && u.cost != null && u.cost <= gold && (!best || u.cost < best.cost))
+      best = { id: u.id, cost: u.cost }
+  return best?.id ?? null
 }

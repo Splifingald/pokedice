@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 import { H, Player, setCalm, W, type Hud, type Timeline } from '@/fx/timeline'
+import type { LiveSprite } from '@/fx/sprites'
 import { useMotion } from '@/lib/motion'
 import { cx } from '@/theme/util'
 
@@ -36,9 +37,11 @@ export const StageCanvas = forwardRef<
     /** Art pixels, when the timeline draws on a stage of its own size (a full-screen scene); else 240×160 at 3:2. */
     size?: { w: number; h: number }
     className?: string
+    /** The page's sprites it moves instead of drawing them still (a fight's move: they stay animated). */
+    live?: Map<string, LiveSprite>
   }
 >(function StageCanvas(
-  { timeline, hud, ready, autoPlay = true, instant, onEnd, onTick, label, className, size },
+  { timeline, hud, ready, autoPlay = true, instant, onEnd, onTick, label, className, size, live },
   ref,
 ) {
   const cv = useRef<HTMLCanvasElement>(null)
@@ -59,8 +62,8 @@ export const StageCanvas = forwardRef<
   useEffect(() => {
     if (!cv.current) return
     // The hud passed to the player forwards to whatever the latest render gave us.
-    const live: Hud = new Proxy({} as Hud, { get: (_, k: keyof Hud) => hudRef.current[k] })
-    const p = new Player<unknown>(cv.current, live)
+    const forward: Hud = new Proxy({} as Hud, { get: (_, k: keyof Hud) => hudRef.current[k] })
+    const p = new Player<unknown>(cv.current, forward)
     p.onEnd = () => endRef.current?.()
     p.onTick = (t) => tickRef.current?.(t)
     player.current = p
@@ -69,6 +72,10 @@ export const StageCanvas = forwardRef<
       player.current = null
     }
   }, [])
+  // After the player is made (effects run in order): the sprites it moves, read at each frame.
+  useEffect(() => {
+    if (player.current) player.current.live = live ?? null
+  })
 
   useEffect(() => {
     const p = player.current

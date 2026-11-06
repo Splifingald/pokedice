@@ -27,7 +27,10 @@ async function recordCries(page: Page) {
   return asked
 }
 
-/** Charmander's sheet, from the Pokédex. `nav`: through the side nav, not a reload (which would reset the save). */
+/**
+ * Charmander's entry, from the Pokédex: on this PC-sized page it stands docked beside the grid (docs/43 §5.6), a
+ * region named by its title. `nav`: through the side nav, not a reload (which would reset the save).
+ */
 async function openCharmander(page: Page, nav = false) {
   if (nav) await page.getByRole('link', { name: 'Pokédex' }).click()
   else await page.goto('/pokedex')
@@ -35,7 +38,7 @@ async function openCharmander(page: Page, nav = false) {
     .getByRole('button', { name: /Charmander/ })
     .first()
     .click()
-  const sheet = page.getByRole('dialog', { name: /Charmander/ })
+  const sheet = page.getByRole('region', { name: /Charmander/ })
   await expect(sheet).toBeVisible()
   return sheet
 }

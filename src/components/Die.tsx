@@ -1,44 +1,31 @@
+import { useContext, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { motion } from 'framer-motion'
 import type { DieType, Face } from '@/engine/types'
+import { numberPx, pipLayout, PIPS } from '@/fx/dice/pips'
+import { MotionCap } from '@/lib/motion'
 import { usePace } from '@/lib/pace'
+import { useGame } from '@/store/game'
 import { PALETTE, STATUS_COLORS } from '@/theme/colors'
 import { cx, hexToRgb, typeColor } from '@/theme/util'
 import { PixelIcon, STATUS_ICON } from './icons'
+import { useDieThrow } from './useDieThrow'
 import { t } from '@/i18n'
 import { statusName, typeName } from '@/lib/format'
 
-/**
- * Which of the nine pip cells (0–8, row by row) each value lights: a die's own 1 to 6. Anything else (0, 7, 8, a
- * negative face) has no pips and shows its number, so it reads at a glance as out of the ordinary.
- */
-const PIPS: Record<number, number[]> = {
-  1: [4],
-  2: [0, 8],
-  3: [0, 4, 8],
-  4: [0, 2, 6, 8],
-  5: [0, 2, 4, 6, 8],
-  6: [0, 2, 3, 5, 6, 8],
-}
+// The pips live with the thrown cube's face art (fx/dice/pips.ts), so both draw the same face.
+export { pipLayout }
 
 /** Under this size a die drops its 3D lip for a thinner one. */
 const MINI = 40
-
-/**
- * Pip geometry on whole pixels: one even pip size per die and three fixed columns and rows, so every dot on a die is
- * the same size whatever the die's size (a fractional pip renders as a blur or a lopsided dot).
- */
-export function pipLayout(size: number) {
-  const pip = Math.max(2, Math.round((size * 0.15) / 2) * 2)
-  const margin = Math.round(size * 0.2)
-  const at = [margin, Math.round((size - pip) / 2), size - margin - pip]
-  return { pip, at }
-}
 
 /** Ink pips on light dice, white on dark ones (perceived brightness, as the lab draws them). */
 const pipColor = (fill: string) => {
   const [r, g, b] = hexToRgb(fill)
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? PALETTE.ink : '#ffffff'
 }
+
+/** steps(2, start): half way at once, all the way at the end. */
+const twoSteps = (t: number) => (t <= 0 ? 0 : t < 0.5 ? 0.5 : 1)
 
 const statusColor = (face: Face | null | undefined): string | null =>
   face?.kind === 'status' ? (STATUS_COLORS[face.status as keyof typeof STATUS_COLORS] ?? PALETTE.gold) : null
@@ -50,7 +37,7 @@ function FaceArt({ face, size, ink }: { face: Face; size: number; ink: string })
     return (
       <span
         className="absolute inset-0 flex items-center justify-center font-pixel leading-none"
-        style={{ fontSize: Math.round(size * 0.62), color: ink }}
+        style={{ fontSize: numberPx(size), color: ink }}
       >
         {face.value}
       </span>
@@ -70,14 +57,78 @@ function FaceArt({ face, size, ink }: { face: Face; size: number; ink: string })
   )
 }
 
+/** Ink and gold as the dice draw them: art, the same in both themes. */
+const INK = PALETTE.ink
+const GOLD = PALETTE.gold
+
+/**
+ * A combo die's gold corner brackets (A7a, docs/38): its corners as well as its ring say so, for players who can't tell
+ * the gold ring from a pick's red one. Drawn over the face's corners, clear of the pips, so a tray never gets wider.
+ */
+function Brackets({ size }: { size: number }) {
+  const arm = Math.max(8, Math.round((size * 0.32) / 2) * 2)
+  // Gold over the corner, an ink line inside it so it reads on a gold or yellow die too.
+  const corner = (at: CSSProperties, x: 1 | -1, y: 1 | -1) => (
+    <i
+      className="absolute block"
+      style={{
+        ...at,
+        width: arm,
+        height: arm,
+        borderStyle: 'solid',
+        borderColor: GOLD,
+        borderWidth: `${y > 0 ? 4 : 0}px ${x < 0 ? 4 : 0}px ${y < 0 ? 4 : 0}px ${x > 0 ? 4 : 0}px`,
+        boxShadow: `inset ${2 * x}px ${2 * y}px 0 0 ${INK}`,
+      }}
+    />
+  )
+  return (
+    <span className="pointer-events-none absolute inset-0" aria-hidden>
+      {corner({ left: 0, top: 0 }, 1, 1)}
+      {corner({ right: 0, top: 0 }, -1, 1)}
+      {corner({ left: 0, bottom: 0 }, 1, -1)}
+      {corner({ right: 0, bottom: 0 }, -1, -1)}
+    </span>
+  )
+}
+
+/** A picked die's ↻ tag (A7a): it will be thrown again, said by a shape as well as the red ring. */
+function RerollTag({ size }: { size: number }) {
+  const tag = Math.max(16, Math.round((size * 0.34) / 2) * 2)
+  return (
+    <span
+      className="pixel-corners absolute flex items-center justify-center"
+      style={{
+        left: -tag / 3,
+        top: -tag / 3,
+        width: tag,
+        height: tag,
+        background: '#ffffff',
+        boxShadow: `inset 0 0 0 2px ${INK}`,
+      }}
+      aria-hidden
+    >
+      <PixelIcon name="reroll" size={tag - 4} />
+    </span>
+  )
+}
+
 export interface DieProps {
   type: DieType
   face?: Face | null
   size?: number
-  /** Picked to be thrown again: lifted, with a red outline. */
+  /** Picked to be thrown again: lifted, with a red outline and a ↻ tag. */
   selected?: boolean
-  /** One of the dice that make the combo: a gold ring. */
+  /** One of the dice that make the combo: a gold ring and gold corner brackets. */
   combo?: boolean
+  /** How big the combo is (1–4), each tier its own ring (docs/38 F2b). */
+  tier?: 0 | 1 | 2 | 3 | 4
+  /** The last die of a throw to land (F8b): a two-frame squash. */
+  squash?: boolean
+  /** A picked die before the last reroll (F9a): a 1 px jitter. */
+  jitter?: boolean
+  /** Called once the die is down: its tumble or its throw over (at once with nothing to play). */
+  onLand?: () => void
   locked?: boolean
   /** Change this to replay the tumble-and-settle animation. */
   rollKey?: string | number
@@ -94,9 +145,31 @@ export interface DieProps {
 }
 
 /** A die in its type colour: sharp corners, an ink edge, pips on whole pixels. */
-export function Die({ type, face, size = 56, selected, combo, locked, rollKey, delay = 0, color, onClick, asButton, label, className }: DieProps) {
+export function Die({
+  type,
+  face,
+  size = 56,
+  selected,
+  combo,
+  tier = 0,
+  squash,
+  jitter,
+  onLand,
+  locked,
+  rollKey,
+  delay = 0,
+  color,
+  onClick,
+  asButton,
+  label,
+  className,
+}: DieProps) {
   const fill = typeColor(type, color)
   const pace = usePace()
+  // Nothing animates (reduced motion, or a screen capped at off): down at once. Read cheaply: dice come by the dozen.
+  const stillAll = useGame((s) => s.settings.reducedMotion)
+  const cap = useContext(MotionCap)
+  const off = stillAll || cap === 'off'
   const ink = pipColor(fill)
   const interactive = !!onClick && !locked
   const special = statusColor(face)
@@ -112,18 +185,54 @@ export function Die({ type, face, size = 56, selected, combo, locked, rollKey, d
         })
       : t('ui.die.name', { type: typeName(type) }))
   const tag = Math.max(14, Math.round(size * 0.3))
+  // A recorded throw (docs/37): the face hides while a canvas throws the die onto it.
+  const bodyRef = useRef<HTMLSpanElement>(null)
+  const { active: thrown, flying } = useDieThrow({
+    rollKey,
+    body: bodyRef,
+    type,
+    face,
+    size,
+    fill,
+    pip: ink,
+    locked: !!locked,
+    delay,
+    onLand,
+  })
+  // The tumble (no throw): down once its 0.6 s are over, or at once when nothing animates.
+  const landRef = useRef(onLand)
+  landRef.current = onLand
+  const [downKey, setDownKey] = useState<string | number>()
+  useEffect(() => {
+    if (rollKey === undefined || thrown) return
+    const timer = setTimeout(
+      () => {
+        setDownKey(rollKey)
+        landRef.current?.()
+      },
+      off ? 0 : (delay + 0.6 * pace) * 1000,
+    )
+    return () => clearTimeout(timer)
+    // Once per throw, as the tumble itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rollKey, thrown])
+  const down = rollKey === undefined || thrown || downKey === rollKey
+  const ring = combo && !selected
   const body = (
     <span
-      className={cx(size < MINI ? 'die-mini' : 'die', 'relative block')}
+      ref={bodyRef}
+      className={cx(size < MINI ? 'die-mini' : 'die', 'relative block', squash && 'die-squash', jitter && 'die-jitter')}
       style={{ width: size, height: size, ['--c' as string]: fill, opacity: locked ? 0.8 : 1 }}
     >
       {face ? (
         <FaceArt face={face} size={size} ink={ink} />
       ) : (
-        <span className="absolute inset-0 flex items-center justify-center font-pixel leading-none text-muted" style={{ fontSize: size * 0.5 }} aria-hidden>
+        <span className="absolute inset-0 flex items-center justify-center font-pixel leading-none" style={{ fontSize: size * 0.5, color: ink }} aria-hidden>
           ?
         </span>
       )}
+      {ring && size >= 32 && <Brackets size={size} />}
+      {selected && <RerollTag size={size} />}
       {special && face?.kind === 'status' && size >= 24 && (
         <span
           className="absolute flex items-center justify-center rounded-full"
@@ -135,15 +244,23 @@ export function Die({ type, face, size = 56, selected, combo, locked, rollKey, d
       )}
     </span>
   )
-  const wrap = cx('die-wrap', special && 'st', combo && !selected && 'combo', selected && 'sel')
+  const wrap = cx('die-wrap', special && 'st', ring && 'combo', ring && tier > 1 && `t${tier}`, selected && 'sel')
   const motionProps = {
     className: cx(wrap, 'relative select-none', interactive && 'cursor-pointer', className),
-    style: { ['--stc' as string]: special ?? undefined, transformStyle: 'preserve-3d' as const },
-    initial: rollKey !== undefined ? { rotateX: 540, rotateZ: 200, y: -size * 1.2, scale: 0.6, opacity: 0 } : (false as const),
-    animate: { rotateX: 0, rotateZ: 0, y: selected ? -6 : combo ? -5 : 0, scale: 1, opacity: 1 },
+    // Flat, never preserve-3d: the tumble never needed it (the old drop-shadow filters flattened it all along), and
+    // live it left phones not drawing a die whose throw had just landed until it was tapped (Discord, 2026-10-25).
+    style: { ['--stc' as string]: special ?? undefined },
+    initial:
+      rollKey !== undefined && !thrown ? { rotateX: 540, rotateZ: 200, y: -size * 1.2, scale: 0.6, opacity: 0 } : (false as const),
+    // A thrown die lands flat; a pick or a combo lifts it once it's down.
+    animate: { rotateX: 0, rotateZ: 0, y: flying ? 0 : selected ? -6 : combo ? -5 : 0, scale: 1, opacity: 1 },
     transition: {
       default: { duration: 0.6 * pace, delay, ease: [0.2, 0.9, 0.3, 1.2] },
-      y: { duration: 0.12 * pace, ease: 'linear' },
+      // Once the die is down, a pick lifts in two steps over 60 ms, like a button press (F7b); before, a 120 ms glide
+      // (the tumble's own drop, untouched).
+      y: down ? { duration: 0.06 * pace, ease: twoSteps } : { duration: 0.12 * pace, ease: 'linear' },
+      // The press under a finger too, once the die is down (else it rides the tumble's 0.6 s).
+      ...(down && { scale: { duration: 0.06 * pace, ease: twoSteps } }),
     },
   }
 

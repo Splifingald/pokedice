@@ -6,12 +6,27 @@ import { itemOn } from './items'
 import { createInstance, instanceMaxHp } from './progression'
 import type { Rng } from './rng'
 import { getInstance, progressOf, unlockedHiddenAreas, type RunEvent } from './run'
+import { familyTalent, familyUnlocked, talentsOn, unlockFamily } from './talents'
 import type { GameData, ItemDef, PokemonInstance, SaveData } from './types'
+import {
+  addUnownLetters,
+  isUnownLetter,
+  payUnownDex,
+  UNOWN_DEX,
+  UNOWN_LETTERS,
+  unownCatchOpen,
+  unownDexOf,
+  unownDexOpen,
+} from './unownDex'
 import { worldOfArea } from './worldList'
 
 export const CATCH_DIE = 6
 
-export type CatchTarget = { mode: 'new' } | { mode: 'replace'; uid: string; level: number }
+/**
+ * `learn` (docs/51): a weaker copy carrying its family's hidden talent, still locked here. Caught, its talent passes to
+ * the family and the Pokémon is let go: `uid` is the copy the player keeps.
+ */
+export type CatchTarget = { mode: 'new' } | { mode: 'replace'; uid: string; level: number } | { mode: 'learn'; uid: string }
 
 /**
  * Can this K.O.'d Pokémon be caught? A species not in the Pokédex yet, or — wild ones only — a stronger copy of one you
@@ -31,6 +46,26 @@ export function catchTarget(
   data: GameData,
   shiny = false,
   areaId: string = save.currentAreaId,
+  /** It carries its family's hidden talent (docs/51). */
+  talent = false,
+): CatchTarget | null {
+  const target = ordinaryTarget(save, dex, level, kind, data, shiny, areaId)
+  if (target || !talent || !talentsOn(data) || familyUnlocked(save, data, dex)) return target
+  // A talent still locked here is worth a catch whatever its level: it passes to the family, the Pokémon is let go.
+  const own =
+    save.box.filter((p) => p.dex === dex && !p.shiny && !p.outfit).sort((a, b) => b.level - a.level)[0] ??
+    save.box.find((p) => p.dex === dex)
+  return own ? { mode: 'learn', uid: own.id } : null
+}
+
+function ordinaryTarget(
+  save: SaveData,
+  dex: number,
+  level: number,
+  kind: 'wild' | 'boss',
+  data: GameData,
+  shiny: boolean,
+  areaId: string,
 ): CatchTarget | null {
   if (!data.species[dex]) return null
   if (!save.pokedex.includes(dex)) return { mode: 'new' }
@@ -39,11 +74,15 @@ export function catchTarget(
   if (kind !== 'wild') return null
   // A shiny never overwrites a copy you own, whatever its level: it always joins as its own Pokémon.
   if (shiny) return { mode: 'new' }
-  const plain = save.box.filter((p) => p.dex === dex && !p.shiny)
+  // A shiny or an outfit copy (docs/59) is its own Pokémon: a wild catch never overwrites it.
+  const plain = save.box.filter((p) => p.dex === dex && !p.shiny && !p.outfit)
   // Only shiny copies (or none here at all): the plain one is a Pokémon you don't have, so it joins as its own.
   if (!plain.length) return { mode: 'new' }
   const weakest = plain.sort((a, b) => a.level - b.level)[0]!
   if (weakest.level < level) return { mode: 'replace', uid: weakest.id, level: weakest.level }
+  // A letter missing from the Unown Pokédex (docs/41): every Unown caught is one, so a weaker one is still worth it. It
+  // joins as its own, the weaker copy is let go, and its letter stays on the page.
+  if (dex === UNOWN_DEX && unownCatchOpen(save, data)) return { mode: 'new' }
   return null
 }
 
@@ -120,6 +159,40 @@ export function rollBait(roll: CatchRoll, faces: readonly number[], rng: Rng): C
   return { ...roll, bait, total, caught: total >= roll.need }
 }
 
+// ---------------------------------------------------------------- the wobbles
+
+/** A ball's wobbles before the result: a throw's, and the Bait's last ones from the ground. */
+export const CATCH_WOBBLES = 3
+export const BAIT_WOBBLES = 2
+
+/**
+ * How many times the ball wobbles before the result, as in the main games: a catch every time, a miss fewer the
+ * further it fell short — all of them one short, none from `max + 1` short. A miss used to stop one short of a catch,
+ * so the last wobble gave the result away before it came.
+ */
+export function catchWobbles(
+  roll: Pick<CatchRoll, 'total' | 'need' | 'caught'>,
+  max = CATCH_WOBBLES,
+): number {
+  if (roll.caught) return max
+  return Math.max(0, Math.min(max, max + 1 - (roll.need - roll.total)))
+}
+
+/**
+ * The wobbles of each part of a throw (docs/25): `throw`, the ball's own, measured on the throw alone (before any
+ * Bait, which only follows a miss); `bait`, the last ones from the ground once a Bait was thrown (0 without one).
+ */
+export function catchShakes(roll: Pick<CatchRoll, 'total' | 'need' | 'caught' | 'bait'>): {
+  throw: number
+  bait: number
+} {
+  if (roll.bait == null) return { throw: catchWobbles(roll), bait: 0 }
+  return {
+    throw: catchWobbles({ total: roll.total - roll.bait, need: roll.need, caught: false }),
+    bait: catchWobbles(roll, BAIT_WOBBLES),
+  }
+}
+
 export interface CatchResult {
   save: SaveData
   events: RunEvent[]
@@ -128,25 +201,47 @@ export interface CatchResult {
   needsTeamChoice: boolean
 }
 
-/** Keep the catch: a new Pokémon joins the team (or waits in the Box); a stronger copy replaces the weaker one in place. */
+/**
+ * Keep the catch: a new Pokémon joins the team (or waits in the Box); a stronger copy replaces the weaker one in place.
+ * An Unown's letter (`unownLetterFor`, docs/41) goes on the region's Unown Pokédex, whose last letter pays its prize.
+ */
 export function applyCatch(
   save: SaveData,
-  caught: { dex: number; level: number; shiny?: boolean },
+  caught: { dex: number; level: number; shiny?: boolean; letter?: string; talent?: boolean },
   target: CatchTarget,
   data: GameData,
   now: number,
   newId: () => string,
 ): CatchResult {
+  // Extreme mode (docs/48): no Pokémon is ever shiny there, however it was met.
+  if (save.mode === 'extreme' && caught.shiny) caught = { ...caught, shiny: false }
   const hiddenBefore = new Set(unlockedHiddenAreas(save, data))
   const events: RunEvent[] = []
   let next: SaveData
   let caughtId: string
   let needsTeamChoice = false
+  const talent = !!caught.talent && talentsOn(data)
+  // A weaker copy caught for its talent (docs/51): the family learns it, the Pokémon is let go.
+  if (target.mode === 'learn') {
+    const kept = getInstance(save, target.uid)
+    if (!kept) return { save, events, caughtId: target.uid, needsTeamChoice: false }
+    const learnt = talent ? unlockFamily(save, data, caught.dex) : save
+    if (learnt !== save) events.push({ kind: 'talent', uid: kept.id, dex: kept.dex, talent: familyTalent(data, caught.dex), how: 'passed' })
+    return { save: learnt, events, caughtId: kept.id, needsTeamChoice: false }
+  }
   const old = target.mode === 'replace' ? getInstance(save, target.uid) : undefined
+  const letter = caught.dex === UNOWN_DEX && isUnownLetter(caught.letter) ? caught.letter : null
   if (old) {
-    // The stronger copy is the one just caught, colours included.
-    const { shiny: _oldShiny, ...rest } = old
-    const upgraded: PokemonInstance = { ...rest, level: caught.level, xp: 0, caughtAt: now, ...(caught.shiny && { shiny: true }) }
+    // The stronger copy is the one just caught, colours (and letter) included.
+    const { shiny: _oldShiny, letter: _oldLetter, ...rest } = old
+    const upgraded: PokemonInstance = {
+      ...rest,
+      level: caught.level,
+      xp: 0,
+      caughtAt: now,
+      ...(caught.shiny && { shiny: true }),
+      ...(letter && { letter }),
+    }
     upgraded.currentHp = instanceMaxHp(upgraded, data)
     next = { ...save, box: save.box.map((p) => (p.id === old.id ? upgraded : p)) }
     caughtId = old.id
@@ -154,6 +249,7 @@ export function applyCatch(
   } else {
     const inst = createInstance(caught.dex, caught.level, data, newId(), now)
     if (caught.shiny) inst.shiny = true
+    if (letter) inst.letter = letter
     const joined = save.team.length < data.config.maxTeamSize
     next = {
       ...save,
@@ -164,6 +260,27 @@ export function applyCatch(
     caughtId = inst.id
     needsTeamChoice = !joined
     events.push({ kind: 'caught', uid: inst.id, dex: inst.dex, level: inst.level, joinedTeam: joined, isNew: !save.pokedex.includes(caught.dex) })
+  }
+  // Noted here, whatever the switch says: the Box keeps one Unown, so a weaker one is let go once it settles.
+  if (letter) {
+    const isNew = !unownDexOf(next).includes(letter)
+    next = addUnownLetters(next, [letter])
+    const prize = payUnownDex(next, data)
+    next = prize.save
+    if (unownDexOpen(next, data))
+      events.push({
+        kind: 'unown_letter',
+        letter,
+        isNew,
+        found: unownDexOf(next).length,
+        total: UNOWN_LETTERS.length,
+        ...(prize.paid > 0 && { reward: prize.paid }),
+      })
+  }
+  // Its hidden talent (docs/51): the whole family carries it from now on, here.
+  if (talent && !familyUnlocked(next, data, caught.dex)) {
+    next = unlockFamily(next, data, caught.dex)
+    events.push({ kind: 'talent', uid: caughtId, dex: caught.dex, talent: familyTalent(data, caught.dex), how: 'caught' })
   }
   // Secret areas whose Pokédex condition this catch just met.
   for (const id of unlockedHiddenAreas(next, data)) if (!hiddenBefore.has(id)) events.push({ kind: 'secret_unlocked', areaId: id })

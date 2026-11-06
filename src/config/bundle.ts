@@ -9,6 +9,7 @@ import items from '@/data/items.json'
 import config from '@/data/config.json'
 import regions from '@/data/regions.json'
 import eggGroups from '@/data/egg-groups.json'
+import talents from '@/data/talents.json'
 import type { BundleRaw } from '@/engine/types'
 
 /**
@@ -36,7 +37,12 @@ export const BUNDLE: BundleRaw = {
   config: { ...config, ...devConfig() },
   regions,
   eggGroups,
+  talentFamilies: talents.families,
 } as unknown as BundleRaw
 
 /** Egg groups are canon, not content (`pnpm egg-groups`): whatever bundle the game plays, it breeds with these. */
-export const withStatics = (raw: BundleRaw): BundleRaw => ({ ...raw, eggGroups: BUNDLE.eggGroups })
+export const withStatics = (raw: BundleRaw): BundleRaw => ({
+  ...raw,
+  eggGroups: BUNDLE.eggGroups,
+  talentFamilies: BUNDLE.talentFamilies,
+})

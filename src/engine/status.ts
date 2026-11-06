@@ -1,4 +1,5 @@
-import { dieValue, faceOf, statusCounts, type RolledDie } from './dice'
+import { dieUpgradeBonus, type UpgradeLevels } from './damage'
+import { faceOf, statusCounts, type RolledDie } from './dice'
 import type { CurableStatus, GameData, StatusKind, StatusRules } from './types'
 
 export interface StatusState {
@@ -7,8 +8,12 @@ export interface StatusState {
   /** Remaining stunned turns. */
   frozen: number
   paralyze: number
-  /** The next attack hits the attacker itself. */
-  confused: boolean
+  /**
+   * How confused (0 = not): the Confuse faces that landed, 1 to `confuse.maxFaces`. The next attack costs that many
+   * times `confuse.recoilPercentPerFace` % of max HP. A battle saved before levels holds `true`: read it with
+   * `confusionLevel`.
+   */
+  confused: number
 }
 
 export const emptyStatus = (): StatusState => ({
@@ -16,8 +21,14 @@ export const emptyStatus = (): StatusState => ({
   poison: null,
   frozen: 0,
   paralyze: 0,
-  confused: false,
+  confused: 0,
 })
+
+/** How confused a Pokémon is, 0 when not (a battle resumed from before the levels may hold `true`: level 1). */
+export const confusionLevel = (s: StatusState): number => {
+  const c = s.confused as number | boolean
+  return c === true ? 1 : typeof c === 'number' && c > 0 ? Math.floor(c) : 0
+}
 
 export interface StatusApplication {
   status: StatusKind
@@ -26,33 +37,43 @@ export interface StatusApplication {
   turns?: number
   /** heal: HP the attacker restores */
   amount?: number
+  /** confuse: how confused the foe gets (its Confuse faces, capped) */
+  level?: number
+  /** frozen, paralyze: the chance it lands, 0–1 (1 = sure) */
+  chance?: number
 }
 
-/** Which statuses a roll triggers — Burn from 1 face (stacking), the rest only once their threshold is met. */
-export function statusesFromRoll(dice: readonly RolledDie[], data: GameData): StatusApplication[] {
+/** Freeze and Paralysis: each face adds 1 / `sureAt` to the chance, so `sureAt` faces make it sure. */
+const stunChance = (faces: number, sureAt: number) => Math.min(1, faces / Math.max(1, sureAt))
+
+/**
+ * What a roll's status faces do — a single face is enough for each: Burn stacks per face, Poison lands, Freeze and
+ * Paralysis each have a chance per face (sure from `sureAt` faces), Confusion grows with its faces, and Heal faces
+ * heal their own value plus their die's upgrade. `levels`: the attacker's, for that upgrade.
+ */
+export function statusesFromRoll(dice: readonly RolledDie[], data: GameData, levels?: UpgradeLevels): StatusApplication[] {
   const r = data.config.status
   const c = statusCounts(dice, data)
   const out: StatusApplication[] = []
   if (c.burn >= r.burn.threshold && c.burn > 0) out.push({ status: 'burn', stacks: c.burn, turns: r.burn.duration })
-  if (c.poison >= r.poison.threshold && c.poison > 0) out.push({ status: 'poison', turns: r.poison.duration })
-  if (c.frozen >= r.frozen.threshold && c.frozen > 0) out.push({ status: 'frozen', turns: r.frozen.stunTurns })
-  if (c.paralyze >= r.paralyze.threshold && c.paralyze > 0)
-    out.push({ status: 'paralyze', turns: r.paralyze.stunTurns })
-  if (c.confuse >= r.confuse.threshold && c.confuse > 0) out.push({ status: 'confuse' })
-  if (c.heal >= r.heal.threshold && c.heal > 0) {
-    const amount =
-      r.heal.amount === 'healFaces'
-        ? dice.reduce((sum, d) => {
-            const f = faceOf(d, data)
-            return sum + (f.kind === 'status' && f.status === 'heal' ? f.value : 0)
-          }, 0)
-        : dice.reduce((sum, d) => sum + dieValue(d, data), 0) // the total value of the dice rolled
+  if (c.poison > 0) out.push({ status: 'poison', turns: r.poison.duration })
+  if (c.frozen > 0)
+    out.push({ status: 'frozen', turns: r.frozen.stunTurns, chance: stunChance(c.frozen, r.frozen.sureAt) })
+  if (c.paralyze > 0)
+    out.push({ status: 'paralyze', turns: r.paralyze.stunTurns, chance: stunChance(c.paralyze, r.paralyze.sureAt) })
+  if (c.confuse > 0) out.push({ status: 'confuse', level: Math.min(c.confuse, Math.max(1, r.confuse.maxFaces)) })
+  if (c.heal > 0) {
+    const amount = dice.reduce((sum, d) => {
+      const f = faceOf(d, data)
+      if (f.kind !== 'status' || f.status !== 'heal') return sum
+      return sum + f.value + (levels ? dieUpgradeBonus(d.type, levels, data) : 0)
+    }, 0)
     out.push({ status: 'heal', amount })
   }
   return out
 }
 
-/** Status faces whose threshold is met in this roll — the AI always keeps these. */
+/** Status faces in this roll — the AI always keeps these, as each one already does something. */
 export function satisfiedStatusMask(dice: readonly RolledDie[], data: GameData): boolean[] {
   const triggered = new Set(statusesFromRoll(dice, data).map((a) => a.status))
   return dice.map((d) => {
@@ -80,7 +101,8 @@ export function applyStatuses(state: StatusState, apps: readonly StatusApplicati
         s.paralyze = rules.paralyze.stunTurns
         break
       case 'confuse':
-        s.confused = true
+        // The stronger confusion holds: a lighter one never eases it.
+        s.confused = Math.max(confusionLevel(s), a.level ?? 1)
         break
       case 'heal':
         break // a self-effect, resolved by the battle on the attacker
@@ -126,7 +148,7 @@ export function consumeStun(state: StatusState): StatusState {
 }
 
 export function hasAnyStatus(s: StatusState): boolean {
-  return !!(s.burn || s.poison || s.frozen || s.paralyze || s.confused)
+  return !!(s.burn || s.poison || s.frozen || s.paralyze || confusionLevel(s))
 }
 
 export function hasStatus(s: StatusState, k: CurableStatus): boolean {
@@ -140,7 +162,7 @@ export function hasStatus(s: StatusState, k: CurableStatus): boolean {
     case 'paralyze':
       return s.paralyze > 0
     case 'confuse':
-      return s.confused
+      return confusionLevel(s) > 0
   }
 }
 
@@ -152,7 +174,7 @@ export function clearStatuses(s: StatusState, kinds: readonly CurableStatus[]): 
     else if (k === 'poison') out.poison = null
     else if (k === 'frozen') out.frozen = 0
     else if (k === 'paralyze') out.paralyze = 0
-    else out.confused = false
+    else out.confused = 0
   }
   return out
 }

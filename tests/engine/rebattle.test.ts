@@ -27,6 +27,7 @@ import {
   rebattleTiers,
   rebattleUpgradeLevel,
   startRegion,
+  type OwedGold,
   type SaveData,
 } from '@/engine'
 import { data, makeData, newId } from '../fixtures'
@@ -45,14 +46,16 @@ function beatTrainer(s: SaveData): { save: SaveData; events: ReturnType<typeof a
   const tier = currentTier(s, data, 'kanto')
   let next = s
   const events: ReturnType<typeof applyRebattleKO>['events'] = []
+  let owed: OwedGold | undefined
   enc.team.forEach((m, index) => {
     const r = applyRebattleKO(
       next,
-      { regionId: 'kanto', tier, trainerId: enc.trainerId, index, last: index === enc.team.length - 1, enemyLevel: m.level, fighterUid: next.team[0]! },
+      { regionId: 'kanto', tier, trainerId: enc.trainerId, index, last: index === enc.team.length - 1, enemyLevel: m.level, fighterUid: next.team[0]!, owed },
       data,
       createRng(index + 1),
     )
     next = r.save
+    owed = r.owed
     events.push(...r.events)
   })
   return { save: next, events }
@@ -107,6 +110,27 @@ describe('the rival Champion', () => {
 })
 
 describe('the gauntlet', () => {
+  it("holds a trainer's ₽ until their last Pokémon; a loss before it pays none, and none is marked paid", () => {
+    const s = champion(save(1))
+    const enc = rebattleEncounter(s, data, 'kanto')!
+    if (enc.kind !== 'gym') throw new Error('no fight')
+    const [a, b] = enc.team
+    const base = { regionId: 'kanto', tier: 0, trainerId: enc.trainerId, fighterUid: s.team[0]! }
+    const first = applyRebattleKO(s, { ...base, index: 0, last: false, enemyLevel: a!.level }, data, createRng(1))
+    const gold = rebattleGold(data, 'kanto', 0, a!.level)
+    expect(first.save.gold).toBe(s.gold)
+    expect(first.events.some((e) => e.kind === 'gold')).toBe(false)
+    expect(first.owed).toMatchObject({ amount: gold })
+    // Lost before the last: nothing paid, and that Pokémon still pays next time.
+    const lost = applyRebattleLoss(first.save, data, 'kanto')
+    const retry = applyRebattleKO(lost, { ...base, index: 0, last: false, enemyLevel: a!.level }, data, createRng(1))
+    expect(retry.owed).toMatchObject({ amount: gold })
+    const end = applyRebattleKO(retry.save, { ...base, index: 1, last: true, enemyLevel: b!.level, owed: retry.owed }, data, createRng(2))
+    const total = gold + rebattleGold(data, 'kanto', 0, b!.level)
+    expect(end.save.gold).toBe(s.gold + total)
+    expect(end.events.filter((e) => e.kind === 'gold')).toEqual([{ kind: 'gold', amount: total }])
+  })
+
   it('starts with the first Elite Four member, a League battle at the tier’s upgrade level', () => {
     const enc = rebattleEncounter(champion(save(1)), data, 'kanto')
     expect(enc).toMatchObject({ kind: 'gym', role: 'elite', index: 1, total: 5, badge: null, rebattle: { regionId: 'kanto', tier: 0 } })
@@ -124,7 +148,7 @@ describe('the gauntlet', () => {
     const ko = (from: SaveData) =>
       applyRebattleKO(
         from,
-        { regionId: 'kanto', tier: 0, trainerId: enc.trainerId, index: 0, last: false, enemyLevel: first.level, fighterUid: from.team[0]! },
+        { regionId: 'kanto', tier: 0, trainerId: enc.trainerId, index: 0, last: true, enemyLevel: first.level, fighterUid: from.team[0]! },
         data,
         createRng(1),
       )

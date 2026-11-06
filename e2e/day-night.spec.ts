@@ -116,11 +116,13 @@ test('the Pokédex: each place says when it comes, and Nearby counts only what t
   await boot(page, { ...inJohto(), dayNight: { rulesSeen: true } }, DAY)
   await page.goto('/pokedex')
   // By day, Route 29's Hoothoot (night only) isn't nearby; Sentret (day only) is.
-  await page.getByRole('radio', { name: /Nearby/ }).click()
+  // The filter shares the search's row as one dropdown (docs/43 §5.6).
+  const show = page.getByRole('combobox', { name: 'Show' })
+  await show.selectOption('nearby')
   await expect(page.getByRole('button', { name: /#161/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /#163/ })).toHaveCount(0)
 
-  await page.getByRole('radio', { name: /^All/ }).click()
+  await show.selectOption('all')
   await page.getByRole('button', { name: /#163/ }).click()
   const place = page.getByRole('listitem').filter({ hasText: 'Route 29' }).first()
   await expect(place.locator('[data-day-time="night"]')).toHaveText('Night only')

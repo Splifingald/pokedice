@@ -207,6 +207,15 @@ test('an unseen answer pops up on opening the game, and My messages keeps every 
   await expect(form.getByText("The developer's answer")).toBeVisible()
   await expect(form.getByText('Great idea — it is on the list!')).toBeVisible()
   expect(seen).toHaveLength(1)
+
+  // The same view on its own, from the trainer menu's Inbox row (docs/38 U6b).
+  await page.keyboard.press('Escape')
+  await expect(form).toHaveCount(0)
+  await page.getByRole('button', { name: 'Your trainer menu' }).click()
+  await page.getByRole('dialog', { name: 'Trainer card' }).getByRole('button', { name: 'Inbox', exact: true }).click()
+  const inbox = page.getByRole('dialog', { name: 'My messages' })
+  await expect(inbox.getByText('Shiny odds?')).toBeVisible()
+  await expect(inbox.getByText('Great idea — it is on the list!')).toBeVisible()
 })
 
 test('admin → Messages: answering a message saves the answer and marks it read', async ({ page }) => {

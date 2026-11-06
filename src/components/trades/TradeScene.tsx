@@ -144,7 +144,7 @@ function SceneBody({ show, onDone }: { show: TradeShow; onDone: () => void }) {
                 <MiniSprite dex={e.gave.dex} size={36} className="-my-1 shrink-0" />
                 <span className="grid min-w-0 leading-none">
                   <b className="truncate text-[18px] font-normal">{give}</b>
-                  <small className="truncate font-pixel-sm text-[13px] text-muted">
+                  <small className="truncate font-pixel-sm text-[16px] text-muted">
                     {t('ui.trades.pop.yours')}
                   </small>
                 </span>
@@ -154,7 +154,7 @@ function SceneBody({ show, onDone }: { show: TradeShow; onDone: () => void }) {
                 <MiniSprite dex={e.got.dex} size={36} className="-my-1 shrink-0" />
                 <span className="grid min-w-0 leading-none">
                   <b className="truncate text-[18px] font-normal">{get}</b>
-                  <small className="truncate font-pixel-sm text-[13px] text-muted">
+                  <small className="truncate font-pixel-sm text-[16px] text-muted">
                     <NameIn name={who} rich={e.withRich} text={(name) => t('ui.trades.whose', { name })} />
                   </small>
                 </span>
@@ -347,7 +347,7 @@ export function TradeResult({ show }: { show: TradeShow }) {
         )}
       </p>
       <p className="copy m-0 text-[18px] leading-tight">{[where, level].filter(Boolean).join(' ')}</p>
-      <p className="m-0 font-pixel-sm text-[15px] text-muted">
+      <p className="m-0 font-pixel-sm text-[16px] text-muted">
         {t('ui.trades.result.dexStays', { name: data.species[e.gave.dex]?.name ?? t('ui.common.pokemon') })}
       </p>
     </div>

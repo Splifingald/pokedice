@@ -50,22 +50,63 @@ import { PushBits } from './kitchen/PushBits'
 import { GeneralBits } from './kitchen/GeneralBits'
 import { LooksBits } from './kitchen/LooksBits'
 import { RulesBits } from './kitchen/RulesBits'
+import { HomeBits } from './kitchen/HomeBits'
 import { ExtremeBits } from './kitchen/ExtremeBits'
+import { ExtremeCenterBits } from './kitchen/ExtremeCenterBits'
+import { ExtremeRunBits } from './kitchen/ExtremeRunBits'
 import { PartnerBits } from './kitchen/PartnerBits'
-import { RaidBits } from './kitchen/RaidBits'
+import { OnboardingBits } from './kitchen/OnboardingBits'
+import { RaidBits, RaidOverhaulBits } from './kitchen/RaidBits'
 import { WorldBits } from './kitchen/WorldBits'
 import { PortalBits } from './kitchen/PortalBits'
 import { PortalRaidBits } from './kitchen/PortalRaidBits'
 import { NightmareBits } from './kitchen/NightmareBits'
 import { NightmareRaidBits } from './kitchen/NightmareRaidBits'
+import { TimeRaceBits } from './kitchen/TimeRaceBits'
+import { WhiteoutBits } from './kitchen/WhiteoutBits'
+import { TracksBits } from './kitchen/TracksBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
+import { WelcomeBackBits } from './kitchen/WelcomeBackBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
+import { GiftCardBits } from './kitchen/GiftCardBits'
+import { SideQuestBits } from './kitchen/SideQuestBits'
+import { FlavourBits } from './kitchen/FlavourBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
+import { FriendshipBits } from './kitchen/FriendshipBits'
+import { FriendBattleBits } from './kitchen/FriendBattleBits'
+import { CalendarBits } from './kitchen/CalendarBits'
 import { DayNightBits } from './kitchen/DayNightBits'
+import { TalentBits } from './kitchen/TalentBits'
+import { OutfitBits } from './kitchen/OutfitBits'
+import { AreaVersusBits } from './kitchen/AreaVersusBits'
+import { IdleBits } from './kitchen/IdleBits'
+import { SuggestionBits } from './kitchen/SuggestionBits'
+import { ShinyDexBits } from './kitchen/ShinyDexBits'
+import { UnownDexBits } from './kitchen/UnownDexBits'
+import { TutorialBits } from './kitchen/TutorialBits'
+import { LeagueBits } from './kitchen/LeagueBits'
+import { DiceThrowBits } from './kitchen/DiceThrowBits'
+import { FeelDiceBits } from './kitchen/FeelDiceBits'
+import { HowToBits } from './kitchen/HowToBits'
 import { PowersBits } from './kitchen/PowersBits'
+import { ShellBits } from './kitchen/ShellBits'
+import { DeepShellBits } from './kitchen/DeepShellBits'
+import { TeamDeepBits } from './kitchen/TeamDeepBits'
+import { PokedexDeepBits } from './kitchen/PokedexDeepBits'
+import { EventsDeepBits } from './kitchen/EventsDeepBits'
+import { SocialDeepBits } from './kitchen/SocialDeepBits'
+import { AreaDeepBits } from './kitchen/AreaDeepBits'
+import { BattleSidesBits } from './kitchen/BattleSidesBits'
+import { MartDeepBits } from './kitchen/MartDeepBits'
+import { RewardBits } from './kitchen/RewardBits'
+import { HitFeelBits } from './kitchen/HitFeelBits'
+import { FeelBits } from './kitchen/FeelBits'
+import { TitleLogoBits } from './kitchen/TitleLogoBits'
+import { ReworkBits } from './kitchen/ReworkBits'
 import { RotateView } from '@/components/RotateCover'
+import { SettingsOverlay } from '@/screens/Settings'
 import { BadgeIcon, CrownIcon } from '@/components/BadgeIcon'
 import { BoardRow } from '@/components/BoardRow'
 
@@ -94,12 +135,24 @@ function RoundGaugeStates() {
   if (!area) return null
   const n = deckSize(area)
   const mid: AreaProgress = { ...emptyProgress(), drawn: ['wild', 'center'], deck: Array<DeckCard>(n - 2).fill('wild') }
+  const ahead: AreaProgress = {
+    ...emptyProgress(),
+    drawn: ['wild', 'trainer', 'wild'],
+    deck: ['center', ...Array<DeckCard>(n - 4).fill('wild')],
+  }
   const done: AreaProgress = { ...emptyProgress(), drawn: Array.from({ length: n }, (_, i) => (i % 3 ? 'wild' : 'trainer')) }
   return (
     <div className="flex w-full max-w-md flex-col gap-3">
       <RoundGauge area={area} progress={mid} />
       <RoundGauge area={area} progress={emptyProgress()} />
       <RoundGauge area={area} progress={done} />
+      {/* A fight's strip (the card being played white) and Home's banner (the rest grey, a Center ahead). */}
+      <div className="relative h-[14px] bg-panel">
+        <RoundGauge area={area} progress={ahead} strip className="absolute inset-x-0 top-0" />
+      </div>
+      <div className="pixel-btn px-3 py-2">
+        <RoundGauge area={area} progress={ahead} banner />
+      </div>
       <div className="flex flex-col gap-1.5 border-t-[3px] border-edge bg-parchment px-3 py-2">
         <RoundGauge area={area} progress={mid} compact />
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2.5">
@@ -124,6 +177,7 @@ export function KitchenSink() {
   const [selected, setSelected] = useState<number[]>([1])
   const [modal, setModal] = useState(false)
   const [sheet, setSheet] = useState(false)
+  const [settingsOver, setSettingsOver] = useState<null | 'fight' | 'free'>(null)
   const [mon, setMon] = useState<Species | null>(data.species[6] ?? null)
   const [gaugeVal, setGaugeVal] = useState(30)
   const [seg, setSeg] = useState<'combos' | 'dice'>('combos')
@@ -187,7 +241,7 @@ export function KitchenSink() {
             <span className="text-[24px] leading-none">Safari Zone</span>
             <LevelTag level={24} className="ml-auto" />
           </div>
-          <span className="font-pixel-sm text-[15px] text-muted">Plate: flat ring, clipped corners</span>
+          <span className="font-pixel-sm text-[16px] text-muted">Plate: flat ring, clipped corners</span>
         </div>
         <div className="hatched w-56 p-3">Unavailable (dotted)</div>
       </Section>
@@ -214,6 +268,11 @@ export function KitchenSink() {
           <PixelButton disabled>disabled</PixelButton>
           <PixelButton variant="primary" disabled>
             primary off
+          </PixelButton>
+          {/* Shut by a lock: still focusable, the reason in its name, a tap says it. */}
+          <PixelButton shut="Finish the fight first">shut</PixelButton>
+          <PixelButton size="sm" variant="danger" shut="Finish the fight first">
+            Delete save
           </PixelButton>
         </div>
         {/* The tight case: a full-width button, the largest size, and the longest label a translation produces.
@@ -259,7 +318,7 @@ export function KitchenSink() {
         </span>
         <div className="flex w-full flex-wrap gap-2">
           {STATUS_KINDS.map((s, i) => (
-            <StatusChip key={s} status={s} count={i % 2 ? '1/2' : undefined} lit={i % 3 !== 2} />
+            <StatusChip key={s} status={s} count={i % 2 ? '50%' : undefined} lit={i % 3 !== 2} />
           ))}
         </div>
         <Toggle label="A toggle" hint="Its hint, in Jersey 15" on={toggle} onChange={setToggle} className="w-full max-w-md" />
@@ -472,6 +531,10 @@ export function KitchenSink() {
         <RoundGaugeStates />
       </Section>
 
+      <Section title="Rewards' game feel (docs/38): gold from 0, coins to the top bar, XP steps, pixel confetti, Pokédex card, Upgrades' buttons and pop">
+        <RewardBits />
+      </Section>
+
       <Section title="GoldPill · Toast · Modal · Sheet">
         <GoldPill amount={gold} />
         <PixelButton size="sm" onClick={() => setGold((g) => g + 57)}>
@@ -606,12 +669,23 @@ export function KitchenSink() {
         <DoubleBits />
       </Section>
 
-      <Section title="Battle powers: Mega plates (timed, last turn, older rules), G-MAX, Z-MOVE hints, the Mart's Mega Gems (open, poor, shut, empty), rules and INFO (docs/35)">
+      <Section title="Battle powers: Mega plates (timed, last turn, older rules), G-MAX, Z-MOVE hints, a dual-type's Z-Move type pick, the Mart's Mega Gems (open, poor, shut, empty), rules and INFO (docs/35)">
         <PowersBits />
+      </Section>
+
+      <Section title="Game feel, hits (docs/38): a shiny's entrance, hits of each weight and their settle, the K.O.'s boss stop and drop">
+        <HitFeelBits />
+      </Section>
+
+      <Section title="The area rework (docs/15 §6): AutoButton, PokeCard (Center, send-out), a label on two lines, BottomDock">
+        <ReworkBits />
       </Section>
 
       <Section title="PartnerMoment: the lab (new game, new region)">
         <PartnerBits />
+      </Section>
+      <Section title="Onboarding and menus: the default name, Settings' one Delete and its question, the Inbox, SENT OUT (docs/38 §8)">
+        <OnboardingBits />
       </Section>
 
       <Section title="Day Care: Egg, hearts, tags, slot cards, empty slots, Egg now, the Egg card">
@@ -626,8 +700,28 @@ export function KitchenSink() {
         <RulesBits />
       </Section>
 
+      <Section title="Home: the Coming up line (each thing still to open), the big button (CONTINUE, a challenge, greyed out, GO TO with Stay here, CONTINUE with the green GO TO), the leaderboard tip">
+        <HomeBits />
+      </Section>
+
       <Section title="General upgrades: the tab's cards, rules and INFO, while you were away, golden names (docs/25)">
         <GeneralBits />
+      </Section>
+
+      <Section title="Shiny Pokédex: the Pokédex / Shiny switch, the shiny page's tiles (owned shiny, caught, unknown, nearby), complete, rules and INFO (docs/39)">
+        <ShinyDexBits />
+      </Section>
+
+      <Section title="Unown Pokédex: the switch with its Unown page, Home's banner (none, under way, complete), the 28 letters, complete, the result card's line, rules and INFO (docs/41)">
+        <UnownDexBits />
+      </Section>
+
+      <Section title="Dice tutorial: the pixel hand (up, down, still), Prof. Oak's bubble (a step, SHOW ME, the way back), a step framed high and low (docs/46 §5)">
+        <TutorialBits />
+      </Section>
+
+      <Section title="Versus league: the header, the 3 opponents (the admin's BOT tag), the group's board and its rewards, the result card in each state, the week's reward message, the Raid Ball, rules and INFO (docs/44)">
+        <LeagueBits />
       </Section>
 
       <Section title="Trainer looks: the row and its red dot, the menu in each state, locked looks, rules and INFO (docs/31)">
@@ -650,22 +744,88 @@ export function KitchenSink() {
         <InviteBits />
       </Section>
 
-      <Section title="Support me: the developer's asks (Discord, invite, PayPal), with and without a Discord link">
+      <Section title="Welcome back: the developer's message on a return (the pop-up, its words per tier, My messages in every state, INFO, the rules, the opening)">
+        <WelcomeBackBits />
+      </Section>
+
+      <Section title="Support me: the developer's asks (Discord, invite, Ko-fi), with and without a Discord link">
         <SupportBits />
       </Section>
 
-      <Section title="RotateCover: a phone or a tablet held sideways (over the whole game, nothing to dismiss)">
+      <Section title="SettingsOverlay: Settings opened over a fight (what would end it shut, BACK TO THE FIGHT), and with nothing shut (BACK)">
+        <PixelButton size="sm" onClick={() => setSettingsOver('fight')}>
+          Over a fight
+        </PixelButton>
+        <PixelButton size="sm" onClick={() => setSettingsOver('free')}>
+          Nothing shut
+        </PixelButton>
+        <SettingsOverlay
+          open={settingsOver != null}
+          onClose={() => setSettingsOver(null)}
+          shut={settingsOver === 'fight' ? 'Finish the fight first' : null}
+          fight={settingsOver === 'fight'}
+        />
+      </Section>
+
+      <Section title="RotateCover: a phone held sideways (over the whole game, nothing to dismiss)">
         <div className="flex w-full justify-center bg-parchment p-3 shadow-ring">
           <RotateView />
         </div>
+      </Section>
+
+      <Section title="The shell: a page loading (wobbling, still), each toast (info, good, long, an error with its ✕)">
+        <ShellBits />
+      </Section>
+
+      <Section title="Deep pass: Social's views · SplitView (docs/43)">
+        <DeepShellBits />
+      </Section>
+
+      <Section title="Team deep pass (docs/43 §5.4): PokeCard states, MonTile level tag, BoxFilter, TeamSwapDock">
+        <TeamDeepBits />
+      </Section>
+
+      <Section title="Pokédex (docs/43 §5.6): the head's gauge, every tile, the grid's keys, the fold, the entry as a sheet and docked">
+        <PokedexDeepBits />
+      </Section>
+
+      <Section title="Events and onboarding (docs/43 §5.10–5.11): StagePanel, the dock, tickets, the hall, How to play's folds">
+        <EventsDeepBits />
+      </Section>
+
+      <Section title="Deep pass: Social and Settings (board rows and meters, FIGHT, SocialColumns, SocialDock, adding a friend, the compact trainer card, the menu's foot)">
+        <SocialDeepBits />
+      </Section>
+
+      <Section title="The area loop's deep pass (docs/43 §5.3): StagePanel, Stamp, KeyHints, the switch's cards, the forfeit flag">
+        <AreaDeepBits />
+      </Section>
+
+      <Section title="A computer's fight (docs/42 §3): the Bag's column and the team's, in every state">
+        <BattleSidesBits />
+      </Section>
+
+      <Section title="Mart deep pass (docs/43 §5.5): ItemTile in every state, ItemDetail as a sheet and docked, the quantity buttons, SmallInfo">
+        <MartDeepBits />
       </Section>
 
       <Section title="Extreme mode: rules, band, title card, K.O. rest, resting team, while you were away, switch">
         <ExtremeBits />
       </Section>
 
+      <Section title="Extreme Pokémon Centers (docs/47): the boons, a pick's confirm, who for, Team Rocket's reveal, the Center a K.O. sends, the Pokébuff">
+        <ExtremeCenterBits />
+      </Section>
+
+      <Section title="Extreme as a speedrun (docs/48): a region's card in every state, the restart that asks twice, the board">
+        <ExtremeRunBits />
+      </Section>
+
       <Section title="Raids: the NPC partners pop-up (each state), a legendary raid's card open and caught">
         <RaidBits />
+      </Section>
+      <Section title="Raid overhaul (docs/40)">
+        <RaidOverhaulBits />
       </Section>
 
       <Section title="Small worlds: square, pop-up, partner pick, strip, squares inside, boosters, dice level, mythical card, closing, away page">
@@ -674,6 +834,9 @@ export function KitchenSink() {
 
       <Section title="Portal run (Distortion World): the portal, gauge, breach and its pop-up, rules, boons, bonuses, shader, screen distortion, victory">
         <PortalBits />
+      </Section>
+      <Section title="The Stairway of Plates (Hall of Origin): the altar, landings' gauge, the way in and its pop-up, rules, an altar's blessings (a Plate), bonuses, light on its Pokémon, the screen's gleam, an altar lit, shiny Arceus coming down">
+        <PortalBits skin="plates" />
       </Section>
       <Section title="Giratina's area raid (Distortion World): the themed raid page, its pop-up, the raid's stage and a bar's tear">
         <PortalRaidBits />
@@ -684,23 +847,80 @@ export function KitchenSink() {
       <Section title="Darkrai's area raid (the nightmare): the themed raid page, its pop-up, the raid's stage and a bar's shadow, the screen's vignette">
         <NightmareRaidBits />
       </Section>
+      <Section title="The race of time and space (Spear Pillar): the clock and rift, the countdown, the gauge, a fork's gates (first, last, the replay's alone), the way in (intro, then its pop-up; the replay's), rules, result and lost-try cards, the wins (Dialga, Palkia)">
+        <TimeRaceBits />
+      </Section>
+      <Section title="Whiteout (Crown Shrine): the shrine, the gauge of waves, the blizzard's chip and snow over a fight, the way in (intro, then its pop-up), rules, the bonfire (catching, warmed, the last, one Pokémon, six), the wave's card, the shut bag, the locked Areas button, the end">
+        <WhiteoutBits />
+      </Section>
+      <Section title="Tracks in the Snow (Moonlit Glade): the glade, gauge, bushes and prints, the glade's panel (fresh, searched, a bush rustling, the snow falling, bolted, found), the 4 × 4 at 360 px, a playable glade, way in, rules, result card, wipe line, outro">
+        <TracksBits />
+      </Section>
+      <Section title="The side quests (docs/61): a roadblock's words, a Pokémon posing as a find (before and as it springs out), the Safari, rivals and gifts">
+        <SideQuestBits />
+      </Section>
+      <Section title="The region flavours (docs/62): the weather (its chips, its recap factor, its fall on a stage), a horde, an island trial, the Titans, the auras, the fights' lines, the rules">
+        <FlavourBits />
+      </Section>
       <Section title="Trick or Treat: the gauge of each tier, the screen in each state (idle, after a Treat, a Treat and a throw playing, a miss, caught, fled), the recaps, the pieces, preview cards, rules">
         <TrickBits />
+      </Section>
+      <Section title="The Gift card (docs/64 §4.0, §4.2): the present at every level in both looks, the level gauge, rewards, the plate and Delibird's chip, the screen in each state (lands, grows, with Delibird, at the top, breaks, broken, opening, opened), Delibird's present (idle, growing, bursting, shiny Delibird out), the result cards, the preview card, rules">
+        <GiftCardBits />
       </Section>
       <Section title="The Underground: the cave, the crack gauge, a wall in each state (fresh, half dug with a strike flashing, cleared, collapsing), the pickaxe die and faces, orbs and plates, the haul, the plates and orb bag, the team seats, the rules">
         <UndergroundBits />
       </Section>
+      <Section title="The gift calendar: a door in every state (shut, today's, last chance, opened with each kind of gift, missed, busy), a calendar on its 10th day, Home's card (gold, later, done), the rules card and INFO, a door's opening (docs/55)">
+        <CalendarBits />
+      </Section>
+      <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friend Ball's catch tag, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/60)">
+        <FriendshipBits />
+      </Section>
+      <Section title="Friend Battles: the shield tag (up, used), the mode tags, the time chip and gauge, face to face, a challenge to answer, a match on, the rules card, INFO and the challenge sheet, and each step of a match — waiting, its outcomes, the coin (yours, theirs), the draft (your pick, theirs), the order (Draft's, Classic's ready, waiting) (docs/65)">
+        <FriendBattleBits />
+      </Section>
       <Section title="Day and night (Johto): the top bar's chip by day and by night, the fights' indicator, the list tags (its half, the other half), rules">
         <DayNightBits />
+      </Section>
+      <Section title="Hidden talents: the gem (base, super, unknown), every talent, the sheet's box (carried, known, never met), the encounter's line, the result cards, the battle log, the trade toggle, rules (docs/51)">
+        <TalentBits />
+      </Section>
+      <Section title="Outfits: the sheet's chip (a tap: the rules), the hat on a tile or a gift (each size), Santa Pikachu in each view (and Raichu, which has no outfit), the rules pop-up (docs/59)">
+        <OutfitBits />
+      </Section>
+      <Section title="Real-player battles: the intro, the tag, the card (a stranger, a rich friend), the rules, the result's part (won, lost; each friend request state), the Friends page's requests (docs/54)">
+        <AreaVersusBits />
+      </Section>
+      <Section title="Idle mode and the play styles: the style cards (each picked, none), a new game's question, the area's switch (AUTO-MODE, Idle mode; off, on, the tip), the autopilot's note, rules (docs/36)">
+        <IdleBits />
+      </Section>
+      <Section title="Players' suggestions: the favourite toggle and heart, shiny Box tiles, the area grid's shiny star, PASS on an owned catch, auto-mode's HEAL offer (docs/67)">
+        <SuggestionBits />
+      </Section>
+      <Section title="Dice throws: a tray at each motion level (full, short, the OS's calm drop, off), reroll of the picked dice only, slow motion, frozen mid-throw, the status faces, the foe's size, at rest (docs/37)">
+        <DiceThrowBits />
+      </Section>
+      <Section title="Game feel, the dice and the readout: the count-up at each combo tier (full, short, off), a pick's ↻ tag, the combo's brackets and rings, the last die's squash, the last reroll's jitter, dice in hand, the readout counting (docs/38)">
+        <FeelDiceBits />
+      </Section>
+      <Section title="How to play, animated: the four cards playing, a still with PLAY (calm), PLAY to the end (off); the button pictures (docs/38 §8b)">
+        <HowToBits />
+      </Section>
+      <Section title="Taps, haptics and music: a pressed button, the haptics test pad, Settings' music and vibration rows (each state), the battle loop (docs/38)">
+        <FeelBits />
+      </Section>
+      <Section title="The title's dice logo (game feel): each motion level, the throw frozen mid-flight and at its flash, two rows or one (docs/38 §9)">
+        <TitleLogoBits />
       </Section>
 
       <Section title="StatusIcons · PixelIcon">
         <StatusIcons
-          status={{ ...emptyStatus(), burn: { stacks: 3, turns: 2 }, poison: { turns: 3 }, frozen: 2, paralyze: 1, confused: true }}
+          status={{ ...emptyStatus(), burn: { stacks: 3, turns: 2 }, poison: { turns: 3 }, frozen: 2, paralyze: 1, confused: 2 }}
         />
         <div className="flex flex-wrap gap-3">
           {(Object.keys(ICONS) as IconName[]).map((n) => (
-            <span key={n} className="flex flex-col items-center gap-1 font-pixel-sm text-[12px]">
+            <span key={n} className="flex flex-col items-center gap-1 font-pixel-sm text-tag">
               <PixelIcon name={n} size={n.startsWith('nav') ? 32 : 24} />
               {n}
             </span>

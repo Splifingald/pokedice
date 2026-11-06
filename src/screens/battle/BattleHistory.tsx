@@ -2,9 +2,7 @@
 // switches, items and heals. Only what the animation has already shown.
 import { useMemo, useState, type ReactNode } from 'react'
 import {
-  faceOf,
-  statusCounts,
-  STATUS_KINDS,
+  talentTier,
   type Battler,
   type DamageResult,
   type GameData,
@@ -12,16 +10,20 @@ import {
   type RolledDie,
   type Side,
 } from '@/engine'
+import { sfx } from '@/audio/sfx'
 import { Die } from '@/components/Die'
 import { PixelIcon, STATUS_ICON } from '@/components/icons'
 import { MiniSprite } from '@/components/SpriteImg'
 import type { BattleSlice } from '@/store/game'
 import { useGame } from '@/store/game'
 import { BoosterChip } from '@/screens/events/world'
+import { WeatherBoostChip } from '@/components/Weather'
 import { joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { comboName, statusName, typeName } from '@/lib/format'
+import { chancePercent, comboName, typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
+import { talentLogText, TIER_ICON } from '@/components/Talent'
+import { plateKey, plateType } from '@/components/portalSkin'
 
 /**
  * How a hit adds up, in one line: ( dice + combo ) × the type multiplier = the damage dealt.
@@ -73,6 +75,13 @@ export function DamageRecap({ result, dice, className }: { result: DamageResult;
             <BoosterChip type={result.boost.type} n={result.boost.multiplier} />
           </>
         )}
+        {/* The weather's (docs/62 §2): its own factor too. */}
+        {result.weather && (
+          <>
+            <span aria-hidden>×</span>
+            <WeatherBoostChip kind={result.weather.kind} n={result.weather.multiplier} />
+          </>
+        )}
         <span aria-hidden>=</span>
         <span className="text-base">{result.final}</span>
         {result.immune && <span className="text-muted">{t('ui.hist.noEffect')}</span>}
@@ -90,25 +99,7 @@ interface Row {
   icon?: Parameters<typeof PixelIcon>[0]['name']
   amount?: number
   heal?: boolean
-  /** Status faces that landed short of their threshold: "1/2 Poison faces — counted as 1". */
-  note?: string
   recap?: { result: DamageResult; dice: RolledDie[] }
-}
-
-/** Status faces in a roll that didn't reach their threshold, so they only counted as a number. */
-function nearMisses(dice: readonly RolledDie[], data: GameData): string | undefined {
-  const counts = statusCounts(dice, data)
-  const bits = STATUS_KINDS.filter((k) => counts[k] > 0 && counts[k] < data.config.status[k].threshold).map((k) => {
-    const value = dice.map((d) => faceOf(d, data)).find((f) => f.kind === 'status' && f.status === k)?.value ?? 0
-    return t('ui.hist.nearMiss', {
-      have: counts[k],
-      need: data.config.status[k].threshold,
-      status: statusName(k),
-      status2: statusName(k).toLowerCase(),
-      value,
-    })
-  })
-  return bits.length ? bits.join(' · ') : undefined
 }
 
 /** `foes`: the one foe, or a double battle's every foe (docs/33). */
@@ -147,7 +138,6 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
             : t('ui.hist.attacked', { target: target.name }),
           icon: 'sword',
           amount: e.amount,
-          note: nearMisses(e.dice, data),
           recap: { result: e.result, dice: e.dice },
         })
         return
@@ -164,7 +154,13 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
                     e.status === 'frozen'
                       ? t('ui.hist.statusFrozen')
                       : e.status === 'confuse'
-                        ? t('ui.hist.statusConfused')
+                        ? t(
+                            e.level === 1
+                              ? 'ui.hist.statusConfusedBit'
+                              : e.level && e.level >= 3
+                                ? 'ui.hist.statusConfusedVery'
+                                : 'ui.hist.statusConfused',
+                          )
                         : e.status === 'paralyze'
                           ? t('ui.hist.statusParalyzed')
                           : e.status === 'burn'
@@ -174,6 +170,29 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
           icon: STATUS_ICON[e.status],
         })
         return
+      case 'weather_tick':
+        rows.push({
+          key,
+          ...who(e.targetUid),
+          text: t(`ui.raid.x.tick.${e.weather === 'snow' ? 'snow' : 'sand'}`, { name: who(e.targetUid).name }),
+          icon: e.weather === 'snow' ? 'weatherSnow' : 'weatherSand',
+          amount: e.amount,
+        })
+        return
+      case 'sos':
+        rows.push({ key, ...who(e.uid), text: t('ui.log.sos', { name: who(e.from).name, ally: who(e.uid).name }), icon: 'warning' })
+        return
+      case 'titan_rise':
+        rows.push({
+          key,
+          ...who(e.uid),
+          text: t(e.commander ? 'ui.log.titanCommander' : 'ui.log.titanRise', { name: who(e.uid).name }),
+          icon: 'crown',
+        })
+        return
+      case 'foe_fled':
+        rows.push({ key, ...who(e.uid), text: t('ui.log.allyFled', { name: who(e.uid).name }), icon: 'run' })
+        return
       case 'status_tick':
         rows.push({
           key,
@@ -181,6 +200,18 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
           text: t('ui.hist.hurtBy', { source: t(e.status === 'burn' ? 'ui.hist.burnSource' : 'ui.hist.poisonSource') }),
           icon: STATUS_ICON[e.status],
           amount: e.amount,
+        })
+        return
+
+      case 'talent':
+        rows.push({ key, ...who(e.uid), text: talentLogText(e.name ?? who(e.uid).name, e, e.ally ? who(e.ally).name : undefined), icon: TIER_ICON[talentTier(e.talent)] })
+        return
+      case 'status_resisted':
+        rows.push({
+          key,
+          ...who(e.targetUid),
+          text: t(e.status === 'frozen' ? 'ui.hist.resistedFrozen' : 'ui.hist.resistedParalyze', { pct: chancePercent(e.chance) }),
+          icon: STATUS_ICON[e.status],
         })
         return
       case 'stunned':
@@ -230,6 +261,9 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
       case 'cleansed':
         rows.push({ key, ...who(e.uid), text: t('ui.hist.zCleansed'), icon: 'heal' })
         return
+      case 'shield':
+        rows.push({ key, ...who(e.uid), text: t('ui.hist.shield', { before: e.before, after: e.after }), icon: 'shield' })
+        return
       case 'recoil':
         rows.push({
           key,
@@ -264,7 +298,12 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
                         form: t(`ui.raid.form.${e.toDex}`),
                         type: typeName(e.die ?? 'normal'),
                       })
-                    : t('ui.hist.typeChange', { type: typeName(e.dice[0] ?? 'normal') }),
+                    : e.reason === 'plate'
+                      ? t('ui.hist.plate', {
+                          plate: t(plateKey(plateType(e.dice))),
+                          type: typeName(plateType(e.dice)),
+                        })
+                      : t('ui.hist.typeChange', { type: typeName(e.dice[0] ?? 'normal') }),
           icon: 'up',
         })
         return
@@ -282,7 +321,6 @@ function HistoryRow({ r }: { r: Row }) {
       <MiniSprite dex={r.dex} size={32} className="-my-1" />
       <span className="min-w-0 flex-1 leading-tight">
         <b className={r.foe ? 'text-danger' : undefined}>{r.foe ? t('ui.hist.foe', { name: r.name }) : r.name}</b> {r.text}
-        {r.note && <span className="block text-sm text-muted">{r.note}</span>}
       </span>
       {r.amount != null && (
         <span className={cx('flex shrink-0 items-center gap-1 font-mono', r.heal && 'text-good')}>
@@ -345,7 +383,10 @@ export function BattleHistory({
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          sfx('button')
+          setOpen((v) => !v)
+        }}
         className="flex min-h-[36px] w-full items-center gap-2 text-left text-xl"
       >
         <PixelIcon name="history" size={16} />

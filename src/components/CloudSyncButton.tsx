@@ -27,9 +27,12 @@ export function CloudSyncButton() {
   if (!signedIn) return null
 
   const blocked = syncBlockedBy(now)
+  // Mid-fight the menu opens (docs/15 §12): the button says, in words, why it waits.
   const status = busy
     ? t('ui.sync.syncing')
-    : blocked === 'cooldown' && lastAt != null
+    : blocked === 'fight'
+      ? t('ui.nav.finishFight')
+      : blocked === 'cooldown' && lastAt != null
       ? t('ui.sync.again', { time: mmss(lastAt + SYNC_COOLDOWN_MS - now) })
       : null
   const last = lastAt == null ? t('ui.sync.never') : t('ui.sync.last', { when: agoText(lastAt, now) })
@@ -48,8 +51,10 @@ export function CloudSyncButton() {
       <PixelIcon name="cloud" size={20} className={cx(busy && 'animate-pulse')} />
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="text-2xl leading-none">{t('ui.sync.button')}</span>
-        <span className="font-pixel-sm truncate text-sm leading-none text-muted">{last}</span>
-        {status && <span className="font-pixel-sm truncate text-sm leading-none text-muted">{status}</span>}
+        {/* One line (it was two): when it last matched, and why it waits. */}
+        <span className="font-pixel-sm truncate text-sm leading-none text-muted">
+          {status ? `${last} · ${status}` : last}
+        </span>
       </span>
     </button>
   )

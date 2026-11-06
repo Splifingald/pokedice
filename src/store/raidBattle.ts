@@ -2,13 +2,16 @@
 // your turns, the catch. A raid isn't saved mid-fight: leaving or reloading is a free retry, the try already counted.
 // The same fight runs the day's raid and a progression raid (docs/24): the team, the friends' teams, the numbers and
 // where a catch goes are the raid's own.
+import { raidWithFriends } from './friendship'
 import { create } from 'zustand'
 import {
+  applyMegaRaidWin,
   applyProgressRaidCatch,
   applyRaidCatch,
   baitFaces,
   baitFor,
   ballBonus,
+  isBallFor,
   catchValueOf,
   consumeItem,
   countRaidTry,
@@ -26,6 +29,7 @@ import {
   raidNpcOffer,
   raidSeedLevels,
   raidTeam,
+  carriedTalent,
   raidTeamCap,
   randomSeed,
   regionOf,
@@ -82,6 +86,8 @@ export interface RaidRun {
   log: RaidLogEntry[]
   stage: RaidStage
   catch: RaidCatch | null
+  /** A Mega raid won (docs/40): the gem or orb it gave. No catch. */
+  gem?: string
 }
 
 export const useRaidRun = create<{ run: RaidRun | null }>(() => ({ run: null }))
@@ -228,7 +234,14 @@ function friendSide(f: RaidFriend, k: number, cap: number): RaidSideSeed {
     look: avatarOf(f.avatar).src,
     kind: 'friend',
     userId: f.userId,
-    team: f.team.slice(0, 3).map((m, i) => ({ uid: `s${k}-${i}`, dex: m.dex, ...raidSeedLevels(m.level, cap), hp: Number.MAX_SAFE_INTEGER, shiny: m.shiny })),
+    team: f.team.slice(0, 3).map((m, i) => ({
+      uid: `s${k}-${i}`,
+      dex: m.dex,
+      ...raidSeedLevels(m.level, cap),
+      hp: Number.MAX_SAFE_INTEGER,
+      shiny: m.shiny,
+      talent: carriedTalent(useGame.getState().data, m.dex, m.talent),
+    })),
   }
 }
 
@@ -258,9 +271,14 @@ function startFight(
       hp: Number.MAX_SAFE_INTEGER,
       shiny: m.shiny,
       nickname: m.nickname,
+      talent: carriedTalent(data, m.dex, m.talent),
     })),
   }
-  const picked = friends.filter((f) => f.team.length > 0).slice(0, 2)
+  // A friend's Pokémon the game doesn't know (a forged save) is left out rather than failing the whole fight (docs/63).
+  const picked = friends
+    .map((f) => ({ ...f, team: f.team.filter((m) => data.species[m.dex]) }))
+    .filter((f) => f.team.length > 0)
+    .slice(0, 2)
   const chosen = npcs.slice(0, 2 - picked.length).map((o, i) => npcSideSeed(o, picked.length + i + 1, cap, t('ui.raid.npcName', { n: picked.length + i + 1 })))
   const sides = [me, ...picked.map((f, i) => friendSide(f, i + 1, cap)), ...chosen, ...npcSides(2 - picked.length - chosen.length, source, cap)]
   const { state, log } = createRaid(
@@ -279,7 +297,7 @@ function startFight(
 }
 
 /**
- * Starts today's raid with the friends and the NPC trainers picked. The try counts now. Signed in, your own raid team
+ * Starts today's raid with the friends and the NPC trainers picked. The try counts once it has started. Signed in, your own raid team
  * is registered for your friends on the way.
  */
 export function startRaid(npcs: RaidNpcOption[] = [], friends: RaidFriend[] = groupOf('daily', useRaidGroup.getState())): boolean {
@@ -289,8 +307,9 @@ export function startRaid(npcs: RaidNpcOption[] = [], friends: RaidFriend[] = gr
   if (!save || !raid || inWorldRegion(save, data)) return false
   const team = raidTeam(save, data)
   if (!team.length) return false
+  startFight({ kind: 'daily' }, raid, team, friends, npcs, raidTeamCap(data, raid.dex, 'daily'))
+  // Counted once the fight is under way: a fight that fails to start costs no try.
   mutateSave((s) => countRaidTry(s, raid.day))
-  startFight({ kind: 'daily' }, raid, team, friends, npcs, data.config.events.raid.teamCap)
   void syncRaidTeam()
   return true
 }
@@ -321,6 +340,13 @@ export function raidAgain(npcs: RaidNpcOption[] = []): boolean {
 /** The empty sides a raid would start with: its friend slots minus the friends picked who have a team. */
 export const emptySlots = (friends: RaidFriend[]): number => Math.max(0, raidFriendSlots() - friends.filter((f) => f.team.length > 0).length)
 
+/** A legendary's own entrance has been seen once (docs/40): from now on it has a Skip. */
+export function markRaidIntroSeen(dex: number) {
+  mutateSave((s) =>
+    s.events?.raidIntrosSeen?.includes(dex) ? null : { ...s, events: { ...s.events, raidIntrosSeen: [...(s.events?.raidIntrosSeen ?? []), dex].slice(-200) } },
+  )
+}
+
 /** The opening has played (or was skipped). */
 export function raidIntroDone() {
   const run = useRaidRun.getState().run
@@ -343,6 +369,21 @@ export function raidAct(e: RaidEvent) {
 export function raidFightOver() {
   const run = useRaidRun.getState().run
   if (!run || run.stage !== 'fight') return
+  // A Mega raid (docs/40): won, its gem or orb is the player's, and nothing is caught.
+  const { save, data } = useGame.getState()
+  const mega = run.source.kind === 'progress' ? progressRaidOf(data, run.source.key) : null
+  // Fought beside friends' teams, won or lost: their friendship streaks go on (docs/60).
+  if (run.state.phase === 'won' || run.state.phase === 'lost')
+    void raidWithFriends(
+      run.friends.map((f) => f.userId),
+      run.source.kind === 'progress' ? run.source.key : null,
+    )
+  if (run.state.phase === 'won' && save && mega?.mega) {
+    commitSave(applyMegaRaidWin(save, mega))
+    void closeOnServer(run.source, run.friends.map((f) => f.userId))
+    useRaidRun.setState({ run: { ...run, stage: 'result', gem: mega.mega.gem } })
+    return
+  }
   if (run.state.phase === 'won') useRaidRun.setState({ run: { ...run, stage: 'catch', catch: { result: null } } })
   else if (run.state.phase === 'lost') useRaidRun.setState({ run: { ...run, stage: 'result' } })
 }
@@ -373,7 +414,7 @@ export function throwRaidBall(ballKey: string | null) {
   const { save, data } = useGame.getState()
   if (!run || run.stage !== 'catch' || run.catch?.result || !save) return
   const ball = ballKey ? data.items[ballKey] : undefined
-  if (ballKey && (!ball || ball.effect.kind !== 'ball' || (save.inventory[ballKey] ?? 0) <= 0)) return
+  if (ballKey && (!ball || !isBallFor(ball, true) || (save.inventory[ballKey] ?? 0) <= 0)) return
   const next = ballKey ? (consumeItem(save, ballKey) ?? save) : save
   const roll = rollCatch(catchValueOf(data, run.raid.dex), ballBonus(ball), rng)
   // Short, with a Bait that could still make it: the player is asked first (docs/25).

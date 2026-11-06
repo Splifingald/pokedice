@@ -1,6 +1,7 @@
 // Out-of-battle save actions: shop, upgrades, bag items from the team screen, team changes (at a Center, at a portal's
 // way in).
 import {
+  type ProgressEvent,
   applyFieldItem,
   applyLevelEvolution,
   buyComboUpgrade,
@@ -10,6 +11,12 @@ import {
   buyItem,
   markPowerRulesSeen as markPowerRulesSeenIn,
   markGeneralRulesSeen as markGeneralRulesSeenIn,
+  markShinyDexSeen as markShinyDexSeenIn,
+  markUnownDexSeen as markUnownDexSeenIn,
+  startDiceTutorial,
+  finishItemLesson,
+  finishDiceTutorial,
+  gentleFoeMax,
   sellItem,
   createRng,
   randomSeed,
@@ -21,6 +28,8 @@ import {
   dayCareOf,
   depositError,
   depositPokemon,
+  crackEgg,
+  hatchChoices,
   hatchEgg,
   markDayCareVisited,
   markDonationSeen,
@@ -34,7 +43,11 @@ import {
   type Pickup,
   type PokeType,
   type PowerKind,
+  type RegionId,
+  type Rng,
   type RushRefusal,
+  type SaveData,
+  versusLeagueOn,
 } from '@/engine'
 import { tickDayCare } from './daycare'
 import { currentLive } from './live'
@@ -94,6 +107,7 @@ export function applyBagItem(key: string, instId: string): { evolved: { uid: str
   const up = [...res.events].reverse().find((e) => e.kind === 'level_up')
   if (up && up.kind === 'level_up')
     pushToast(t('ui.toast.grewTo', { name: data.species[up.dex]?.name ?? '', level: up.level }), 'good')
+  toastTalents(res.events)
   return { evolved: evo && evo.kind === 'evolve' ? { uid: evo.uid, fromDex: evo.fromDex, toDex: evo.toDex } : null }
 }
 
@@ -105,7 +119,22 @@ export function evolveAtLevelCap(instId: string): { uid: string; fromDex: number
   const evo = res?.events.find((e) => e.kind === 'evolve')
   if (!res || !evo || evo.kind !== 'evolve') return null
   mutateSave(() => res.save)
+  toastTalents(res.events)
   return { uid: evo.uid, fromDex: evo.fromDex, toDex: evo.toDex }
+}
+
+/** A family's hidden talent found as one of its Pokémon evolved out of battle (docs/51): a toast says so. */
+function toastTalents(events: readonly { kind: string }[]) {
+  const data = useGame.getState().data
+  for (const e of events)
+    if (e.kind === 'talent') {
+      const f = e as Extract<ProgressEvent, { kind: 'talent' }>
+      pushToast(
+        t(`ui.talent.found.${f.how}`, { name: data.species[f.dex]?.name ?? '', talent: t(`ui.talent.name.${f.talent}`) }),
+        'good',
+        4500,
+      )
+    }
 }
 
 export function reorderTeam(ids: string[]) {
@@ -179,11 +208,49 @@ export function upgradeGeneral(id: GeneralId): boolean {
 
 /** The General tab's rules have been shown (its pop-up, or the tab opened). */
 export function markGeneralRulesSeen(): void {
-  mutateSave((s) => (s.general?.rulesSeen ? null : markGeneralRulesSeenIn(s)))
+  mutateSave((s) => {
+    const next = markGeneralRulesSeenIn(s, useGame.getState().data)
+    return next === s ? null : next
+  })
 }
 
 export function markVersusRulesSeen(): void {
-  mutateSave((s) => (s.versusRulesSeen ? null : { ...s, versusRulesSeen: true }))
+  // With the weekly league on (docs/44), its card read is both flags: Versus's own rules are inside it.
+  const league = versusLeagueOn(useGame.getState().data)
+  mutateSave((s) =>
+    s.versusRulesSeen && (!league || s.versusLeagueRulesSeen)
+      ? null
+      : { ...s, versusRulesSeen: true, ...(league && { versusLeagueRulesSeen: true }) },
+  )
+}
+
+/** The shiny Pokédex's rules have been shown (its pop-up). */
+export function markShinyDexSeen(): void {
+  mutateSave((s) => (s.shinyDexSeen ? null : markShinyDexSeenIn(s)))
+}
+
+/** The Unown Pokédex's rules have been shown (its pop-up, or its page). */
+export function markUnownDexSeen(): void {
+  mutateSave((s) => (s.unownDexSeen ? null : markUnownDexSeenIn(s)))
+}
+
+/** The dice tutorial has shown (docs/46 §5): it comes back until it's finished. */
+export function startDiceTutorialNow(): void {
+  mutateSave((s) => (s.diceTutorial ? null : startDiceTutorial(s)))
+}
+
+/** The item tutorial has shown (docs/46 §7): never again. */
+export function finishItemLessonNow(): void {
+  mutateSave((s) => (s.itemLesson ? null : finishItemLesson(s)))
+  // From now on the foe hits softly on the set opening's first round (docs/46 §7): this fight too, not only the next.
+  const { save, data, run, battle } = useGame.getState()
+  const max = save && battle && !battle.state.foeDiceMax ? gentleFoeMax(save, data, run.areaId) : undefined
+  if (max != null) useGame.setState({ battle: { ...battle!, state: { ...battle!.state, foeDiceMax: max } } })
+}
+
+/** BACK TO the area: the dice tutorial is done, for good. */
+export function finishDiceTutorialNow(): void {
+  mutateSave((s) => (s.diceTutorial === 'done' ? null : finishDiceTutorial(s)))
 }
 
 /** The first visit ends the unlock tutorial. */
@@ -210,33 +277,64 @@ export function pickUpFromDayCare(uid: string): Pickup | null {
   return res
 }
 
-/** The Egg waiting hatches (the gift, or one a pair left). Null when none waits. */
-export function hatchDayCareEgg(): Hatch | null {
-  const { save, data } = useGame.getState()
-  const res = save ? hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId, currentLive()) : null
+/**
+ * What a hatching Egg offers: `placed` when it had one Box to go to (it is there already), else `choices`, one per Box
+ * it can go to, as it would arrive there (the player picks with `hatchDayCareEggInto`).
+ */
+export type HatchOffer = { placed: Hatch } | { choices: Hatch[] }
+
+/**
+ * The Egg cracks and what it holds is kept on it (so a reload rolls nothing again); with one Box to go to it hatches
+ * there at once, with several the screen asks which. Null when none waits.
+ */
+function offerHatch(save: SaveData, rng: Rng): HatchOffer | null {
+  const { data } = useGame.getState()
+  const cracked = crackEgg(save, data, rng)
+  if (!cracked) return null
+  const choices = hatchChoices(cracked, data, Date.now(), currentLive())
+  if (choices.length > 1) {
+    mutateSave(() => cracked)
+    return { choices }
+  }
+  return hatchInto(cracked, choices[0]?.region)
+}
+
+function hatchInto(save: SaveData, region?: RegionId): { placed: Hatch } | null {
+  const { data } = useGame.getState()
+  const res = hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId, currentLive(), region)
   if (!res) return null
   mutateSave(() => res.save)
   // The clocks kept running while it waited: a check that came due meanwhile can leave the next one now.
   tickDayCare()
-  return res
+  return { placed: res }
+}
+
+/** The Egg waiting hatches (the gift, or one a pair left). Null when none waits. */
+export function hatchDayCareEgg(): HatchOffer | null {
+  const { save } = useGame.getState()
+  return save ? offerHatch(save, createRng(randomSeed())) : null
+}
+
+/** The player picked the hatchling's Box (one of its `choices`). Null when none waits or it can't go there. */
+export function hatchDayCareEggInto(region: RegionId): Hatch | null {
+  const { save } = useGame.getState()
+  return (save && hatchInto(save, region)?.placed) ?? null
 }
 
 /**
  * Egg now: the checks that are due run first (one may leave an Egg on its own, and then there is nothing to buy),
  * then the next check runs early for `rushPrice` and its Egg hatches at once: one commit, one moment.
  */
-export function rushDayCareEgg(): { hatch: Hatch } | { refused: RushRefusal } {
+export function rushDayCareEgg(): { hatch: HatchOffer } | { refused: RushRefusal } {
   tickDayCare()
   const { save, data } = useGame.getState()
   if (!save) return { refused: 'pair' }
-  const now = Date.now()
   const rng = createRng(randomSeed())
-  const rushed = rushEgg(save, data, now, rng)
+  const rushed = rushEgg(save, data, Date.now(), rng)
   if ('refused' in rushed) return rushed
-  const hatch = hatchEgg(rushed.save, data, rng, now, newId, currentLive())
-  if (!hatch) return { refused: 'pair' }
-  mutateSave(() => hatch.save)
-  return { hatch }
+  // Paid with the Egg it bought: the hatching commits both, or the Box pick does, with the Egg cracked meanwhile.
+  const hatch = offerHatch(rushed.save, rng)
+  return hatch ? { hatch } : { refused: 'pair' }
 }
 
 /** The residents the Day Care sent home when it had too many: read once, for the toast. */

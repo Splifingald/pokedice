@@ -545,7 +545,7 @@ async function fetchNewSpecies(existing: Species[]): Promise<FetchResult> {
       type2,
       baseHp: hpAtLevel(hpStat, 1),
       maxHp: hpAtLevel(hpStat, 100),
-      speed: Math.floor(stat('speed') / 10),
+      speed: stat('speed'),
       spriteUrl: SPRITE(mon.id),
       dice: composeDice(diceCount, type1, type2),
       rerolls: diceCount,
