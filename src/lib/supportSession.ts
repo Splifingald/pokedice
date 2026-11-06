@@ -13,10 +13,20 @@ const BEAT_MS = 60_000
 function read(): SupportSession | null {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<SupportSession> | null
-    if (!raw || typeof raw.count !== 'number' || typeof raw.startedAt !== 'number' || typeof raw.lastSeen !== 'number') {
+    if (
+      !raw ||
+      typeof raw.count !== 'number' ||
+      typeof raw.startedAt !== 'number' ||
+      typeof raw.lastSeen !== 'number'
+    ) {
       return null
     }
-    return { count: raw.count, startedAt: raw.startedAt, lastSeen: raw.lastSeen, shownDay: raw.shownDay ?? null }
+    return {
+      count: raw.count,
+      startedAt: raw.startedAt,
+      lastSeen: raw.lastSeen,
+      shownDay: raw.shownDay ?? null,
+    }
   } catch {
     return null
   }
