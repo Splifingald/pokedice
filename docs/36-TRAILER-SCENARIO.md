@@ -32,8 +32,7 @@ DISCORD COMMUNITY instead of the Discord link, and a better Discord mark; every 
 - **Always the battle area** in the fights and the big moments; menus only in the features, as cut-ins.
 - **Nothing blurry.** Every Pokémon is drawn at its sprite's own size (the game shrinks anything over 80 px, which
   blurs or drops pixels; every Pokémon here fits at full size), the area pictures and the lab at a whole number of
-  screen pixels per picture pixel, the raid openings' Pokémon at 1×, and their hazard tapes level and laid pixel by
-  pixel. Every stage shot is centred on the stage, so a timeline's dimming covers the whole frame.
+  screen pixels per picture pixel, the raid openings at ×4 or ×3 and their words in the game's bitmap font. Every stage shot is centred on the stage, so a timeline's dimming covers the whole frame.
 - **Your Pokémon in full view.** In the game, your Pokémon's feet sit 4 px below the stage (a back view cut by the
   panel under it). In a video the bottom of the frame is the dice's band and a player's control bar, so the trailer
   stands it 12 px higher, whole (`liftHero`, fight.ts), keeps the dice band lighter, and draws Charmander, Charmeleon
@@ -138,11 +137,11 @@ light. `What? Charmander is evolving!`, then `Charmander evolved into Charmeleon
 
 | Time | Picture |
 |---|---|
-| 26.5–31 | **Rayquaza's raid opening**, full screen (`RaidIntro.tsx`, redrawn landscape in `trailer/lib/raidIntro.ts`): in **the Sky Pillar's day** (the backdrop of the promo video's sky raid, `trailer/lib/skyPillar.ts`: the sky, the sea of clouds, the far towers, Rayquaza on a pillar's top): the alarm and its hazard tapes, emerald lightning, the silhouette rising, the pillar of light, the reveal, `RAID BATTLE / RAYQUAZA` and its three HP bars filling. |
+| 26.5–31 | **Rayquaza's raid opening**, full screen: its own cinematic (`src/fx/timelines/cinema/rayquaza.ts`, docs/53) at 480×270 ×4, the size the game gives it on a 1080p screen: Sky Pillar above the clouds, the serpent weaving through them, Dragon Ascent smashing a meteor; its reveal on the music's crash (2.2 s in, from 2.4 s of its own before, 1.1× its speed). Then, as the game's raid intro times them from the reveal (`wordsAt`), `RAID BATTLE / RAYQUAZA` and its three HP bars filling (`trailer/lib/raidIntro.ts`). No warning tapes, as in the game with the cinematics on. |
 | 31–34 | **Mega Evolution**, full screen, on the Indigo Plateau: Charizard → Mega Charizard X. `Charizard Mega Evolved into Mega Charizard X!` |
 | 34–37 | **Gigantamax**, full screen, in Pokémon Tower: Gengar → G-Max Gengar. `Gengar Gigantamaxed!` |
-| 37–40.5 | **Four mythical bosses** in a 2×2 grid, their entrances a beat apart: Mew (Faraway Island), Celebi (Ilex Forest), Jirachi (a summit), Manaphy (a beach). A `MYTHICAL BOSSES` chip where the tiles meet. |
-| 40.5–44 | **Four raids** in a 2×2 grid, each one's raid opening: Lugia, Groudon, Palkia, Zacian. A `RAIDS WITH FRIENDS` chip. White takes the screen at the end. |
+| 37–40.5 | **Four mythical bosses** in a 2×2 grid, each its own entrance on the battle stage (`BOSS_CINEMAS`, docs/53), a beat apart: Mew hopping through the forest, Celebi's shrine turning through the seasons, Jirachi's comet, Manaphy's Heart Swap in the Sea Temple; each from 2.5 s before its reveal at 1.25×, so the reveals land 2 s in and the name cards follow. A `MYTHICAL BOSSES` chip where the tiles meet. |
+| 40.5–44 | **Four raids** in a 2×2 grid, each its own cinematic with its words (`RAID_CINEMAS`): Lugia out of the Whirl Islands' whirlpool, Groudon over the land splitting, Palkia tearing space at Spear Pillar, Zacian; each from 2 s before its reveal at 1.2×. A `RAIDS WITH FRIENDS` chip. White takes the screen at the end. |
 
 Each tile has a 12-px ink border and its star's type colour as a rim; each part opens on a white frame.
 
@@ -207,8 +206,9 @@ the landscape one.
 - The title's dice land in two rows, POKÉ over DICE, `Roll · Battle · Catch` under them; the side swap as in landscape.
 - The three fights and the evolution as in the vertical cut; the PAIR chip just above the dice, the Boulder Badge over
   the stage's top right.
-- Rayquaza's raid, the Mega Evolution and the Gigantamax in the stage's window (the raid at ×5, its middle 216 of 320
-  art pixels); the two 2×2 grids as a 1080 px square of 540 px tiles under the header (bosses at ×3).
+- Rayquaza's raid, the Mega Evolution and the Gigantamax in the stage's window (the raid its own cinematic at
+  270×200 ×4); the bosses' grid in tiles of the stage's shape (540×360, the stage at ×2 so each name card shows whole),
+  the raids' as a 1080 px square of 540 px tiles (each scene 180×180 at ×3).
 - The features: the friends' cards stacked; Versus with the rival and her dice up top, VS, you and yours below (the
   stadium at ×8 to cover the height); trading, the co-op raid and the Day Care in the stage's window, the raid's three
   bars over it and the trainers' cards in a row under it; the word bottom left, above the apps' caption.
@@ -279,3 +279,6 @@ its own score `scoreSocial`). 1920×1080 like the main one. No title: it opens o
     with three HP bars, not five (the four raids, Kyogre's co-op raid).
 14. The co-op raid against Kyogre with Hoenn's starters at their last stage (Blaziken, Swampert, Sceptile).
 15. A long portrait cut (the whole trailer in 9:16), and long versions under 20 MB without losing much (§9).
+16. Every video remade with the game's latest raid and mythical intros (docs/53): each legend's own cinematic replaces
+    the shared raid opening and the shared legend entrance (and the Sky Pillar backdrop of item 13, which Rayquaza's
+    own cinematic now is).

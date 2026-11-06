@@ -41,7 +41,8 @@ export interface Frame {
   /** The combo chip (PAIR) and the badge won from a trainer. */
   combo: Point
   badge: Point
-  /** Where the 2×2 grids of the montage go, and the zoom of a boss's stage in a tile. */
+  /** Where the 2×2 grids of the montage go (the bosses' and the raids'), and the zoom of a boss's stage in a tile. */
+  bossGrid: Box
   grid: Box
   gridZoom: number
   /** A feature's word: its baseline's left end and size. */
@@ -69,6 +70,7 @@ export const LANDSCAPE: Frame = {
   burst: { x: 960, y: 900 },
   combo: { x: 960, y: 560 },
   badge: { x: 1920 - 200, y: 230 },
+  bossGrid: { x: 0, y: 0, w: 1920, h: 1080 },
   grid: { x: 0, y: 0, w: 1920, h: 1080 },
   gridZoom: 4,
   word: { x: 96, y: 1000, size: 150 },
@@ -98,9 +100,11 @@ export const PORTRAIT: Frame = {
   burst: { x: 540, y: 1430 },
   combo: { x: 540, y: 1210 },
   badge: { x: 880, y: STAGE_Y + 200 },
-  // Square tiles of 540: a stage at ×3 shows 180×180 of it.
+  // The bosses' tiles in the stage's shape (540×360: the stage at ×2, its name card whole; ×3 would cut it), the
+  // raids' square (540: a raid's scene at ×3).
+  bossGrid: { x: 0, y: STAGE_Y + 180, w: 1080, h: 720 },
   grid: { x: 0, y: STAGE_Y, w: 1080, h: 1080 },
-  gridZoom: 3,
+  gridZoom: 2,
   word: { x: 60, y: 1520, size: 120 },
 }
 
