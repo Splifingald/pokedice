@@ -58,6 +58,10 @@ renamed in the admin, or one only the remote config has, is read from their team
   makes a whole-stage picture fill the box (an area's picture still shows its middle 240 × 160).
 - `BattleView` picks it for a gym encounter, before the area's picture. The drawn background stands in while it loads.
 - Kitchen sink → Battle: a **Stage** dropdown shows the stage on each of the 18.
+- `e2e/gym-stages.spec.ts`: Lt. Surge's fight on the Electric stage, filling it; its picture:
+
+  ![Lt. Surge on the Electric stage](67-gym-stages/surge-battle.png)
+
 - Tests: `tests/gym-stages.test.ts` (every gym battle in the data finds a type; the tricky leaders; one 400 × 268 file
   per type), `tests/area-art.test.ts` (the gym stages are 3:2 like the lab).
 
