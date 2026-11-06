@@ -29,7 +29,6 @@ import {
   speciesTime,
   wildShare,
   type DayTime,
-  routeShiniesOn,
   shinyDexOf,
 } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -285,7 +284,7 @@ export function DetailsBody({ area }: { area: Area }) {
   const side = playerSideOf(save)
   const avg = teamAverageLevel(save)
   // The species already in this region's shiny Pokédex (docs/67, Ceurana's ask): a star on their cards.
-  const shinyOwned = new Set(routeShiniesOn(data) ? shinyDexOf(save) : [])
+  const shinyOwned = new Set(shinyDexOf(save))
 
   // The gym, or the League's battles.
   const gyms = gymsFor(area, data, side)

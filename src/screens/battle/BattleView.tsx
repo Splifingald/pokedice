@@ -53,7 +53,6 @@ import {
   roadblockOf,
   canPassCatch,
   autoCureItem,
-  autoCureOn,
   AUTO_CURE_MS,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
@@ -620,7 +619,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
 
   // Auto-mode's HEAL (docs/67): stunned with its cure in the Bag, the turn waits a few seconds for a tap before it
   // passes. `cureGone`: the log's length when the offer ran out, so that turn passes and the next stun asks again.
-  const cureKey = auto && stunned && !versus && autoCureOn(data) ? autoCureItem(st, data, save?.inventory) : null
+  const cureKey = auto && stunned && !versus ? autoCureItem(st, data, save?.inventory) : null
   const [cureGone, setCureGone] = useState(-1)
   const cureHold = !!cureKey && cureGone !== battle.log.length
 
@@ -900,7 +899,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const idlePick = idleCatch?.startsWith('throw:') ? idleCatch.slice(6) || null : undefined
   // PASS (docs/67): a Pokémon already owned can be left without a throw; Idle passes by itself (above).
   const passOffered = useGame(
-    (s) => !idleCatch && !!s.save && !!s.run.catch && canPassCatch(s.save, s.data, s.run.catch.dex, s.run.catch.shiny),
+    (s) => !idleCatch && !!s.save && !!s.run.catch && canPassCatch(s.save, s.run.catch.dex, s.run.catch.shiny),
   )
   const idleAct = useRef<() => void>(() => {})
   idleAct.current = () => {

@@ -455,12 +455,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   // same row.
   leagueHeal: { access: 'off' },
   rivalLossHeal: { access: 'off' },
-  // The players' suggestions (docs/67): each Off until the admin switches it on. Migration 0143 inserts the same rows.
-  raidFavourites: { access: 'off' },
-  shinyTiles: { access: 'off' },
-  passOwned: { access: 'off' },
-  routeShinies: { access: 'off' },
-  autoCure: { access: 'off' },
   // A rival's team matched to the player (docs/61 §5.5): Off; its choices' defaults in engine/rivalMatch.ts. Migration
   // 0137 inserts the same row.
   rivalMatch: { access: 'off' },

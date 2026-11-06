@@ -1,6 +1,6 @@
 // Favourites (docs/67, Ash's suggestion): a heart on a Pokémon, put on in its sheet or in the raid team picker, so the
-// ones the player wants to raid with come first there. The engine keeps the list (`toggleFavourite`); behind its switch.
-import { isFavourite, raidFavouritesOn, toggleFavourite, type PokemonInstance } from '@/engine'
+// ones the player wants to raid with come first there. The engine keeps the list (`toggleFavourite`).
+import { isFavourite, toggleFavourite, type PokemonInstance } from '@/engine'
 import { PixelIcon } from '@/components/icons'
 import { useT } from '@/i18n/react'
 import { mutateSave, useGame } from '@/store/game'
@@ -15,11 +15,10 @@ export function HeartGlyph({ on, size = 18 }: { on: boolean; size?: number }) {
   )
 }
 
-/** Whether this Pokémon wears the heart, and the toggle; null while the switch is off. */
+/** Whether this Pokémon wears the heart, and the toggle; null without a Pokémon. */
 export function useFavourite(id: string | undefined): { on: boolean; toggle: () => void } | null {
-  const open = useGame((s) => raidFavouritesOn(s.data))
   const on = useGame((s) => !!id && !!s.save && isFavourite(s.save, id))
-  if (!open || !id) return null
+  if (!id) return null
   return { on, toggle: () => mutateSave((s) => toggleFavourite(s, id)) }
 }
 

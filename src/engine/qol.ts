@@ -1,25 +1,16 @@
-// The players' suggestions of 2026-11-04/05 (docs/67), five small helps, each behind its own admin switch (docs/15 §20),
-// Off by default:
-// - raidFavourites: a heart on a Pokémon; the raid team picker lists the favourites first (Ash).
-// - shinyTiles: a shiny's tile in the Box on a gold ground, not only its star (Ash).
-// - passOwned: PASS on the catch panel, for a Pokémon already owned (Ash).
-// - routeShinies: the area's Pokémon grid marks a species already in the shiny Pokédex (Ceurana).
-// - autoCure: in auto-mode, a stunned Pokémon with its cure in the Bag gets a few seconds' HEAL button (Ash).
-// All of them live on the player's device: no server function acts for them, so none reads their switches.
+// The players' suggestions of 2026-11-04/05 (docs/67), five small helps, on for everyone with no switch (the user's
+// call, 2026-11-06):
+// - favourites: a heart on a Pokémon; the raid team picker lists the favourites first (Ash).
+// - shiny tiles: a shiny's tile in the Box on a gold ground, not only its star (Ash).
+// - PASS on the catch panel, for a Pokémon already owned (Ash).
+// - the area's Pokémon grid marks a species already in the shiny Pokédex (Ceurana).
+// - in auto-mode, a stunned Pokémon with its cure in the Bag gets a few seconds' HEAL button (Ash).
 import { activeBattler, type BattleState } from './battle'
-import { eventOpenTo } from './events'
 import { usableIn } from './items'
 import { stunKind } from './status'
 import type { GameData, SaveData } from './types'
 
-export const raidFavouritesOn = (data: GameData): boolean =>
-  eventOpenTo(data.config.raidFavourites?.access, data)
-export const shinyTilesOn = (data: GameData): boolean => eventOpenTo(data.config.shinyTiles?.access, data)
-export const passOwnedOn = (data: GameData): boolean => eventOpenTo(data.config.passOwned?.access, data)
-export const routeShiniesOn = (data: GameData): boolean => eventOpenTo(data.config.routeShinies?.access, data)
-export const autoCureOn = (data: GameData): boolean => eventOpenTo(data.config.autoCure?.access, data)
-
-/** How long auto-mode holds a stunned turn for its HEAL button (× the battle pace). */
+/** How long auto-mode holds a stunned turn for its HEAL button (not shortened by the auto pace: the player's time). */
 export const AUTO_CURE_MS = 3000
 
 /** The most favourites a save keeps (the schema's bound too). */
@@ -44,17 +35,11 @@ export function toggleFavourite(save: SaveData, id: string): SaveData {
 }
 
 /**
- * PASS on the catch panel: the switch, and a Pokémon already owned, by Idle's rule (`idleOwns`, docs/36): a plain one
- * once its species is in the Pokédex, a shiny once a shiny of its species is in the Box. A new one is never passed by
- * a slip of the thumb.
+ * PASS on the catch panel: for a Pokémon already owned, by Idle's rule (`idleOwns`, docs/36): a plain one once its
+ * species is in the Pokédex, a shiny once a shiny of its species is in the Box. A new one is never passed by a slip of
+ * the thumb.
  */
-export function canPassCatch(
-  save: Pick<SaveData, 'pokedex' | 'box'>,
-  data: GameData,
-  dex: number,
-  shiny = false,
-): boolean {
-  if (!passOwnedOn(data)) return false
+export function canPassCatch(save: Pick<SaveData, 'pokedex' | 'box'>, dex: number, shiny = false): boolean {
   return shiny ? save.box.some((m) => m.dex === dex && m.shiny) : save.pokedex.includes(dex)
 }
 

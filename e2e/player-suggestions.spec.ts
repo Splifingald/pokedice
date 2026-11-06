@@ -1,16 +1,14 @@
-// The players' suggestions (docs/67), played with their switches on: a shiny's Box tile on gold, the heart in the
+// The players' suggestions (docs/67), on for everyone: a shiny's Box tile on gold, the heart in the
 // Pokémon sheet, favourites first in the raid team picker, the shiny star on an area's Pokémon, PASS on an owned
-// Pokémon's catch, and auto-mode's HEAL offer on the kitchen sink. Off, none of it shows. Last, the fix that came with
+// Pokémon's catch, and auto-mode's HEAL offer on the kitchen sink. Last, the fix that came with
 // them: a trainer's next Pokémon no longer flickers the fight's background.
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG, emptyProgress, instanceMaxHp, linearAreas, type SaveData } from '../src/engine'
 import { EVENTS_ON, FAST, gameData, makeSave, mockSupabase } from './helpers'
 
 const data = gameData()
-const SWITCHES = ['raidFavourites', 'shinyTiles', 'passOwned', 'routeShinies', 'autoCure']
-const ON = Object.fromEntries(SWITCHES.map((k) => [k, { access: 'all' }]))
 
-async function boot(page: Page, save: SaveData, config: Record<string, unknown> = ON, rpc = {}) {
+async function boot(page: Page, save: SaveData, rpc = {}) {
   await mockSupabase(page, { rpc })
   await page.addInitScript(
     ([s, f, c]) => {
@@ -18,7 +16,7 @@ async function boot(page: Page, save: SaveData, config: Record<string, unknown> 
       localStorage.setItem('pokedice.settings', f!)
       localStorage.setItem('pokedice.devConfig', c!)
     },
-    [JSON.stringify(save), FAST, JSON.stringify({ ...EVENTS_ON, ...config })],
+    [JSON.stringify(save), FAST, JSON.stringify(EVENTS_ON)],
   )
 }
 
@@ -65,17 +63,6 @@ test('the Box: a shiny tile on gold; the heart in its sheet, kept in the save', 
   await expect.poll(async () => (await stored(page)).favourites).toEqual([])
 })
 
-test('switched off: no gold tile, no heart', async ({ page }) => {
-  await boot(page, boxSave(), {})
-  await page.goto('/team')
-  expect(await background(page, /^Spearow, Shiny/)).toBe('rgb(255, 255, 255)')
-  await page.getByRole('button', { name: /^Lapras,/ }).click()
-  // Its sheet, docked beside the Box on a computer.
-  await expect(page.getByRole('button', { name: /^Lapras,/ })).toHaveAttribute('aria-current', 'true')
-  await expect(page.getByRole('button', { name: 'Favourite', exact: true })).toHaveCount(0)
-  await expect(page.getByText('Favourites come first when you pick a raid team.')).toHaveCount(0)
-})
-
 test("an area's Pokémon: the star on a species already in the shiny Pokédex", async ({ page }) => {
   const save = makeSave(4)
   const area = data.areas.find((a) => a.id === save.currentAreaId)!
@@ -110,7 +97,6 @@ test('the raid team picker: favourites first, a heart on each card', async ({ pa
       areaProgress: { ...base.areaProgress, [DEFAULT_CONFIG.events.raid.unlockAreaId!]: cleared },
       events: { seen: ['wheel', 'raid'] },
     },
-    ON,
     { event_time: () => ({ now: `${RAID_DAY}T12:00:00.000Z`, day: RAID_DAY }) },
   )
   await page.goto('/events/raid')

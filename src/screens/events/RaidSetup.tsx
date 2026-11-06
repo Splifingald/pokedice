@@ -7,7 +7,6 @@ import {
   getRegion,
   isFavourite,
   POKE_TYPES,
-  raidFavouritesOn,
   progressRaidOf,
   progressRaidTeam,
   raidRecommended,
@@ -262,11 +261,10 @@ function TeamEditor({
   const collator = new Intl.Collator(getLang())
   const needle = searchFold(q)
   // Favourites (docs/67): the hearts the player put on come first in every order, then the order picked.
-  const favOn = useGame((s) => raidFavouritesOn(s.data))
   const save = useGame((s) => s.save)
-  const fav = (id: string) => favOn && !!save && isFavourite(save, id)
+  const fav = (id: string) => !!save && isFavourite(save, id)
   // The order keeps the hearts as they were when the picker opened: a card tapped doesn't jump away under the thumb.
-  const [favAtOpen] = useState(() => new Set(favOn ? (save?.favourites ?? []) : []))
+  const [favAtOpen] = useState(() => new Set(save?.favourites ?? []))
   // The search and the type narrow the list; picks they hide stay picked. Every order falls back to the next key so
   // two copies of a species always read the same way. Recommended: the green thumbs first by Pokédex No. (the user's
   // rule, 2026-10-16), then the rest strongest first.
@@ -401,7 +399,7 @@ function TeamEditor({
             })}
           </p>
         )}
-        {favOn && candidates.length > 1 && (
+        {candidates.length > 1 && (
           <p className="m-0 flex items-start gap-1.5 font-pixel-sm text-[16px] leading-tight text-muted">
             <HeartGlyph on size={16} />
             {t('ui.fav.raidTip')}
@@ -441,14 +439,12 @@ function TeamEditor({
                   )}
                 </button>
                 {/* Its heart, a button of its own beside the card's: the next time, it comes first. */}
-                {favOn && (
-                  <FavouriteHeart
-                    on={fav(p.id)}
-                    onToggle={() => mutateSave((s) => toggleFavourite(s, p.id))}
-                    label={t('ui.fav.toggle', { name })}
-                    className="absolute right-0 top-0"
-                  />
-                )}
+                <FavouriteHeart
+                  on={fav(p.id)}
+                  onToggle={() => mutateSave((s) => toggleFavourite(s, p.id))}
+                  label={t('ui.fav.toggle', { name })}
+                  className="absolute right-0 top-0"
+                />
               </li>
             )
           })}

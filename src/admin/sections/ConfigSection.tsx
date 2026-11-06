@@ -1699,12 +1699,6 @@ const FEATURES: Feature[] = [
   own('Friendship & Friend Market', 'friendship', 'friendship'),
   own('Welcome back', 'welcomeBack', 'welcomeBack'),
   own('Push notifications', 'push', 'push'),
-  // The players' suggestions (docs/67).
-  bare('Raid favourites', 'raidFavourites'),
-  bare('Shiny tiles in the Box', 'shinyTiles'),
-  bare('PASS on an owned catch', 'passOwned'),
-  bare("Shiny star on an area's Pokémon", 'routeShinies'),
-  bare('Auto-mode HEAL button', 'autoCure'),
 ]
 
 const isAccess = (v: unknown): v is EventAccess => (EVENT_ACCESS as readonly unknown[]).includes(v)

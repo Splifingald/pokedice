@@ -1390,16 +1390,6 @@ export interface GameConfig {
    */
   rivalLossHeal: { access: EventAccess }
   /**
-   * The players' suggestions (docs/67), each its own switch: favourites first in the raid picker, shiny tiles on gold
-   * in the Box, PASS on an owned Pokémon's catch, the shiny star on an area's Pokémon, auto-mode's HEAL button.
-   * Migration 0143 inserts the same rows.
-   */
-  raidFavourites: { access: EventAccess }
-  shinyTiles: { access: EventAccess }
-  passOwned: { access: EventAccess }
-  routeShinies: { access: EventAccess }
-  autoCure: { access: EventAccess }
-  /**
    * A rival's team matched to the player (docs/61 §5.5): the switch, how the levels follow and how the species follow.
    * Migration 0137 inserts the same row; a missing field keeps the game's default (engine/rivalMatch.ts).
    */

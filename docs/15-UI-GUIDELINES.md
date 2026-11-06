@@ -1121,7 +1121,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
   rules shown at their own moment (the portal's and the nightmare's way in, Trick or Treat's first ghost, the Gift
   card's first present (§45), the gifts', the looks'). The Day Care, Versus, the events, Extreme mode, Trades, the gifts (§23), the General upgrades (§24), the invite rewards (§25),
-  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27; the Stairway of Plates, §49, on a switch of its own, `platesRun`, with its own rules flag), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), Tracks in the Snow (§46: the same, as the nightmare's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), Friend Battles (§50: its page's rules card, once; INFO at its foot; Home's notice for an account with Versus open), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) the players' suggestions (§51: **no rules and no INFO**, each explained where it happens or purely visual) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
+  the shiny Pokédex (§35), the Unown Pokédex (§37), the portal run (§27; the Stairway of Plates, §49, on a switch of its own, `platesRun`, with its own rules flag), idle mode (§34: **no rules pop-up**, the user's explicit exception of 2026-10-23; INFO in Settings → Play style), the small worlds (§22: the world's pop-up, once; INFO at the bottom of Home inside it), finishing a small world early (§22: its offer is its rules pop-up, once; Home's row inside the world is its INFO), Trick or Treat (§28), trainer looks (§17, docs/31), the battle powers (§33), hidden talents (§38: its INFO is a tap on the Pokémon sheet's talent box, as it has no page), real-player battles (§39: its rules pop-up after the first card's intro, as Trick or Treat's at the first ghost; INFO on the card), the nightmare (§29: its short rules on its way in's pop-up, every time, as the portal run's), Tracks in the Snow (§46: the same, as the nightmare's), day and night in Johto (§30: its INFO is the top bar's sun or moon, as it has no page), the Underground (§32: its pop-up is its rules, once per event), the gift calendar (§40: its page's rules card, once; INFO in its dock), outfits (§41, docs/59: no page, so its rules pop-up once the first Pokémon in an outfit arrives; its INFO is a tap on the outfit's chip on the Pokémon sheet), friendship (§42: its rules card on the Friends page or the market, whichever opens first, once; INFO on its card and at the market's foot; **no Home notice**, the user's call of 2026-11-01: players meet it on the Friends page), Friend Battles (§50: its page's rules card, once; INFO at its foot; Home's notice for an account with Versus open), welcome-back gifts (§23, docs/58: **no rules and no INFO**, the user's explicit exception of 2026-11-01: a developer's message that says only how long the player was away) the players' suggestions (§51: **no switch, no rules and no INFO**, the user's call of 2026-11-06: on for everyone from the start, each explained where it happens or purely visual) and push notifications (§26: its rules pop-up is its question, asked once per feature; its INFO is in Settings →
   Notifications) follow it.
 - **The one-time pop-ups take turns, in one queue** (`nextOneTimePopup`, src/engine/popups.ts; docs/38 U2a): one at a
   time, only between fights (`run.phase === 'idle'`, no battle, no full-screen moment, no gift being opened), never on
@@ -2594,22 +2594,22 @@ Switches' Beta testers list. The switch offers that 4th value only on a feature 
 
 ## 51. The players' suggestions
 
-docs/67. Five small helps, each on its own switch (§20), Off by default; none has a rules pop-up or INFO: each is
-explained where it happens, or only changes how something looks. Every state is on `/kitchen-sink` (`SuggestionBits`).
+docs/67. Five small helps, **on for everyone with no switch** (the user's call, 2026-11-06, an exception to §20); none
+has a rules pop-up or INFO: each is explained where it happens, or only changes how something looks. Every state is on `/kitchen-sink` (`SuggestionBits`).
 
-- **The heart** (`raidFavourites`, `components/Favourite.tsx`): the `heart` icon, red when on, its silhouette in `muted`
+- **The heart** (`components/Favourite.tsx`): the `heart` icon, red when on, its silhouette in `muted`
   when off; the state is the button's `aria-pressed`, never the colour alone. In the Pokémon sheet, `FavouriteRow`: a
   44 px toggle ("Favourite"; on: `bg-rose` with an edge ring) and its one line. On the raid picker's cards,
   `FavouriteHeart`: a 36 px button of its own at the card's top right, a sibling of the card's button (never inside it).
   A heart tapped there doesn't move the card: the order follows the hearts as they were when the picker opened.
-- **Shiny tiles** (`shinyTiles`): `MonTile shiny` puts a shiny on `gold-pale` (the star stays). Picked or shown beside
+- **Shiny tiles**: `MonTile shiny` puts a shiny on `gold-pale` (the star stays). Picked or shown beside
   the grid is still the gold outline, so the two never read the same.
-- **PASS** (`passOwned`): a secondary `PixelButton`, "Pass", titled "Leave {name}: you have one already". Beside "Tap a
+- **PASS**: a secondary `PixelButton`, "Pass", titled "Leave {name}: you have one already". Beside "Tap a
   ball" (size `sm`) with a choice of balls; side by side with the throw (both `lg`, the throw red and twice as wide)
   with one. **A step with a choice never presses itself**: the throw is a plain `PixelButton` then, not `AutoButton`.
-- **The shiny star on an area's Pokémon** (`routeShinies`): the 12 px `star`, "In your shiny Pokédex", under the caught
+- **The shiny star on an area's Pokémon**: the 12 px `star`, "In your shiny Pokédex", under the caught
   ball at the card's top right.
-- **Auto-mode's HEAL** (`autoCure`, `components/AutoCure.tsx`): in the battle panel's actions, a `role="status"` line
+- **Auto-mode's HEAL** (`components/AutoCure.tsx`): in the battle panel's actions, a `role="status"` line
   and a red `lg` "USE {item}" with the item's sprite and a 5 px gauge at its foot draining (the reverse of
   `AutoButton`'s filling: here the time runs out and the turn passes). A dialog over the fight holds it, gauge hidden.
 

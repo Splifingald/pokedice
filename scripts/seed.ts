@@ -943,7 +943,6 @@ export async function regionsPrelude(): Promise<string> {
       '0136_rival_loss_heal.sql',
       '0138_rival_match.sql',
       '0139_versus_board_cache.sql',
-      '0143_player_suggestions.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

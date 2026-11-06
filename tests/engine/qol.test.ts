@@ -1,19 +1,12 @@
-// The players' suggestions (docs/67): each switch Off by default and read per player; the favourites list; PASS only
-// for a Pokémon already owned; auto-mode's cure only for a stun it can lift, the narrowest cure first.
+// The players' suggestions (docs/67), on for everyone: the favourites list; PASS only for a Pokémon already owned; auto-mode's cure only for a stun it can lift, the narrowest cure first.
 import { describe, expect, it } from 'vitest'
 import {
   autoCureItem,
-  autoCureOn,
   canPassCatch,
   createBattle,
-  DEFAULT_CONFIG,
   emptyStatus,
   isFavourite,
   MAX_FAVOURITES,
-  passOwnedOn,
-  raidFavouritesOn,
-  routeShiniesOn,
-  shinyTilesOn,
   toggleFavourite,
   uniformLevels,
   type BattleState,
@@ -22,14 +15,6 @@ import {
   type SaveData,
 } from '@/engine'
 import { data } from '../fixtures'
-
-const withConfig = (patch: Partial<GameData['config']>): GameData => ({
-  ...data,
-  config: { ...data.config, ...patch },
-})
-const SWITCHES = ['raidFavourites', 'shinyTiles', 'passOwned', 'routeShinies', 'autoCure'] as const
-const READERS = [raidFavouritesOn, shinyTilesOn, passOwnedOn, routeShiniesOn, autoCureOn]
-const ALL = withConfig(Object.fromEntries(SWITCHES.map((k) => [k, { access: 'all' }])))
 
 const mon = (id: string, dex: number, shiny = false): PokemonInstance => ({
   id,
@@ -42,20 +27,6 @@ const mon = (id: string, dex: number, shiny = false): PokemonInstance => ({
 })
 const save = (box: PokemonInstance[], extra: Partial<SaveData> = {}): SaveData =>
   ({ box, team: [], pokedex: [...new Set(box.map((p) => p.dex))], ...extra }) as unknown as SaveData
-
-describe('the switches', () => {
-  it('are Off by default, on for admin only with the admin, on for everyone', () => {
-    for (const [i, key] of SWITCHES.entries()) {
-      const on = READERS[i]!
-      expect(DEFAULT_CONFIG[key]).toEqual({ access: 'off' })
-      expect(on(data)).toBe(false)
-      const admin = withConfig({ [key]: { access: 'admin' } })
-      expect(on(admin)).toBe(false)
-      expect(on({ ...admin, viewer: { admin: true } } as GameData)).toBe(true)
-      expect(on(ALL)).toBe(true)
-    }
-  })
-})
 
 describe('favourites', () => {
   const s = save([mon('a', 22), mon('b', 41)], { favourites: ['gone'] })
@@ -84,14 +55,13 @@ describe('favourites', () => {
 
 describe('PASS on the catch', () => {
   const s = save([mon('a', 45), mon('b', 22, true)])
-  it('only with its switch on', () => expect(canPassCatch(s, data, 45)).toBe(false))
   it('for a species in the Pokédex, never a new one', () => {
-    expect(canPassCatch(s, ALL, 45)).toBe(true)
-    expect(canPassCatch(s, ALL, 46)).toBe(false)
+    expect(canPassCatch(s, 45)).toBe(true)
+    expect(canPassCatch(s, 46)).toBe(false)
   })
   it('for a shiny only once a shiny of it is in the Box', () => {
-    expect(canPassCatch(s, ALL, 22, true)).toBe(true)
-    expect(canPassCatch(s, ALL, 45, true)).toBe(false)
+    expect(canPassCatch(s, 22, true)).toBe(true)
+    expect(canPassCatch(s, 45, true)).toBe(false)
   })
 })
 
