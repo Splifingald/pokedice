@@ -19,7 +19,7 @@ export const COLORS = {
   sky: 0x4aa3df,
 } as const
 
-export type RoleKey = 'professor' | 'gymLeader' | 'raidPings' | 'patchPings' | 'eventPings'
+export type RoleKey = 'professor' | 'gymLeader' | 'raidPings' | 'patchPings' | 'eventPings' | 'videoPings'
 /** Whom an overwrite is for: everyone, or one of the layout's roles. */
 export type Who = 'everyone' | RoleKey
 
@@ -222,6 +222,7 @@ export const LAYOUT: Layout = {
     { key: 'raidPings', name: 'Raid Pings', permissions: 0n, color: 0, hoist: false, mentionable: false },
     { key: 'patchPings', name: 'Patch Notes Pings', permissions: 0n, color: 0, hoist: false, mentionable: false },
     { key: 'eventPings', name: 'Event Pings', permissions: 0n, color: 0, hoist: false, mentionable: false },
+    { key: 'videoPings', name: 'Video Pings', permissions: 0n, color: 0, hoist: false, mentionable: false },
   ],
 
   categories: [
@@ -272,6 +273,15 @@ export const LAYOUT: Layout = {
           kind: 'announcement',
           aliases: ['live-events', 'event', 'evenements', 'evenement'],
           topic: "Live events: the week's calendar every Monday, and a post as each one starts. Get Event Pings in Channels & Roles.",
+        },
+        {
+          // Pingcord posts here (not a webhook of ours): its role needs Send Messages and Embed Links on this channel,
+          // which the layout keeps since it doesn't manage that role (docs/23 §14).
+          key: 'videos',
+          name: '🎬-videos',
+          kind: 'announcement',
+          aliases: ['video', 'videos', 'youtube', 'tiktok', 'videos-youtube', 'nouvelles-videos'],
+          topic: 'New YouTube and TikTok videos from the developer, posted as they go up. Get Video Pings in Channels & Roles.',
         },
         {
           key: 'supportMe',
@@ -479,6 +489,7 @@ export const LAYOUT: Layout = {
         { title: 'The daily raid', description: "Today's raid Pokémon, every day at 00:00 UTC", emoji: '🔥', roles: ['raidPings'] },
         { title: 'Patch notes', description: 'Each update, once it is live', emoji: '📝', roles: ['patchPings'] },
         { title: 'Events', description: 'Live events, special raids and big news', emoji: '🎉', roles: ['eventPings'] },
+        { title: 'Videos', description: 'Each new YouTube or TikTok video', emoji: '🎬', roles: ['videoPings'] },
       ],
     },
     {
@@ -499,12 +510,12 @@ export const LAYOUT: Layout = {
             'dice, catch them all region after region, and take on the daily raid with your friends.\n\n' +
             `**[Play now: ${SITE.replace('https://', '')}](${SITE})**`,
           fields: [
-            { name: 'Start here', value: '{#rules} the rules\n{#announcements} news\n{#patchNotes} what each update changed\n{#dailyRaid} today\'s raid\n{#liveEvents} live events: the week\'s calendar, each start\n{#supportMe} support the developer' },
+            { name: 'Start here', value: '{#rules} the rules\n{#announcements} news\n{#patchNotes} what each update changed\n{#dailyRaid} today\'s raid\n{#liveEvents} live events: the week\'s calendar, each start\n{#videos} new YouTube and TikTok videos\n{#supportMe} support the developer' },
             { name: 'Talk', value: '{#general} chat\n{#help} questions\n{#strategy} teams and dice\n{#raidSquad} find raid partners\n{#showOff} your best catches\n{#offTopic} anything else' },
             { name: 'Feedback', value: '{#bugs} something broke\n{#ideas} ideas and votes' },
             {
               name: 'Pings and languages',
-              value: 'Open **Channels & Roles** at the top of the channel list to get pinged for raids, patch notes or events, and to join the French channel.',
+              value: 'Open **Channels & Roles** at the top of the channel list to get pinged for raids, patch notes, events or videos, and to join the French channel.',
             },
           ],
           footer: 'Pokédice is a non-commercial fan project, not affiliated with Nintendo, Game Freak, Creatures or The Pokémon Company.',
