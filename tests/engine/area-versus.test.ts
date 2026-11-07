@@ -248,6 +248,35 @@ describe('the level match', () => {
     expect(Object.values(foeLevels(m).dieLevels).every((v) => v === lv)).toBe(true)
   })
 
+  it('takes back each evolution their new level stands below, not a stone’s', () => {
+    const m = matchFoe(
+      {
+        ...foe,
+        team: [
+          { dex: 6, level: 60, shiny: true }, // Charizard at 31: below Charmeleon's 36
+          { dex: 6, level: 28 }, // …at 14: below Charmander's 16 as well
+          { dex: 3, level: 54 }, // Venusaur at 28: below Ivysaur's 32
+          { dex: 25, level: 20 }, // Pikachu at 10: below its Pichu's 30
+          { dex: 135, level: 40 }, // Jolteon: a stone's, no level to go by
+        ],
+      },
+      at30(),
+      ROUTE3,
+      matched,
+    )
+    expect(m.team).toEqual([
+      { dex: 5, level: 31, shiny: true },
+      { dex: 4, level: 14 },
+      { dex: 2, level: 28 },
+      { dex: 172, level: 10 },
+      { dex: 135, level: 21 },
+    ])
+    // A team within reach keeps its species, a Lv.20 Charizard included.
+    expect(matchFoe({ ...foe, team: [{ dex: 6, level: 20 }] }, at30(), ROUTE3, matched).team).toEqual([
+      { dex: 6, level: 20 },
+    ])
+  })
+
   it('takes the admin’s margin, and never goes below level 1', () => {
     const d = makeData({ areaVersus: { access: 'all', levelMatchAccess: 'all', levelMargin: 0 } })
     const s = { ...save(), box: save().box.map((p) => ({ ...p, level: 5 })) }

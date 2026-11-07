@@ -168,6 +168,22 @@ export function stageForLevel(
   return cur
 }
 
+/**
+ * Back down its line through each evolution `level` stands below (a Charizard at Lv.30 is a Charmeleon, at Lv.14 a
+ * Charmander), whatever it was written at: a real player's team brought down never keeps a form its level couldn't
+ * have (docs/54 §9). A stone's or a trade's evolution has no level to undo; a battle form (a Mega) is left alone.
+ */
+export function stageAtLevel(data: GameData, dex: number, level: number): number {
+  const form = data.species[dex]?.form
+  if (form && form.kind !== 'regional') return dex
+  let cur = dex
+  for (let p = prevoOf(data, cur), guard = 0; p && p.level != null && level < p.level && guard < 4; guard++) {
+    cur = p.dex
+    p = prevoOf(data, cur)
+  }
+  return cur
+}
+
 /** Back down its line until it is no further evolved than `max` (Charizard → Charmander at 0). */
 function capStage(data: GameData, dex: number, max: number): number {
   let cur = dex

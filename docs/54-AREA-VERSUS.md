@@ -200,6 +200,13 @@ weaker team first on the server), the user picked:
 | Their upgrades | **The area's dice and combo level** (its `enemyUpgradeLevel`, else game_config's), as the area's trainers fight, not their own, while the match is on |
 | The card | **Just the new levels**: no tag. The ₽ to win follows them (each K.O.'s ₽ is a level's). INFO gains a rule while the match is on |
 
+- **Evolutions follow the level** (the user's ask, 2026-11-07: "if the opponent pokemon level is lower than its
+  pokemon should be, like charizard level 30 while lowest should be 36, use the lower evolution so it stays
+  logical"): a Pokémon brought down goes back through every evolution its new level stands below (`stageAtLevel`,
+  in `rivalMatch.ts`): a Lv.60 Charizard at Lv.31 is a Charmeleon, at Lv.15 a Charmander. It goes by the new level
+  only, not the one they had: a Lv.28 Charizard brought to 14 is a Charmander, a Lv.20 Pikachu brought to 10 a Pichu
+  (its 30). A stone's or a trade's evolution has no level to undo (a Jolteon stays one); a Mega is left alone; shiny
+  and talent are kept. A team within reach keeps its species, levels and all. INFO's rule says so.
 - `matchFoe(foe, save, area, data)` (engine): the team the card brings, scaled; the same foe with the switch off.
   `bestOwnedLevel(save)` is the cap's base. The store applies it when it builds the encounter context
   (`encounterContext`), so the card, the fight, the ₽ and the XP all see the matched team; the server's team is
