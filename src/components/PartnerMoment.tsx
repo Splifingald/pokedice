@@ -230,80 +230,102 @@ export function PartnerMoment({
     >
       {/* PC (docs/43 §5.10): the lab large on the left, the message, the card and its buttons beside it. */}
       <div className="mx-auto flex min-h-full w-full max-w-[560px] flex-col gap-3 pb-4 lg:grid lg:max-w-[1360px] lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:gap-6 lg:p-6">
-        <div
-          className="relative shadow-ledge"
-          onClick={() => {
-            // A tap during the drop lets the balls land at once.
-            if (phase !== 'intro' || !scene) return
-            clock.current = Math.max(clock.current, scene.landed)
-            scene.land()
-          }}
-        >
-          {lab?.picture && (
-            <img
-              ref={labImg}
-              src={LAB_ART}
-              alt=""
+        <div className="flex flex-col gap-3">
+          <div
+            className="relative shadow-ledge"
+            onClick={() => {
+              // A tap during the drop lets the balls land at once.
+              if (phase !== 'intro' || !scene) return
+              clock.current = Math.max(clock.current, scene.landed)
+              scene.land()
+            }}
+          >
+            {lab?.picture && (
+              <img
+                ref={labImg}
+                src={LAB_ART}
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="pixelated absolute inset-0 h-full w-full max-w-none object-cover"
+              />
+            )}
+            {lab?.picture && theme && (
+              <span aria-hidden className="pointer-events-none absolute inset-0 mix-blend-multiply" style={{ background: theme.main, opacity: 0.22 }} />
+            )}
+            <canvas
+              ref={cv}
+              width={W}
+              height={H}
               aria-hidden
-              draggable={false}
-              className="pixelated absolute inset-0 h-full w-full max-w-none object-cover"
+              className="pixelated relative block aspect-[3/2] w-full"
+              style={{ imageRendering: 'pixelated' }}
             />
-          )}
-          {lab?.picture && theme && (
-            <span aria-hidden className="pointer-events-none absolute inset-0 mix-blend-multiply" style={{ background: theme.main, opacity: 0.22 }} />
-          )}
-          <canvas
-            ref={cv}
-            width={W}
-            height={H}
-            aria-hidden
-            className="pixelated relative block aspect-[3/2] w-full"
-            style={{ imageRendering: 'pixelated' }}
-          />
-          {seats.map(({ x, y }, i) => (
-            <button
-              key={i}
-              ref={i === 0 ? firstRef : undefined}
-              type="button"
-              // Not before the lab is ready (the picture and sprites, 1.5 s at most): a tap then would go nowhere.
-              disabled={!scene || phase === 'intro' || phase === 'done'}
-              onClick={(e) => {
-                e.stopPropagation()
-                open(i)
-              }}
-              onMouseEnter={() => phase === 'choose' && scene && (scene.focus = i)}
-              onFocus={() => phase === 'choose' && scene && (scene.focus = i)}
-              aria-label={
-                pick === i
-                  ? t('ui.partner.out', { name: getSpecies(data, starters[i]!).name })
-                  : t('ui.partner.ball', { n: i + 1 })
-              }
-              className="absolute h-[25%] w-[16%] -translate-x-1/2 focus-visible:outline-offset-0"
-              // Over its ball, and the Pokémon's feet once it is out.
-              style={{ left: `${(x / W) * 100}%`, top: `${((y - 24) / H) * 100}%` }}
-            />
-          ))}
-          {late && shown != null && seats[shown] && (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute w-[22%] -translate-x-1/2 -translate-y-full"
-              style={{ left: `${(seats[shown]!.x / W) * 100}%`, top: `${((seats[shown]!.y + 6) / H) * 100}%` }}
-            >
-              <SpriteImg dex={starters[shown]!} size={96} className="h-auto w-full" />
-            </span>
-          )}
-                    {onLeave && phase !== 'done' && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onLeave()
-              }}
-              aria-label={t('ui.partner.leave')}
-              className="absolute right-1.5 top-1.5 grid h-11 w-11 place-items-center bg-paper text-[22px] leading-none shadow-ring"
-            >
-              ✕
-            </button>
+            {seats.map(({ x, y }, i) => (
+              <button
+                key={i}
+                ref={i === 0 ? firstRef : undefined}
+                type="button"
+                // Not before the lab is ready (the picture and sprites, 1.5 s at most): a tap then would go nowhere.
+                disabled={!scene || phase === 'intro' || phase === 'done'}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  open(i)
+                }}
+                onMouseEnter={() => phase === 'choose' && scene && (scene.focus = i)}
+                onFocus={() => phase === 'choose' && scene && (scene.focus = i)}
+                aria-label={
+                  pick === i
+                    ? t('ui.partner.out', { name: getSpecies(data, starters[i]!).name })
+                    : t('ui.partner.ball', { n: i + 1 })
+                }
+                className="absolute h-[25%] w-[16%] -translate-x-1/2 focus-visible:outline-offset-0"
+                // Over its ball, and the Pokémon's feet once it is out.
+                style={{ left: `${(x / W) * 100}%`, top: `${((y - 24) / H) * 100}%` }}
+              />
+            ))}
+            {late && shown != null && seats[shown] && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute w-[22%] -translate-x-1/2 -translate-y-full"
+                style={{ left: `${(seats[shown]!.x / W) * 100}%`, top: `${((seats[shown]!.y + 6) / H) * 100}%` }}
+              >
+                <SpriteImg dex={starters[shown]!} size={96} className="h-auto w-full" />
+              </span>
+            )}
+            {onLeave && phase !== 'done' && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onLeave()
+                }}
+                aria-label={t('ui.partner.leave')}
+                className="absolute right-1.5 top-1.5 grid h-11 w-11 place-items-center bg-paper text-[22px] leading-none shadow-ring"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {/* Who is in the balls, in ball order, while they drop and while you choose: just a look (the balls are what
+              you tap). Once a ball is open its own card says more, so the row steps aside. */}
+          {(phase === 'intro' || phase === 'choose') && (
+            <ul className="m-0 grid list-none grid-cols-3 gap-2 p-0 px-3 lg:px-0" aria-label={t('ui.partner.starters')}>
+              {starters.map((d) => (
+                <li
+                  key={d}
+                  className="grid min-w-0 content-start justify-items-center gap-1 bg-paper px-0.5 pb-2 pt-0.5 shadow-ring-line"
+                >
+                  <MiniSprite dex={d} size={56} />
+                  <b className="max-w-full truncate text-[18px] font-normal leading-none">{getSpecies(data, d).name}</b>
+                  <span className="flex flex-wrap justify-center gap-1">
+                    {speciesTypes(data, d).map((ty) => (
+                      <TypeBadge key={ty} type={ty} size="sm" />
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 

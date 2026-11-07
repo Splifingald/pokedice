@@ -8,14 +8,14 @@ import { StageCanvas, type StageHandle } from '@/components/StageCanvas'
 import { Toggle } from '@/components/Toggle'
 import type { DieType, PokeType, StatusKind } from '@/engine/types'
 import { hitPower, type HitPower } from '@/engine/hitPower'
-import { loadItemSprite, loadPicture, loadSprite, spriteKey } from '@/fx/sprites'
+import { loadItemSprite, loadPicture, loadSprite, pictureKey, spriteFrame, spriteKey } from '@/fx/sprites'
 import { H, Stage, W, type Hud, type Timeline } from '@/fx/timeline'
 import { attackTimeline } from '@/fx/timelines/attacks'
 import { shinyTimeline } from '@/fx/timelines/shiny'
 import { background } from '@/fx/scenes'
 import { catchTimeline } from '@/fx/timelines/catch'
 import { TREAT_URL, treatTimeline } from '@/fx/timelines/trick'
-import { loadTrickBall } from '@/fx/scenes'
+import { loadCenterArt, loadTrickBall } from '@/fx/scenes'
 import { centerTimeline } from '@/fx/timelines/center'
 import { gmaxEndTimeline, gmaxFor, megaFor, unleashTimeline } from '@/fx/timelines/forms'
 import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
@@ -43,12 +43,12 @@ import {
   tracksSnowfallTimeline,
 } from '@/fx/timelines/tracks'
 import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
-import { artUrl } from '@/fx/areaArt'
+import { artUrl, LAB_ART } from '@/fx/areaArt'
 import { evolveTimeline, hatchTimeline } from '@/fx/timelines/moments'
 import { tradeTimeline } from '@/fx/timelines/trade'
 import { giftTimeline } from '@/fx/timelines/gift'
 import { presentTimeline } from '@/fx/timelines/present'
-import { labColors, starterTimeline } from '@/fx/timelines/starter'
+import { labColors, starterTimeline, type StarterScene } from '@/fx/timelines/starter'
 
 interface Preset {
   name: string
@@ -199,8 +199,34 @@ const zStrike = (name: string, atk: number, def: number, type: DieType): Preset 
 const PRESETS: Preset[] = [
   {
     name: 'Pokémon Center',
-    sprites: [[113, false]],
-    make: (o) => centerTimeline({ balls: 3, nurse: foe(113), short: o.short }),
+    sprites: [
+      [113, false],
+      [25, false],
+      [6, false],
+      [131, false],
+    ],
+    load: loadCenterArt,
+    make: (o) => centerTimeline({ balls: 3, nurse: foe(113), team: [foe(25), foe(6), foe(131)], short: o.short }),
+  },
+  // A team of one or two: the balls and the wall screen with fewer Pokémon.
+  {
+    name: 'Pokémon Center (one Pokémon)',
+    sprites: [
+      [113, false],
+      [25, false],
+    ],
+    load: loadCenterArt,
+    make: (o) => centerTimeline({ balls: 1, nurse: foe(113), team: [foe(25)], short: o.short }),
+  },
+  {
+    name: 'Pokémon Center (two Pokémon)',
+    sprites: [
+      [113, false],
+      [6, false],
+      [131, false],
+    ],
+    load: loadCenterArt,
+    make: (o) => centerTimeline({ balls: 2, nurse: foe(113), team: [foe(6), foe(131)], short: o.short }),
   },
   {
     name: 'Catch (Great Ball)',
@@ -742,6 +768,36 @@ const PRESETS: Preset[] = [
         ribbon: { welcome: 'Welcome to', region: 'Johto' },
         pick: 1,
       }),
+  },
+  {
+    // As PartnerMoment plays it: the lab picture under the scene (moving with its shake), the balls in its cradles.
+    name: 'Starter choice (the lab picture)',
+    sprites: [
+      [152, false],
+      [155, false],
+      [158, false],
+    ],
+    load: () => loadPicture(LAB_ART),
+    make: () => {
+      const tl = starterTimeline({
+        lab: labColors('johto'),
+        mons: [foe(152), foe(155), foe(158)],
+        ribbon: { welcome: 'Welcome to', region: 'Johto' },
+        picture: true,
+        pick: 1,
+      })
+      const withPicture: Timeline<StarterScene> = {
+        ...tl,
+        draw(g, s, t) {
+          const lab = spriteFrame(pictureKey(LAB_ART))
+          const sh = s.shake(t)
+          // The picture (240 × 160, its own grid) covering the stage, as the screen's object-cover does.
+          if (lab) g.drawImage(lab, Math.round(sh.x), Math.round(sh.y), W, Math.round((W * lab.height) / lab.width))
+          tl.draw(g, s, t)
+        },
+      }
+      return withPicture
+    },
   },
   {
     name: 'Mega Evolution (Charizard X)',

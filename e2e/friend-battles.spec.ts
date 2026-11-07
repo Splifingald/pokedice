@@ -1,7 +1,7 @@
-// Friend Battles (docs/65), against the mocked Supabase: the Friends page's card and a BATTLE button on the friend in the
-// game (Offline on the others), the challenge sheet and its waiting screen; a challenge arriving as a banner, accepted,
-// the coin and the draft's first pick; a fight on the battle screen with your move sent to the server and the
-// opponent's coming back; the page's rules card once and its record; the switch off. With SHOTS=<dir>, it also saves
+// Friend Battles (docs/65), against the mocked Supabase: BATTLE in the card of a friend in the game (Offline in the
+// others'), the challenge sheet and its waiting screen; a challenge arriving as a banner, accepted, the coin and the
+// draft's first pick; a fight on the battle screen with your move sent to the server and the opponent's coming back;
+// the page (no rules card: opening it sets the flag) and its record; the switch off. With SHOTS=<dir>, it also saves
 // the screenshots of each screen for review.
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
@@ -38,6 +38,23 @@ const friend = (user_id: string, name: string, avatar: string) => ({
   in_realm: true,
 })
 const FRIENDS = [friend(MISTY, 'Misty', 'green'), friend(BROCK, 'Brock', 'kanto/hiker')]
+/** A friend's card (friend_profile), for the one asked. */
+const PROFILE = (body: { p_friend?: string }) => {
+  const f = FRIENDS.find((x) => x.user_id === body.p_friend) ?? FRIENDS[0]!
+  return [
+    {
+      user_id: f.user_id, name: f.name, avatar: f.avatar, region: 'kanto', area_id: null, updated_at: hoursAgo(1),
+      since: '2026-10-03T10:00:00Z',
+      regions: [{ region: 'kanto', team: f.team, pokedex: 40, maxLevel: 60, shinies: 0, progress: {}, badges: [], endgame: false }],
+      versus: null,
+    },
+  ]
+}
+/** BATTLE is in the friend's card (the user's call, 2026-11-07): open Misty's, then BATTLE. */
+async function battleMisty(page: Page) {
+  await page.getByRole('button', { name: /^Misty,/ }).click()
+  await page.getByRole('dialog', { name: 'Misty' }).getByRole('button', { name: 'Battle Misty' }).click()
+}
 const ON = { ...EVENTS_ON, friendBattles: { ...FRIEND_BATTLES_DEFAULTS, access: 'all' } }
 const mon = (dex: number, level = 60) => ({ dex, level, shiny: false })
 /** Battle tickets (docs/65 §15) as pvp_home carries them: `n` held, the next at midnight in 5 h. */
@@ -78,6 +95,7 @@ async function boot(page: Page, save: SaveData, rpc: SupabaseMock['rpc'] = {}, c
       friend_list: FRIENDS,
       friend_status: [{ ids: [MISTY, BROCK], unseen: [], beta: false }],
       friend_seen: null,
+      friend_profile: PROFILE,
       pvp_here: null,
       pvp_online: [MISTY],
       pvp_home: { current: null, records: [], history: [], tickets: TICKETS(2) },
@@ -112,7 +130,7 @@ async function seriousAxe(page: Page) {
 
 const save = () => makeSave(4, { player: { name: 'Sam', character: 'red' }, friendBattlesRulesSeen: true })
 
-test('the Friends page: the card, BATTLE on the friend in the game, the challenge sheet, waiting for the answer', async ({
+test("the Friends page: BATTLE in the card of the friend in the game, the challenge sheet, waiting for the answer", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -124,14 +142,25 @@ test('the Friends page: the card, BATTLE on the friend in the game, the challeng
     },
   })
   await page.goto('/friends')
-  await expect(page.getByRole('button', { name: /Friend Battles/ })).toBeVisible()
-  const battle = page.getByRole('button', { name: 'Battle Misty' })
+  // No card and no button on the rows: the friend in the game says so on their row.
+  await expect(page.getByRole('button', { name: /^Misty,/ })).toContainText('Online now')
+  await expect(page.getByRole('button', { name: /Friend Battles/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Battle Misty' })).toHaveCount(0)
+  await page.getByRole('button', { name: /^Brock,/ }).click()
+  const brock = page.getByRole('dialog', { name: 'Brock' })
+  await expect(brock.getByRole('button', { name: 'Brock is offline' })).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await expect(brock).toHaveCount(0)
+  await page.getByRole('button', { name: /^Misty,/ }).click()
+  const card = page.getByRole('dialog', { name: 'Misty', exact: true })
+  const battle = card.getByRole('button', { name: 'Battle Misty' })
   await expect(battle).toBeEnabled()
-  await expect(page.getByRole('button', { name: 'Brock is offline' })).toBeDisabled()
-  await expect(page.getByText('Online now')).toBeVisible()
+  await expect(card.getByRole('button', { name: /Friend Battles/ })).toBeVisible()
   await shot(page, 'pvp-friends')
 
   await battle.click()
+  // A phone shows one sheet at a time: the card steps aside for the challenge.
+  await expect(card).toHaveCount(0)
   const sheet = page.getByRole('dialog', { name: 'Challenge Misty' })
   await expect(sheet).toBeVisible()
   await expect(sheet.getByRole('radio', { name: /Draft/ })).toHaveAttribute('aria-checked', 'true')
@@ -344,7 +373,7 @@ test('back after a reload: the moves missed are read back and played the same as
   await shot(page, 'pvp-caught-up', false)
 })
 
-test('the page: its rules card once, the record and the last battles', async ({ page }) => {
+test('the page: no rules card (opening it sets the flag), the record and the last battles', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await boot(page, makeSave(4, { player: { name: 'Sam', character: 'red' } }), {
     pvp_home: {
@@ -357,14 +386,11 @@ test('the page: its rules card once, the record and the last battles', async ({ 
   })
   await page.goto('/battles')
   await expect(page.getByRole('heading', { name: 'Friend Battles', level: 1 })).toBeVisible()
-  const card = page.getByRole('region', { name: 'How Friend Battles works' })
-  await expect(card).toBeVisible()
+  await expect(page.getByRole('region', { name: 'How Friend Battles works' })).toHaveCount(0)
   await expect(page.getByText('vs Misty')).toBeVisible()
   await expect(page.getByText(/You lead 4–3/)).toBeVisible()
   await shot(page, 'pvp-page')
   expect(await seriousAxe(page)).toEqual([])
-  await card.getByRole('button', { name: 'Got it' }).click()
-  await expect(card).toHaveCount(0)
   await expect
     .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').friendBattlesRulesSeen))
     .toBe(true)
@@ -380,7 +406,7 @@ test('Lv.100: picked in the sheet, sent with the challenge, said on the banner a
     },
   })
   await page.goto('/friends')
-  await page.getByRole('button', { name: 'Battle Misty' }).click()
+  await battleMisty(page)
   const sheet = page.getByRole('dialog', { name: 'Challenge Misty' })
   const levels = sheet.getByRole('radiogroup', { name: 'Pick a level' })
   await expect(levels.getByRole('radio', { name: /Lv\.50/ })).toHaveAttribute('aria-checked', 'true')
@@ -397,8 +423,7 @@ test('battle tickets: the sheet says the cost; with none, SEND is off and says w
   await page.setViewportSize({ width: 390, height: 844 })
   await boot(page, save(), { pvp_home: { current: null, records: [], history: [], tickets: TICKETS(0) } })
   await page.goto('/friends')
-  await expect(page.getByRole('img', { name: '0 battle tickets' }).first()).toBeVisible()
-  await page.getByRole('button', { name: 'Battle Misty' }).click()
+  await battleMisty(page)
   const sheet = page.getByRole('dialog', { name: 'Challenge Misty' })
   await expect(sheet.getByText(/No battle ticket left/)).toBeVisible()
   await expect(sheet.getByRole('button', { name: 'Send challenge' })).toBeDisabled()
@@ -452,13 +477,16 @@ test('battle tickets: the page counts them; the Friend Market sells them, credit
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
-test('switched off: no card, no BATTLE, the page goes back to Friends', async ({ page }) => {
+test("switched off: no BATTLE on the page or in a friend's card, the page goes back to Friends", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const calls = await boot(page, save(), {}, EVENTS_ON)
   await page.goto('/friends')
   await expect(page.getByText('Misty')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Battle Misty' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Friend Battles/ })).toHaveCount(0)
+  await page.getByRole('button', { name: /^Misty,/ }).click()
+  await expect(page.getByRole('dialog', { name: 'Misty' })).toContainText('Friends since')
+  await expect(page.getByTestId('friend-battle')).toHaveCount(0)
   await page.goto('/battles')
   await expect(page).toHaveURL(/\/friends$/)
   expect(calls.filter((c) => c.includes('/rpc/pvp_'))).toEqual([])

@@ -11,7 +11,7 @@ import { snowglobe } from '../scripts/content-snowglobe-valley'
 
 const DIR = 'public/area-art'
 /** Pictures planned in the Visual Lab and not made yet: their areas keep their drawn scene until they arrive. */
-const STILL_TO_MAKE = ['sunne-moone']
+const STILL_TO_MAKE: string[] = []
 const file = (id: string) => path.join(DIR, `${id}.png`)
 const size = (id: string) => {
   const png = PNG.sync.read(readFileSync(file(id)))
@@ -45,17 +45,18 @@ describe('area pictures (public/area-art)', () => {
     for (const id of Object.keys(ART_GEOMETRY)) expect(existsSync(file(id)), file(id)).toBe(true)
   })
 
-  it('keeps every picture at 400 px wide: square scenes, and the 3:2 lab and gym stages', () => {
+  it('keeps every picture on its own grid, at most 400 px: square scenes, and the 3:2 lab and gym stages', () => {
     const files = readdirSync(DIR).filter((f) => f.endsWith('.png'))
     expect(files.length).toBeGreaterThan(0)
     for (const f of files) {
       const id = f.replace(/\.png$/, '')
       const [w, h] = size(id)
-      expect(w, f).toBe(ART_PX)
+      // The grid Gemini drew it on: 400 for most, fewer pixels for a coarser one (never resampled across grids).
+      expect(w! >= 120 && w! <= ART_PX, `${f} is ${w} wide`).toBe(true)
       // The lab and the gym stages (docs/67, measured in gym-stages.test.ts) are whole 3:2 stages.
       if (id === 'moment-lab' || id.startsWith('gym-')) expect(Math.abs(h! / w! - 2 / 3), f).toBeLessThan(0.01)
       else {
-        expect(h, f).toBe(ART_PX)
+        expect(h, f).toBe(w)
         expect(ART_GEOMETRY[id], `${f} is used by no area`).toBeTruthy()
       }
     }
@@ -89,7 +90,8 @@ describe('area pictures (public/area-art)', () => {
 
   it('leaves the areas of a picture still to make on their drawn scene', () => {
     const waiting = (areas as { id: string }[]).filter((a) => STILL_TO_MAKE.includes(AREA_ART[a.id]!))
-    expect(waiting.length).toBeGreaterThan(0)
+    // Every planned picture is made today; the list comes back when one is planned and not drawn yet.
+    expect(waiting.length > 0).toBe(STILL_TO_MAKE.length > 0)
     for (const a of waiting) expect(pictureOf(a.id)).toBeNull()
     expect(pictureOf('no-such-area')).toBeNull()
   })

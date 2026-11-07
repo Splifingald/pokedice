@@ -152,8 +152,8 @@ test('the league: trophies and the week, 3 opponents with theirs, the group rank
   await fakeLeague(page)
   await leagueOn(page, readySave())
   await page.goto('/versus')
-  // Its rules, once, at the top (players who knew Versus read the league's).
-  await expect(page.getByText('How Versus league works')).toBeVisible()
+  // No rules card (the user's call, 2026-11-07): INFO holds them.
+  await expect(page.getByText('How Versus league works')).toHaveCount(0)
   await expect(page.getByLabel('24 trophies').first()).toBeVisible()
   await expect(page.getByText('#2 of 4 in your group')).toBeVisible()
   await expect(page.getByText(/Ends in [23]d/)).toBeVisible()

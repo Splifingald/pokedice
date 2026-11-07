@@ -5,6 +5,20 @@
 > just below; decisions are in §12; server load, measured on the live database, is in §8. One fix comes first, and is
 > not code: migration 0029 was never applied to the live database (§8.5).
 
+### The page since 2026-11-07 (the user's redesign)
+
+Validated on the mockup canvas (https://claude.ai/artifact/T5ePfuVDS9mSuoLj8okEwP) and built on `feature/friends-redesign`:
+
+- **On the page**: friend requests (while there are some), the **Friendship gauge** (`FriendshipGauge`: coins, today's
+  Heart Scales toward the cap, streaks kept today, FRIEND MARKET), the friends' rows (each opens their card; no BATTLE
+  on the rows, no Friend Battles card) and INFO.
+- **ADD FRIENDS** is the page's one red action, pinned at a phone's foot and beside the Social views on PC. It opens
+  `AddFriendsSheet`: the invite rewards on top, your friend ID with COPY, adding a friend ID, *Reset my friend ID*
+  (quiet), and SHARE INVITE LINK pinned at its foot.
+- **A friend's card** (`FriendProfileSheet`, from the Friends page) pins Friend Battles at its foot (`FriendBattleFoot`:
+  online or not, the head to head, FRIEND BATTLES ›, BATTLE or Offline); REMOVE FRIEND moved to the card's end.
+- No rules on the page: the invite rewards' and friendship's rules are in INFO, and opening the page sets their flags.
+
 ### What changed in the building
 
 - **Daybreak, not the old look.** The mockups below (§4) are screenshots of the screens as built. A friend's card is a

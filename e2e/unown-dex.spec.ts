@@ -89,21 +89,15 @@ test('switched off: no banner in the ruins, no Unown page, nothing pops up', asy
   await expect(page.getByRole('radio', { name: 'Unown' })).toHaveCount(0)
 })
 
-test('the rules on the page until GOT IT, the letters found, INFO, then the banner on Home', async ({ page }) => {
+test('no rules on the page (opening it is enough), the letters found, INFO, then the banner on Home', async ({ page }) => {
   await boot(page, atRuins())
   await page.goto('/pokedex')
   await page.getByRole('radiogroup', { name: 'Which Pokédex' }).getByRole('radio', { name: 'Unown' }).click()
   await expect(page).toHaveURL(/\/pokedex\?view=unown/)
-  // Its rules where they apply (docs/43 §7): a card at the top of the view, not a pop-up.
-  const card = page.getByRole('region', { name: 'How Unown Pokédex works' })
-  await expect(card).toBeVisible()
-  await expect(card).toContainText('28 letters')
-  await expect(card).toContainText('Always a new one')
-  await expect(card).toContainText('₽1,000')
+  // Behind INFO only (the user's call, 2026-11-07): opening the view sets the flag.
+  await expect(page.getByRole('region', { name: 'How Unown Pokédex works' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
-  await card.getByRole('button', { name: 'GOT IT' }).click()
-  await expect(card).toHaveCount(0)
   await expect.poll(async () => (await stored()).unownDexSeen).toBe(true)
 
   await expect(
@@ -136,13 +130,12 @@ test('the rules on the page until GOT IT, the letters found, INFO, then the bann
 test('a page finished while it was off pays its prize the day it opens, once', async ({ page }) => {
   const done = atRuins({ unownDex: { johto: [...UNOWN_LETTERS] } })
   await boot(page, done)
-  // Its page: the prize is paid as the save loads; GOT IT on its rules' card writes the save.
+  // Its page: the prize is paid as the save loads; opening the view (its rules' flag) writes the save.
   await page.goto('/pokedex?view=unown')
   await expect(page.getByText('UNOWN POKÉDEX COMPLETE!')).toBeVisible()
   await expect(page.getByText('All 28 letters found: ₽1,000 earned.')).toBeVisible()
   await expect(page.getByRole('button', { name: /, found$/ })).toHaveCount(28)
   const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
-  await page.getByRole('region', { name: 'How Unown Pokédex works' }).getByRole('button', { name: 'GOT IT' }).click()
   await expect.poll(async () => (await stored()).unownDexSeen).toBe(true)
   expect((await stored()).gold).toBe(done.gold + 1000)
   expect((await stored()).unownDexPaid).toEqual(['johto'])

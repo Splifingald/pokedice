@@ -19,7 +19,7 @@ import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { SHOWDOWN_SPRITES, unownShowdownId } from '@/lib/showdown'
-import { showdownMissed, useShowdownDown, watchShowdown } from '@/lib/showdownReach'
+import { spriteMissed, useSpriteSource, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { Chip } from './Chip'
@@ -29,8 +29,12 @@ import { PixelButton } from './PixelButton'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 import { spriteUrlFor } from './SpriteImg'
 
-/** A letter's animated sprite (Black and White drew all 28), on Showdown's CDN like every other Pokémon. */
-export const unownSpriteUrl = (l: UnownLetter) => `${SHOWDOWN_SPRITES}/gen5ani/${unownShowdownId(l)}.gif`
+/**
+ * A letter's animated sprite (Black and White drew all 28), from the sprites folder the game reads like every other
+ * Pokémon (our copy, else Showdown: src/lib/showdownReach.ts).
+ */
+export const unownSpriteUrl = (l: UnownLetter, sprites = SHOWDOWN_SPRITES) =>
+  `${sprites}/gen5ani/${unownShowdownId(l)}.gif`
 
 /**
  * One letter of Unown. Showdown trims its GIFs to the art, so each is scaled to fit the box (never past ×2): a slim I
@@ -48,9 +52,11 @@ export function UnownSprite({
   className?: string
 }) {
   const { t } = useT()
-  // Showdown failing or stalling (src/lib/showdownReach.ts): straight to the local sprite.
-  const down = useShowdownDown()
-  const chain = down ? [spriteUrlFor(UNOWN_DEX)] : [unownSpriteUrl(letter), spriteUrlFor(UNOWN_DEX)]
+  // A source failing or stalling (src/lib/showdownReach.ts): the next one, Showdown after our copy, else the local
+  // sprite.
+  const sprites = useSpriteSource()
+  const local = spriteUrlFor(UNOWN_DEX)
+  const chain = sprites ? [unownSpriteUrl(letter, sprites), local] : [local]
   const key = `${letter}:${chain[0]}`
   const [state, setState] = useState<{ key: string; step: number; dims: [number, number] | null }>({
     key,
@@ -82,7 +88,7 @@ export function UnownSprite({
             })
           }
           onError={() => {
-            if (s.step === 0 && !down) showdownMissed()
+            if (s.step === 0 && sprites) spriteMissed(src)
             setState({ key, step: s.step + 1, dims: null })
           }}
           className="pixelated max-w-none select-none"

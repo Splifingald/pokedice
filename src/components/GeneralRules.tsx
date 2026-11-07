@@ -5,14 +5,12 @@ import { charmChanceAt, charmOn, generalCfg, generalMax } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { countdown, money, oneInText } from '@/lib/format'
-import { markGeneralRulesSeen } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { closeOfflineReport, useOfflineReport } from '@/store/general'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { useMyTurn, useOnScreen } from './popupTurn'
-import { RulesCard } from './RulesCard'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
 /** The Battle Frontier's plaza at sunset: the grand, golden end of the game. */
@@ -77,24 +75,6 @@ export function useCharmRules(): RuleRow[] {
     { icon: 'dex', title: t('ui.rules.charm.where.title'), text: t('ui.rules.charm.where.text') },
     { icon: 'coin', title: t('ui.rules.gen.all.title'), text: t('ui.rules.charm.all.text') },
   ]
-}
-
-/**
- * The General upgrades' rules where they apply (docs/43 §7): a card at the top of the Mart's General view until GOT
- * IT, the same rows as INFO's pop-up (the Shiny Charm's alone for one who read the rest before it came).
- */
-export function GeneralRulesCard({ charmOnly = false }: { charmOnly?: boolean }) {
-  const { t } = useT()
-  const all = useGeneralRules()
-  const charm = useCharmRules()
-  return (
-    <RulesCard
-      title={t(charmOnly ? 'ui.general.charm.name' : 'ui.upgrades.tabGeneral')}
-      icon={charmOnly ? 'sparkle' : 'navUpgrades'}
-      rules={charmOnly ? charm : all}
-      onDone={markGeneralRulesSeen}
-    />
-  )
 }
 
 export function GeneralRulesModal({

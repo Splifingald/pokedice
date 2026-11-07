@@ -9,7 +9,6 @@ import {
   generalLevel,
   generalMax,
   charmChanceAt,
-  charmRulesOnly,
   generalRulesDue,
   generalOn,
   generalShown,
@@ -35,10 +34,11 @@ import { COMBO_EXAMPLES, comboExampleText, comboName, money, oneInText, typeName
 import { bestBuy, dieCarriers, maxDiceOwned } from '@/lib/upgrades'
 import { useMotion } from '@/lib/motion'
 import { useT } from '@/i18n/react'
-import { GeneralRulesCard, GeneralRulesModal } from '@/components/GeneralRules'
+import { GeneralRulesModal } from '@/components/GeneralRules'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { SmallInfo } from '@/components/SmallInfo'
 import { TrainerName } from '@/components/TrainerName'
-import { upgradeCombo, upgradeDie, upgradeGeneral } from '@/store/actions'
+import { markGeneralRulesSeen, upgradeCombo, upgradeDie, upgradeGeneral } from '@/store/actions'
 import { pushToast, useGame } from '@/store/game'
 import { useDetails } from '@/store/hooks'
 import { useInWorld } from '@/screens/events/world'
@@ -368,10 +368,9 @@ export function UpgradesPanel() {
     setParams(next === 'combos' ? { tab: 'upgrades' } : { tab: 'upgrades', up: next }, { replace: true })
   const [affordOnly, setAffordOnly] = useState(false)
   const [rules, setRules] = useState(false)
-  // The rules where they apply (docs/43 §7): a card at the top of the General view until GOT IT; opening the view no
-  // longer counts as having read them. The Shiny Charm's alone for a player who read the rest before it came.
   const rulesDue = useGame((s) => !!s.save && generalRulesDue(s.save, s.data))
-  const charmOnly = useGame((s) => !!s.save && charmRulesOnly(s.save, s.data))
+  // The General view's rules are behind INFO; opening the view is enough (docs/15 §20).
+  useSeenOnOpen(tab === 'general' && rulesDue, markGeneralRulesSeen)
   if (!save) return null
 
   const maxDice = maxDiceOwned(save, data)
@@ -531,7 +530,6 @@ export function UpgradesPanel() {
         </button>
       </div>
       <div role="tabpanel" aria-labelledby={`up-${tab}`} className="flex flex-col gap-2">
-        {tab === 'general' && rulesDue && <GeneralRulesCard charmOnly={charmOnly} />}
         <ul className={UP_GRID}>
           {open.map((u) => (
             <UpCard key={u.id} u={u} gold={save.gold} best={u.id === best} />

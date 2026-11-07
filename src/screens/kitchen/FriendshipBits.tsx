@@ -8,7 +8,7 @@ import { DEFAULT_CONFIG, marketRows, type FriendStreak, type GiftLanded } from '
 import {
   CapGauge,
   CoinPlate,
-  FriendshipCard,
+  FriendshipGauge,
   FriendshipRulesModal,
   FriendStreakBlock,
   MarketHead,
@@ -16,7 +16,6 @@ import {
   MarketShinyCard,
   StreakBadge,
   StreakLadder,
-  useFriendshipRules,
 } from '@/components/friends/Friendship'
 import { FriendsInfoModal } from '@/components/friends/FriendsInfo'
 import { GiftMoment } from '@/components/Gifts'
@@ -24,7 +23,6 @@ import { ItemSprite } from '@/components/ItemSprite'
 import { FriendBallTag } from '@/screens/battle/CatchPanel'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
-import { RulesCard } from '@/components/RulesCard'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 
@@ -37,12 +35,6 @@ const F = {
   erika: '22222222-0000-4000-8000-000000000004',
   leaf: '22222222-0000-4000-8000-000000000005',
 }
-const FRIENDS = [
-  { userId: F.misty, name: 'Misty' },
-  { userId: F.brock, name: 'Brock' },
-  { userId: F.erika, name: 'Erika', rich: true },
-  { userId: F.leaf, name: 'Leaf' },
-]
 const streak = (friend: string, n: number, lastDay: string, best = n): FriendStreak => ({
   friend,
   streak: n,
@@ -72,8 +64,6 @@ export function FriendshipBits() {
   const [info, setInfo] = useState(false)
   const [pageInfo, setPageInfo] = useState<'all' | 'oak' | null>(null)
   const [moment, setMoment] = useState(false)
-  const [rulesSeen, setRulesSeen] = useState(false)
-  const rules = useFriendshipRules()
   // The kitchen sink reads the game's own numbers, the switch aside.
   const kData = {
     ...data,
@@ -148,50 +138,42 @@ export function FriendshipBits() {
         </Frame>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <Frame name="Friendship card: streaks waiting">
-          <FriendshipCard
+        <Frame name="Friendship gauge: streaks waiting">
+          <FriendshipGauge
             balance={186}
             earned={11}
             streaks={STREAKS}
-            friends={FRIENDS}
             today={TODAY}
             onMarket={nop}
-            onInfo={() => setInfo(true)}
           />
         </Frame>
-        <Frame name="Friendship card: no streak yet">
-          <FriendshipCard
+        <Frame name="Friendship gauge: no streak yet">
+          <FriendshipGauge
             balance={0}
             earned={0}
             streaks={[]}
-            friends={FRIENDS}
             today={TODAY}
             onMarket={nop}
-            onInfo={nop}
           />
         </Frame>
-        <Frame name="Friendship card: loading">
-          <FriendshipCard
+        <Frame name="Friendship gauge: loading">
+          <FriendshipGauge
             balance={0}
             earned={0}
             streaks={[]}
-            friends={[]}
             today={TODAY}
             state="loading"
             onMarket={nop}
-            onInfo={nop}
           />
         </Frame>
-        <Frame name="Friendship card: failed">
-          <FriendshipCard
+        <Frame name="Friendship gauge: failed">
+          <FriendshipGauge
             balance={0}
             earned={0}
             streaks={[]}
-            friends={[]}
             today={TODAY}
             state="error"
             onMarket={nop}
-            onInfo={nop}
           />
         </Frame>
       </div>
@@ -254,20 +236,6 @@ export function FriendshipBits() {
         </ul>
       </Frame>
       <div className="grid gap-3 md:grid-cols-2">
-        <Frame name="Rules card (first visit)">
-          {rulesSeen ? (
-            <PixelButton size="sm" onClick={() => setRulesSeen(false)}>
-              Show it again
-            </PixelButton>
-          ) : (
-            <RulesCard
-              title={t('ui.fship.title')}
-              icon="heart"
-              rules={rules}
-              onDone={() => setRulesSeen(true)}
-            />
-          )}
-        </Frame>
         <Frame name="INFO and a purchase's opening">
           <div className="grid gap-2">
             <InfoButton name={t('ui.fship.title')} onClick={() => setInfo(true)} />

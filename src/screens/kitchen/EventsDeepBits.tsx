@@ -8,13 +8,10 @@ import { HelpContent } from '@/screens/Help'
 import { TypesContent } from '@/screens/Types'
 import { StagePanel } from '@/screens/events/layout'
 import { TicketsMeter } from '@/screens/events/WheelPage'
-import { EventRules, eventRuleRows } from '@/screens/events/shared'
-import { RulesCard } from '@/components/RulesCard'
-import { useT } from '@/i18n/react'
+import { EventRules } from '@/screens/events/shared'
 import { useGame } from '@/store/game'
 
 export function EventsDeepBits() {
-  const { t } = useT()
   const data = useGame((s) => s.data)
   return (
     <div className="flex w-full flex-col gap-6">
@@ -58,13 +55,7 @@ export function EventsDeepBits() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h3 className="m-0 text-[22px] font-normal">An event's rules: the card at the top of its page, the rows</h3>
-        <RulesCard
-          title={t('ui.events.raid.name')}
-          icon="star"
-          rules={eventRuleRows('raid', data, t)}
-          onDone={() => undefined}
-        />
+        <h3 className="m-0 text-[22px] font-normal">An event's rules: the rows (in its INFO pop-up)</h3>
         <EventRules id="rebattle" data={data} />
       </section>
 

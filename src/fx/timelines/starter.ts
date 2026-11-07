@@ -61,15 +61,19 @@ const DRAWN_SEATS: readonly Seat[] = [
 ]
 /**
  * The lab picture's cradles (public/area-art/moment-lab.png, 400 × 268 laid over the 240 × 160 stage), measured on
- * the picture: the hollows sit at x 113, 201 and 288, y 175 of the picture, so a ball's bottom settles into each one.
+ * the picture: the rings are centred at x 105, 200 and 295, their hollows around y 213 of the picture (stage 128),
+ * so a ball of radius PICTURE_R sits down into each hollow.
  */
 const PICTURE_SEATS: readonly Seat[] = [
-  { x: 68, y: 98 },
-  { x: 121, y: 98 },
-  { x: 173, y: 98 },
+  { x: 63, y: 121 },
+  { x: 120, y: 121 },
+  { x: 177, y: 121 },
 ]
 /** The three balls' resting places, left to right: on the lab picture's cradles, or the drawn lab's. */
 export const starterSeats = (picture: boolean) => (picture ? PICTURE_SEATS : DRAWN_SEATS)
+/** A ball's radius: big enough to fill the picture's cradles (about 33 stage pixels across) and read on a phone. */
+const PICTURE_R = 10
+const DRAWN_R = 8
 
 /**
  * The professor's lab: a bright back wall with a window, shelves and machines at the edges, a tiled floor, and the
@@ -227,6 +231,8 @@ export interface StarterSceneOptions {
 export class StarterScene {
   readonly slots: Slot[]
   readonly landed: number
+  /** The balls' radius, which every size around them follows (shadow, dust, glow, cursor, the roll aside). */
+  readonly R: number
   focus = -1
   open = -1
   chosen = -1
@@ -240,6 +246,7 @@ export class StarterScene {
 
   constructor(private readonly o: StarterSceneOptions) {
     this.r = rng(83)
+    this.R = o.picture ? PICTURE_R : DRAWN_R
     this.bg = o.picture ? null : labBackground(o.lab)
     this.cursor = icon(CURSOR, { k: '#24304f', w: '#ffffff' }, 1)
     this.slots = starterSeats(!!o.picture).map((s, i) => ({
@@ -258,19 +265,24 @@ export class StarterScene {
   }
 
   /** Ball i's position and spin at time t: the fall, two bounces, then an idle wobble now and then. */
-  private ball(i: number, t: number): { x: number; y: number; a: number; on: boolean; falling?: number } {
+  private ball(
+    i: number,
+    t: number,
+  ): { x: number; y: number; a: number; on: boolean; falling?: number; squash: number } {
     const s = this.slots[i]!
-    if (this.o.instant) return { x: s.x, y: s.y, a: this.wobble(i, t), on: true }
+    if (this.o.instant) return { x: s.x, y: s.y, a: this.wobble(i, t), on: true, squash: 1 }
     const tl = s.t0 + 0.55
-    if (t < s.t0) return { x: s.x, y: -30, a: 0, on: false }
+    if (t < s.t0) return { x: s.x, y: -30, a: 0, on: false, squash: 1 }
     if (t < tl) {
       const p = ease.inQ(span(t, s.t0, tl))
       return {
-        x: s.x + Math.round((1 - p) * (i - 1) * 10),
-        y: Math.round(lerp(-16, s.y, p)),
+        // Straight down over its cradle for the last third, so it lands dead centre.
+        x: s.x + Math.round(Math.max(0, 1 - p * 1.5) * (i - 1) * 10),
+        y: Math.round(lerp(-2 * this.R, s.y, p)),
         a: t * 14,
         on: true,
         falling: p,
+        squash: 1,
       }
     }
     const b1 = span(t, tl, tl + 0.26)
@@ -281,7 +293,11 @@ export class StarterScene {
         : b2 < 1
           ? s.y - Math.round(Math.sin(Math.PI * b2) * 3)
           : s.y
-    return { x: s.x, y, a: b2 < 1 ? (1 - b1) * 0.6 : this.wobble(i, t), on: true }
+    // A short squash each time it meets the cradle: hard on the landing, light on the bounce.
+    const hit1 = span(t, tl, tl + 0.08)
+    const hit2 = span(t, tl + 0.26, tl + 0.31)
+    const squash = hit1 < 1 ? 0.78 + 0.22 * hit1 : hit2 < 1 ? 0.9 + 0.1 * hit2 : 1
+    return { x: s.x, y, a: b2 < 1 ? (1 - b1) * 0.6 : this.wobble(i, t), on: true, squash }
   }
 
   private wobble(i: number, t: number) {
@@ -329,10 +345,10 @@ export class StarterScene {
             this.shakes.push([at, 0.16, 1])
             fxSound('starter.land')
           }
-          for (let q = 0; q < n; q++)
+          for (let q = 0; q < n + (k[0] === 'l' ? 4 : 0); q++)
             this.fx.add({
-              x: s.x + r.range(-6, 6),
-              y: s.y + 5,
+              x: s.x + r.range(-this.R, this.R),
+              y: s.y + this.R - 2,
               vx: r.range(-30, 30),
               vy: r.range(-22, -4),
               ay: 40,
@@ -340,7 +356,7 @@ export class StarterScene {
               life: r.range(0.3, 0.5),
               size: r.int(1, 2),
               shape: 'sq',
-              colors: ['#ffffff', '#e8f0d8', '#c8d8b0'],
+              colors: ['#ffffff', '#fff3cf', '#e8c98a'],
             })
         }
     })
@@ -354,7 +370,7 @@ export class StarterScene {
           const sp = r.range(30, 90)
           this.fx.add({
             x: s.x,
-            y: s.y - 8,
+            y: s.y - this.R,
             vx: Math.cos(a) * sp,
             vy: Math.sin(a) * sp - 10,
             drag: 3,
@@ -426,12 +442,28 @@ export class StarterScene {
         label(g, rib.region, 120 - labelWidth(g, rib.region, 2) / 2, y + 9, '#f2553f', null, 2)
       }
     }
+    const R = this.R
     this.slots.forEach((s, i) => {
       const b = this.ball(i, t)
       if (!b.on) return
-      // A shadow that firms up as the ball comes down.
+      // A shadow in the cradle's hollow that firms up as the ball comes down.
       const k = b.falling ?? 1
-      softEllipse(g, s.x, s.y + 6, Math.round(3 + 5 * k), 2, '#24304f', 0.25 + 0.3 * k, 0.8)
+      softEllipse(g, s.x, s.y + R - 2, Math.round(4 + (R - 1) * k), 3, '#24304f', 0.25 + 0.35 * k, 0.8)
+      // The cradle catches the light as the ball sits down in it: a gold glow spreading out and fading.
+      if (!this.o.instant) {
+        const p = span(t, s.t0 + 0.55, s.t0 + 0.55 + 0.45)
+        if (p > 0 && p < 1)
+          softEllipse(
+            g,
+            s.x,
+            s.y + R - 2,
+            Math.round(R + 3 + 10 * ease.outC(p)),
+            4 + Math.round(3 * p),
+            '#ffe7a8',
+            0.75 * (1 - p),
+            0.6,
+          )
+      }
       // The Pokémon, when its ball is open (or was chosen).
       const out = this.monOut(i, t)
       if (out) {
@@ -441,7 +473,7 @@ export class StarterScene {
                 Math.abs(Math.sin(span(t, this.chosenAt! + 0.1, this.chosenAt! + 0.9) * Math.PI * 2)) * 6,
               )
             : 0
-        drawSprite(g, this.o.mons[i]!, s.x, s.y + 6 - hop, out)
+        drawSprite(g, this.o.mons[i]!, s.x, s.y + R - 3 - hop, out)
       }
       // Gone: the other two fly back up once the choice is made.
       let by = b.y
@@ -451,19 +483,20 @@ export class StarterScene {
         if (p >= 1) return
         by = Math.round(b.y - ease.inQ(p) * 150)
         ba = p * 12
-        if (p > 0) g.drawImage(glow(8, '#ffffff', 1.5, 0.5 * (1 - p)), s.x - 8, by - 8)
+        if (p > 0) g.drawImage(glow(R + 2, '#ffffff', 1.5, 0.5 * (1 - p)), s.x - R - 2, by - R - 2)
       }
       const open = this.lid(i, t)
       const dim = (this.open >= 0 && this.open !== i) || (this.chosen >= 0 && this.chosen !== i) ? 0.5 : 0
       const focus = this.focus === i && this.open < 0 && this.chosen < 0 && t >= this.landed
-      if (focus) g.drawImage(glow(13, '#fff6b8', 1.4, 0.6 + 0.2 * Math.sin(t * 8)), s.x - 13, by - 13)
+      const G = R + 7
+      if (focus) g.drawImage(glow(G, '#fff6b8', 1.4, 0.6 + 0.2 * Math.sin(t * 8)), s.x - G, by - G)
       if (b.falling != null && b.falling < 0.95) {
         // Two ghosts above it while it falls.
         for (const [dy, d] of [
-          [-10, 0.75],
-          [-20, 0.9],
+          [-R - 4, 0.75],
+          [-2 * R - 8, 0.9],
         ] as const) {
-          const gb = ball('poke', ba - 0.4, { R: 6, dim: d })
+          const gb = ball('poke', ba - 0.4, { R: R - 2, dim: d })
           g.globalAlpha = 0.35
           g.drawImage(gb, Math.round(b.x - (gb.width - 1) / 2), Math.round(by + dy - (gb.height - 1) / 2))
           g.globalAlpha = 1
@@ -472,25 +505,27 @@ export class StarterScene {
       // An open ball rolls aside, smaller, so its Pokémon stands clear of it; it rolls back when it goes in.
       const ak = this.aside(i, t)
       const bc = ball('poke', ba + ak * 0.6, {
-        R: 7 - Math.round(2 * ak),
+        R: R - Math.round(3 * ak),
         open,
         dim,
         button: focus && Math.floor(t * 4) % 2 ? '#ffe14d' : '#ffffff',
       })
-      g.drawImage(
-        bc,
-        Math.round(b.x + 20 * ak - (bc.width - 1) / 2),
-        Math.round(by + 7 * ak - (bc.height - 1) / 2),
-      )
-      if (focus) g.drawImage(this.cursor, s.x - 3, by - 22 - Math.round(Math.abs(Math.sin(t * 5)) * 3))
+      // Squashed into the cradle on a landing: shorter and a little wider, its bottom kept on the hollow.
+      const sq = b.squash
+      const bw = Math.round(bc.width * (2 - sq))
+      const bh = Math.round(bc.height * sq)
+      const bx = Math.round(b.x + (R + 13) * ak - (bw - 1) / 2)
+      const byTop = Math.round(by + 7 * ak + (bc.height - 1) / 2 - bh + 1)
+      g.drawImage(bc, bx, byTop, bw, bh)
+      if (focus) g.drawImage(this.cursor, s.x - 3, by - R - 15 - Math.round(Math.abs(Math.sin(t * 5)) * 3))
     })
     // The light of an opening: a ring and a glow.
     this.slots.forEach((s) => {
       if (s.openAt == null) return
       const p = span(t, s.openAt, s.openAt + 0.45)
       if (p > 0 && p < 1) {
-        const R = Math.round(6 + 26 * ease.outC(p))
-        g.drawImage(ring(R, 2, '#ffffff', 1 - p), s.x - R - 1, s.y - 10 - R - 1)
+        const rr = Math.round(R + 26 * ease.outC(p))
+        g.drawImage(ring(rr, 2, '#ffffff', 1 - p), s.x - rr - 1, s.y - R - 2 - rr - 1)
       }
     })
     this.fx.draw(g)

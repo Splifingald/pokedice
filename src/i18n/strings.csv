@@ -1857,6 +1857,7 @@ ui.friends.share,Share invite link,Partager le lien d'invitation,Compartir enlac
 ui.friends.shareText,Add me on Pokédice! My friend ID: {code},Ajoute-moi sur Pokédice ! Mon code ami : {code},¡Agrégame en Pokédice! Mi código de amigo: {code},Füg mich in Pokédice hinzu! Meine Freundes-ID: {code},Aggiungimi su Pokédice! Il mio codice amico: {code},Adiciona-me no Pokédice! O meu código de amigo: {code},Me adicione no Pokédice! Meu código de amigo: {code},Pokédiceでフレンドになろう！フレンドID：{code},Pokédice에서 친구 추가해 줘! 내 친구 ID: {code},在Pokédice加我好友吧！我的好友ID：{code}
 ui.friends.linkCopied,Invite link copied,Lien d'invitation copié,Enlace de invitación copiado,Einladungslink kopiert,Link di invito copiato,Link de convite copiado,Link de convite copiado,招待リンクをコピーしました,초대 링크를 복사했어요,已复制邀请链接
 ui.friends.addTitle,Add a friend,Ajouter un ami,Añadir un amigo,Freund hinzufügen,Aggiungi un amico,Adicionar um amigo,Adicionar um amigo,フレンドを追加,친구 추가,添加好友
+ui.friends.addFriends,Add friends,Ajouter des amis,Añadir amigos,Freunde hinzufügen,Aggiungi amici,Adicionar amigos,Adicionar amigos,フレンドを追加,친구 추가,添加好友
 ui.friends.idLabel,Friend ID,Code ami,Código de amigo,Freundes-ID,Codice amico,Código de amigo,Código de amigo,フレンドID,친구 ID,好友ID
 ui.friends.idHint,"8 letters and numbers, like K7QM-4XD9","8 lettres et chiffres, comme K7QM-4XD9","8 letras y números, como K7QM-4XD9","8 Buchstaben und Ziffern, z. B. K7QM-4XD9","8 lettere e numeri, come K7QM-4XD9","8 letras e números, como K7QM-4XD9","8 letras e números, como K7QM-4XD9",英数字8文字（例：K7QM-4XD9）,영문과 숫자 8자 (예: K7QM-4XD9),8位字母和数字，例如K7QM-4XD9
 ui.friends.addButton,Add,Ajouter,Añadir,Hinzufügen,Aggiungi,Adicionar,Adicionar,追加,추가,添加
@@ -2240,6 +2241,7 @@ ui.partner.no,Not this one,Pas celui-ci,Este no,Nicht diesen,Non questo,Este nã
 ui.partner.yes,Pick {name},Choisir {name},Elegir a {name},{name} wählen,Scegli {name},Escolher {name},Escolher {name},{name}にする,{name} 고르기,选择{name}
 ui.partner.go,Let's go!,C'est parti !,¡Vamos!,Los geht's!,Andiamo!,Vamos!,Vamos!,いこう！,가자!,出发！
 ui.partner.leave,Not now,Pas maintenant,Ahora no,Nicht jetzt,Non ora,Agora não,Agora não,いまはやめる,나중에,现在不要
+ui.partner.starters,The three starters,Les trois starters,Los tres iniciales,Die drei Starter,I tre starter,Os três iniciais,Os três iniciais,さいしょの3匹,스타팅 포켓몬 셋,三只御三家
 ui.partner.enter,Enter {region},Entrer à {region},Entrar en {region},{region} betreten,Entra a {region},Entrar em {region},Entrar em {region},{region}へ,{region}로 가기,进入{region}
 ui.newGame.selectCharacter,Select your character,Choisis ton personnage,Elige tu personaje,Wähle deine Figur,Scegli il tuo personaggio,Escolhe a tua personagem,Escolha seu personagem,キャラクターを選ぼう,캐릭터를 고르세요,选择你的角色
 ui.newGame.character,Character,Personnage,Personaje,Figur,Personaggio,Personagem,Personagem,キャラクター,캐릭터,角色

@@ -43,19 +43,14 @@ async function boot(page: Page, save: SaveData) {
 
 const areaId = (name: string) => gameData().areas.find((a) => a.name === name)!.id
 
-test('the overhaul’s rules on the Raids page until GOT IT, never a pop-up there', async ({ page }) => {
+test('the overhaul’s rules: no card and no pop-up on the Raids page; opening it sets the flag', async ({ page }) => {
   await boot(page, kantoSave())
   await page.goto('/events/raid')
-  // The overhaul's rules where they apply (docs/43 §7): a card at the top of the Raids page, never a pop-up there.
-  const card = page.getByRole('region', { name: 'How Raid Battles works' })
-  await expect(card.getByText('Learn its pattern')).toBeVisible()
+  // Behind INFO only (the user's call, 2026-11-07).
+  await expect(page.getByRole('heading', { level: 1, name: 'Raid Battles' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'How Raid Battles works' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  // Opening the page isn't reading them.
-  await page.waitForTimeout(500)
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).events?.raidRulesSeen)).toBeFalsy()
-  await card.getByRole('button', { name: 'Got it' }).click()
-  await expect(card).toHaveCount(0)
-  // Seen: kept in the save, so it doesn't come back.
+  // Seen: kept in the save.
   await expect
     .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!).events?.raidRulesSeen))
     .toBe(true)

@@ -44,7 +44,7 @@ import { cx } from '@/theme/util'
 import { showdownView, SpriteImg } from './SpriteImg'
 import { StageCanvas } from './StageCanvas'
 import { artBox } from '@/lib/showdown'
-import { useShowdownDown } from '@/lib/showdownReach'
+import { useSpriteSource } from '@/lib/showdownReach'
 
 /** How the world's lasting effects play here: full (a calm OS too), short, or off (still). */
 function useDistortionLevel(): MotionLevel {
@@ -368,8 +368,8 @@ export function GlitchSprite({
   const level = forced ?? shown
   const host = useRef<HTMLDivElement>(null)
   const over = useRef<HTMLCanvasElement>(null)
-  // Showdown down (src/lib/showdownReach.ts): SpriteImg shows the local sprite, so the scale follows it.
-  useShowdownDown()
+  // A source failing (src/lib/showdownReach.ts): SpriteImg shows the next one's sprite, so the scale follows it.
+  useSpriteSource()
   // The art's scale in the box, as SpriteImg places it: CSS pixels per canvas-sprite pixel.
   const s = stageSprite(dex, false, shiny)
   const sd = showdownView(dex, false, shiny)

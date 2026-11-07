@@ -82,16 +82,23 @@ async function toDataUrl(canvas) {
 }
 
 /**
- * The 2:1 image: `art.bg` is a window of a picture ({ src, x, y, w, h } in its own pixels, already 2:1; without them,
- * the picture's middle), drawn at the whole scale nearest IMAGE_W; `art.mons` ({ src, shiny }) stand on `art.ground` (0–1 down the window), side by side,
- * each about `art.height` (0–1) of the image tall.
+ * The 2:1 image: `art.bg` is a window of a picture ({ src, x, y, w, h } measured on a picture `of` pixels wide, scaled
+ * to the file: each picture keeps the grid it was drawn on; already 2:1; without them, the picture's middle), drawn at
+ * the whole scale nearest IMAGE_W; `art.mons` ({ src, shiny }) stand on `art.ground` (0–1 down the window), side by
+ * side, each about `art.height` (0–1) of the image tall.
  */
 async function drawImage(art) {
   const bg = await bitmap(art.bg.src)
+  const s = art.bg.of ? bg.width / art.bg.of : 1
   // A picture without a window (an event's own banner): its middle, 2:1.
   const win =
     art.bg.w && art.bg.h
-      ? art.bg
+      ? {
+          x: Math.round((art.bg.x || 0) * s),
+          y: Math.round((art.bg.y || 0) * s),
+          w: Math.max(1, Math.round(art.bg.w * s)),
+          h: Math.max(1, Math.round(art.bg.h * s)),
+        }
       : bg.width / bg.height > 2
         ? { x: Math.round((bg.width - bg.height * 2) / 2), y: 0, w: bg.height * 2, h: bg.height }
         : { x: 0, y: Math.round((bg.height - bg.width / 2) / 2), w: bg.width, h: Math.round(bg.width / 2) }

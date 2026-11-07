@@ -1,11 +1,14 @@
 // Kitchen sink: the Social and Settings family of the deep pass (docs/43 §5.8–§5.9). Board rows with their measure
 // (a bar where the board has a ceiling, a count and its icon where it hasn't, the area being worked on), a compact row
 // (a side column), Versus rows with the one red FIGHT and the navy ones; ScoreMeter on its way and full; a view's two
-// columns (SocialColumns); the dock pinned at a phone's foot (SocialDock, shown on demand: it pins over this page); adding
-// a friend in the page; the compact trainer card; the menu's foot tiles.
+// columns (SocialColumns); the dock pinned at a phone's foot (SocialDock, shown on demand: it pins over this page); ADD
+// FRIENDS' pop-up and adding a friend in it; a friend's card's BATTLE foot (online, offline, no record yet); the compact
+// trainer card; the menu's foot tiles.
 import { useState } from 'react'
 import { BoardRow, ScoreMeter } from '@/components/BoardRow'
 import { AddFriendForm } from '@/components/friends/AddFriendModal'
+import { AddFriendsButton, AddFriendsSheet } from '@/components/friends/AddFriendsSheet'
+import { FriendBattleFoot } from '@/components/friends/FriendProfileSheet'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { FootTile } from '@/components/PlayerMenu'
@@ -20,6 +23,7 @@ const TEAM = [
 
 export function SocialDeepBits() {
   const [dock, setDock] = useState(false)
+  const [adding, setAdding] = useState(false)
   return (
     <div className="flex w-full flex-col gap-4">
       <h3 className="m-0 text-[20px] font-normal">
@@ -126,10 +130,35 @@ export function SocialDeepBits() {
       {dock && (
         <SocialDock>
           <PixelButton variant="primary" className="w-full" onClick={() => setDock(false)}>
-            Share invite link
+            Add friends
           </PixelButton>
         </SocialDock>
       )}
+
+      <h3 className="m-0 text-[20px] font-normal">
+        ADD FRIENDS (no reward waiting; 2 ready, small as on PC) and its pop-up: the invite rewards (signed in, while on), your ID and COPY, adding one, reset, SHARE (the
+        kitchen has no account: no ID, SHARE greyed)
+      </h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <AddFriendsButton onClick={() => setAdding(true)} readyCount={0} />
+        <AddFriendsButton size="sm" onClick={() => setAdding(true)} readyCount={2} />
+      </div>
+      <AddFriendsSheet open={adding} onClose={() => setAdding(false)} />
+
+      <h3 className="m-0 text-[20px] font-normal">
+        A friend's card's foot with Friend Battles: online with a record · online, never fought · offline
+      </h3>
+      <div className="grid w-full max-w-[1100px] gap-3 md:grid-cols-3">
+        {[
+          { online: true, record: 'You lead 4–3' },
+          { online: true, record: null },
+          { online: false, record: 'Kiro leads 1–0' },
+        ].map((b, i) => (
+          <div key={i} className="bg-panel p-3 shadow-ring">
+            <FriendBattleFoot battle={{ ...b, onBattle: () => undefined }} name="Kiro" />
+          </div>
+        ))}
+      </div>
 
       <h3 className="m-0 text-[20px] font-normal">Adding a friend in the page (the field, the hint, ADD)</h3>
       <div className="w-full max-w-[420px]">

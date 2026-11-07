@@ -6,7 +6,7 @@ import { ellipse, icon } from '@/fx/pixel'
 import { spriteError, stageSprite } from '@/fx/sprites'
 import { useT } from '@/i18n/react'
 import { useMotion } from '@/lib/motion'
-import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
+import { useSpriteSource, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { H, W, dayCareWorld } from '../home/scene'
 import { useHerdLoop, type HerdOverlay } from '../home/SceneStage'
@@ -52,12 +52,13 @@ export function YardStage({
   const imgs = useRef<(HTMLImageElement | null)[]>([])
 
   const key = members.map((m) => `${m.key}:${m.dex}:${m.shiny ? 1 : 0}:${m.outfit ?? ''}:${m.likes.join(',')}`).join('|')
-  // Showdown failing or stalling brings the local sprites (src/lib/showdownReach.ts).
-  const down = useShowdownDown()
+  // A source failing or stalling brings the next one: Showdown after our copy, then the local sprites
+  // (src/lib/showdownReach.ts).
+  const source = useSpriteSource()
   const sprites = useMemo(
     () => members.map((m) => stageSprite(m.dex, false, !!m.shiny, m.outfit)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [key, down],
+    [key, source],
   )
   const herd = useMemo(() => {
     const world = dayCareWorld()

@@ -74,12 +74,14 @@ the sprites come from there, and nothing from `pokemonshowdown.com`.
   `sprites-custom/`, at the paths Showdown would use. Step 3 copies them in as they are, with nothing to download.
   After adding or changing one, run step 3, then the `deploy` line of step 4. Only the copy has them, not Showdown,
   so the game can show them only once `VITE_SPRITES_HOST` points at the copy.
-- **If the copy fails** for a player: after 4 s the game shows its older built-in sprites, exactly as it does when
-  Showdown fails (`src/lib/showdownReach.ts`). It doesn't fall back to Showdown.
+- **If the copy fails** for a player (fails, or still loading after 4 s on screen): the game reads the same sprites
+  and cries from Showdown itself for 10 minutes, still animated, then tries the copy again. If Showdown fails too, it
+  shows its older built-in sprites (`src/lib/showdownReach.ts`, docs/13 "Offline and misses"). Outfits, which only
+  the copy has, show the plain species meanwhile.
 - **To go back to Showdown:** delete `VITE_SPRITES_HOST` in Netlify and deploy again.
 - **The switch** is that variable, not an admin setting: it chooses where files come from and changes nothing
   players do, so there is nothing to show players first.
 
-How it works: `SPRITES_HOST` in `src/lib/showdown.ts` swaps `https://play.pokemonshowdown.com` for the copy in every
-sprite and cry address; `scripts/sprites-mirror.ts` lists exactly those files, plus everything in `sprites-custom/`
+How it works: `SPRITE_SOURCES` in `src/lib/showdown.ts` puts the copy before `https://play.pokemonshowdown.com`, and
+`spriteSource()` (`src/lib/showdownReach.ts`) gives every sprite and cry address the first that answers; `scripts/sprites-mirror.ts` lists exactly those files, plus everything in `sprites-custom/`
 (`tests/sprites-mirror.test.ts` checks none is missing, and that each of our own sprites has all four views).

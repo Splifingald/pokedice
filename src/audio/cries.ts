@@ -1,9 +1,10 @@
-// Pokémon cries: Showdown's MP3s, played straight from its CDN like the sprites (docs/13-SHOWDOWN-SPRITES.md), so they
-// cost our host no request. A cry is fetched the first time it plays, then the browser's cache has it (31 days);
-// nothing is fetched ahead, and nothing at all while sound is off. One that can't load (offline, Showdown down) is
-// simply not heard: no retry, no message.
+// Pokémon cries: Showdown's MP3s, played from where the sprites come from (our copy, else Showdown itself when the copy
+// failed this player: src/lib/showdownReach.ts, docs/13-SHOWDOWN-SPRITES.md), so they cost our host no request. A cry
+// is fetched the first time it plays, then the browser's cache has it (31 days); nothing is fetched ahead, and nothing
+// at all while sound is off. One that can't load (offline, the source down) is simply not heard: no retry, no message.
 import showdownSprites from '@/data/showdown-sprites.json'
-import { cryId, SHOWDOWN_CRIES, type ShowdownEntry } from '@/lib/showdown'
+import { cryId, type ShowdownEntry } from '@/lib/showdown'
+import { crySource } from '@/lib/showdownReach'
 
 const ENTRIES = showdownSprites as unknown as Record<string, ShowdownEntry | undefined>
 
@@ -33,7 +34,7 @@ export function setCriesEnabled(on: boolean) {
 export function cryUrl(dex: number): string | null {
   const e = ENTRIES[dex]
   const id = e && cryId(e)
-  return id && !import.meta.env.VITE_PROTO ? `${SHOWDOWN_CRIES}/${id}.mp3` : null
+  return id && !import.meta.env.VITE_PROTO ? `${crySource().cries}/${id}.mp3` : null
 }
 
 /** Whether this species or form has a cry of its own (a Mega's, rather than its species'). */

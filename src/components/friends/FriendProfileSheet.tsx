@@ -1,7 +1,9 @@
 // A friend's trainer card (docs/16): drawn with the same pieces as your own — the blue card, their badges counted
 // across every region — from their player card, as of their last cloud push. Friends only; REMOVE FRIEND ends it for both.
 // Versus says the most trophies they ever held while the weekly league is on (docs/44 §10), as your own card does.
+// From the Friends page, BATTLE (Friend Battles, docs/65) is pinned at the card's foot (the user's call, 2026-11-07).
 import { useEffect, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { linearAreas, regionCaseOf, regionSpecies, versusLeagueFor } from '@/engine'
 import { getLang } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -22,6 +24,7 @@ import { TrainerName } from '../TrainerName'
 import { FriendStreakBlock } from './Friendship'
 import { friendshipWaits, utcDay } from '@/engine'
 import { useFriendship } from '@/store/friendship'
+import { cx } from '@/theme/util'
 
 type Load = { state: 'loading' } | { state: 'ready'; profile: FriendProfile } | { state: 'gone' } | { state: 'error'; why: string }
 
@@ -31,12 +34,15 @@ export function FriendProfileSheet({
   userId,
   name,
   onClose,
+  battle,
 }: {
   /** The friend to show; null closes the sheet. */
   userId: string | null
   /** Their name, shown while the card loads. */
   name?: string
   onClose: () => void
+  /** Friend Battles open to you and this friend in your realm (the Friends page): BATTLE, or Offline, at the foot. */
+  battle?: FriendBattle
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -109,15 +115,7 @@ export function FriendProfileSheet({
         onClose={onClose}
         title={shownName}
         sub={profile?.since ? t('ui.friends.since', { date: dateText(profile.since) }) : undefined}
-        footer={
-          profile && (
-            <div className="flex justify-end">
-              <PixelButton size="sm" variant="danger" onClick={() => setConfirm(true)}>
-                {t('ui.friends.remove')}
-              </PixelButton>
-            </div>
-          )
-        }
+        footer={profile && battle && <FriendBattleFoot battle={battle} name={shownName} />}
       >
         {load.state === 'loading' && <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.common.loading')}</p>}
         {load.state === 'gone' && <p className="m-0 p-4 text-center text-[20px] text-muted">{t('ui.friends.gone')}</p>}
@@ -181,6 +179,12 @@ export function FriendProfileSheet({
               </section>
             )}
             {userId && <TheirTrades userId={userId} />}
+            {/* Rare and for good: quiet, at the card's end. */}
+            <div className="flex justify-end">
+              <PixelButton size="sm" variant="danger" onClick={() => setConfirm(true)}>
+                {t('ui.friends.remove')}
+              </PixelButton>
+            </div>
           </div>
         )}
       </Sheet>
@@ -195,5 +199,53 @@ export function FriendProfileSheet({
         </div>
       </Modal>
     </>
+  )
+}
+
+export interface FriendBattle {
+  online: boolean
+  record: string | null
+  onBattle: () => void
+}
+
+/** A friend's card's foot with Friend Battles (docs/65): in the game now (or not), your record, BATTLE or Offline. */
+export function FriendBattleFoot({ battle, name }: { battle: FriendBattle; name: string }) {
+  const { t } = useT()
+  const navigate = useNavigate()
+  return (
+    <div className="grid gap-1.5" data-testid="friend-battle">
+      <div className="flex min-h-[28px] items-center gap-2">
+        <small
+          className={cx(
+            'flex min-w-0 flex-1 items-center gap-1 truncate font-pixel-sm text-[16px] leading-tight',
+            battle.online ? 'text-good' : 'text-muted',
+          )}
+        >
+          {battle.online && (
+            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#3fbf6a] shadow-ring-thin" />
+          )}
+          {[battle.online && t('ui.pvp.onlineNow'), battle.record].filter(Boolean).join(' · ')}
+        </small>
+        <button
+          type="button"
+          onClick={() => navigate('/battles')}
+          className="shrink-0 font-pixel-sm text-[17px] text-ink underline underline-offset-[3px]"
+        >
+          {t('ui.pvp.toBattles')} ›
+        </button>
+      </div>
+      <PixelButton
+        variant="primary"
+        size="lg"
+        className="w-full"
+        disabled={!battle.online}
+        aria-label={
+          battle.online ? t('ui.pvp.battleWith', { name }) : t('ui.pvp.offlineWith', { name })
+        }
+        onClick={battle.onBattle}
+      >
+        {battle.online ? t('ui.pvp.battle') : t('ui.pvp.offline')}
+      </PixelButton>
+    </div>
   )
 }

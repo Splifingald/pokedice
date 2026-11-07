@@ -26,12 +26,12 @@ import {
 import { BoardGap, BoardRow } from '@/components/BoardRow'
 import { Chip } from '@/components/Chip'
 import { AccountButton } from '@/components/AccountButton'
-import { useVersusRules, VersusRulesModal } from '@/components/FeatureRules'
+import { VersusRulesModal } from '@/components/FeatureRules'
 import { ItemSprite } from '@/components/ItemSprite'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
-import { RulesCard } from '@/components/RulesCard'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { InfoButton } from '@/components/RulesModal'
 import { Seg } from '@/components/Segmented'
 import { SocialColumns, SocialDock } from '@/components/SocialTabs'
@@ -92,7 +92,7 @@ export function LeagueScreen() {
   const [busy, setBusy] = useState(false)
   const [rules, setRules] = useState(false)
   const rulesDue = versusRulesDue(save, data)
-  const leagueRules = useVersusRules()
+  useSeenOnOpen(rulesDue, markVersusRulesSeen)
   const globalOn = versusGlobalOn(data)
 
   const refresh = useCallback(() => {
@@ -176,14 +176,6 @@ export function LeagueScreen() {
   return (
     <div className="flex flex-col gap-3">
       <PageHead title={t('ui.versus.title')} social="versus" />
-      {rulesDue && (
-        <RulesCard
-          title={t('ui.league.title')}
-          icon="trophy"
-          rules={leagueRules}
-          onDone={markVersusRulesSeen}
-        />
-      )}
       {h && (
         <LeagueHeader
           trophies={h.trophies}

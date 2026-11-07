@@ -2,10 +2,11 @@
 // No tabs between events. The page opens on the event's banner: its picture, the back arrow, the title, the live status.
 import type { ReactNode } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { EVENT_IDS, eventOn, eventUnlocked, inWorld, type EventId } from '@/engine'
+import { EVENT_IDS, eventOn, eventUnlocked, inWorld, raidOverhaulRulesDue, type EventId } from '@/engine'
 import { BackButton } from '@/components/PageHead'
 import { useT } from '@/i18n/react'
 import { countdown } from '@/lib/format'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { useGame } from '@/store/game'
 import { useTodayRaid } from '@/store/raid'
 import { useWheelTickets } from '@/store/wheel'
@@ -14,8 +15,8 @@ import { useRaidRun } from '@/store/raidBattle'
 import { RaidPage } from './RaidPage'
 import { RaidView } from './RaidView'
 import { RebattlePage, tierName } from './RebattlePage'
-import { EventPicture, EventRulesCard } from './shared'
-import { RaidRulesCard } from './RaidRules'
+import { EventPicture, eventRulesDue, markEventRead } from './shared'
+import { seeRaidOverhaulRules } from './RaidRules'
 import { cx } from '@/theme/util'
 import { WheelPage } from './WheelPage'
 import { WorldAwayPage } from './world'
@@ -102,17 +103,10 @@ export function EventsScreen() {
 
 function EventPage({ id }: { id: EventId }) {
   const status = useEventStatus(id)
-  return (
-    <EventBody
-      id={id}
-      head={
-        // The banner, then the event's rules the first times it opens (a card, never a pop-up over Home).
-        <div className="flex flex-col gap-3">
-          <EventBanner id={id} status={status} />
-          <EventRulesCard id={id} />
-          {id === 'raid' && <RaidRulesCard />}
-        </div>
-      }
-    />
-  )
+  const save = useGame((s) => s.save)
+  const data = useGame((s) => s.data)
+  // The event's rules are behind INFO at the page's foot; opening it is enough for Home's notice (docs/15 §20).
+  useSeenOnOpen(eventRulesDue(id, save), () => markEventRead(id))
+  useSeenOnOpen(id === 'raid' && !!save && raidOverhaulRulesDue(save, data), seeRaidOverhaulRules)
+  return <EventBody id={id} head={<EventBanner id={id} status={status} />} />
 }

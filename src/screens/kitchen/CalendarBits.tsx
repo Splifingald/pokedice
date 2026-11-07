@@ -15,11 +15,10 @@ import {
   type LiveEvent,
   type SaveData,
 } from '@/engine'
-import { CalendarDoorTile, CalendarGrid, CalendarRulesModal, useCalendarRules } from '@/components/Calendar'
+import { CalendarDoorTile, CalendarGrid, CalendarRulesModal } from '@/components/Calendar'
 import { GiftMoment } from '@/components/Gifts'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
-import { RulesCard } from '@/components/RulesCard'
 import { useT } from '@/i18n/react'
 import { LiveFx, LiveGauge, LivePicture, LiveTag, calendarSub, liveName } from '@/screens/events/live'
 import { HomeCard } from '@/screens/home/Widget'
@@ -87,8 +86,6 @@ export function CalendarBits() {
   const data = useGame((s) => s.data)
   const [info, setInfo] = useState(false)
   const [moment, setMoment] = useState(false)
-  const [rulesSeen, setRulesSeen] = useState(false)
-  const rules = useCalendarRules(CAL)
   const midway = sampleSave([1, 2, 4, 6, 7, 8])
   const done = sampleSave(Array.from({ length: 24 }, (_, i) => i + 1))
   const name = liveName(CAL)
@@ -157,14 +154,7 @@ export function CalendarBits() {
       <Frame name="Home's card: every door opened" wide>
         {card(done, START + 24 * D + 5, false)}
       </Frame>
-      <Frame name="The rules card (the page's first visit), then INFO" wide>
-        {!rulesSeen ? (
-          <RulesCard title={name} icon="calendar" rules={rules} onDone={() => setRulesSeen(true)} />
-        ) : (
-          <PixelButton size="sm" onClick={() => setRulesSeen(false)}>
-            Show the card again
-          </PixelButton>
-        )}
+      <Frame name="INFO (the rules) and the opening" wide>
         <div className="mt-2 flex gap-2">
           <InfoButton compact name={name} onClick={() => setInfo(true)} />
           <PixelButton size="sm" onClick={() => setMoment(true)}>

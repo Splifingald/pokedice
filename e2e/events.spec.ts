@@ -36,20 +36,13 @@ async function boot(page: Page, save: SaveData, signedIn = false, settings = FAS
 
 const stored = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save')!) as SaveData)
 
-test('the wheel’s rules sit at the top of its page until GOT IT, never a pop-up there', async ({ page }) => {
+test('the wheel’s page shows no rules: opening it is enough, INFO holds them', async ({ page }) => {
   await mockSupabase(page, { rpc: { event_time: eventTime } })
   await boot(page, wheelSave(false))
   await page.goto('/events/wheel')
   await expect(page.getByRole('heading', { level: 1, name: 'Fortune Wheel' })).toBeVisible()
-  const card = page.getByRole('region', { name: 'How Fortune Wheel works' })
-  await expect(card).toBeVisible()
-  await expect(card.getByText('Tickets', { exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'How Fortune Wheel works' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  // Opening the page isn't reading them: still unseen.
-  await page.waitForTimeout(500)
-  expect((await stored(page)).events?.seen ?? []).not.toContain('wheel')
-  await card.getByRole('button', { name: 'Got it' }).click()
-  await expect(card).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).events?.seen).toContain('wheel')
   expect((await stored(page)).events?.wheelRulesSeen).toBe(true)
   // Back on the page from Home (a reload would seed the unseen save again): no card this time.
@@ -103,15 +96,14 @@ test('a spin costs a ticket: the odds, the last ticket spent, one bought for ₽
   expect(calls.some((c) => c.includes('wheel_spin'))).toBe(false)
 })
 
-test('the new rules show once on the page; a Porygon won is paid and the jackpot moves on to a shiny one', async ({ page }) => {
+test('the new rules: opening the page sets their flag; a Porygon won is paid and the jackpot moves on to a shiny one', async ({ page }) => {
   await mockSupabase(page, { rpc: { event_time: eventTime } })
   // A player from before the tickets (the wheel seen, not its new rules), with a Porygon still waiting to be paid.
   const save = wheelSave(false, { seen: ['wheel'], wheelPending: { kind: 'pokemon', dex: 137, level: 30 } })
   await boot(page, save)
   await page.goto('/events/wheel')
-  const rules = page.getByRole('region', { name: 'How Fortune Wheel works' })
-  await expect(rules.getByText('Tickets', { exact: true })).toBeVisible()
-  await rules.getByRole('button', { name: 'Got it' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Fortune Wheel' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'How Fortune Wheel works' })).toHaveCount(0)
   // The jackpot's card in the docked panel (PC): the next one, a shiny Porygon.
   await expect(page.getByText('Shiny Porygon · 1 %')).toBeVisible()
   await expect.poll(async () => (await stored(page)).box.some((p) => p.dex === 137)).toBe(true)

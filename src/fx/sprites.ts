@@ -13,7 +13,7 @@ import itemSheet from '@/assets/item-icons.png'
 import itemAtlas from '@/data/item-atlas.json'
 import { artBox } from '@/lib/showdown'
 import { outfitSprite } from '@/lib/outfitSprites'
-import { isShowdownUrl, PATIENCE_MS, showdownMissed } from '@/lib/showdownReach'
+import { isShowdownUrl, PATIENCE_MS, spriteMissed, spriteSource } from '@/lib/showdownReach'
 import type { SyntheticEvent } from 'react'
 import { cached, canvas, clamp, type Canvas, type G } from './pixel'
 
@@ -76,14 +76,18 @@ export function stageSprite(dex: number, back: boolean, shiny: boolean, outfit?:
 }
 
 /**
- * A stage <img>'s onError: its local copy takes the sprite's place, and Showdown counts as down for every sprite
- * (src/lib/showdownReach.ts: the components re-render with the local sprite, placed as it should be). The <img>'s ref
- * calls `watchShowdown` for a Showdown that stalls rather than fails.
+ * A stage <img>'s onError: its source counts as down for every sprite (src/lib/showdownReach.ts). With Showdown still
+ * there behind our copy, the components re-render with its URL; with no source left, the local copy takes the
+ * sprite's place at once (the components then re-render with it, placed as it should be). The <img>'s ref calls
+ * `watchShowdown` for a source that stalls rather than fails.
  */
 export const spriteError = (s: StageSprite) => (e: SyntheticEvent<HTMLImageElement>) => {
   const img = e.currentTarget
   if (!s.fallback || img.src === new URL(s.fallback, location.href).href) return
-  if (isShowdownUrl(img.src)) showdownMissed()
+  if (isShowdownUrl(img.src)) {
+    spriteMissed(img.src)
+    if (spriteSource()) return
+  }
   img.src = s.fallback
 }
 
@@ -131,7 +135,7 @@ export function loadSprite(dex: number, back: boolean, shiny = false, outfit?: s
   if (frames.has(key)) return Promise.resolve(key)
   let p = loading.get(key)
   if (p) return p
-  const s = stageSprite(dex, back, shiny, outfit)
+  let s = stageSprite(dex, back, shiny, outfit)
   p = new Promise<string>((res) => {
     const img = new Image()
     let fallback = false
@@ -143,8 +147,18 @@ export function loadSprite(dex: number, back: boolean, shiny = false, outfit?: s
     }
     const next = () => {
       window.clearTimeout(wait)
-      // Showdown failing or stalling: Showdown down for every sprite (src/lib/showdownReach.ts).
-      if (!fallback && isShowdownUrl(img.src)) showdownMissed()
+      // A source failing or stalling: down for every sprite (src/lib/showdownReach.ts), and on to the next one, Showdown
+      // after our copy (its sprite may differ: an outfit only our copy has), else the local sprite.
+      if (!fallback && isShowdownUrl(img.src)) {
+        spriteMissed(img.src)
+        const again = stageSprite(dex, back, shiny, outfit)
+        if (again.url !== s.url && isShowdownUrl(again.url)) {
+          s = again
+          img.src = s.url
+          wait = window.setTimeout(stall, PATIENCE_MS)
+          return
+        }
+      }
       if (!fallback && s.fallback) {
         fallback = true
         img.src = s.fallback

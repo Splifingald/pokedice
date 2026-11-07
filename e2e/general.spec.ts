@@ -66,17 +66,8 @@ test('the rules where they apply: a card on the General view until GOT IT, Captu
   await boot(page, trainer())
   await page.goto('/shop?tab=upgrades&up=general')
   await expect(page.getByRole('tab', { name: /General/ })).toHaveAttribute('aria-selected', 'true')
-  // The first time: the rules at the top of the view, the same rows as INFO's pop-up (docs/43 §7).
-  const card = page.getByRole('region', { name: 'How General works' })
-  await expect(card).toBeVisible()
-  await expect(card).toContainText('Capture Luck')
-  await expect(card).toContainText('I am just rich')
-  // Level 0 earns a little offline too (`offlineBase`, ₽1 an hour): the range starts there.
-  await expect(card).toContainText('₽1–₽20 an hour')
-  // Opening the view doesn't count as reading them: only GOT IT does.
-  expect((await stored(page)).general?.rulesSeen).toBeFalsy()
-  await card.getByRole('button', { name: 'GOT IT' }).click()
-  await expect(card).toHaveCount(0)
+  // No rules on the view (the user's call, 2026-11-07): opening it sets the flag; INFO holds them.
+  await expect(page.getByRole('region', { name: 'How General works' })).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).general?.rulesSeen).toBe(true)
 
   const luck = page.getByRole('listitem').filter({ hasText: 'Capture Luck' })
@@ -90,7 +81,10 @@ test('the rules where they apply: a card on the General view until GOT IT, Captu
   await expect(page.getByRole('listitem').filter({ hasText: 'I am just rich' })).toContainText('₽99,999')
 
   await page.getByRole('button', { name: 'Info: how General works' }).click()
-  await expect(page.getByRole('dialog', { name: 'General' })).toBeVisible()
+  const info = page.getByRole('dialog', { name: 'General' })
+  await expect(info).toContainText('Capture Luck')
+  // Level 0 earns a little offline too (`offlineBase`, ₽1 an hour): the range starts there.
+  await expect(info).toContainText('₽1–₽20 an hour')
   await page.getByRole('button', { name: 'OK' }).click()
   // Seen: the card doesn't come back, and nothing pops up on Home.
   await page.reload()
@@ -128,10 +122,7 @@ test('the Shiny Charm: its own card once on the General view, then a level bough
   }
   await boot(page, trainer({ general: { rulesSeen: true } }), charmOn)
   await page.goto('/shop?tab=upgrades&up=general')
-  const card = page.getByRole('region', { name: 'How Shiny Charm works' })
-  await expect(card).toContainText('1 in 1,000 down to 1 in 333')
-  await card.getByRole('button', { name: 'GOT IT' }).click()
-  await expect(card).toHaveCount(0)
+  await expect(page.getByRole('region', { name: 'How Shiny Charm works' })).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).general?.charmSeen).toBe(true)
 
   const charm = page.getByRole('listitem').filter({ hasText: 'Shiny Charm' })

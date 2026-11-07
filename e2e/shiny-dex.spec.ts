@@ -57,16 +57,10 @@ test('the rules on the shiny view until GOT IT, a shiny counted, INFO again', as
   await expect(
     page.getByRole('radiogroup', { name: 'Which Pokédex' }).getByRole('radio', { name: 'Shiny' }),
   ).toHaveAttribute('aria-checked', 'true')
-  // Its rules where they apply (docs/43 §7): a card at the top of the view, not a pop-up.
-  const card = page.getByRole('region', { name: 'How Shiny Pokédex works' })
-  await expect(card).toBeVisible()
-  await expect(card).toContainText('A page for shinies')
-  await expect(card).toContainText('1 in')
+  // No rules on the view (the user's call, 2026-11-07): opening it sets the flag; INFO holds them.
+  await expect(page.getByRole('region', { name: 'How Shiny Pokédex works' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
-  expect((await stored()).shinyDexSeen).toBeFalsy()
-  await card.getByRole('button', { name: 'GOT IT' }).click()
-  await expect(card).toHaveCount(0)
   await expect.poll(async () => (await stored()).shinyDexSeen).toBe(true)
 
   // Pidgey owned shiny: starred and counted. Rattata caught, never shiny: a silhouette with its name.

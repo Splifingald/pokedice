@@ -34,15 +34,15 @@ import { PageHead } from '@/components/PageHead'
 import { PixelIcon } from '@/components/icons'
 import { InfoButton } from '@/components/RulesModal'
 import { SearchField } from '@/components/Segmented'
-import { RulesCard } from '@/components/RulesCard'
-import { DexViewSwitch, ShinyDexRulesModal, useShinyDexRules, type DexView } from '@/components/ShinyDexRules'
+import { DexViewSwitch, ShinyDexRulesModal, type DexView } from '@/components/ShinyDexRules'
 import { SplitView } from '@/components/SplitView'
 import { SortSelect } from '@/components/TypeSelect'
-import { UnownDexRulesModal, UnownSprite, useUnownDexRules } from '@/components/UnownDex'
+import { UnownDexRulesModal, UnownSprite } from '@/components/UnownDex'
 import { markDexSeen, useDexNew } from '@/lib/dexSeen'
 import { dexNo, money } from '@/lib/format'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { markShinyDexSeen, markUnownDexSeen } from '@/store/actions'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { useDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
 
@@ -109,8 +109,6 @@ export function PokedexScreen() {
   // rows are the INFO pop-up's own, one source each.
   const shinySeen = useGame((s) => !!s.save?.shinyDexSeen)
   const unownSeen = useGame((s) => !!s.save?.unownDexSeen)
-  const shinyRules = useShinyDexRules()
-  const unownRules = useUnownDexRules()
   // What was new on arrival keeps its NEW tag while the screen is open; looking clears the tab bar's dot.
   const newCount = useDexNew()
   const [fresh] = useState(() => new Set(newCount > 0 ? (save?.pokedex.slice(-newCount) ?? []) : []))
@@ -144,6 +142,10 @@ export function PokedexScreen() {
     }
     return set
   }, [save, data, now])
+
+  // The shiny and Unown views' rules are behind INFO; opening the view is enough for Home's notice (docs/15 §20).
+  useSeenOnOpen(dexView === 'shiny' && !shinySeen, markShinyDexSeen)
+  useSeenOnOpen(dexView === 'unown' && !unownSeen, markUnownDexSeen)
 
   if (!save) return null
   const region = regionOf(save)
@@ -354,17 +356,6 @@ export function PokedexScreen() {
           </p>
         )}
       </div>
-      {shiny && !shinySeen && (
-        <RulesCard
-          title={t('ui.dex.shinyTitle')}
-          icon="sparkle"
-          rules={shinyRules}
-          onDone={markShinyDexSeen}
-        />
-      )}
-      {unown && !unownSeen && (
-        <RulesCard title={t('ui.unown.title')} icon="navDex" rules={unownRules} onDone={markUnownDexSeen} />
-      )}
       {counts && (
         <div className="flex items-center gap-2">
           <SearchField

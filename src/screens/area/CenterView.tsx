@@ -27,7 +27,6 @@ import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { StageCanvas } from '@/components/StageCanvas'
 import { loadSprite, spriteKey } from '@/fx/sprites'
 import { loadCenterArt } from '@/fx/scenes'
-import { quicken } from '@/fx/timeline'
 import { centerTimeline } from '@/fx/timelines/center'
 import { useMotion } from '@/lib/motion'
 import { RunRoundGauge } from '@/screens/area/RoundGauge'
@@ -40,8 +39,6 @@ const BOX_SORTS: readonly BoxSort[] = ['dex', 'level', 'type', 'newest']
 
 /** Chansey, behind the healing machine's counter. */
 const NURSE = 113
-/** How much faster than the full scene (6.4 s) the Center's healing plays. */
-const CENTER_PACE = 2.4
 
 /**
  * Pokémon Center: heal jingle, then team management — tap any Pokémon for its sheet and team actions, or open the Team
@@ -66,12 +63,25 @@ export function CenterView() {
   const [sort, setSort] = useState<BoxSort>('dex')
   const [type, setType] = useState<PokeType | 'all'>('all')
   const teamSize = useGame((s) => s.save?.team.length ?? 1)
-  // The machine plays once, on arrival: the full scene (the balls set down, the jingle) at a brisk pace, a little longer
-  // than the one flash it was (the user's call, 2026-10-27: about 2.7 s).
-  const [machine] = useState(() => ({
-    ready: Promise.all([loadSprite(NURSE, false), loadCenterArt()]),
-    timeline: quicken(centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false) }), CENTER_PACE),
-  }))
+  // The machine plays once, on arrival: the full scene (the balls set down, the jingle, the team on the wall screen) at
+  // its own pace, 6.4 s (the user's call, 2026-11-07, over the brisk 2.7 s of 2026-10-27).
+  const [machine] = useState(() => {
+    // The team shows on the Center's wall screen while it is healed: their front sprites load with the rest.
+    const st = useGame.getState().save
+    const members = st ? teamOf(st) : []
+    return {
+      ready: Promise.all([
+        loadSprite(NURSE, false),
+        loadCenterArt(),
+        ...members.map((m) => loadSprite(m.dex, false, !!m.shiny)),
+      ]),
+      timeline: centerTimeline({
+        balls: teamSize,
+        nurse: spriteKey(NURSE, false),
+        team: members.map((m) => spriteKey(m.dex, false, !!m.shiny)),
+      }),
+    }
+  })
   // The team is healed already (engage): once the jingle has started, leaving and coming back doesn't play it again.
   useEffect(() => markHealShown(), [])
 
