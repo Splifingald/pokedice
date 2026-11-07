@@ -27,6 +27,7 @@ import {
   type TrainerMon,
 } from './types'
 import { uniformLevels, type UpgradeLevels } from './damage'
+import { stageAtLevel } from './rivalMatch'
 
 export const AREA_VERSUS_DEFAULTS: AreaVersusConfig = {
   access: 'off',
@@ -208,6 +209,10 @@ export const bestOwnedLevel = (save: SaveData): number =>
  * The level match (the user's ask, 2026-11-03: "it's never more than 1 level above the max player pokemon level of
  * this region"). A team whose best Pokémon stands above the player's best + the margin is scaled down by one ratio, so
  * their best lands on that cap and the team keeps its proportions (45/42/38/30/22 against a best of 30: 31/29/26/21/15).
+ * A Pokémon brought below the level its evolution needs goes back down its line (the user's ask, 2026-11-07: "a
+ * charizard level 30 while lowest should be 36 should use the lower evolution"): a Lv.45 Charizard at Lv.30 is a
+ * Charmeleon, at Lv.15 a Charmander (`stageAtLevel`), even one they had below its level (a Lv.28 Charizard at Lv.14
+ * is a Charmander). A stone's or a trade's evolution has no level to undo. A team within reach keeps its species.
  * While the match is on, they fight with the area's dice and combos, as its trainers do, not their own. The same foe
  * with the switch off, or with a team already within reach (only the upgrades then).
  */
@@ -220,7 +225,12 @@ export function matchFoe(foe: AreaFoe, save: SaveData, area: Area | undefined, d
   return {
     ...foe,
     team:
-      ratio < 1 ? foe.team.map((m) => ({ ...m, level: Math.max(1, Math.round(m.level * ratio)) })) : foe.team,
+      ratio < 1
+        ? foe.team.map((m) => {
+            const level = Math.max(1, Math.round(m.level * ratio))
+            return { ...m, level, dex: stageAtLevel(data, m.dex, level) }
+          })
+        : foe.team,
     comboLevels,
     dieLevels,
   }

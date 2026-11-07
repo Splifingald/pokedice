@@ -1,13 +1,13 @@
 // The one-time pop-ups' queue (engine/popups.ts, docs/15 §20): one at a time, only between fights, in one order, never
 // on the page a pop-up leads to; the battle powers' rules no longer wait on the gifts' and Trick or Treat's. Home's notices
-// (docs/43 §7): Prof. Oak's leaderboard tip, his invite and Support me left the queue for cards on Home, same flags.
+// (docs/43 §7): Prof. Oak's leaderboard tip and his invite left the queue for cards on Home, same flags. Support me came
+// back to the queue (2026-11-06): on Home, 5 minutes into a session past the third, once a day.
 import { describe, expect, it } from 'vitest'
 import {
   createInstance,
   DEFAULT_CONFIG,
   homeNotices,
   inviteRulesDue,
-  markDonationSeen,
   newSave,
   nextOneTimePopup,
   ONE_TIME_POPUPS,
@@ -90,6 +90,7 @@ describe('the one-time pop-ups queue', () => {
       'live',
       'tradeScene',
       'push',
+      'donation',
     ])
   })
 
@@ -147,14 +148,13 @@ describe('the one-time pop-ups queue', () => {
     expect(homeNotices(read, on, HOME)).toEqual([])
   })
 
-  it('Prof. Oak’s leaderboard tip, his invite and Support me are no pop-ups: Home’s notices instead', () => {
+  it('Prof. Oak’s leaderboard tip and his invite are no pop-ups: Home’s notices instead', () => {
     const donating = makeData({ donation: { ...D.donation, enabled: true, kofiUrl: 'https://ko-fi.com/x' } })
-    // Five badges, the Day Care's tutorial done, nothing seen: none of the three ever takes the queue's turn.
+    // Five badges, the Day Care's tutorial done, nothing seen: neither ever takes the queue's turn.
     const save = withBadges({ ...start(), leaderboardVisited: false }, 'kanto', 5)
     expect(nextOneTimePopup(save, donating, { ...HOME, shareSeen: false })).toBeNull()
-    expect(homeNotices(save, donating, { shareSeen: false })).toEqual(
-      expect.arrayContaining(['leaderboard', 'share', 'donation']),
-    )
+    expect(homeNotices(save, donating, { shareSeen: false })).toEqual(expect.arrayContaining(['leaderboard', 'share']))
+    expect(homeNotices(save, donating, { shareSeen: false })).not.toContain('donation')
   })
 
   it('what you came back to goes first, the question about notifications last', () => {
@@ -227,13 +227,17 @@ describe('Home’s notices', () => {
     expect(homeNotices(two, on, { shareSeen: true })).toEqual([])
   })
 
-  it('Support me once per region at its 5th badge, only switched on with a link; its flag ends it', () => {
-    const save = withBadges(start(), 'kanto', 5)
-    expect(homeNotices(save, on, HOME)).toEqual([])
+  it('Support me opens on Home only, between fights, after everything else', () => {
     const donating = makeData({ donation: { ...D.donation, enabled: true, kofiUrl: 'https://ko-fi.com/x' } })
-    expect(homeNotices(save, donating, HOME)).toEqual(['donation'])
-    expect(homeNotices(withBadges(start(), 'kanto', 4), donating, HOME)).toEqual([])
-    expect(homeNotices(markDonationSeen(save, donating), donating, HOME)).toEqual([])
+    const save = withBadges(start(), 'kanto', 1)
+    const support = { session: { count: 4, startedAt: 0, lastSeen: 0, shownDay: null }, now: 5 * 60_000, today: 'd' }
+    const ctx = { ...HOME, support }
+    expect(nextOneTimePopup(save, donating, ctx)).toBe('donation')
+    expect(nextOneTimePopup(save, donating, { ...ctx, path: '/area' })).toBeNull()
+    expect(nextOneTimePopup(save, donating, { ...ctx, calm: false })).toBeNull()
+    expect(nextOneTimePopup(save, donating, { ...ctx, pushAsking: true })).toBe('push')
+    // No clock from the page (its settings not in yet): it waits.
+    expect(nextOneTimePopup(save, donating, HOME)).toBeNull()
   })
 
   it('has nothing without a save', () => {

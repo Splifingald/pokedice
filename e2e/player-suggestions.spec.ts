@@ -1,7 +1,7 @@
 // The players' suggestions (docs/67), on for everyone: a shiny's Box tile on gold, the heart in the
 // Pokémon sheet, favourites first in the raid team picker, the shiny star on an area's Pokémon, PASS on an owned
-// Pokémon's catch, and auto-mode's HEAL offer on the kitchen sink. Last, the fix that came with
-// them: a trainer's next Pokémon no longer flickers the fight's background.
+// Pokémon's catch, and the stun's cure (auto-mode's HEAL offer, and by hand) on the kitchen sink and in a fight.
+// Last, the fix that came with them: a trainer's next Pokémon no longer flickers the fight's background.
 import { expect, test, type Page } from '@playwright/test'
 import { DEFAULT_CONFIG, emptyProgress, instanceMaxHp, linearAreas, type SaveData } from '../src/engine'
 import { EVENTS_ON, FAST, gameData, makeSave, mockSupabase } from './helpers'
@@ -170,7 +170,7 @@ test("the kitchen sink: auto-mode's HEAL offer, its gauge running, and held by a
   await boot(page, makeSave(4))
   await page.goto('/kitchen-sink')
   const offers = page.getByRole('button', { name: 'Use Paralyze Heal' })
-  await expect(offers).toHaveCount(2, { timeout: 90_000 })
+  await expect(offers).toHaveCount(3, { timeout: 90_000 })
   await expect(
     page.getByText("Pikachu can't move this turn: cure it, or the turn passes.").first(),
   ).toBeVisible()
@@ -229,4 +229,62 @@ test("a trainer's next Pokémon: the area picture stays on screen through every 
   })
   expect(seen).toBe(true)
   expect(drops).toBe(0)
+})
+
+test('stunned by hand with its cure in the Bag: a red USE beside a white SKIP TURN, and the turn goes ahead', async ({
+  page,
+}) => {
+  test.setTimeout(180_000)
+  await mockSupabase(page)
+  const base = makeSave(4)
+  await page.addInitScript(
+    ([s, f]) => {
+      // Once: the reload below must find the page's own save, with the stun put in it.
+      if (sessionStorage.getItem('e2e.seeded')) return
+      sessionStorage.setItem('e2e.seeded', '1')
+      localStorage.setItem('pokedice.save', s!)
+      localStorage.setItem('pokedice.settings', f!)
+      localStorage.setItem('pokedice.sharePrompt.kanto', '1')
+    },
+    [JSON.stringify({ ...base, inventory: { ...base.inventory, 'paralyze-heal': 2 } }), FAST],
+  )
+  const attack = page.getByRole('button', { name: 'ATTACK', exact: true })
+  await page.goto('/home')
+  for (
+    let i = 0;
+    i < 200 && !((await attack.isVisible().catch(() => false)) && (await attack.isEnabled()));
+    i++
+  ) {
+    const healing = page.getByRole('dialog', { name: 'Healing…' }).getByRole('button', { name: 'SKIP ▸▸' })
+    if (await healing.isVisible().catch(() => false)) await healing.click()
+    for (const name of ['FIGHT', 'EXPLORE', 'ENTER', 'PICK IT UP', 'CONTINUE']) {
+      const b = page.getByRole('button', { name, exact: true }).first()
+      if ((await b.isVisible().catch(() => false)) && (await b.isEnabled().catch(() => false))) {
+        await b.click()
+        break
+      }
+    }
+    await page.waitForTimeout(80)
+  }
+  await expect(attack).toBeEnabled()
+  // The fight as stored (src/store/resume.ts), its lead paralysed at its turn's start; a reload brings it back so.
+  await page.evaluate(() => {
+    const save = JSON.parse(localStorage.getItem('pokedice.save')!)
+    const s = save.resume.battle.state
+    s.phase = 'player_stunned'
+    s.dice = []
+    s.selected = []
+    s.player[s.activeIndex].status.paralyze = 1
+    localStorage.setItem('pokedice.save', JSON.stringify(save))
+  })
+  await page.reload()
+  const cure = page.getByRole('button', { name: 'Use Paralyze Heal' })
+  const skip = page.getByRole('button', { name: 'SKIP TURN', exact: true })
+  await expect(cure).toBeVisible({ timeout: 15_000 })
+  await expect(skip).toBeVisible()
+  // Daybreak's paper for SKIP TURN; the cure is the red one.
+  expect(await skip.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)')
+  await cure.click()
+  await expect(attack).toBeEnabled({ timeout: 15_000 })
+  await expect(cure).toHaveCount(0)
 })

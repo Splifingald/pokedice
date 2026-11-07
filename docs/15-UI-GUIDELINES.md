@@ -195,7 +195,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `DiceLogo` | The title with the game feel on (docs/38 §9) | The word POKÉDICE as eight pixel-art dice on a canvas (`role="img"`, named Pokédice, inside the `<h1>`): thrown in and landing crooked on their letters (full), dropped in (short), two-step drops (calm), at rest (off); two rows under 768 px, one from 768; the white flash, the gold rings, the tagline; a tap throws it again. Off: the wordmark and its five dice |
 | `HowToPlay` / `ButtonLook` | How to play's animated cards (§17, docs/38 §8b), with the Game feel on | Four `figure`s (throw the dice, reroll, deal damage, catch), each a scene drawn with the battle's own pieces on a 280 × 224 stage, an `h3` and a line: looping (full motion), a still of its key moment with PLAY (calm: it plays once), PLAY showing the end (animations off). `ButtonLook`: a picture of a `PixelButton` (same frame, label fit, pressed look) in a span, for a scene with nothing to press |
 | `PageLoading` | A page split out of the main bundle loading (`Lazy` in `App.tsx`) | A Poké Ball drawn in code wobbling in pixel steps (`steps()`), still under calm; "Loading…" for screen readers (`role="status"`) |
-| `SupportModal` / `SupportView` | SUPPORT ME (side menu, Settings), and once per region at its 5th badge | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on Ko-fi under the line saying Pokémon is a licence so the game is never for sale; a big OK |
+| `SupportModal` / `SupportView` / `SupportPopup` | SUPPORT ME (side menu, Settings), and on Home by itself, between fights, from the player's 4th session (one starts on opening the game, or back after 30 min away), 5 minutes into it, with at least 1 badge, at most once a day (the user's rule, 2026-11-06; `supportPopupDue`, the queue's last) | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on Ko-fi under the line saying Pokémon is a licence so the game is never for sale; a big OK |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
 | `TrickGauge` / `TrickStage` / `NeedDie` / `TrickScreen` / `TrickPlate` / `TrickRecap` / `TrickCard` / `TierChip` / `TrickSprite` / `TrickRulesModal` / `SafariAskView` / `SafariPayButton` | Trick or Treat (§28) | The gauge: its value in numbers ("62/100") with what the last Treat or miss added (a gold "+18" that pops in; the added stretch flashes white twice once filled), its sections each in a colour of its own (red for a 6, the hardest, then orange, yellow, green and teal as it gets easier; lilac where no roll can) with a dark line between two, the flee zone striped night with a ghost, bright up to its value and as a pastel past it, the section it is in ringed in gold, the white post where it stands, and under each section the die a Trick Ball needs on a chip of the section's colour (`NeedDie`: the `Die` face with its "+", the face alone where a section is narrow; the current one ringed in gold), then Flees; a `meter`. The stage: the battle's (the area's picture as the battle cuts it, a night sky where there's none), the ghost at its centre floating in pixel steps (still when calm), its shadow, the timelines on top; at rest the ball on the ground (caught) or nobody (fled). The screen in every state (idle, after a Treat, a Treat and a throw playing, a miss, a flee, caught), the plate, the result card (caught: the battle's `CatchCard` with the Trick Ball, NEW, ✦ Shiny, where it went, a secret area; fled), the preview card, the rarity chip (a word, never colour alone), the two pictures, the rules; the Safari's round asked (free, paid, not enough ₽) and the area's CONTINUE with its price or free round |
 | `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
@@ -638,7 +638,7 @@ Players shouldn't have to make many requests:
   Home's card shape: strip, name, one status line (levels · caught · to catch, or why it's locked), GO at the right.
 - **Notices** (`NoticeCard`, `homeNotices`): what never needs a pop-up over Home is a card in the page, one at a time: a
   feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, the page's `RulesCard` ends
-  it), Prof. Oak's leaderboard tip, Support me, a region on offer once its pop-up was seen. **His invite is the
+  it), Prof. Oak's leaderboard tip, a region on offer once its pop-up was seen. **His invite is the
   friends list's**, a line of the Friends page's INFO (the user's call, 2026-10-27: not on Home; 2026-11-01: no note on
   top of Friends). Never red. **A
   region on offer** is its own picture as the card, "{region} is available", and two buttons: NOT NOW (put away on this
@@ -1005,7 +1005,8 @@ pieces.
   (`/f/<code>`, opening it makes you friends), or the game's own link while signed out (no friend ID then). With the
   invite rewards on (§25) it shows the gauge, signed in, or a line saying an account earns them, signed out.
 - **Support me** (while the admin has donations on, with a Ko-fi link): the SUPPORT ME button at the bottom of the
-  side menu and at the top of Settings (white: red is for the game's actions), and once per region at its 5th badge.
+  side menu and at the top of Settings (white: red is for the game's actions), and on Home by itself, between fights, from the player's 4th session (one starts on opening the game, or back after 30 min away), 5 minutes into it, with at least 1 badge, at most once a day (the user's rule, 2026-11-06; `supportPopupDue`, the queue's last). Closing it, either
+  way (SUPPORT ME's too), counts as the day's showing.
   Three rows, most important first: join the Discord, invite friends (the same link as INVITE), and support the developer on Ko-fi, under a plain line
   that Pokémon is a licence, so Pokédice is never monetized and a donation gives nothing in the game. Never "keep the
   game alive" or hosting costs: the money is for the developer, not the game.
@@ -1143,8 +1144,9 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   nightmare's on their way in, the looks' at the first open, a world's finish or a live event asked for from Home) stay
   there, and being due holds nothing back. Every "seen" flag stays where it was in the save. What left the queue
   (docs/43 §7: the Day Care, the events, Versus, Trades, the General upgrades, the Shiny and Unown dexes, the invite
-  rewards' rules, the raids' overhaul, the Underground, Prof. Oak's tip and invite, Support me) is a Home notice
-  (`homeNotices`) and, for a feature with a page, its `RulesCard` there.
+  rewards' rules, the raids' overhaul, the Underground, Prof. Oak's tip and invite) is a Home notice
+  (`homeNotices`) and, for a feature with a page, its `RulesCard` there. Support me went back into the queue
+  (2026-11-06): its own pop-up, on Home only, never on arrival (5 minutes into a session).
 - **How to play lists every feature's rules** (`FeatureRulesList`, the user's ask of 2026-11-02): at the bottom of How
   to play, under "All the rules", **Game features**: a button per feature switched on for the player (its icon and its
   rules' title), each opening its `RulesModal` (OK). Several rules no longer open by themselves (2026-11-02: the
@@ -2618,6 +2620,8 @@ has a rules pop-up or INFO: each is explained where it happens, or only changes 
 - **Auto-mode's HEAL** (`components/AutoCure.tsx`): in the battle panel's actions, a `role="status"` line
   and a red `lg` "USE {item}" with the item's sprite and a 5 px gauge at its foot draining (the reverse of
   `AutoButton`'s filling: here the time runs out and the turn passes). A dialog over the fight holds it, gauge hidden.
+  By hand (`StunCureActions`), the same cure with no gauge: a white SKIP TURN and a red "USE {item}" side by side
+  (REROLL / ATTACK's grid), the cure the main action.
 
 **Area pictures on a new fight** (docs/67 §9): a picture already shown this session (`artSeen`) is there on the battle
 screen's first frame, decoded with it and with no fade, so a trainer's next Pokémon (a new fight, a new screen) never
