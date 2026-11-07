@@ -11,7 +11,7 @@ import { snowglobe } from '../scripts/content-snowglobe-valley'
 
 const DIR = 'public/area-art'
 /** Pictures planned in the Visual Lab and not made yet: their areas keep their drawn scene until they arrive. */
-const STILL_TO_MAKE = ['sunne-moone']
+const STILL_TO_MAKE: string[] = []
 const file = (id: string) => path.join(DIR, `${id}.png`)
 const size = (id: string) => {
   const png = PNG.sync.read(readFileSync(file(id)))
@@ -89,7 +89,8 @@ describe('area pictures (public/area-art)', () => {
 
   it('leaves the areas of a picture still to make on their drawn scene', () => {
     const waiting = (areas as { id: string }[]).filter((a) => STILL_TO_MAKE.includes(AREA_ART[a.id]!))
-    expect(waiting.length).toBeGreaterThan(0)
+    // Every planned picture is made today; the list comes back when one is planned and not drawn yet.
+    expect(waiting.length > 0).toBe(STILL_TO_MAKE.length > 0)
     for (const a of waiting) expect(pictureOf(a.id)).toBeNull()
     expect(pictureOf('no-such-area')).toBeNull()
   })

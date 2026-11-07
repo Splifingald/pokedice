@@ -115,6 +115,7 @@ export const PICTURE_GROUPS: readonly PictureGroup[] = [
       a651: 'Flare HQ Depths — red flower machine',
       a652: 'Terminus Cave — mine tunnel',
       a654: "Hoopa's Ring — ring portal over a beach",
+      'sunne-moone': 'Altar of the Sunne and Moone — sun and moon gateway',
       a753: 'Ultra Megalopolis — dark city, tower spire',
       a754: 'Ruins of the Guardians — jungle stone shrines',
       a759: 'Poni Grove — sunlit jungle',
