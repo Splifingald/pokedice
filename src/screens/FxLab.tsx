@@ -791,7 +791,7 @@ const PRESETS: Preset[] = [
         draw(g, s, t) {
           const lab = spriteFrame(pictureKey(LAB_ART))
           const sh = s.shake(t)
-          // 400 × 268 covering the 240 × 160 stage, as the screen's object-cover does.
+          // The picture (240 × 160, its own grid) covering the stage, as the screen's object-cover does.
           if (lab) g.drawImage(lab, Math.round(sh.x), Math.round(sh.y), W, Math.round((W * lab.height) / lab.width))
           tl.draw(g, s, t)
         },

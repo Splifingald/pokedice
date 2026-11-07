@@ -1,8 +1,10 @@
-// The area pictures (public/area-art/<id>.png): one 400 px picture per scene, generated with Gemini and shrunk to
-// true pixel art by unpixel. One picture, three uses, as the Visual Lab's Backgrounds tab composed them: Home shows
-// the whole scene, lists show strips cut around its horizon, and the battle shows its middle 240 × 160 with the two
-// zones drawn on top. Geometry is measured in the Home scene's 288 × 276 art pixels; on screen the picture keeps its
-// own 400 px resolution (nearest-neighbour), so thin lines survive. Areas without a picture keep their painted scene,
+// The area pictures (public/area-art/<id>.png): one square picture per scene, generated with Gemini and shrunk to
+// true pixel art on the grid it was drawn on: 400 px for most (Gemini's 2× and 3× blocks both land on it), its own
+// size for a picture drawn on another grid (forest: 150), so no pixel is split. One picture, three uses, as the
+// Visual Lab's Backgrounds tab composed them: Home shows the whole scene, lists show strips cut around its horizon,
+// and the battle shows its middle 240 × 160 with the two zones drawn on top. Geometry is measured in the Home
+// scene's 288 × 276 art pixels on a 400 px square (ART_PX), whatever the file's own size; on screen the picture keeps
+// its own resolution (nearest-neighbour), so thin lines survive. Areas without a picture keep their painted scene,
 // which is also what shows while a picture loads.
 import type { PokeType } from '@/engine'
 import { clamp } from './pixel'
@@ -11,7 +13,7 @@ import { AREA_ART, ART_GEOMETRY } from './areaArtMap'
 /** The Home scene, in art pixels (src/screens/home/scene.ts). */
 export const SCENE_W = 288
 export const SCENE_H = 276
-/** The pictures' width, in their own pixels. */
+/** The square every picture's geometry is measured on (a file may be smaller: its own grid, scaled to this). */
 export const ART_PX = 400
 /** Scene art pixels → picture pixels. */
 export const ART_K = ART_PX / SCENE_W
@@ -148,8 +150,14 @@ export async function artStrip(p: AreaPicture, h: number): Promise<string | null
   if (hit) return hit
   const im = await loadArt(p.url)
   if (!im) return null
-  const sh = Math.round(h * ART_K)
-  const sy = clamp(Math.round(ART_CROP + stripTop(horizonOf(p), h) * ART_K), 0, im.naturalHeight - sh)
+  // Measured on a 400 px picture; the file keeps the grid it was drawn on (150, 400…), so scale to it.
+  const k = (im.naturalWidth / ART_PX) * ART_K
+  const sh = Math.max(1, Math.round(h * k))
+  const sy = clamp(
+    Math.round((ART_CROP / ART_K + stripTop(horizonOf(p), h)) * k),
+    0,
+    im.naturalHeight - sh,
+  )
   const c = document.createElement('canvas')
   c.width = im.naturalWidth
   c.height = sh

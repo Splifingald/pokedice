@@ -12,9 +12,13 @@ export interface PushMon {
   shiny?: boolean
 }
 
-/** What sw.js draws: `bg` a window of a picture (its own pixels), `mons` standing on `ground`, `icon` alone. */
+/**
+ * What sw.js draws: `bg` a window of a picture, `mons` standing on `ground`, `icon` alone. The window is measured on
+ * a picture `of` pixels wide (ART_PX); sw.js scales it to the file, which keeps the grid it was drawn on (a 150 px
+ * picture is as valid as a 400 px one).
+ */
 export interface PushArt {
-  bg?: { src: string; x?: number; y?: number; w?: number; h?: number }
+  bg?: { src: string; x?: number; y?: number; w?: number; h?: number; of?: number }
   mons?: PushMon[]
   /** Where their feet go, 0 (top) to 1 (bottom) of the window. */
   ground?: number
@@ -43,7 +47,7 @@ export function pictureWindow(
   const [, y0, , y1] = geo.walk
   const foot = ART_CROP + (y0 + (y1 - y0) * 0.4) * ART_K
   const y = Math.round(clamp(foot - h * 0.82, 0, ART_PX - h))
-  return { bg: { src: artUrl(key), x: 0, y, w, h }, ground: clamp((foot - y) / h, 0.5, 0.95) }
+  return { bg: { src: artUrl(key), x: 0, y, w, h, of: ART_PX }, ground: clamp((foot - y) / h, 0.5, 0.95) }
 }
 
 /** The picture of a key that may be an area picture's or a path of its own (an event's banner). */

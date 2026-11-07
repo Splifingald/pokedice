@@ -45,17 +45,18 @@ describe('area pictures (public/area-art)', () => {
     for (const id of Object.keys(ART_GEOMETRY)) expect(existsSync(file(id)), file(id)).toBe(true)
   })
 
-  it('keeps every picture at 400 px wide: square scenes, and the 3:2 lab and gym stages', () => {
+  it('keeps every picture on its own grid, at most 400 px: square scenes, and the 3:2 lab and gym stages', () => {
     const files = readdirSync(DIR).filter((f) => f.endsWith('.png'))
     expect(files.length).toBeGreaterThan(0)
     for (const f of files) {
       const id = f.replace(/\.png$/, '')
       const [w, h] = size(id)
-      expect(w, f).toBe(ART_PX)
+      // The grid Gemini drew it on: 400 for most, fewer pixels for a coarser one (never resampled across grids).
+      expect(w! >= 120 && w! <= ART_PX, `${f} is ${w} wide`).toBe(true)
       // The lab and the gym stages (docs/67, measured in gym-stages.test.ts) are whole 3:2 stages.
       if (id === 'moment-lab' || id.startsWith('gym-')) expect(Math.abs(h! / w! - 2 / 3), f).toBeLessThan(0.01)
       else {
-        expect(h, f).toBe(ART_PX)
+        expect(h, f).toBe(w)
         expect(ART_GEOMETRY[id], `${f} is used by no area`).toBeTruthy()
       }
     }
