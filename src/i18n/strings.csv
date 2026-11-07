@@ -2241,6 +2241,7 @@ ui.partner.no,Not this one,Pas celui-ci,Este no,Nicht diesen,Non questo,Este nã
 ui.partner.yes,Pick {name},Choisir {name},Elegir a {name},{name} wählen,Scegli {name},Escolher {name},Escolher {name},{name}にする,{name} 고르기,选择{name}
 ui.partner.go,Let's go!,C'est parti !,¡Vamos!,Los geht's!,Andiamo!,Vamos!,Vamos!,いこう！,가자!,出发！
 ui.partner.leave,Not now,Pas maintenant,Ahora no,Nicht jetzt,Non ora,Agora não,Agora não,いまはやめる,나중에,现在不要
+ui.partner.starters,The three starters,Les trois starters,Los tres iniciales,Die drei Starter,I tre starter,Os três iniciais,Os três iniciais,さいしょの3匹,스타팅 포켓몬 셋,三只御三家
 ui.partner.enter,Enter {region},Entrer à {region},Entrar en {region},{region} betreten,Entra a {region},Entrar em {region},Entrar em {region},{region}へ,{region}로 가기,进入{region}
 ui.newGame.selectCharacter,Select your character,Choisis ton personnage,Elige tu personaje,Wähle deine Figur,Scegli il tuo personaggio,Escolhe a tua personagem,Escolha seu personagem,キャラクターを選ぼう,캐릭터를 고르세요,选择你的角色
 ui.newGame.character,Character,Personnage,Personaje,Figur,Personaggio,Personagem,Personagem,キャラクター,캐릭터,角色

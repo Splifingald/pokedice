@@ -346,6 +346,9 @@ test('a new region: its partner is picked in the lab, from three Poké Balls', a
 
   const lab = page.getByRole('dialog', { name: 'Pick your partner in Johto' })
   await expect(lab).toBeVisible()
+  // Under the lab, who is in the balls (in ball order): each starter's sprite, name and type.
+  const starters = lab.getByRole('list', { name: 'The three starters' })
+  await expect(starters.getByRole('listitem')).toHaveText([/Chikorita/, /Cyndaquil/, /Totodile/])
   // A ball opens; "not this one" puts it back, and another one is asked about.
   await lab.getByRole('button', { name: 'Poké Ball 1 of 3' }).click()
   await expect(lab.getByText('Do you want to pick Chikorita?')).toBeVisible()
