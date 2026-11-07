@@ -98,7 +98,10 @@ test('an answer with a gift: shown under it, opened on closing, into the save', 
   await expect(moment).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
 
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
+  // The save is written 500 ms after a change (scheduleWrite): read it once the gift's change is on disk.
+  const read = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}'))
+  await expect.poll(async () => (await read()).gifts?.done).toEqual([9])
+  const stored = await read()
   expect(stored.inventory['rare-candy']).toBe((save.inventory['rare-candy'] ?? 0) + 5)
   expect(stored.gold).toBe(save.gold + 1500)
   const pika = stored.box.find((p: { dex: number }) => p.dex === 25)

@@ -86,6 +86,9 @@ test('a spin costs a ticket: the odds, the last ticket spent, one bought for ₽
   await expect(page.getByText('No ticket left')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Spin!' })).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).events?.wheelTickets).toBe(0)
+  // The ticket was written before the wheel turned; the prize's payment is a later (debounced) write: wait for it too,
+  // or a ₽ prize lands after this reading and the price looks short.
+  await expect.poll(async () => (await stored(page)).events?.wheelPending ?? null).toBeNull()
   const spent = await stored(page)
 
   await page.getByRole('button', { name: 'Buy a ticket · ₽200' }).click()

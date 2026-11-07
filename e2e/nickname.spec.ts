@@ -47,7 +47,9 @@ test('a tap on its name gives a Pokémon a nickname, which its sheet and the tea
   await field.fill('ABCDEFGHIJKLMNOP')
   await expect(field).toHaveValue('ABCDEFGHIJKL')
   await expect(dialog.getByText('12/12')).toBeVisible()
-  // Every control of the dialog, and the name that opened it, is a 44px target on a phone.
+  // Every control of the dialog, and the name that opened it, is a 44px target on a phone. Measured once the panel's
+  // pop-in (a framer-motion spring, Modal.tsx) is over: mid-scale its buttons read a fraction under 44.
+  await expect.poll(() => dialog.evaluate((el) => getComputedStyle(el).transform)).toBe('none')
   for (const control of [
     sheet.getByRole('button', { name: 'Charmander', exact: true }),
     field,

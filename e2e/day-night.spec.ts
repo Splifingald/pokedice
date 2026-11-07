@@ -135,7 +135,10 @@ test('switched off, or in Kanto: no sun or moon, no rules', async ({ page }) => 
   await expect(timeButton(page)).toHaveCount(0)
   await expect(page.getByRole('dialog', { name: 'Day and night' })).toHaveCount(0)
 
-  const kanto = await page.context().newPage()
+  // The Johto page closes first: both share the storage, and a tab adopts the save another tab writes (sync.ts).
+  const context = page.context()
+  await page.close()
+  const kanto = await context.newPage()
   await boot(kanto, makeSave(4), NIGHT)
   await kanto.goto('/home')
   await expect(kanto.getByRole('button', { name: /CONTINUE|GO TO/ }).first()).toBeVisible()
