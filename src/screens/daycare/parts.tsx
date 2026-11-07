@@ -13,7 +13,7 @@ import { MiniSprite, showdownView, SpriteImg } from '@/components/SpriteImg'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
 import { artBox } from '@/lib/showdown'
-import { useShowdownDown } from '@/lib/showdownReach'
+import { useSpriteSource } from '@/lib/showdownReach'
 import { cx } from '@/theme/util'
 
 /** Your first and second Pokémon each have a colour: a heart in it means "can make an Egg with it". */
@@ -118,8 +118,8 @@ export function SlotCard({
   children?: ReactNode
   action: { label: string; aria: string; onClick: () => void }
 }) {
-  // Showdown down (src/lib/showdownReach.ts): the tile sizes the local sprite instead.
-  useShowdownDown()
+  // A source failing (src/lib/showdownReach.ts): the tile sizes the next one's sprite instead.
+  useSpriteSource()
   return (
     <li className="relative flex min-w-0 flex-col gap-1.5 bg-paper px-2 pb-2 pt-2.5 shadow-card">
       <i aria-hidden className="absolute inset-x-[2px] top-[2px] block h-1" style={{ background: band }} />

@@ -6,7 +6,8 @@
 > rebuilds everything below.
 
 **Our own copy** (docs/45-SPRITE-MIRROR.md): set `VITE_SPRITES_HOST` and the game reads the same files, at the same
-paths, from a copy on Cloudflare Pages (`pnpm sprites-mirror` builds it) instead of Showdown's server.
+paths, from a copy on Cloudflare Pages (`pnpm sprites-mirror` builds it) before Showdown's server, which stands in when
+the copy fails a player ("Offline and misses").
 
 ## What the game shows
 
@@ -75,24 +76,41 @@ they cost our host nothing either: 1,123 cries, about 10 MB, none of it in the r
 
 ### Offline and misses
 
-`SpriteImg`'s chain: Showdown's sprite → the local sprite (`public/pokemon/NNN_<view>.png`, the old PokeAPI-based set,
-kept as the offline fallback) → the species' own `sprite_url` (one added in admin) → `?`. A view Showdown doesn't have
-starts at the local sprite, so that miss costs no request either.
+**Sources, in order** (`SPRITE_SOURCES` in `src/lib/showdown.ts`): our copy (docs/45, when the build sets
+`VITE_SPRITES_HOST`, as the live site does) → Showdown itself → the local sprites. The copy holds the same files at the
+same paths, so a sprite animated on one is animated on the other: a player whose copy fails (a school or office network
+blocking `pages.dev`, Cloudflare having a bad day) keeps the animations. Without the copy, the list starts at Showdown.
 
-**Showdown down** (`src/lib/showdownReach.ts`). Showdown's server can stall rather than fail: the request hangs, the
-`<img>` neither loads nor errors, and nothing ever falls back. Players saw battles with the HP plates over no Pokémon
+`SpriteImg`'s chain: the sprite from the first source that answers → the local sprite (`public/pokemon/NNN_<view>.png`,
+the old PokeAPI-based set, kept as the offline fallback) → the species' own `sprite_url` (one added in admin) → `?`. A
+view Showdown doesn't have starts at the local sprite, so that miss costs no request either.
+
+**A source down** (`src/lib/showdownReach.ts`). A server can stall rather than fail: the request hangs, the `<img>`
+neither loads nor errors, and nothing ever falls back. Players saw battles with the HP plates over no Pokémon
 (Discord, 2026-10-27). So:
 
-- a Showdown sprite that fails, or is **still loading after 4 s on screen** (`PATIENCE_MS`; a hidden tab or a lazy
-  image below the fold doesn't count), marks Showdown **down for 10 minutes** (`DOWN_MS`);
-- while it is down, `showdownView` answers null, so every sprite (`SpriteImg`, the battle, Home's scene, the Day Care,
-  the canvas stills, the Unown letters, the preloads) is the local one, placed as the local set is, at once and without
-  asking Showdown; the components re-render as it goes down (`useShowdownDown`), and come back to Showdown after;
-- it is kept in `localStorage` (`pokedice.showdownDown`), so a reload doesn't wait 4 s again.
+- a sprite that fails, or is **still loading after 4 s on screen** (`PATIENCE_MS`; a hidden tab or a lazy image below
+  the fold doesn't count), marks **its source** down for **10 minutes** (`DOWN_MS`);
+- every sprite then moves to the next source (`spriteSource()`: the copy, then Showdown, then null for the local
+  sprites): `SpriteImg`, the battle, Home's scene, the Day Care, the canvas stills, the Unown letters, the preloads
+  and the cries. The components re-render as a source goes down (`useSpriteSource`) and go back to it after. A stage
+  `<img>` whose source failed waits for that re-render when another source is left (`spriteError`), and takes the
+  local sprite at once when none is; `loadSprite` tries the next source's file the same way;
+- with no source left, `showdownView` answers null, so every sprite is the local one, placed as the local set is, at
+  once and without asking anyone. The cries still try Showdown then (one that can't load is simply not heard);
+- it is kept in `localStorage` (`pokedice.spritesDown`, each source's date by its sprites folder), so a reload doesn't
+  wait 4 s again.
 
-One failure is enough: the game never asks for a file Showdown doesn't have, so a failure means Showdown isn't serving
-this player. Every `<img>` of a Showdown sprite calls `watchShowdown` from its ref and reports a failure (`spriteError`
-on the stages, `showdownMissed` elsewhere); `loadSprite` watches its own off-page image the same way.
+The worst case (the player's own connection is slow, so both sources stall) is about 8 s before the first local
+sprite, then every sprite at once for 10 minutes.
+
+One failure is enough: the game never asks a source for a file it doesn't have, so a failure means that source isn't
+serving this player. Every `<img>` of a source's sprite calls `watchShowdown` from its ref and reports a failure
+(`spriteError` on the stages, `spriteMissed(url)` elsewhere: the URL says which source failed); `loadSprite` watches
+its own off-page image the same way.
+
+**Outfits** (docs/59) are our own drawings, only on the copy: while the copy is down they show the plain species from
+Showdown, so Showdown is never asked for a file it doesn't have.
 
 Showdown has no sprite at all for 17 of the newest Megas (Heatran, Darkrai, Magearna, Zeraora, Meowstic, Raichu X
 and Y, Staraptor, Scolipede, Scrafty, Eelektross, Pyroar, Malamar, Barbaracle, Dragalge, Falinks, Curly Tatsugiri),

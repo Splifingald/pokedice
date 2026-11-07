@@ -32,7 +32,7 @@ import { H, W, type Hud, type Timeline } from '@/fx/timeline'
 import { TREAT_URL } from '@/fx/timelines/trick'
 import { hasKey } from '@/i18n'
 import { useT } from '@/i18n/react'
-import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
+import { useSpriteSource, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { AreaArt } from './AreaArt'
@@ -411,10 +411,11 @@ export function TrickStage({
   const box = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0)
   const pic = pictureOf(areaId)
-  // Showdown failing or stalling brings the local sprite (src/lib/showdownReach.ts).
-  const down = useShowdownDown()
+  // A source failing or stalling brings the next one: Showdown after our copy, then the local sprite
+  // (src/lib/showdownReach.ts).
+  const source = useSpriteSource()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const s = useMemo(() => stageSprite(dex, false, !!shiny), [dex, shiny, down])
+  const s = useMemo(() => stageSprite(dex, false, !!shiny), [dex, shiny, source])
   const at = placeSprite(s, TRICK_AT.x, TRICK_AT.y)
   // The timelines draw no background of their own: the picture (or the night) shows through the canvas.
   useLayoutEffect(() => {

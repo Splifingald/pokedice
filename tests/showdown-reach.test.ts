@@ -1,6 +1,7 @@
-// Showdown's CDN stalling or failing (src/lib/showdownReach.ts): a battle stood empty, the HP plates over no Pokémon,
+// A sprite source stalling or failing (src/lib/showdownReach.ts): a battle stood empty, the HP plates over no Pokémon,
 // while play.pokemonshowdown.com kept a sprite loading (players on Discord, 2026-10-27). A sprite still loading after a
-// few seconds on screen, or one that fails, now sends every sprite to the local copies for a while, placed as those are.
+// few seconds on screen, or one that fails, now sends every sprite to the next source for a while: our copy (docs/45),
+// then Showdown itself, then the local copies, placed as those are.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The pixel engine makes a scratch canvas when it loads; the stall check reads the tab's visibility, and waits for a
@@ -42,7 +43,7 @@ const { shown } = vi.hoisted(() => {
   return { shown }
 })
 
-const { DOWN_MS, PATIENCE_MS, resetShowdownReach, showdownDown, showdownMissed, watchShowdown } =
+const { DOWN_MS, PATIENCE_MS, resetShowdownReach, spriteMissed, spriteSource, watchShowdown } =
   await import('@/lib/showdownReach')
 const { showdownView, spriteUrlFor } = await import('@/components/SpriteImg')
 const { stageSprite } = await import('@/fx/sprites')
@@ -60,6 +61,8 @@ function fakeImg(src: string, opts: { lazy?: boolean } = {}) {
 }
 
 const WEEPINBELL = showdownView(70, false, false)!.url
+/** The local sprites are what the game reads: no source left. */
+const showdownDown = () => spriteSource() === null
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -73,7 +76,7 @@ afterEach(() => {
 describe('Showdown down', () => {
   it('sends every sprite to the local copies, placed as those are, then tries Showdown again', () => {
     expect(WEEPINBELL).toMatch(/^https:\/\/play\.pokemonshowdown\.com\/sprites\/gen5ani\/weepinbell\.gif$/)
-    showdownMissed()
+    spriteMissed(WEEPINBELL)
     expect(showdownDown()).toBe(true)
     expect(showdownView(70, false, false)).toBeNull()
     const s = stageSprite(12, true, false)
@@ -87,8 +90,14 @@ describe('Showdown down', () => {
 
   it('is remembered by the next page', () => {
     const now = Date.now()
-    showdownMissed(now)
-    expect(Number(localStorage.getItem('pokedice.showdownDown'))).toBe(now + DOWN_MS)
+    spriteMissed(WEEPINBELL, now)
+    const stored = JSON.parse(localStorage.getItem('pokedice.spritesDown')!)
+    expect(stored).toEqual({ 'https://play.pokemonshowdown.com/sprites': now + DOWN_MS })
+  })
+
+  it('ignores a failure of anything but a source (a local sprite, a trainer sheet)', () => {
+    spriteMissed(`https://poke-dice.netlify.app${spriteUrlFor(70)}`)
+    expect(showdownDown()).toBe(false)
   })
 })
 
@@ -142,5 +151,81 @@ describe('a Showdown sprite that stalls', () => {
     expect(showdownDown()).toBe(false)
     vi.advanceTimersByTime(1)
     expect(showdownDown()).toBe(true)
+  })
+})
+
+// With our copy (VITE_SPRITES_HOST, docs/45): the copy first, Showdown itself when it fails, the local sprites after.
+describe('our sprite copy, then Showdown', () => {
+  const COPY = 'https://pokedice-sprites.pages.dev'
+
+  /** The game's modules as a build with the copy has them (the address is read once, at load). */
+  async function withCopy() {
+    vi.stubEnv('VITE_SPRITES_HOST', COPY)
+    vi.resetModules()
+    const reach = await import('@/lib/showdownReach')
+    const sprite = await import('@/components/SpriteImg')
+    const { stageSprite } = await import('@/fx/sprites')
+    const { outfitSprite } = await import('@/lib/outfitSprites')
+    const { cryUrl } = await import('@/audio/cries')
+    return { ...reach, ...sprite, stageSprite, outfitSprite, cryUrl }
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.resetModules()
+  })
+
+  it('reads the copy, then Showdown when the copy fails, then the local sprites', async () => {
+    const m = await withCopy()
+    const fromCopy = m.showdownView(70, false, false)!.url
+    expect(fromCopy).toBe(`${COPY}/sprites/gen5ani/weepinbell.gif`)
+    expect(m.cryUrl(25)).toBe(`${COPY}/audio/cries/pikachu.mp3`)
+
+    m.spriteMissed(fromCopy)
+    // Still animated, from Showdown: the same file, placed the same.
+    expect(m.showdownView(70, false, false)!.url).toBe(WEEPINBELL)
+    expect(m.stageSprite(12, true, false).url).toBe(
+      'https://play.pokemonshowdown.com/sprites/gen5ani-back/butterfree.gif',
+    )
+    expect(m.cryUrl(25)).toBe('https://play.pokemonshowdown.com/audio/cries/pikachu.mp3')
+
+    m.spriteMissed(WEEPINBELL)
+    expect(m.spriteSource()).toBeNull()
+    expect(m.stageSprite(12, true, false).url).toBe(m.spriteUrlFor(12, 'back'))
+    // No source left: the cries still try Showdown (one that can't load is simply not heard).
+    expect(m.cryUrl(25)).toBe('https://play.pokemonshowdown.com/audio/cries/pikachu.mp3')
+
+    vi.advanceTimersByTime(DOWN_MS)
+    expect(m.showdownView(70, false, false)!.url).toBe(fromCopy)
+  })
+
+  it('shows an outfit only from the copy: the plain species from Showdown', async () => {
+    const m = await withCopy()
+    expect(m.outfitSprite('santa', 25)?.id).toBe('pikachu-santa')
+    expect(m.showdownView(25, false, false, 'santa')!.url).toBe(`${COPY}/sprites/gen5ani/pikachu-santa.gif`)
+    m.spriteMissed(`${COPY}/sprites/gen5ani/pikachu-santa.gif`)
+    expect(m.outfitSprite('santa', 25)).toBeNull()
+    expect(m.showdownView(25, false, false, 'santa')!.url).toBe(
+      'https://play.pokemonshowdown.com/sprites/gen5ani/pikachu.gif',
+    )
+  })
+
+  it('marks only the source that stalled', async () => {
+    const m = await withCopy()
+    const img = fakeImg(m.showdownView(70, false, false)!.url)
+    m.watchShowdown(img)
+    vi.advanceTimersByTime(PATIENCE_MS)
+    expect(m.spriteSource()?.sprites).toBe('https://play.pokemonshowdown.com/sprites')
+    // The copy's image, still loading, doesn't count against Showdown.
+    vi.advanceTimersByTime(PATIENCE_MS * 3)
+    expect(m.spriteSource()?.sprites).toBe('https://play.pokemonshowdown.com/sprites')
+  })
+
+  it('remembers on the next page which source failed', async () => {
+    const m = await withCopy()
+    m.spriteMissed(`${COPY}/sprites/gen5ani/weepinbell.gif`)
+    const next = await withCopy()
+    expect(next.spriteSource()?.sprites).toBe('https://play.pokemonshowdown.com/sprites')
+    expect(next.showdownView(70, false, false)!.url).toBe(WEEPINBELL)
   })
 })

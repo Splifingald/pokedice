@@ -31,7 +31,7 @@ import { shinyTimeline } from '@/fx/timelines/shiny'
 import { zAwayTimeline, zMoveTimeline, zStrikeTimeline } from '@/fx/timelines/zmove'
 import { usePace } from '@/lib/pace'
 import { useMotion } from '@/lib/motion'
-import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
+import { useSpriteSource, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { finalBlow, landHit, type Fx, type Scene } from './useBattleAnimator'
@@ -240,10 +240,11 @@ function Mon({
   // Only the sprite it first drew is out already: a form change later still comes in as its own.
   const [settledKey] = useState(() => (settled ? `${b.uid}:${b.dex}` : null))
   const entered = settledKey === `${b.uid}:${b.dex}`
-  // Showdown failing or stalling brings the local sprite, placed as it stands (src/lib/showdownReach.ts).
-  const down = useShowdownDown()
+  // A source failing or stalling brings the next one, Showdown after our copy, then the local sprite placed as it stands
+  // (src/lib/showdownReach.ts).
+  const source = useSpriteSource()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const s = useMemo(() => stageSprite(b.dex, back, b.shiny, b.outfit), [b.dex, back, b.shiny, b.outfit, down])
+  const s = useMemo(() => stageSprite(b.dex, back, b.shiny, b.outfit), [b.dex, back, b.shiny, b.outfit, source])
   const at = place ?? (back ? LAYOUT.own : LAYOUT.foe)
   const raw = placeSprite(s, at.x, at.y)
   // Scaled about its feet, so it stands on the same spot.

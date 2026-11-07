@@ -15,9 +15,9 @@ import {
 import { outfitSprite } from '@/lib/outfitSprites'
 import {
   isShowdownUrl,
-  showdownDown,
-  showdownMissed,
-  useShowdownDown,
+  spriteMissed,
+  spriteSource,
+  useSpriteSource,
   watchShowdown,
 } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
@@ -47,7 +47,8 @@ export const SPRITE_METRICS = spriteMetrics as unknown as Record<string, SpriteM
 export const SHOWDOWN = showdownSprites as unknown as Record<string, ShowdownEntry | undefined>
 
 /**
- * The Showdown sprite of one view, when Showdown has one and is answering (src/lib/showdownReach.ts): its URL and box.
+ * The Showdown sprite of one view, when Showdown has one and a source of its files is answering (our copy, else
+ * Showdown itself: src/lib/showdownReach.ts): its URL there and its box.
  * Shiny boxes fall back to the plain ones. `outfit` (docs/59): the species in that outfit when it has it drawn and the
  * game can load it (`outfitSprite`), else the plain species.
  */
@@ -57,13 +58,14 @@ export function showdownView(
   shiny: boolean,
   outfit?: string | null,
 ): { url: string; box: ShowdownBox } | null {
+  const source = spriteSource()
   const e = outfitSprite(outfit, dex) ?? SHOWDOWN[dex]
-  if (!e || showdownDown()) return null
+  if (!e || !source) return null
   const v = (back ? 1 : 0) + (shiny ? 2 : 0)
   const kind = e.v[v]
   const box = shiny ? (back ? (e.bs ?? e.b) : (e.fs ?? e.f)) : back ? e.b : e.f
   if ((kind !== 'a' && kind !== 'g') || !box) return null
-  return { url: showdownSpriteUrl(e.id, SHOWDOWN_VIEWS[v]!, kind), box }
+  return { url: showdownSpriteUrl(e.id, SHOWDOWN_VIEWS[v]!, kind, source.sprites), box }
 }
 
 /**
@@ -120,9 +122,9 @@ export function preloadSprites(dexes: number[]) {
 
 /**
  * A Pokémon by dex number: Showdown's animated sprite, with a skeleton while loading and a silhouette mode for uncaught.
- * Showdown unreachable (offline, failing, or still loading after a few seconds: src/lib/showdownReach.ts) → the local
- * sprite → the species' own sprite_url (one added in admin) → "?". Only a view Showdown really has is ever asked for,
- * so no request is spent on a miss.
+ * Our copy of it failing (offline, failing, or still loading after a few seconds: src/lib/showdownReach.ts) → the
+ * same sprite from Showdown itself → the local sprite → the species' own sprite_url (one added in admin) → "?". Only a
+ * view Showdown really has is ever asked for, so no request is spent on a miss.
  */
 /** How long a big sprite waits for its picture before trying the next one (the local sprite). */
 export const SPRITE_PATIENCE_MS = 6000
@@ -154,8 +156,8 @@ export function SpriteImg({
   fit?: boolean
 }) {
   const species = useGame((s) => s.data.species[dex])
-  // Showdown failing or stalling (here or anywhere) brings the local sprite at once.
-  useShowdownDown()
+  // A source failing or stalling (here or anywhere) brings the next one at once: Showdown, then the local sprite.
+  useSpriteSource()
   const sd = showdownView(dex, back, shiny, outfit)
   const local = spriteUrlFor(dex, back ? 'back' : 'front', shiny)
   // A species added in admin without a local sprite falls back to its own sprite_url.
@@ -214,7 +216,7 @@ export function SpriteImg({
           draggable={false}
           onLoad={() => setState({ key, step, loaded: true })}
           onError={() => {
-            if (isShowdownUrl(src)) showdownMissed()
+            if (isShowdownUrl(src)) spriteMissed(src)
             setState({ key, step: step + 1, loaded: false })
           }}
           className={cx('pixelated select-none', place ? 'absolute max-w-none' : 'h-full w-full')}

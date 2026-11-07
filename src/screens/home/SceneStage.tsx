@@ -6,7 +6,7 @@ import { HpBar } from '@/components/HpBar'
 import { LevelTag } from '@/components/Chip'
 import { placeSprite, spriteError, stageSprite, type StageSprite } from '@/fx/sprites'
 import { useMotion } from '@/lib/motion'
-import { useShowdownDown, watchShowdown } from '@/lib/showdownReach'
+import { useSpriteSource, watchShowdown } from '@/lib/showdownReach'
 import { useGame } from '@/store/game'
 import { clamp, type G } from '@/fx/pixel'
 import { artPlacement, homeWindow } from '@/fx/areaArt'
@@ -70,8 +70,9 @@ export function SceneStage({
   const [card, setCard] = useState<{ uid: string; x: number; y: number } | null>(null)
   const lastTap = useRef<{ uid: string; t: number } | null>(null)
   const lastCry = useRef(-Infinity)
-  // Showdown failing or stalling brings the local sprites (src/lib/showdownReach.ts).
-  const down = useShowdownDown()
+  // A source failing or stalling brings the next one: Showdown after our copy, then the local sprites
+  // (src/lib/showdownReach.ts).
+  const source = useSpriteSource()
 
   const members: Member[] = useMemo(
     () =>
@@ -82,7 +83,7 @@ export function SceneStage({
         sprite: stageSprite(inst.dex, false, !!inst.shiny, outfitOf(data, inst)),
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [team, data, down],
+    [team, data, source],
   )
   // A new herd for a new area or a new team; HP changes keep the herd (they only change who is tired).
   const teamKey = team

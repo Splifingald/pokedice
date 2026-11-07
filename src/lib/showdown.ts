@@ -3,15 +3,33 @@
 
 export const SHOWDOWN_HOST = 'https://play.pokemonshowdown.com'
 /**
- * Where the game reads Showdown's files: Showdown itself, or our own copy of them at the same paths when the build sets
- * `VITE_SPRITES_HOST` (docs/45-SPRITE-MIRROR.md). `import.meta.env` is undefined in Node scripts, which keep Showdown.
+ * Our own copy of Showdown's files, at the same paths, when the build sets `VITE_SPRITES_HOST`
+ * (docs/45-SPRITE-MIRROR.md); null without one. `import.meta.env` is undefined in Node scripts, which read Showdown.
  */
-export const SPRITES_HOST =
-  (import.meta.env ?? ({} as ImportMetaEnv)).VITE_SPRITES_HOST?.trim().replace(/\/+$/, '') || SHOWDOWN_HOST
+const copyHost = (import.meta.env ?? ({} as ImportMetaEnv)).VITE_SPRITES_HOST?.trim().replace(/\/+$/, '')
+export const COPY_HOST = copyHost && copyHost !== SHOWDOWN_HOST ? copyHost : null
 // The rework prototype carries the sprites it needs in its own files (an Artifact loads pictures from nowhere else).
-export const SHOWDOWN_SPRITES = import.meta.env?.VITE_PROTO ? './sd' : `${SPRITES_HOST}/sprites`
-/** Showdown's cries, one MP3 per Pokémon (`<id>.mp3`), loaded straight from its CDN like the sprites. */
-export const SHOWDOWN_CRIES = `${SPRITES_HOST}/audio/cries`
+const PROTO = !!import.meta.env?.VITE_PROTO
+/** Showdown's own sprites folder (the scripts download from it). */
+export const SHOWDOWN_SPRITES = PROTO ? './sd' : `${SHOWDOWN_HOST}/sprites`
+/** Showdown's cries, one MP3 per Pokémon (`<id>.mp3`). */
+export const SHOWDOWN_CRIES = `${SHOWDOWN_HOST}/audio/cries`
+
+/** One place the game can read Showdown's files from: its sprites and cries folders. */
+export interface SpriteSource {
+  sprites: string
+  cries: string
+}
+/**
+ * Where the game reads sprites and cries, in order: our copy first, then Showdown itself when the copy fails this
+ * player (src/lib/showdownReach.ts), then the local sprites (no source left).
+ */
+export const SPRITE_SOURCES: readonly SpriteSource[] = PROTO
+  ? [{ sprites: SHOWDOWN_SPRITES, cries: SHOWDOWN_CRIES }]
+  : [
+      ...(COPY_HOST ? [{ sprites: `${COPY_HOST}/sprites`, cries: `${COPY_HOST}/audio/cries` }] : []),
+      { sprites: SHOWDOWN_SPRITES, cries: SHOWDOWN_CRIES },
+    ]
 
 /** Showdown's id for a letter of Unown: the A is plain Unown, the others its formes (`unown-b`, `unown-exclamation`). */
 export const unownShowdownId = (l: string) =>
@@ -82,7 +100,10 @@ export const TRAINER_CELL = 80
 export const TRAINER_PITCH = TRAINER_CELL + 2
 export const TRAINER_COLS = 10
 
-export const showdownSpriteUrl = (id: string, view: ShowdownView, kind: 'a' | 'g') =>
-  kind === 'a'
-    ? `${SHOWDOWN_SPRITES}/${ANI_DIRS[view]}/${id}.gif`
-    : `${SHOWDOWN_SPRITES}/${GEN5_DIRS[view]}/${id}.png`
+/** A sprite's file in a sprites folder (`sprites`: Showdown's own unless given, the game passes the one it reads). */
+export const showdownSpriteUrl = (
+  id: string,
+  view: ShowdownView,
+  kind: 'a' | 'g',
+  sprites = SHOWDOWN_SPRITES,
+) => (kind === 'a' ? `${sprites}/${ANI_DIRS[view]}/${id}.gif` : `${sprites}/${GEN5_DIRS[view]}/${id}.png`)

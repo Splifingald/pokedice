@@ -1,60 +1,89 @@
-// Whether Showdown's CDN answers this player (docs/13-SHOWDOWN-SPRITES.md, "Offline and misses"). The Pokémon sprites
-// load straight from play.pokemonshowdown.com, and when that server stalls an <img> neither loads nor fails: the browser
-// just waits, and a battle stood empty, the HP plates over no Pokémon (players on Discord, 2026-10-27). So a Showdown
-// sprite that fails, or is still loading after PATIENCE_MS on screen, marks Showdown down for DOWN_MS: every sprite then
-// comes from our own copies (public/pokemon), placed as those are, and a reload remembers it. The game never asks for a
-// file Showdown doesn't have, so one failure already means Showdown isn't serving us.
+// Whether the sprite sources answer this player (docs/13-SHOWDOWN-SPRITES.md, "Offline and misses"). The Pokémon sprites
+// load from our copy of Showdown's files (docs/45), else from play.pokemonshowdown.com itself, and when such a server
+// stalls an <img> neither loads nor fails: the browser just waits, and a battle stood empty, the HP plates over no
+// Pokémon (players on Discord, 2026-10-27). So a sprite that fails, or is still loading after PATIENCE_MS on screen,
+// marks its source down for DOWN_MS and every sprite moves to the next one: our copy, then Showdown, then our own
+// built-in copies (public/pokemon), placed as those are. A reload remembers it. The game never asks a source for a file
+// it doesn't have, so one failure already means that source isn't serving us.
 import { create } from 'zustand'
-import { SHOWDOWN_SPRITES } from './showdown'
+import { SPRITE_SOURCES, type SpriteSource } from './showdown'
 
-/** How long a Showdown sprite (about 45 KB) may take on screen before our own copy takes its place. */
+/** How long a sprite (about 45 KB) may take on screen before the next source takes its place. */
 export const PATIENCE_MS = 4000
-/** How long the game then keeps to its own copies before it tries Showdown again. */
+/** How long a source that failed is then left alone before the game tries it again. */
 export const DOWN_MS = 10 * 60_000
-const KEY = 'pokedice.showdownDown'
+/** `{ [sprites folder]: down until (epoch ms) }`, so a source added or removed by a deploy reads nothing stale. */
+const KEY = 'pokedice.spritesDown'
 
-/** Until when Showdown counts as down (epoch ms); a date further than DOWN_MS ahead is a clock that moved. */
-function readUntil(now: number): number {
+/** Until when each source counts as down (epoch ms), by its sprites folder. */
+const until = new Map<string, number>()
+
+/** What the store holds: a date further than DOWN_MS ahead is a clock that moved. */
+function readStored(now: number) {
   try {
-    const at = Number(globalThis.localStorage?.getItem(KEY))
-    return at > now && at <= now + DOWN_MS ? at : 0
+    const stored = JSON.parse(globalThis.localStorage?.getItem(KEY) ?? '{}') as Record<string, unknown>
+    for (const s of SPRITE_SOURCES) {
+      const at = Number(stored?.[s.sprites])
+      if (at > now && at <= now + DOWN_MS) until.set(s.sprites, at)
+    }
   } catch {
-    return 0
+    /* nothing stored, or not ours */
   }
 }
 
-let until = readUntil(Date.now())
-let back: ReturnType<typeof setTimeout> | undefined
-
-/** Re-renders whatever shows a sprite when Showdown goes down or comes back. */
-const useReach = create<{ down: boolean }>(() => ({ down: until > Date.now() }))
-
-/** The sprites come from our own copies: Showdown failed or stalled a moment ago. */
-export const showdownDown = (now = Date.now()): boolean => now < until
-
-/** Re-renders when Showdown goes down or comes back; read with `showdownDown` (it gives the same answer). */
-export const useShowdownDown = (): boolean => useReach((s) => s.down)
-
-function comeBackAt(at: number) {
-  clearTimeout(back)
-  const wait = at - Date.now()
-  if (wait > 0) back = setTimeout(() => useReach.setState({ down: showdownDown() }), wait)
-}
-if (until) comeBackAt(until)
-
-/** A Showdown sprite failed or stalled: our own copies for DOWN_MS, this page and the next. */
-export function showdownMissed(now = Date.now()) {
-  until = now + DOWN_MS
+function store() {
   try {
-    globalThis.localStorage?.setItem(KEY, String(until))
+    globalThis.localStorage?.setItem(KEY, JSON.stringify(Object.fromEntries(until)))
   } catch {
     /* private mode: this page only */
   }
-  useReach.setState({ down: true })
-  comeBackAt(until)
 }
 
-export const isShowdownUrl = (url: string): boolean => url.startsWith(SHOWDOWN_SPRITES)
+readStored(Date.now())
+
+const isUp = (s: SpriteSource, now: number) => !(now < (until.get(s.sprites) ?? 0))
+
+/** The source the game reads now: the first that hasn't failed lately, or null (the local sprites). */
+export const spriteSource = (now = Date.now()): SpriteSource | null =>
+  SPRITE_SOURCES.find((s) => isUp(s, now)) ?? null
+
+/** Where the cries come from: the sprites' source, else Showdown (a cry that can't load is simply not heard). */
+export const crySource = (now = Date.now()): SpriteSource => spriteSource(now) ?? SPRITE_SOURCES.at(-1)!
+
+/** Re-renders whatever shows a sprite when a source goes down or comes back. */
+const useReach = create<{ sprites: string | null }>(() => ({ sprites: spriteSource()?.sprites ?? null }))
+
+/**
+ * The sprites folder the game reads now (null: the local sprites), re-rendering when it changes; read the source with
+ * `spriteSource` (it gives the same answer).
+ */
+export const useSpriteSource = (): string | null => useReach((s) => s.sprites)
+
+let back: ReturnType<typeof setTimeout> | undefined
+
+/** Follow the sources: the store says which is read, and a timer wakes when the next one that failed is due back. */
+function settle(now = Date.now()) {
+  useReach.setState({ sprites: spriteSource(now)?.sprites ?? null })
+  clearTimeout(back)
+  const due = Math.min(...[...until.values()].filter((at) => at > now))
+  if (Number.isFinite(due)) back = setTimeout(() => settle(), due - now)
+}
+if (until.size) settle()
+
+/** The source this URL is one of the files of, if any. */
+const sourceOf = (url: string) => SPRITE_SOURCES.find((s) => url.startsWith(s.sprites))
+
+/** A sprite from this URL failed or stalled: its source is down for DOWN_MS, this page and the next. */
+export function spriteMissed(url: string, now = Date.now()) {
+  const s = sourceOf(url)
+  if (!s) return
+  until.set(s.sprites, now + DOWN_MS)
+  store()
+  settle(now)
+}
+
+/** A sprite from one of the sources (our copy or Showdown), not a local one. */
+export const isShowdownUrl = (url: string): boolean => !!sourceOf(url)
 
 /** The <img>s already watched, with the URL they were watched for: a re-render doesn't restart the wait. */
 const watched = new WeakMap<HTMLImageElement, string>()
@@ -80,32 +109,33 @@ function whenShown(img: HTMLImageElement, go: () => void) {
 }
 
 /**
- * Watch an <img> showing a Showdown sprite (call it from its ref): still loading PATIENCE_MS after it came on screen,
- * it marks Showdown down, and the components show our own copy instead. A failure is the <img>'s own onError to report
- * (`showdownMissed`). Nothing to clean up: the wait ends by itself once the image loads, leaves the page or changes.
+ * Watch an <img> showing a source's sprite (call it from its ref): still loading PATIENCE_MS after it came on screen,
+ * it marks that source down, and the components move on to the next. A failure is the <img>'s own onError to report
+ * (`spriteMissed`). Nothing to clean up: the wait ends by itself once the image loads, leaves the page or changes.
  */
 export function watchShowdown(img: HTMLImageElement | null) {
   if (!img || typeof window === 'undefined') return
   const url = img.src
-  if (!isShowdownUrl(url) || watched.get(img) === url) return
+  const source = sourceOf(url)
+  if (!source || watched.get(img) === url) return
   watched.set(img, url)
   const check = () => {
-    if (!img.isConnected || img.src !== url || img.complete || showdownDown()) return
+    if (!img.isConnected || img.src !== url || img.complete || !isUp(source, Date.now())) return
     // A hidden tab's timers run late and its loads may wait: only a shown page judges.
     if (document.visibilityState === 'hidden') setTimeout(check, PATIENCE_MS)
-    else showdownMissed()
+    else spriteMissed(url)
   }
   whenShown(img, () => setTimeout(check, PATIENCE_MS))
 }
 
-/** For tests: Showdown reachable again, with nothing stored. */
+/** For tests: every source reachable again, with nothing stored. */
 export function resetShowdownReach() {
-  until = 0
+  until.clear()
   clearTimeout(back)
   try {
     globalThis.localStorage?.removeItem(KEY)
   } catch {
     /* nothing stored */
   }
-  useReach.setState({ down: false })
+  useReach.setState({ sprites: spriteSource()?.sprites ?? null })
 }
