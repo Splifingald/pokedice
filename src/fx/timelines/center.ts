@@ -71,7 +71,8 @@ export function centerTimeline(p: CenterParams): Timeline<S> {
     const art = centerRoom(W, H).art
     return {
       art,
-      slots: (art ? CENTER_ART.slots : SLOTS).slice(0, n),
+      // A lone ball sits in the middle slot, not off to one side; two fill the first two, as the games do.
+      slots: n === 1 ? [(art ? CENTER_ART.slots : SLOTS)[1]!] : (art ? CENTER_ART.slots : SLOTS).slice(0, n),
       R: art ? CENTER_ART.ballR : 5,
       screen: art ? CENTER_ART.screen : ([35, 20, 69, 40] as const),
       counterY: art ? CENTER_ART.counterY : 100,

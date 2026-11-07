@@ -208,6 +208,26 @@ const PRESETS: Preset[] = [
     load: loadCenterArt,
     make: (o) => centerTimeline({ balls: 3, nurse: foe(113), team: [foe(25), foe(6), foe(131)], short: o.short }),
   },
+  // A team of one or two: the balls and the wall screen with fewer Pokémon.
+  {
+    name: 'Pokémon Center (one Pokémon)',
+    sprites: [
+      [113, false],
+      [25, false],
+    ],
+    load: loadCenterArt,
+    make: (o) => centerTimeline({ balls: 1, nurse: foe(113), team: [foe(25)], short: o.short }),
+  },
+  {
+    name: 'Pokémon Center (two Pokémon)',
+    sprites: [
+      [113, false],
+      [6, false],
+      [131, false],
+    ],
+    load: loadCenterArt,
+    make: (o) => centerTimeline({ balls: 2, nurse: foe(113), team: [foe(6), foe(131)], short: o.short }),
+  },
   {
     name: 'Catch (Great Ball)',
     sprites: [

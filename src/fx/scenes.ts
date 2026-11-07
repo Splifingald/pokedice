@@ -401,7 +401,10 @@ export function ball(
   const key = `ball|${kind}|${deg}|${Math.round(open * 8)}|${btn}|${Math.round(dim * 4)}|${R}`
   return cached(key, () => {
     const B = BALLS[kind]
-    const S = 2 * R + 5 + Math.round(open * R * 1.4)
+    // Room for the lid: swung open it reaches about 2R from the body's centre (which sits 0.5R above the
+    // canvas's), at any roll of the ball; a smaller canvas cut its top off. Callers centre the canvas, so only
+    // the empty margin grows.
+    const S = 2 * R + 5 + Math.round(open * R * 3.2)
     const c0 = (S - 1) / 2
     const a = (deg * Math.PI) / 180
     const ca = Math.cos(a)
