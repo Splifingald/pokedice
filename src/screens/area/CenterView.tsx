@@ -68,10 +68,26 @@ export function CenterView() {
   const teamSize = useGame((s) => s.save?.team.length ?? 1)
   // The machine plays once, on arrival: the full scene (the balls set down, the jingle) at a brisk pace, a little longer
   // than the one flash it was (the user's call, 2026-10-27: about 2.7 s).
-  const [machine] = useState(() => ({
-    ready: Promise.all([loadSprite(NURSE, false), loadCenterArt()]),
-    timeline: quicken(centerTimeline({ balls: teamSize, nurse: spriteKey(NURSE, false) }), CENTER_PACE),
-  }))
+  const [machine] = useState(() => {
+    // The team shows on the Center's wall screen while it is healed: their front sprites load with the rest.
+    const st = useGame.getState().save
+    const members = st ? teamOf(st) : []
+    return {
+      ready: Promise.all([
+        loadSprite(NURSE, false),
+        loadCenterArt(),
+        ...members.map((m) => loadSprite(m.dex, false, !!m.shiny)),
+      ]),
+      timeline: quicken(
+        centerTimeline({
+          balls: teamSize,
+          nurse: spriteKey(NURSE, false),
+          team: members.map((m) => spriteKey(m.dex, false, !!m.shiny)),
+        }),
+        CENTER_PACE,
+      ),
+    }
+  })
   // The team is healed already (engage): once the jingle has started, leaving and coming back doesn't play it again.
   useEffect(() => markHealShown(), [])
 

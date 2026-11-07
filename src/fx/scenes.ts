@@ -474,20 +474,39 @@ export const SLOTS: readonly (readonly [number, number])[] = [
 ]
 
 /**
- * The Pokémon Center's picture (public/backgrounds/pokemon-center.png, 240 × 160, from the Visual Lab's prompt): the
- * room the healing plays in. Its machine's three empty slots are SLOTS, its light strip and wall screen are where
- * CENTER_ART says, and the counter's top edge is at `counterY`. The drawn room (`center`) stands in until it loads.
+ * The Pokémon Center's picture (public/backgrounds/pokemon-center.png, 240 × 160, the 2026-11-07 remake): the room the
+ * healing plays in. Everything the scene draws over it is measured on that picture: the machine's three slots, its
+ * light strip, the wall screen (the team shows on it while healed) and the counter's top edge. The drawn room
+ * (`center`, with SLOTS) stands in until it loads.
  */
 export const CENTER_ART = {
   url: '/backgrounds/pokemon-center.png',
   /** The counter's top edge: what stands behind it is hidden below this line. */
-  counterY: 103,
-  /** The light strip on top of the machine. */
-  strip: [104, 81, 32, 3] as const,
+  counterY: 95,
+  /** The machine's three slots (their dark hollows' centres), left to right. */
+  slots: [
+    [103, 82],
+    [120, 82],
+    [137, 82],
+  ] as readonly (readonly [number, number])[],
+  /** A ball's radius in those slots: they are about 12 pixels across. */
+  ballR: 7,
+  /** The light strip on top of the machine: x, y, w, h. */
+  strip: [96, 70, 48, 4] as const,
   /** The wall screen's dark inside: x0, y0, x1, y1. */
-  screen: [27, 28, 71, 51] as const,
-  /** Where Chansey stands, behind the counter's low middle (the raised end begins at x 203). */
-  nurseX: 178,
+  screen: [34, 23, 76, 48] as const,
+  /** Where Chansey stands, behind the counter between the machine and its raised right end (from x 195). */
+  nurseX: 176,
+  /** How far below the counter's edge her feet are: only her top half shows over it. */
+  nurseSink: 12,
+  /**
+   * The parts of the picture that stand in front of her: the machine and the counter's raised right end (x, y, w, h).
+   * The scene draws them again over her, so she is behind the counter, not in front of it.
+   */
+  front: [
+    [87, 63, 65, 33],
+    [193, 77, 30, 19],
+  ] as readonly (readonly [number, number, number, number])[],
 }
 let centerArt: Canvas | null = null
 let centerArtLoad: Promise<void> | null = null
