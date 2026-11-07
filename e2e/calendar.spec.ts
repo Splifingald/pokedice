@@ -106,11 +106,8 @@ test('Home’s card leads to the calendar: its rules once, yesterday’s door an
   await expect(page).toHaveURL(/\/calendar\?id=advent$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Advent Calendar' })).toBeVisible()
 
-  const rules = page.getByRole('region', { name: 'How Advent Calendar works' })
-  await expect(rules).toBeVisible()
-  await expect(rules.getByText('Missed a day?')).toBeVisible()
-  await rules.getByRole('button', { name: 'GOT IT' }).click()
-  await expect(rules).toBeHidden()
+  // No rules on the page (the user's call, 2026-11-07): INFO holds them, and opening the page sets the flag.
+  await expect(page.getByRole('region', { name: 'How Advent Calendar works' })).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).events?.calendarRulesSeen).toBe(true)
 
   await expect(page.getByRole('img', { name: /^Day 3: opens in 1[34]h/ })).toBeVisible()

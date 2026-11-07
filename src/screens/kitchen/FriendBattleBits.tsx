@@ -7,7 +7,6 @@ import { useState, type ReactNode } from 'react'
 import { BATTLE_TICKET_KEY, FRIEND_BATTLES_DEFAULTS, type DraftMon, type PvpSide } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
-import { RulesCard } from '@/components/RulesCard'
 import { ChallengeSheet } from '@/components/pvp/ChallengeSheet'
 import { MarketItemCard } from '@/components/friends/Friendship'
 import {
@@ -18,7 +17,6 @@ import {
   ModeTag,
   TimeChip,
   TimeGauge,
-  useFriendBattleRules,
   VsRow,
 } from '@/components/pvp/FriendBattleBits'
 import { ChallengeCard, MatchOnCard } from '@/components/pvp/FriendBattlesService'
@@ -73,11 +71,9 @@ function Frame({ name, children, w = 'max-w-[460px]' }: { name: string; children
 
 export function FriendBattleBits() {
   const { t } = useT()
-  const rules = useFriendBattleRules()
   const [info, setInfo] = useState(false)
   const [sheet, setSheet] = useState(false)
   const [coin, setCoin] = useState(0)
-  const [seen, setSeen] = useState(false)
   // Fixed once, so the steps' clocks run on from a steady deadline.
   const [m] = useState(() => ({
     waiting: match({ state: 'invited', deadline: Date.now() + 98_000 }),
@@ -188,9 +184,8 @@ export function FriendBattleBits() {
           </div>
         </Frame>
       </div>
-      <Frame name="The rules card (GOT IT hides it here), INFO, the challenge sheet">
+      <Frame name="INFO (the rules) and the challenge sheet">
         <div className="grid gap-2">
-          {!seen && <RulesCard title={t('ui.pvp.title')} icon="vs" rules={rules} onDone={() => setSeen(true)} />}
           <div className="flex flex-wrap gap-2">
             <InfoButton name={t('ui.pvp.title')} onClick={() => setInfo(true)} compact />
             <PixelButton onClick={() => setSheet(true)}>{t('ui.pvp.battle')}</PixelButton>

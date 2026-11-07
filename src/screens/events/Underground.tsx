@@ -20,7 +20,7 @@ import {
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { InfoButton } from '@/components/RulesModal'
-import { RulesCard } from '@/components/RulesCard'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { markLivePopupSeen } from '@/store/live'
 import { BackButton } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
@@ -34,7 +34,6 @@ import {
   UgRulesModal,
   UgSellModal,
   UgSoloWarning,
-  ugRuleRows,
 } from '@/components/Underground'
 import { useT } from '@/i18n/react'
 import { countdown, money, typeName } from '@/lib/format'
@@ -113,6 +112,11 @@ export function UndergroundScreen() {
   const wide = useMediaQuery('(min-width: 1024px)')
   // The team and the orbs between teammates, now and every minute while the page is open.
   useUgTeamSync(live?.id ?? null)
+  // Its rules are behind INFO at the foot; opening the page is enough for Home's notice (docs/15 §20).
+  useSeenOnOpen(!!live && !!u && !u.rulesSeen, () => {
+    ugRulesSeen()
+    if (live) markLivePopupSeen(live)
+  })
   if (now == null || !save) return <p className="copy p-3 text-muted">{t('ui.common.loading')}</p>
   // Not running for this player (or its content still on its way): say so; the page fills in once it runs.
   if (!live || !u) return <UgClosed />
@@ -232,18 +236,6 @@ export function UndergroundScreen() {
               </span>
             </div>
           </div>
-          {/* Its rules where they apply (docs/43 §7): a card at the top until GOT IT; INFO at the foot again. */}
-          {!u.rulesSeen && (
-            <RulesCard
-              title={t('ui.live.underground.name')}
-              icon="pickaxe"
-              rules={ugRuleRows(data)}
-              onDone={() => {
-                ugRulesSeen()
-                markLivePopupSeen(live)
-              }}
-            />
-          )}
         </div>
       }
       stage={

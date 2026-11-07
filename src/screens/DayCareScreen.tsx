@@ -35,7 +35,7 @@ import {
 import { sfx } from '@/audio/sfx'
 import { TalentLine } from '@/components/Talent'
 import { AccountButton } from '@/components/AccountButton'
-import { DayCareRulesCard, DayCareRulesModal } from '@/components/FeatureRules'
+import { DayCareRulesModal } from '@/components/FeatureRules'
 import { InfoButton } from '@/components/RulesModal'
 import { Chip, NewTag } from '@/components/Chip'
 import { bumpGold } from '@/components/GoldPill'
@@ -54,6 +54,7 @@ import { useT } from '@/i18n/react'
 import { eggGroupName, waitText } from '@/i18n/text'
 import { avatarOf } from '@/lib/avatars'
 import { useFriendCares } from '@/lib/friends'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
@@ -64,6 +65,7 @@ import {
   leaveAtDayCare,
   pickUpFromDayCare,
   rushDayCareEgg,
+  visitDayCare,
   type HatchOffer,
 } from '@/store/actions'
 import { inviteFriendMon, parentName, sendGuestBack, syncFriendDayCares, tickDayCare } from '@/store/daycare'
@@ -717,11 +719,10 @@ function DayCareScreenMain() {
   const location = useLocation()
   // From Home's gold widget: the page opens, and the Egg starts hatching a moment later.
   const wantsHatch = !!(location.state as { hatch?: boolean } | null)?.hatch
-  // The rules where they apply (docs/43 §7): on the first visit they are a card at the top of the page until GOT IT
-  // (the "visited" flag); opening the page no longer counts as having read them.
+  // Its rules are behind INFO only (docs/15 §20): the first visit sets the "visited" flag Home's notice waits on.
   const rulesDue = useGame((s) => !!s.save && dayCareTutorialDue(s.save, s.data))
-  // Push notifications' question, once (docs/27): an Egg can be announced while the game is closed. It waits while
-  // the rules card is up: one thing to read at a time, never a modal over the rules.
+  useSeenOnOpen(open && rulesDue, visitDayCare)
+  // Push notifications' question, once (docs/27): an Egg can be announced while the game is closed.
   usePushAsk('egg', open && !rulesDue)
   useEffect(() => {
     if (open) tickDayCare()
@@ -824,8 +825,6 @@ function DayCareScreenMain() {
       </div>
 
       <div className="flex flex-col gap-3 lg:pixel-panel lg:sticky lg:top-[calc(var(--top-bar,56px)+1rem)] lg:max-h-[calc(100dvh-var(--top-bar,56px)-2rem)] lg:overflow-y-auto lg:bg-panel lg:p-3">
-        {/* The first visit: the rules first, right under the yard they explain (the panel's top on PC). */}
-        {rulesDue && <DayCareRulesCard />}
         {dc.egg ? (
           <EggCardView
             from={

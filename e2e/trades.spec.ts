@@ -166,16 +166,11 @@ test('a poster: the rules on the page, a listing posted, then taken while away',
   })
   await page.goto('/trades')
 
-  // Trades are open: their rules where they apply (docs/43 §7), a card at the top of the page until GOT IT.
-  const rules = page.getByRole('region', { name: 'How Trades works' })
-  await expect(rules.getByText('You lose the one you trade')).toBeVisible()
+  // Trades are open: no rules on the page (the user's call, 2026-11-07); opening it sets the flag, INFO holds them.
+  await expect(page.getByRole('region', { name: 'How Trades works' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Trades', level: 1 })).toBeAttached()
   const seen = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').trades?.rulesSeen)
-  await page.waitForTimeout(800)
-  expect(await seen()).toBeFalsy()
-  await rules.getByRole('button', { name: 'GOT IT' }).click()
-  await expect(rules).toHaveCount(0)
   await expect.poll(seen).toBe(true)
   await expect(page.getByTestId('trade-board').getByText('Charmander')).toBeVisible()
   await fitsThePhone(page)

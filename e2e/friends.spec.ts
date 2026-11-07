@@ -84,7 +84,13 @@ test('the Friends page: a new friend is announced, your ID, your friends, a frie
   // (Opening the page marks the new friend seen: the strip's count goes.)
   await expect(page.getByRole('link', { name: /^Friends/ })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('heading', { level: 1, name: 'Friends' })).toBeVisible()
-  await expect(page.getByTestId('friend-code')).toHaveText('K7QM-4XD9')
+  // Your ID is in ADD FRIENDS' pop-up (the user's call, 2026-11-07), not on the page.
+  await expect(page.getByTestId('friend-code')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Add friends' }).click()
+  const adding = page.getByRole('dialog', { name: 'Add friends' })
+  await expect(adding.getByTestId('friend-code')).toHaveText('K7QM-4XD9')
+  await adding.press('Escape')
+  await expect(adding).toHaveCount(0)
 
   const misty = page.getByRole('button', { name: /^Misty,/ })
   await expect(misty).toContainText('NEW')
@@ -116,12 +122,16 @@ test('the Friends page: a new friend is announced, your ID, your friends, a frie
   await expect(page.getByRole('button', { name: /^Misty,/ })).toHaveCount(0)
 })
 
-test('add by friend ID: typed any way in the page, previewed, friends at once with ADD', async ({ page }) => {
+test('add by friend ID: typed any way in ADD FRIENDS, previewed, friends at once with ADD', async ({ page }) => {
   const save = makeSave(4)
   const calls = await boot(page, save, { mock: friendsMock(save) })
   await page.goto('/friends')
-  // No dialog to open first (docs/43 §5.8): the field and ADD are on the page.
-  const form = page.getByRole('form', { name: 'Add a friend' })
+  // In ADD FRIENDS' pop-up (the user's call, 2026-11-07): the rewards, your ID, the field and ADD, SHARE at its foot.
+  await page.getByRole('button', { name: 'Add friends' }).click()
+  const adding = page.getByRole('dialog', { name: 'Add friends' })
+  await expect(adding.getByRole('button', { name: 'Share invite link' })).toBeVisible()
+  await expect(adding.getByRole('button', { name: 'Reset my friend ID' })).toBeVisible()
+  const form = adding.getByRole('form', { name: 'Add a friend' })
   await expect(form.getByRole('button', { name: 'Add' })).toBeDisabled()
   await form.getByLabel('Friend ID').fill('k7qm 4xd9')
   await expect(form.getByLabel('Friend ID')).toHaveValue('K7QM-4XD9')
@@ -129,30 +139,38 @@ test('add by friend ID: typed any way in the page, previewed, friends at once wi
   await form.getByRole('button', { name: 'Add' }).click()
   await expect(page.getByText('You and Erika are now friends!')).toBeVisible()
   expect(calls.some((c) => c.startsWith('POST /rest/v1/rpc/friend_add'))).toBe(true)
-  // The field empties for the next one.
-  await expect(form.getByLabel('Friend ID')).toHaveValue('')
+  // The pop-up closes on the new friend.
+  await expect(adding).toHaveCount(0)
 })
 
 test('add by friend ID: says why it can not', async ({ page }) => {
   const save = makeSave(4)
   await boot(page, save, { mock: friendsMock(save, { friend_lookup: [], friend_add: [{ status: 'not_found' }] }) })
   await page.goto('/friends')
-  const form = page.getByRole('form', { name: 'Add a friend' })
+  await page.getByRole('button', { name: 'Add friends' }).click()
+  const form = page.getByRole('dialog', { name: 'Add friends' }).getByRole('form', { name: 'Add a friend' })
   await form.getByLabel('Friend ID').fill('ZZZZZZZZ')
   await expect(form.getByRole('alert')).toHaveText('No trainer has this friend ID.')
   await expect(form.getByRole('button', { name: 'Add' })).toBeDisabled()
 })
 
-test('a phone: the list first, SHARE INVITE LINK pinned at the foot, a friend in a sheet', async ({ page }) => {
+test('a phone: the list first, ADD FRIENDS pinned at the foot, a friend in a sheet', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const save = makeSave(4)
   await boot(page, save, { mock: friendsMock(save, { friend_status: [{ ids: [MISTY, BROCK], unseen: [] }] }) })
   await page.goto('/friends')
   await expect(page.getByRole('button', { name: /^Misty,/ })).toBeInViewport()
-  const share = page.getByRole('button', { name: 'Share invite link' })
-  await expect(share).toBeInViewport()
+  const add = page.getByRole('button', { name: 'Add friends' })
+  await expect(add).toBeInViewport()
   // The one red action of the page.
+  await expect(add).toHaveClass(/frame-primary/)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  // Its pop-up: SHARE INVITE LINK, red, pinned at its foot.
+  await add.click()
+  const share = page.getByRole('dialog', { name: 'Add friends' }).getByRole('button', { name: 'Share invite link' })
+  await expect(share).toBeInViewport()
   await expect(share).toHaveClass(/frame-primary/)
+  await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.getByRole('button', { name: /^Misty,/ }).click()
   await expect(page.getByRole('dialog', { name: 'Misty' })).toBeVisible()
@@ -256,7 +274,7 @@ for (const size of [
     const save = { ...base, settings: { ...base.settings, ...JSON.parse(FAST), theme: 'dark' as const } }
     await boot(page, save, { mock: friendsMock(save, { friend_status: [{ ids: [MISTY, BROCK], unseen: [] }] }) })
     await page.goto('/friends')
-    await expect(page.getByTestId('friend-code')).toHaveText('K7QM-4XD9')
+    await expect(page.getByRole('button', { name: /^Misty,/ })).toBeVisible()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0)
     await page.waitForTimeout(300)
@@ -269,5 +287,13 @@ for (const size of [
     await page.waitForTimeout(300)
     const sheet = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()
     expect(sheet.violations.flatMap((v) => v.nodes.map((n) => n.target.join(' ')))).toEqual([])
+    // ADD FRIENDS' pop-up, in dark too.
+    if (size.width < 1024) await page.keyboard.press('Escape')
+    await page.getByRole('button', { name: 'Add friends' }).click()
+    const adding = page.getByRole('dialog', { name: 'Add friends' })
+    await expect(adding.getByTestId('friend-code')).toHaveText('K7QM-4XD9')
+    await page.waitForTimeout(300)
+    const pop = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()
+    expect(pop.violations.flatMap((v) => v.nodes.map((n) => n.target.join(' ')))).toEqual([])
   })
 }

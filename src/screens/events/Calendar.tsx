@@ -10,15 +10,13 @@ import {
   calendarRulesDue,
   liveLeft,
   LIVE_BANNERS,
-  newLiveEvent,
-  type LiveEvent,
 } from '@/engine'
-import { CalendarGrid, CalendarRulesModal, until, useCalendarRules } from '@/components/Calendar'
+import { CalendarGrid, CalendarRulesModal, until } from '@/components/Calendar'
 import { BackButton } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { PixelIcon } from '@/components/icons'
 import { InfoButton } from '@/components/RulesModal'
-import { RulesCard } from '@/components/RulesCard'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { useT } from '@/i18n/react'
 import { calendarRulesSeen, openCalendarDoor, useCalendars } from '@/store/calendar'
 import { useGame } from '@/store/game'
@@ -64,7 +62,8 @@ export function CalendarScreen() {
   const [info, setInfo] = useState(false)
   const cal = calendars.find((e) => e.id === params.get('id')) ?? calendars[0]
   // Read before any return (hooks run in the same order every time); a placeholder while there's no calendar.
-  const rules = useCalendarRules(cal ?? PLACEHOLDER)
+  // Its rules are behind INFO at the foot; opening the page is enough for Home's notice (docs/15 §20).
+  useSeenOnOpen(!!cal && now != null && !!save && calendarRulesDue(save, data, now), calendarRulesSeen)
   if (now == null || !save) return <p className="copy p-3 text-muted">{t('ui.common.loading')}</p>
   if (!cal) return <CalendarClosed />
 
@@ -96,10 +95,6 @@ export function CalendarScreen() {
               </span>
             </div>
           </div>
-          {/* Its rules where they apply (docs/43 §7): a card at the top until GOT IT; INFO at the foot again. */}
-          {calendarRulesDue(save, data, now) && (
-            <RulesCard title={name} icon="calendar" rules={rules} onDone={calendarRulesSeen} />
-          )}
         </div>
       }
       stage={
@@ -165,10 +160,4 @@ export function CalendarScreen() {
       }
     />
   )
-}
-
-/** The rules' numbers while there's no calendar to read them from (nothing is shown then). */
-const PLACEHOLDER: LiveEvent = {
-  ...newLiveEvent('', new Date(0).toISOString(), new Date(0).toISOString()),
-  type: 'calendar',
 }

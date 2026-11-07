@@ -254,16 +254,12 @@ test('Versus opening: its rules at the top of its page until GOT IT, then behind
   )
   await signedIn(page, { ...readySave(), versusRulesSeen: false })
   await page.goto('/versus')
-  // Rules where they apply (docs/43 §7): a card on the page, not a pop-up.
-  const card = page.getByRole('region', { name: 'How Versus works' })
-  await expect(card.getByText('Same for everyone')).toBeVisible()
+  // No rules on the page (the user's call, 2026-11-07): opening it sets the flag; INFO holds them.
+  await expect(page.getByRole('heading', { level: 1, name: 'Versus' })).toBeAttached()
+  await expect(page.getByRole('region', { name: 'How Versus works' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  // Opening the page doesn't count as reading them: the flag stays unset until GOT IT.
   const seen = () => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').versusRulesSeen)
-  await page.waitForTimeout(800)
-  expect(await seen()).toBeFalsy()
-  await card.getByRole('button', { name: 'GOT IT' }).click()
-  await expect(card).toHaveCount(0)
+  await expect.poll(seen).toBe(true)
 
   // The same rules from the page's INFO button, without the "now open" tag.
   await page.getByRole('button', { name: 'Info: how Versus works' }).click()
@@ -273,7 +269,4 @@ test('Versus opening: its rules at the top of its page until GOT IT, then behind
   await info.getByRole('button', { name: 'OK', exact: true }).click()
   await expect(info).toHaveCount(0)
 
-  // Seen, and saved: the card doesn't come back.
-  await expect.poll(seen).toBe(true)
-  await expect(card).toHaveCount(0)
 })

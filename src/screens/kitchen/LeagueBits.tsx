@@ -15,12 +15,11 @@ import {
   RewardMark,
 } from '@/screens/versus/League'
 import { TrophyCount } from '@/components/TrophyCount'
-import { useVersusRules, VersusRulesModal } from '@/components/FeatureRules'
+import { VersusRulesModal } from '@/components/FeatureRules'
 import { ItemSprite } from '@/components/ItemSprite'
 import { CatchPanel } from '@/screens/battle/CatchPanel'
 import { ReplyBox } from '@/components/ContactModal'
 import { PixelButton } from '@/components/PixelButton'
-import { RulesCard } from '@/components/RulesCard'
 import { Seg } from '@/components/Segmented'
 import { InfoButton } from '@/components/RulesModal'
 import { ballOfItem } from '@/fx/scenes'
@@ -139,7 +138,6 @@ const GLOBAL_ROWS: LeagueRow[] = Array.from({ length: 130 }, (_, i) => ({
 export function LeagueBits() {
   const { t } = useT()
   const data = useGame((s) => s.data)
-  const rules = useVersusRules()
   const [info, setInfo] = useState(false)
   const noop = () => {}
   const ends = Date.now() + 3 * 86_400_000 + 5 * 3_600_000
@@ -316,8 +314,7 @@ export function LeagueBits() {
           /kitchen-sink/league-fight
         </a>
       </Frame>
-      <Frame name="Rules · the card at the top of Versus, and INFO" wide>
-        <RulesCard title={t('ui.league.title')} icon="trophy" rules={rules} onDone={noop} />
+      <Frame name="Rules · INFO and its pop-up" wide>
         <InfoButton name={t('ui.league.title')} onClick={() => setInfo(true)} />
         <PixelButton size="sm" onClick={() => setInfo(true)}>
           Open the rules pop-up

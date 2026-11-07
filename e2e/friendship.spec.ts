@@ -1,5 +1,5 @@
-// Friendship streaks and the Friend Market (docs/60), against the mocked Supabase: the Friends page's Friendship card
-// (coins, today's gauge, the streaks to keep today), the badges on the friends' rows, the rules card once, a friend's
+// Friendship streaks and the Friend Market (docs/60), against the mocked Supabase: the Friends page's Friendship gauge
+// (coins, today's gauge, the streaks kept today, the market), the badges on the friends' rows, the rules behind INFO, a friend's
 // streak on their card, the market (the shiny of the week, the items, limits and coins, a purchase opened like a gift
 // into the save and marked applied), a purchase a closed tab left behind put away once, and the switch off.
 // With SHOTS=<dir>, it also saves the screenshots of each screen for review.
@@ -175,7 +175,7 @@ async function seriousAxe(page: Page) {
     .map((v) => `${v.id}: ${v.nodes[0]?.target.join(' ')}`)
 }
 
-test('the Friends page: the Friendship card, the streaks on the rows, the rules behind INFO, a friend’s streak', async ({
+test('the Friends page: the Friendship gauge, the streaks on the rows, the rules behind INFO, a friend’s streak', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -183,18 +183,18 @@ test('the Friends page: the Friendship card, the streaks on the rows, the rules 
   await boot(page, save)
   await page.goto('/friends')
 
-  const card = page.getByTestId('friendship-card')
+  // The gauge on top (the user's call, 2026-11-07): the coins, today's toward the cap, the streaks kept, the market.
+  const card = page.getByTestId('friendship-gauge')
   await expect(card).toBeVisible()
   await expect(card.getByRole('img', { name: '186 Heart Scales' })).toBeVisible()
   await expect(card.getByRole('meter', { name: '9 of 50 Heart Scales earned today' })).toBeVisible()
   await expect(card).toContainText('1 of 3 streaks kept today')
-  // The streaks to keep today, the longest first, each with what today would pay.
-  const waiting = card.getByRole('list', { name: 'Streaks to keep today' }).getByRole('listitem')
-  await expect(waiting).toHaveCount(2)
-  await expect(waiting.nth(0)).toContainText('Erika')
-  await expect(waiting.nth(0)).toContainText('+7 today')
-  await expect(waiting.nth(1)).toContainText('Misty')
-  await expect(waiting.nth(1)).toContainText('+5 today')
+  await expect(card.getByTestId('open-market')).toBeVisible()
+  // It comes before the list, and scrolls with the page.
+  const gaugeTop = (await card.boundingBox())!.y
+  expect(gaugeTop).toBeLessThan((await page.getByRole('button', { name: /^Misty,/ }).boundingBox())!.y)
+  // Opening the page sets friendship's rules flag (they're behind INFO).
+  await expect.poll(async () => (await stored(page)).friendship?.rulesSeen).toBe(true)
   // The rows: a badge each, the state in words.
   await expect(page.getByRole('img', { name: 'Friendship streak: 3 days, kept today' })).toBeVisible()
   await expect(
@@ -322,7 +322,7 @@ test('switched off: no card, no badges, the market goes back to Friends', async 
   const calls = await boot(page, save, {}, EVENTS_ON)
   await page.goto('/friends')
   await expect(page.getByRole('button', { name: /^Misty,/ })).toBeVisible()
-  await expect(page.getByTestId('friendship-card')).toHaveCount(0)
+  await expect(page.getByTestId('friendship-gauge')).toHaveCount(0)
   await expect(page.getByRole('img', { name: /Friendship streak/ })).toHaveCount(0)
   await page.goto('/market')
   await expect(page).toHaveURL(/\/friends$/)

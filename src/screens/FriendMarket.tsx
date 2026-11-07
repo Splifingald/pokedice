@@ -12,13 +12,12 @@ import {
   MarketHead,
   MarketItemCard,
   MarketShinyCard,
-  useFriendshipRules,
 } from '@/components/friends/Friendship'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
-import { RulesCard } from '@/components/RulesCard'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { useT } from '@/i18n/react'
 import { buyMarket, loadFriendship, seeFriendshipRules, useFriendship } from '@/store/friendship'
 import { useGame } from '@/store/game'
@@ -34,10 +33,14 @@ export function FriendMarketScreen() {
   const state = useFriendship((s) => s.state)
   const busy = useFriendship((s) => s.busy)
   const opening = useGiftMoment((s) => !!s.opening)
-  const rules = useFriendshipRules()
   const [info, setInfo] = useState(false)
   const [now, setNow] = useState(() => Date.now())
 
+  // Its rules are behind INFO at the foot; opening the market is enough for Home's notice (docs/15 §20).
+  useSeenOnOpen(
+    !!save && auth === 'signed_in' && friendshipWaits(save, data) === null && !!status && friendshipRulesDue(save, data),
+    seeFriendshipRules,
+  )
   useEffect(() => {
     void loadFriendship(true)
     const id = setInterval(() => setNow(Date.now()), 30_000)
@@ -85,9 +88,6 @@ export function FriendMarketScreen() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 pb-4">
       {head}
-      {friendshipRulesDue(save, data) && (
-        <RulesCard title={t('ui.fship.title')} icon="heart" rules={rules} onDone={seeFriendshipRules} />
-      )}
       <MarketHead balance={status.balance} restock={restock} />
       {shiny && (
         <MarketShinyCard

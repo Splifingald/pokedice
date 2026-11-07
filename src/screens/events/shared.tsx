@@ -7,7 +7,6 @@ import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton, RuleList, type RuleRow } from '@/components/RulesModal'
-import { RulesCard } from '@/components/RulesCard'
 import { SpriteImg } from '@/components/SpriteImg'
 import { ART_CROP, ART_K, ART_PX, artUrl, horizonOf } from '@/fx/areaArt'
 import { ART_GEOMETRY } from '@/fx/areaArtMap'
@@ -120,25 +119,6 @@ export function markEventRead(id: EventId): void {
     const seen = [...new Set([...(s.events?.seen ?? []), id])]
     return { ...s, events: { ...s.events, seen, ...(id === 'wheel' && { wheelRulesSeen: true }) } }
   })
-}
-
-/**
- * An event's rules where they apply (docs/43 §7, the user's call): at the top of its page until GOT IT. Opening the
- * page doesn't count as reading them; INFO at the page's foot shows them again.
- */
-export function EventRulesCard({ id }: { id: EventId }) {
-  const { t } = useT()
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  if (!eventRulesDue(id, save)) return null
-  return (
-    <RulesCard
-      title={t(`ui.events.${id}.name`)}
-      icon={EVENT_ICON[id]}
-      rules={eventRuleRows(id, data, t)}
-      onDone={() => markEventRead(id)}
-    />
-  )
 }
 
 /** An event's rules in a pop-up, as the unlock pop-up showed them, with the admin's numbers: INFO, or a page's first open. */

@@ -354,21 +354,12 @@ test('signed out, the friend slots are the friend list’s connect prompt', asyn
 
 // ---------------------------------------------------------------- the rules, where they apply (docs/43 §7)
 
-test('the first visit: the rules are a card at the top of the panel until GOT IT, then live behind INFO', async ({
-  page,
-}) => {
+test('the first visit: no rules card (the visit is enough), the rules live behind INFO', async ({ page }) => {
   // Twenty species and never been in.
   await boot(page, open())
   await page.goto('/daycare')
-  const card = page.getByRole('region', { name: 'How Day Care works' })
-  await expect(card).toBeVisible()
-  for (const rule of ['Training', 'Eggs', "Friends' Pokémon", 'Egg now']) await expect(card.getByText(rule, { exact: true })).toBeVisible()
-  // Opening the page doesn't count as reading them; the push question waits while they're up (one thing at a time).
-  await page.waitForTimeout(1500)
-  await expect(page.getByRole('dialog')).toHaveCount(0)
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').dayCare?.visited)).toBeFalsy()
-  await card.getByRole('button', { name: 'GOT IT' }).click()
-  await expect(card).toHaveCount(0)
+  await expect(page.getByRole('heading', { level: 1, name: 'Day Care' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'How Day Care works' })).toHaveCount(0)
   await expect
     .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('pokedice.save') ?? '{}').dayCare?.visited))
     .toBe(true)

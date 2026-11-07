@@ -7,7 +7,6 @@ import {
   lowHpFormOf,
   markRaidRulesSeen,
   megaRaidDie,
-  raidOverhaulRulesDue,
   raidRules,
   raidSpecialFor,
   type GameData,
@@ -19,8 +18,7 @@ import {
 import { useT } from '@/i18n/react'
 import { typeName } from '@/lib/format'
 import { mutateSave, useGame } from '@/store/game'
-import { RulesCard } from '@/components/RulesCard'
-import { bannerUrl, eventRulesDue } from './shared'
+import { bannerUrl } from './shared'
 
 type T = (key: string, vars?: Record<string, string | number>) => string
 
@@ -275,18 +273,6 @@ export function raidOverhaulRows(t: T): RuleRow[] {
 }
 
 /**
- * The overhaul's rules where they apply (docs/43 §7): a card at the top of the Raids page while unread, GOT IT sets
- * `raidRulesSeen`; the Raids page's INFO shows them again. It waits while the raids' own card is up (one at a time).
- */
-export function RaidRulesCard() {
-  const { t } = useT()
-  const save = useGame((s) => s.save)
-  const data = useGame((s) => s.data)
-  if (!save || !raidOverhaulRulesDue(save, data) || eventRulesDue('raid', save)) return null
-  return <RulesCard title={t('ui.events.raid.name')} icon="star" rules={raidOverhaulRows(t)} onDone={seen} />
-}
-
-/**
  * How the overhaul works, for every raid: the pop-up shown once (with `onGo`: Later / Let's go!) and from the raid
  * pages' INFO (just OK).
  */
@@ -315,4 +301,5 @@ export function RaidRulesInfo({
   )
 }
 
-const seen = () => mutateSave((s) => (s.events?.raidRulesSeen ? null : markRaidRulesSeen(s)))
+/** The overhaul's rules met: set when the Raids page opens (its INFO shows them; docs/15 §20). */
+export const seeRaidOverhaulRules = () => mutateSave((s) => (s.events?.raidRulesSeen ? null : markRaidRulesSeen(s)))

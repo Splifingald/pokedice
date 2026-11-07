@@ -29,8 +29,8 @@ import { BoardGap, BoardRow, TeamIcons } from '@/components/BoardRow'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
 import { Chip } from '@/components/Chip'
 import { AccountButton } from '@/components/AccountButton'
-import { useVersusRules, VersusRulesModal } from '@/components/FeatureRules'
-import { RulesCard } from '@/components/RulesCard'
+import { VersusRulesModal } from '@/components/FeatureRules'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { InfoButton } from '@/components/RulesModal'
 import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
@@ -95,7 +95,7 @@ function VersusScreenMain() {
   // Its rules where they apply (docs/43 §7): a card at the top of the page until GOT IT, which sets the flag. Opening
   // the page no longer counts as reading them.
   const rulesDue = versusRulesDue(save, data)
-  const versusRules = useVersusRules()
+  useSeenOnOpen(rulesDue, markVersusRulesSeen)
 
   const refresh = useCallback(() => {
     let live = true
@@ -179,9 +179,6 @@ function VersusScreenMain() {
   return (
     <div className="flex flex-col gap-3">
       <PageHead title={t('ui.versus.title')} social="versus" />
-      {rulesDue && (
-        <RulesCard title={t('ui.versus.title')} icon="vs" rules={versusRules} onDone={markVersusRulesSeen} />
-      )}
       <SocialColumns
         main={
           <>

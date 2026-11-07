@@ -1,5 +1,5 @@
 // Friendship streaks and the Friend Market (docs/60; docs/15 §42). The pieces: the Heart Scales plate, a friend's
-// streak badge (on their row), the streak's tiers, the Friends page's Friendship card, the streak on a friend's card,
+// streak badge (on their row), the streak's tiers, the Friends page's Friendship gauge, the streak on a friend's card,
 // the market's shelf (the shiny of the week and the items) and the rules. They only show what the engine and the
 // server decided; every state is on /kitchen-sink (FriendshipBits).
 import type { ReactNode } from 'react'
@@ -27,9 +27,7 @@ import { PixelIcon } from '../icons'
 import { ItemSprite } from '../ItemSprite'
 import { PixelButton } from '../PixelButton'
 import { RulesModal, type RuleRow } from '../RulesModal'
-import { SmallInfo } from '../SmallInfo'
 import { SpriteImg } from '../SpriteImg'
-import { TrainerName } from '../TrainerName'
 
 /** How many coins, as a navy plate (as the Mart's wallet is gold). */
 export function CoinPlate({
@@ -183,110 +181,63 @@ export function CapGauge({ earned, cap }: { earned: number; cap: number }) {
   )
 }
 
-/** A friend as the Friendship card names them. */
-export interface StreakFriend {
-  userId: string
-  name: string
-  rich?: boolean
-}
-
 /**
- * The Friends page's Friendship card: the coins, today's gauge, the streaks waiting for today (one interaction keeps
- * each, and what it would pay), the market, and INFO. `status` null: loading, or `failed`.
+ * The Friends page's Friendship gauge (the user's call, 2026-11-07: the page's first line, scrolling with it): the
+ * Heart Scales held, today's toward the day's cap, how many streaks are kept today, and the Friend Market. Who waits
+ * for today shows on each friend's row (their badge); the rules are behind the page's INFO.
  */
-export function FriendshipCard({
+export function FriendshipGauge({
   balance,
   earned,
   streaks,
-  friends,
   today,
   onMarket,
-  onInfo,
   state = 'ready',
 }: {
   balance: number
   earned: number
   streaks: FriendStreak[]
-  friends: StreakFriend[]
   today: string
   onMarket: () => void
-  onInfo: () => void
   state?: 'loading' | 'ready' | 'error'
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const { cap } = friendshipNumbers(data)
-  const named = (id: string) => friends.find((f) => f.userId === id)
-  const alive = streaks.filter((s) => streakState(s, today) !== 'lost' && named(s.friend))
-  const waiting = alive.filter((s) => streakState(s, today) === 'waiting').sort((a, b) => b.streak - a.streak)
+  const alive = streaks.filter((s) => streakState(s, today) !== 'lost')
   const kept = alive.filter((s) => streakState(s, today) === 'kept').length
   return (
     <section
       aria-labelledby="fship-title"
-      className="grid gap-2.5 bg-[linear-gradient(rgb(var(--c-rose)),rgb(var(--c-paper))_75%)] p-2.5 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_5px_#ff6f9c,inset_0_0_0_7px_rgb(var(--c-edge))]"
-      data-testid="friendship-card"
+      className="grid gap-2 bg-[linear-gradient(rgb(var(--c-rose)),rgb(var(--c-paper))_80%)] px-3 pb-3 pt-2.5 shadow-[inset_0_0_0_2px_rgb(var(--c-edge)),inset_0_0_0_5px_#ff6f9c,inset_0_0_0_7px_rgb(var(--c-edge))]"
+      data-testid="friendship-gauge"
     >
-      <div className="flex flex-wrap items-center gap-2 px-1 pt-1">
+      <div className="flex items-center gap-2 px-1 pt-1">
         <PixelIcon name="heart" size={22} />
         <h2 id="fship-title" className="m-0 mr-auto text-[24px] font-normal leading-none">
           {t('ui.fship.title')}
         </h2>
         <CoinPlate n={balance} />
       </div>
-      {state === 'loading' && <p className="m-0 px-1 text-[18px] text-muted">{t('ui.common.loading')}</p>}
-      {state === 'error' && <p className="m-0 px-1 text-[18px] text-danger">{t('ui.fship.failed')}</p>}
-      {state === 'ready' && (
-        <>
-          <div className="px-1">
-            <CapGauge earned={earned} cap={cap} />
-          </div>
-          {alive.length === 0 ? (
-            <p className="copy m-0 px-1 text-[18px] leading-[1.2]">{t('ui.fship.none')}</p>
-          ) : (
+      <div className="flex items-end gap-2.5 px-1">
+        <div className="grid min-w-0 flex-1 gap-1">
+          {state === 'loading' && <p className="m-0 text-[18px] text-muted">{t('ui.common.loading')}</p>}
+          {state === 'error' && <p className="m-0 text-[18px] text-danger">{t('ui.fship.failed')}</p>}
+          {state === 'ready' && (
             <>
-              <p className="m-0 px-1 font-pixel-sm text-[16px] leading-tight text-muted">
-                {t('ui.fship.counts', { kept, all: alive.length })}
-              </p>
-              {waiting.length > 0 && (
-                <ul className="m-0 grid list-none gap-1 p-0" aria-label={t('ui.fship.waitingTitle')}>
-                  {waiting.slice(0, 3).map((s) => {
-                    const f = named(s.friend)!
-                    const next = nextStreakDay(s, today, data)
-                    return (
-                      <li
-                        key={s.friend}
-                        className="flex min-h-[44px] items-center gap-2 bg-paper px-2 py-1 shadow-ring-line"
-                      >
-                        <StreakBadge streak={s.streak} state="waiting" />
-                        <span className="min-w-0 flex-1 truncate text-[19px] leading-none">
-                          <TrainerName name={f.name} rich={f.rich} />
-                        </span>
-                        {next && (
-                          <span className="shrink-0 font-pixel-sm text-[16px] leading-none">
-                            {t('ui.fship.keepFor', { n: next.coins })}
-                          </span>
-                        )}
-                      </li>
-                    )
-                  })}
-                  {waiting.length > 3 && (
-                    <li className="px-1 font-pixel-sm text-[16px] text-muted">
-                      {t('ui.fship.moreWaiting', { n: waiting.length - 3 })}
-                    </li>
-                  )}
-                </ul>
+              <CapGauge earned={earned} cap={cap} />
+              {alive.length > 0 && (
+                <p className="m-0 font-pixel-sm text-[16px] leading-tight text-muted">
+                  {t('ui.fship.counts', { kept, all: alive.length })}
+                </p>
               )}
             </>
           )}
-          <p className="m-0 px-1 font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.fship.how')}</p>
-        </>
-      )}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-        <PixelButton variant="dark" className="min-w-0" onClick={onMarket} data-testid="open-market">
-          <PixelIcon name="navShop" size={20} />
+        </div>
+        <PixelButton size="sm" variant="dark" className="shrink-0" onClick={onMarket} data-testid="open-market">
+          <PixelIcon name="navShop" size={18} />
           {t('ui.market.title')}
         </PixelButton>
-        <SmallInfo name={t('ui.fship.title')} onClick={onInfo} />
       </div>
     </section>
   )

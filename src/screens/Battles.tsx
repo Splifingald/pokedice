@@ -1,6 +1,6 @@
-// Friend Battles' page (docs/65; docs/15 §50), `/battles`, from the Friends page's card: the rules the first time (a
-// card at the top), a match still on, your record, each friend's head to head and the last battles, INFO at the foot.
-// A challenge starts from a friend's BATTLE button on the Friends page.
+// Friend Battles' page (docs/65; docs/15 §50), `/battles`, from a friend's card (ALL BATTLES): a match still on, your
+// record, each friend's head to head and the last battles, INFO (the rules) at the foot. A challenge starts from the
+// BATTLE button on a friend's card.
 import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { friendBattlesFor, friendBattlesRulesDue, friendshipWaits, isExtreme } from '@/engine'
@@ -9,20 +9,19 @@ import { PixelIcon } from '@/components/icons'
 import { PageHead } from '@/components/PageHead'
 import { PixelButton } from '@/components/PixelButton'
 import { InfoButton } from '@/components/RulesModal'
-import { RulesCard } from '@/components/RulesCard'
 import { TrainerLook } from '@/components/TrainerLook'
 import {
   FriendBattleRulesModal,
   LevelTag,
   ModeTag,
   TicketsCard,
-  useFriendBattleRules,
 } from '@/components/pvp/FriendBattleBits'
 import type { TVars } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { agoText } from '@/lib/ago'
 import { avatarOf } from '@/lib/avatars'
 import { isLive } from '@/lib/pvp'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { useGame } from '@/store/game'
 import { foeOf, loadHome, seeFriendBattlesRules, usePvp } from '@/store/pvp'
 import { cx } from '@/theme/util'
@@ -35,11 +34,12 @@ export function BattlesScreen() {
   const auth = useGame((s) => s.auth.status)
   const home = usePvp((s) => s.home)
   const match = usePvp((s) => s.match)
-  const rules = useFriendBattleRules()
   const [info, setInfo] = useState(false)
   const [now] = useState(() => Date.now())
 
   const open = friendBattlesFor(save, data)
+  // Its rules are behind INFO; opening the page is enough for Home's notice (docs/15 §20).
+  useSeenOnOpen(!!save && open && auth === 'signed_in' && !isExtreme(save) && friendBattlesRulesDue(save, data), seeFriendBattlesRules)
   useEffect(() => {
     if (open) void loadHome()
   }, [open])
@@ -68,10 +68,6 @@ export function BattlesScreen() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 pb-4">
       {head}
-      {friendBattlesRulesDue(save, data) && (
-        <RulesCard title={t('ui.pvp.title')} icon="vs" rules={rules} onDone={seeFriendBattlesRules} />
-      )}
-
       {home?.tickets && (
         <TicketsCard
           tickets={home.tickets}

@@ -387,6 +387,10 @@ See §7.
 
 ## 7. Pop-ups
 
+> **Since 2026-11-07 the rules cards below are gone** (the user's call): a feature's page shows no rules, its INFO
+> button holds them, and opening the page sets the "seen" flag that ends its Home notice (docs/15 §20). The rest of
+> this section is the history.
+
 Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 
 - **Moves to the page** what asks nothing of the player: Support me (its 5th-badge pop-up → a Home notice card), Prof.

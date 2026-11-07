@@ -4,10 +4,8 @@ import { leagueConfig, versusLeagueFor, VERSUS_LEVEL, VERSUS_TEAM_SIZE, winTroph
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { money } from '@/lib/format'
-import { visitDayCare } from '@/store/actions'
 import { useGame } from '@/store/game'
 import { EggSprite } from './EggSprite'
-import { RulesCard } from './RulesCard'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 
 /** The Day Care's yard, framed on the whole cottage, chimney to fence. */
@@ -105,16 +103,6 @@ export function useVersusRules(): RuleRow[] {
     { icon: 'sword', title: t('ui.rules.vs.auto.title'), text: t('ui.rules.vs.auto.text') },
     { icon: 'trophy', title: t('ui.rules.vs.board.title'), text: t('ui.rules.vs.board.text') },
   ]
-}
-
-/**
- * The Day Care's rules where they apply (docs/43 §7): a card at the top of its panel on the first visit, the same rows
- * as the INFO button's pop-up; GOT IT marks the Day Care visited, for good.
- */
-export function DayCareRulesCard() {
-  const { t } = useT()
-  const rules = useDayCareRules()
-  return <RulesCard title={t('ui.home.dayCare')} icon="heart" rules={rules} onDone={visitDayCare} />
 }
 
 /** The Day Care's rules, from its page's INFO button (the same rows as the first visit's card). */

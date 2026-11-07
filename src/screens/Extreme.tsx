@@ -13,12 +13,12 @@ import {
   regionOf,
   type Region,
 } from '@/engine'
-import { useExtremeRules, ExtremeRulesModal } from '@/components/Extreme'
+import { ExtremeRulesModal } from '@/components/Extreme'
 import { RestartRunModal, RunCard } from '@/components/ExtremeRuns'
 import { ExtremeBoard } from '@/components/ExtremeBoard'
 import { PageHead } from '@/components/PageHead'
 import { PartnerMoment } from '@/components/PartnerMoment'
-import { RulesCard } from '@/components/RulesCard'
+import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { InfoButton } from '@/components/RulesModal'
 import { useT } from '@/i18n/react'
 import { extremeSaveNow, goToRun, mainSaveNow } from '@/store/extremeRuns'
@@ -31,13 +31,16 @@ export function ExtremeScreen() {
   const data = useGame((s) => s.data)
   const save = useGame((s) => s.save)
   const now = useServerNow(1000) ?? Date.now()
-  const rules = useExtremeRules()
   const [info, setInfo] = useState(false)
   const [picking, setPicking] = useState<Region | null>(null)
   const [restarting, setRestarting] = useState<Region | null>(null)
   const main = mainSaveNow()
   const x = extremeSaveNow()
   const playing = isExtreme(save)
+  // Its rules are behind INFO at the foot; opening the page is enough for Home's notice (docs/15 §20).
+  useSeenOnOpen(!!save && extremeOpen(main, data) && !save.extremePageSeen, () =>
+    mutateSave((s) => (s.extremePageSeen ? null : { ...s, extremePageSeen: true })),
+  )
   // Opened by Kanto's League (or the admin's region), on while the admin has it on.
   if (!save || !extremeOpen(main, data)) return <Navigate to="/home" replace />
   const open = new Set(extremeRegions(main, data).map((r) => r.id))
@@ -48,14 +51,6 @@ export function ExtremeScreen() {
     <div className="flex flex-col gap-4">
       <PageHead icon="skull" title={t('ui.extreme.name')} />
       <p className="copy m-0 text-lg">{t('ui.xrun.intro')}</p>
-      {!save.extremePageSeen && (
-        <RulesCard
-          title={t('ui.extreme.name')}
-          icon="skull"
-          rules={rules}
-          onDone={() => mutateSave((s) => (s.extremePageSeen ? null : { ...s, extremePageSeen: true }))}
-        />
-      )}
       <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-2 xl:grid-cols-3">
         {extremeRegionList(data).map((region) => (
           <RunCard

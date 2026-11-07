@@ -129,22 +129,13 @@ function inEvent(gold = 20_000, patch: Partial<UndergroundSave> = {}): SaveData 
   } as Partial<SaveData>)
 }
 
-test('its rules on its page until GOT IT, Home’s square with the kits, the page', async ({ page }) => {
+test('no rules on its page (opening it is enough), Home’s square with the kits, the page', async ({ page }) => {
   await boot(page, makeSave(4, { player: { name: 'Sam', character: 'red' }, gold: 500 }))
   await page.goto('/underground')
-  // Its rules where they apply (docs/43 §7): a card at the top of its page, never a pop-up there.
-  const card = page.getByRole('region', { name: 'How The Underground works' })
-  await expect(card).toBeVisible({ timeout: 15_000 })
-  await expect(card.getByText('Explorakits', { exact: true })).toBeVisible()
-  await expect(card.getByText(/3 free every 24 h \(up to 3\)/)).toBeVisible()
-  await expect(card.getByText(/your pickaxe die digs that many layers/)).toBeVisible()
+  // Behind INFO only (the user's call, 2026-11-07): opening the page sets the flags.
+  await expect(page.getByTestId('ug-kits')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('region', { name: 'How The Underground works' })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await shot(page, 'rules')
-  // Opening the page isn't reading them.
-  await page.waitForTimeout(500)
-  expect((await stored(page)).events?.liveSeen ?? []).toEqual([])
-  await card.getByRole('button', { name: 'Got it' }).click()
-  await expect(card).toHaveCount(0)
   await expect.poll(async () => (await stored(page)).events?.liveSeen).toEqual(['ug'])
   expect((await stored(page)).underground?.rulesSeen).toBe(true)
   await expect(page.getByRole('heading', { level: 1, name: 'The Underground' })).toBeVisible()
