@@ -122,6 +122,8 @@ function HomeView({ area }: { area: Area }) {
   const cropTop = Math.min(1 - SCENE_SHOWN, Math.max(0, walkMid - SCENE_SHOWN / 2))
   const dock = <PlayDock area={area} onAreas={() => openSheet('details')} />
   const [dockRef, dockH] = useHeight<HTMLDivElement>()
+  // The area banner over the scene's top: the team keeps its heads under it.
+  const banner = useRef<HTMLDivElement>(null)
   // PC: CONTINUE under the scene, in the pinned column, always in sight (the user's call, 2026-10-27); the scene gives it
   // its room in the window's height.
   const [wideDockRef, wideDockH] = useHeight<HTMLDivElement>()
@@ -163,15 +165,36 @@ function HomeView({ area }: { area: Area }) {
           }
         >
           {/* The area's banner on top of the scene, as before (the user's call, 2026-10-27): it opens the areas. */}
-          <div className="absolute inset-x-3 top-3 z-10">
-            <AreaButton area={area} areasState={areasState} heldWhy={heldWhy} onOpen={() => openSheet('details')} />
+          <div ref={banner} className="absolute inset-x-3 top-3 z-10">
+            <AreaButton
+              area={area}
+              areasState={areasState}
+              heldWhy={heldWhy}
+              onOpen={() => openSheet('details')}
+            />
           </div>
           {wide ? (
-            <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })} fill focus={walkMid} />
+            <SceneStage
+              area={area}
+              team={teamOf(save)}
+              onOpen={(id) => setMon({ kind: 'inst', id })}
+              fill
+              focus={walkMid}
+              cover={banner}
+            />
           ) : (
             // Phones: the scene at about 70 % of its height (the user's call), the window kept on where the team walks.
-            <div style={{ marginTop: `calc(-100cqw * ${(SCENE_H / SCENE_W).toFixed(4)} * ${cropTop.toFixed(3)})` }}>
-              <SceneStage area={area} team={teamOf(save)} onOpen={(id) => setMon({ kind: 'inst', id })} />
+            <div
+              style={{
+                marginTop: `calc(-100cqw * ${(SCENE_H / SCENE_W).toFixed(4)} * ${cropTop.toFixed(3)})`,
+              }}
+            >
+              <SceneStage
+                area={area}
+                team={teamOf(save)}
+                onOpen={(id) => setMon({ kind: 'inst', id })}
+                cover={banner}
+              />
             </div>
           )}
         </div>

@@ -1,3 +1,4 @@
+import type { Ref } from 'react'
 import { progressOf, scaledLevelSpan, teamAverageLevel, type Area } from '@/engine'
 import { t } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -23,7 +24,16 @@ export const levelText = (s: { min: number; max: number }) =>
  * The plate on top of the scene: the area's name and levels, its rounds (done, current, to come) and the species caught
  * here. It opens the area's details.
  */
-export function AreaPlate({ area, onOpen }: { area: Area; onOpen: () => void }) {
+export function AreaPlate({
+  area,
+  onOpen,
+  plateRef,
+}: {
+  area: Area
+  onOpen: () => void
+  /** The plate itself: the scene under it keeps the team's heads below it. */
+  plateRef?: Ref<HTMLButtonElement>
+}) {
   useT()
   const save = useGame((s) => s.save)!
   const p = progressOf(save, area.id)
@@ -41,6 +51,7 @@ export function AreaPlate({ area, onOpen }: { area: Area; onOpen: () => void }) 
       : t('ui.home.trainersOnly')
   return (
     <button
+      ref={plateRef}
       type="button"
       onClick={onOpen}
       aria-haspopup="dialog"
