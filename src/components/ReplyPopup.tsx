@@ -23,6 +23,7 @@ import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
 import { messageTitle, ReplyBox } from './ContactModal'
 import { useMyTurn, useOnScreen } from './popupTurn'
+import { RichText } from './RichText'
 
 /** Coming back to the tab asks again, at most this often. */
 const AGAIN_MS = 5 * 60_000
@@ -173,8 +174,10 @@ export function ReplyModal({
   // The pop-up is the league's (or the return's), not the developer's: its title says it, so each message's doesn't.
   const league = all(LEAGUE_REWARD_TITLE)
   const welcome = !league && all(WELCOME_BACK_TITLE)
-  // One global message (docs/69) alone: its own title is the pop-up's.
-  const broadcast = shown.length === 1 && shown[0]!.broadcast ? shown[0]! : null
+  // Global messages (docs/69): the message is the pop-up, the user's call (2026-11-08): no intro, no box, its words are
+  // the pop-up's text. Alone, its title is the pop-up's; two at once, each has its title above its words.
+  const broadcasts = shown.length > 0 && shown.every((m) => m.broadcast)
+  const broadcast = broadcasts && shown.length === 1 ? shown[0]! : null
   const giftOf = (m: MyMessage) => (wait === 'off' || m.gifts_claimed ? [] : parseGifts(m.gifts))
   // A video in it: the game goes quiet while the pop-up is open (the user's call, 2026-11-08), back on closing.
   const video = open && shown.some((m) => hasVideo(m.reply))
@@ -194,17 +197,19 @@ export function ReplyModal({
       }
     >
       <div className="flex flex-col gap-3">
-        <p className="text-xl leading-snug">
-          {t(
-            league
-              ? 'ui.league.reward.popupIntro'
-              : welcome
-                ? 'ui.welcome.popupIntro'
-                : fromDev
-                  ? 'ui.contact.newsIntro'
-                  : 'ui.contact.replyIntro',
-          )}
-        </p>
+        {!broadcasts && (
+          <p className="text-xl leading-snug">
+            {t(
+              league
+                ? 'ui.league.reward.popupIntro'
+                : welcome
+                  ? 'ui.welcome.popupIntro'
+                  : fromDev
+                    ? 'ui.contact.newsIntro'
+                    : 'ui.contact.replyIntro',
+            )}
+          </p>
+        )}
         <ul className="flex flex-col gap-3">
           {shown.map((m) => {
             const gifts = giftOf(m)
@@ -213,7 +218,12 @@ export function ReplyModal({
                 {!league && !welcome && !broadcast && (
                   <p className="break-words text-xl leading-tight">{messageTitle(t, m.title)}</p>
                 )}
-                {m.reply && <ReplyBox reply={m.reply} at={m.replied_at} fromDev={m.from_admin} />}
+                {m.reply &&
+                  (broadcasts ? (
+                    <RichText text={m.reply} className="text-xl leading-snug" />
+                  ) : (
+                    <ReplyBox reply={m.reply} at={m.replied_at} fromDev={m.from_admin} />
+                  ))}
                 {gifts.length > 0 && <GiftPresent count={gifts.length} wait={wait} className="mt-1" />}
               </li>
             )

@@ -87,7 +87,7 @@ export function BroadcastBits() {
       <ReplyBox reply={LINKS} at={at} fromDev />
       <p className={label}>The video on its own, starting at 1:30</p>
       <YouTubeEmbed id="JQKydm46JBI" start={90} />
-      <p className={label}>Global messages’ pop-up (Home only)</p>
+      <p className={label}>Global messages’ pop-up (Home only): the message is the pop-up, its title and words, no box</p>
       <div className="flex flex-wrap gap-2">
         <PixelButton size="sm" onClick={() => setOpen('alone')}>
           Alone: video and gift

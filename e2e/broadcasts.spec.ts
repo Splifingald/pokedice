@@ -120,6 +120,10 @@ test('a global message pops up on Home with its links, its video and its gift, o
   // Its address isn't shown as words as well.
   await expect(popup.getByText('youtube.com/watch')).toHaveCount(0)
   await expect(popup.getByText('Have fun!')).toBeVisible()
+  // The message is the pop-up (the user's call, 2026-11-08): no intro pointing to My messages, no box, no "From the
+  // developer" header.
+  await expect(popup.getByText(/wrote to you|My messages/)).toHaveCount(0)
+  await expect(popup.getByText('From the developer', { exact: true })).toHaveCount(0)
   await expect(popup.getByText('A gift is attached!')).toBeVisible()
   await page.screenshot({ path: 'test-results/broadcast-popup.png' })
   await popup.getByRole('button', { name: 'Open the gift' }).click()

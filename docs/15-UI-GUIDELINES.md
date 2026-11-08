@@ -1402,8 +1402,9 @@ pieces are in `src/components/Gifts.tsx`, every state on `/kitchen-sink` (`GiftB
 - **Global messages** (docs/69; **no switch**, the user's call of 2026-11-08; written in Admin › Messages): the
   developer writes one title, words and gifts for every player, or for those with so many badges (every region's
   together, at least and at most). The server writes each player's copy when their game asks (migration 0143), a developer's message like the others
-  (gift, My messages, Inbox count), and it pops up **on Home only**, under its own title, its turn right after the
-  answers'. **No rules and no INFO**: like a welcome back, it is a message that says everything on its face.
+  (gift, My messages, Inbox count), and it pops up **on Home only**, its turn right after the answers'. **The message is
+  the pop-up** (the user's call, 2026-11-08): its title the pop-up's, its words the pop-up's text, no box, no "From
+  the developer", no line pointing to My messages. **No rules and no INFO**: like a welcome back, it is a message that says everything on its face.
 - **A video silences the game** (the user's call, 2026-11-08): while a messages' pop-up holding a YouTube video is open,
   effects, cries and music stop (`hushGame`), and come back as it closes.
 - **My messages** keeps every message with its answer, the developer's own messages, and their gifts: opened ("Opened
