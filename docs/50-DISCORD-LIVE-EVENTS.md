@@ -86,7 +86,7 @@ is the old two hours.)
   switch, as the daily raid's and the Ko-fi update's are theirs; the game's own screens are unchanged.
 - An event moved or removed while the post waits for its start isn't posted. The post reads the live content again
   at the start, so it shows what players get.
-- An event added (and Published) more than two hours after its start isn't posted: post in `#📣-announcements` by
+- An event added (and Published) more than two hours after its start isn't posted: post in `#📅-events` by
   hand. Up to two hours late, it's posted within the minute.
 
 ## 2. How it's built

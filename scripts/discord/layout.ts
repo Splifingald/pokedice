@@ -19,7 +19,7 @@ export const COLORS = {
   sky: 0x4aa3df,
 } as const
 
-export type RoleKey = 'professor' | 'gymLeader' | 'raidPings' | 'patchPings' | 'eventPings'
+export type RoleKey = 'professor' | 'gymLeader' | 'raidPings' | 'patchPings' | 'eventPings' | 'videoPings'
 /** Whom an overwrite is for: everyone, or one of the layout's roles. */
 export type Who = 'everyone' | RoleKey
 
@@ -128,7 +128,7 @@ export interface Layout {
     rulesChannel: string
     updatesChannel: string
     safetyChannel: string
-    description: string
+    description: string | null
   }
   automod: AutomodSpec[]
   /** Exempt from AutoMod's spam rules. */
@@ -222,6 +222,7 @@ export const LAYOUT: Layout = {
     { key: 'raidPings', name: 'Raid Pings', permissions: 0n, color: 0, hoist: false, mentionable: false },
     { key: 'patchPings', name: 'Patch Notes Pings', permissions: 0n, color: 0, hoist: false, mentionable: false },
     { key: 'eventPings', name: 'Event Pings', permissions: 0n, color: 0, hoist: false, mentionable: false },
+    { key: 'videoPings', name: 'Video Pings', permissions: 0n, color: 0, hoist: false, mentionable: false },
   ],
 
   categories: [
@@ -245,13 +246,7 @@ export const LAYOUT: Layout = {
           aliases: ['regles', 'reglement', 'server-rules'],
           topic: 'The server rules. Breaking them can get your messages removed, or you muted.',
         },
-        {
-          key: 'announcements',
-          name: '📣-announcements',
-          kind: 'announcement',
-          aliases: ['annonces', 'news', 'announcement', 'annonce'],
-          topic: 'News from the developer: big updates, events and maintenance. Get Event Pings in Channels & Roles.',
-        },
+        // No #announcements: the user deleted it (2026-11), news goes in #📅-events.
         {
           key: 'patchNotes',
           name: '📝-patch-notes',
@@ -267,18 +262,20 @@ export const LAYOUT: Layout = {
           topic: "Today's raid Pokémon, posted at 00:00 UTC every day. Get Raid Pings in Channels & Roles.",
         },
         {
+          // A text channel with no topic, as the user made it by hand.
           key: 'liveEvents',
-          name: '🎉-events',
-          kind: 'announcement',
-          aliases: ['live-events', 'event', 'evenements', 'evenement'],
-          topic: "Live events: the week's calendar every Monday, and a post as each one starts. Get Event Pings in Channels & Roles.",
+          name: '📅-events',
+          kind: 'text',
+          aliases: ['live-events', 'event', 'evenements', 'evenement', 'events'],
         },
         {
-          key: 'supportMe',
-          name: '💖-support-me',
-          kind: 'text',
-          aliases: ['soutien', 'soutenir', 'donations', 'donation', 'ko-fi', 'kofi'],
-          topic: "Pokédice is free forever. If you'd like to support the developer, Ko-fi's goal for the month is posted here every Saturday.",
+          // Pingcord posts here (not a webhook of ours): its role needs Send Messages and Embed Links on this channel,
+          // which the layout keeps since it doesn't manage that role (docs/23 §14).
+          key: 'videos',
+          name: '🎬-videos',
+          kind: 'announcement',
+          aliases: ['video', 'videos', 'youtube', 'tiktok', 'videos-youtube', 'nouvelles-videos'],
+          topic: 'New YouTube and TikTok videos from the developer, posted as they go up. Get Video Pings in Channels & Roles.',
         },
       ],
     },
@@ -287,7 +284,11 @@ export const LAYOUT: Layout = {
       name: 'Pokédice',
       aliases: ['text-channels', 'salons-textuels', 'community', 'communaute', 'general', 'chat', 'discussion'],
       overwrites: [],
+      // The user's own channels (#👋-hello, #⚔️-raids, #🔄-trades, #💗support-me) are listed too, so the order keeps
+      // them where they are.
       channels: [
+        // Discord's join messages land here (guild.systemChannel).
+        { key: 'hello', name: '👋-hello', kind: 'text' },
         {
           key: 'general',
           name: '🎲-general',
@@ -311,21 +312,17 @@ export const LAYOUT: Layout = {
             { name: 'Account & saves', emoji: '💾' },
             { name: 'Answered', emoji: '✅', moderated: true },
           ],
+          defaultReaction: '👍',
           sort: 'activity',
           forumLayout: 'list',
         },
-        {
-          key: 'strategy',
-          name: '🧠-strategy',
-          kind: 'text',
-          aliases: ['strategie', 'teams', 'team-building'],
-          topic: 'Teams, dice upgrades, type coverage, and how to get past that one gym.',
-        },
+        // Was #🧠-strategy: the user renamed it and set its topic.
+        { key: 'raids', name: '⚔️-raids', kind: 'text', aliases: ['strategy', 'strategie', 'teams', 'team-building'], topic: '.' },
         {
           key: 'raidSquad',
-          name: '🫂-raid-squad',
+          name: '🫂-friend-codes',
           kind: 'text',
-          aliases: ['codes-ami', 'code-ami', 'find-friends', 'friend-codes', 'friends', 'amis', 'lfg'],
+          aliases: ['codes-ami', 'code-ami', 'find-friends', 'raid-squad', 'friends', 'amis', 'lfg'],
           topic:
             'Find raid partners: post your trainer name, add each other as friends in the game, and bring your teams to ' +
             "each other's raids.",
@@ -345,6 +342,15 @@ export const LAYOUT: Layout = {
           aliases: ['flood', 'hors-sujet', 'random', 'offtopic'],
           topic: "Anything that isn't Pokédice.",
         },
+        {
+          // Here rather than in Start here, as the user moved it: members read, only the staff and the webhook post.
+          key: 'supportMe',
+          name: '💗support-me',
+          kind: 'text',
+          aliases: ['soutien', 'soutenir', 'donations', 'donation', 'ko-fi', 'kofi', 'support-me'],
+          overwrites: [{ who: 'everyone', deny: bits('SEND_MESSAGES') }],
+        },
+        { key: 'trades', name: '🔄-trades', kind: 'text', aliases: ['trade', 'echanges'] },
         {
           key: 'fr',
           name: '🥖-français',
@@ -381,6 +387,7 @@ export const LAYOUT: Layout = {
             { name: 'Fixed', emoji: '✅', moderated: true },
             { name: "Can't reproduce", emoji: '❔', moderated: true },
           ],
+          defaultReaction: '👋',
           sort: 'created',
           forumLayout: 'list',
         },
@@ -455,12 +462,13 @@ export const LAYOUT: Layout = {
     verificationLevel: 2,
     explicitContentFilter: 2,
     defaultNotifications: 1,
-    systemChannel: 'general',
-    systemChannelFlags: 4 | 8,
+    // As the user set them: joins in #👋-hello with the wave button, no server description.
+    systemChannel: 'hello',
+    systemChannelFlags: 4,
     rulesChannel: 'rules',
     updatesChannel: 'modUpdates',
     safetyChannel: 'modLog',
-    description: 'The community of Pokédice, a free fan-made Pokémon dice battler: raids, help, strategy and news.',
+    description: null,
   },
 
   automod: [
@@ -479,6 +487,7 @@ export const LAYOUT: Layout = {
         { title: 'The daily raid', description: "Today's raid Pokémon, every day at 00:00 UTC", emoji: '🔥', roles: ['raidPings'] },
         { title: 'Patch notes', description: 'Each update, once it is live', emoji: '📝', roles: ['patchPings'] },
         { title: 'Events', description: 'Live events, special raids and big news', emoji: '🎉', roles: ['eventPings'] },
+        { title: 'Videos', description: 'Each new YouTube or TikTok video', emoji: '🎬', roles: ['videoPings'] },
       ],
     },
     {
@@ -499,12 +508,12 @@ export const LAYOUT: Layout = {
             'dice, catch them all region after region, and take on the daily raid with your friends.\n\n' +
             `**[Play now: ${SITE.replace('https://', '')}](${SITE})**`,
           fields: [
-            { name: 'Start here', value: '{#rules} the rules\n{#announcements} news\n{#patchNotes} what each update changed\n{#dailyRaid} today\'s raid\n{#liveEvents} live events: the week\'s calendar, each start\n{#supportMe} support the developer' },
-            { name: 'Talk', value: '{#general} chat\n{#help} questions\n{#strategy} teams and dice\n{#raidSquad} find raid partners\n{#showOff} your best catches\n{#offTopic} anything else' },
+            { name: 'Start here', value: '{#rules} the rules\n{#patchNotes} what each update changed\n{#dailyRaid} today\'s raid\n{#liveEvents} live events: the week\'s calendar, each start\n{#videos} new YouTube and TikTok videos\n{#supportMe} support the developer' },
+            { name: 'Talk', value: '{#general} chat\n{#help} questions\n{#raids} teams and dice\n{#raidSquad} find raid partners\n{#showOff} your best catches\n{#offTopic} anything else' },
             { name: 'Feedback', value: '{#bugs} something broke\n{#ideas} ideas and votes' },
             {
               name: 'Pings and languages',
-              value: 'Open **Channels & Roles** at the top of the channel list to get pinged for raids, patch notes or events, and to join the French channel.',
+              value: 'Open **Channels & Roles** at the top of the channel list to get pinged for raids, patch notes, events or videos, and to join the French channel.',
             },
           ],
           footer: 'Pokédice is a non-commercial fan project, not affiliated with Nintendo, Game Freak, Creatures or The Pokémon Company.',
@@ -523,7 +532,7 @@ export const LAYOUT: Layout = {
             '**2. Keep it family-friendly.** No NSFW, gore or slurs, in names and avatars too.',
             "**3. No spam or advertising.** No ads, invite links or DM advertising without a Gym Leader's OK.",
             '**4. Use the right channel.** Questions in {#help}, bugs in {#bugs}, ideas in {#ideas}.',
-            '**5. Mark spoilers.** Late-game surprises go in ||spoiler tags|| outside {#strategy}.',
+            '**5. Mark spoilers.** Late-game surprises go in ||spoiler tags||.',
             '**6. Report exploits privately.** Found a way to cheat the leaderboard? Tell a Gym Leader or use Settings → Contact the developer, instead of posting it.',
             "**7. No ROMs or piracy.** Pokémon belongs to Nintendo; don't share ROMs or pirated games.",
             '**8. Follow Discord\'s rules:** the [Terms of Service](https://discord.com/terms) and the [Community Guidelines](https://discord.com/guidelines).',
@@ -538,7 +547,7 @@ export const LAYOUT: Layout = {
     { channel: 'dailyRaid', name: 'Pokédice Raids', env: 'DISCORD_RAID_WEBHOOK' },
     { channel: 'patchNotes', name: 'Pokédice Patch Notes', env: 'DISCORD_PATCH_WEBHOOK' },
     { channel: 'liveEvents', name: 'Pokédice Events', env: 'DISCORD_EVENTS_WEBHOOK' },
-    { channel: 'supportMe', name: 'Pokédice', env: 'DISCORD_SUPPORT_WEBHOOK' },
+    { channel: 'supportMe', name: 'Support Me', env: 'DISCORD_SUPPORT_WEBHOOK' },
     // Made by hand in #🥖-français (Server Settings → Integrations): the French patch notes and live events.
     { channel: 'fr', name: 'French News', env: 'DISCORD_FRENCH_WEBHOOK' },
   ],
