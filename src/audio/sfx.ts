@@ -592,6 +592,27 @@ const FX_SOUNDS = {
     tone(1047, 0.08, { type: 'triangle', vol: 0.04 })
     tone(1568, 0.2, { type: 'triangle', vol: 0.04, at: 0.08 })
   },
+  // The juice pass (docs/34 §13): a 3's crack (a sharp high snap over a low thump), the stamp landing at the end (a
+  // dull thud), a wall cleared (a quick rising fanfare), a haul card turning (a soft tick) and a new gauge (the rock
+  // knitting back: quick rising clicks).
+  'ug.crit': () => {
+    hiss(0.05, { freq: 4200, type: 'highpass', vol: 0.08 })
+    tone(70, 0.25, { type: 'sawtooth', vol: 0.06, slide: -30 })
+  },
+  'ug.stamp': () => {
+    tone(110, 0.12, { type: 'square', vol: 0.06, slide: -60 })
+    hiss(0.14, { freq: 300, type: 'lowpass', vol: 0.1 })
+  },
+  'ug.clear': () => {
+    tone(523, 0.1, { type: 'square', vol: 0.035 })
+    tone(659, 0.1, { type: 'square', vol: 0.035, at: 0.1 })
+    tone(784, 0.1, { type: 'square', vol: 0.035, at: 0.2 })
+    tone(1047, 0.4, { type: 'square', vol: 0.04, at: 0.3 })
+  },
+  'ug.reveal': () => tone(880, 0.05, { type: 'triangle', vol: 0.035, slide: 220 }),
+  'ug.refill': () => {
+    for (let i = 0; i < 5; i++) tone(500 + i * 120, 0.04, { type: 'square', vol: 0.03, at: i * 0.05 })
+  },
   'impact.windup': () => hiss(0.2, { freq: 700, slide: 900, vol: 0.04 }),
   'impact.hit': () => {
     hiss(0.18, { freq: 420, vol: 0.12 })
