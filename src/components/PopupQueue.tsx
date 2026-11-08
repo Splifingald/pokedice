@@ -2,20 +2,23 @@
 // gathers what the engine can't know (the page, the account, the clock, what waits outside the save) and works the
 // turn out once for the whole game, and OneTimePopups mounts every pop-up and the services that bring them in. Each
 // pop-up opens only on its turn (popupTurn.ts), so they queue, one at a time, in one order. The rules of a feature with
-// a page of its own, Prof. Oak's tips and Support me aren't here: they are notices on Home (docs/43 §7,
+// a page of its own and Prof. Oak's tips aren't here: they are notices on Home (docs/43 §7,
 // screens/home/Notices.tsx), the rules a card on the feature's page.
 import { DiceTutorial } from './DiceTutorial'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
+import { localDay } from '@/analytics/ping'
 import { nextOneTimePopup, type OneTimePopup } from '@/engine'
 import { useFullscreen } from '@/lib/fullscreen'
 import { pushReady, usePush } from '@/lib/push'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { useSupportSession, useSupportSessionTracker } from '@/lib/supportSession'
 import { useAwayReport } from '@/store/extreme'
 import { useGame } from '@/store/game'
 import { useOfflineReport } from '@/store/general'
 import { useGiftMoment } from '@/store/gifts'
 import { useRaidGifts } from '@/store/raidGifts'
+import { useNow } from '@/store/hooks'
 import { useServerNow } from '@/store/serverTime'
 import { LivePopup } from '@/screens/events/live'
 import { WorldByePopup, WorldFinishPopup, WorldPopup } from '@/screens/events/world'
@@ -34,6 +37,7 @@ import { POPUP_GAP_MS, PopupTurnContext, useCenterRush, usePopupOnScreen } from 
 import { PowersUnlockPopup } from './PowersRules'
 import { OutfitRulesPopup } from './Outfit'
 import { PushService } from './PushService'
+import { SupportPopup, useDonationReady } from './SupportModal'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
 import { TradesService } from './trades/TradesService'
@@ -88,6 +92,16 @@ export function PopupQueue({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer)
   }, [center])
   const signedIn = useGame((s) => s.auth.status === 'signed_in')
+  // Support me's sessions and the device's clock, read again every half minute for its 5-minute mark. Only once the
+  // admin's settings and the cloud save are in, so it never opens and vanishes.
+  useSupportSessionTracker()
+  const session = useSupportSession((s) => s.session)
+  const clock = useNow(30_000)
+  const supportReady = useDonationReady()
+  const support = useMemo(
+    () => (supportReady ? { session, now: clock, today: localDay(new Date(clock)) } : undefined),
+    [supportReady, session, clock],
+  )
   // Worked out again only when one of these changes, not on every change to the store (a toast, a fight's turn).
   const due = useMemo(
     () =>
@@ -104,6 +118,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
         raidGifts,
         inviteReward,
         pushAsking: asking && pushReady(data),
+        support,
         showing,
       }),
     [
@@ -124,6 +139,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       raidGifts,
       inviteReward,
       asking,
+      support,
       showing,
     ],
   )
@@ -175,6 +191,7 @@ export function OneTimePopups() {
       <AreaVersusService />
       <TradesService />
       <PushService />
+      <SupportPopup />
     </>
   )
 }

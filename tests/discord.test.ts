@@ -123,6 +123,7 @@ describe('Discord server setup', () => {
       '+ role Raid Pings',
       '+ role Patch Notes Pings',
       '+ role Event Pings',
+      '+ role Video Pings',
     ])
     expect(matchRoles(snap, LAYOUT).get('professor')?.id).toBe('above')
     const everyone = BigInt(snap.roles.find((r) => r.id === 'g')!.permissions)
@@ -130,7 +131,7 @@ describe('Discord server setup', () => {
     expect(everyone & P.MENTION_EVERYONE).toBe(0n)
     // Under the bot: staff, then the server's own roles, then the ping roles.
     const below = snap.roles.filter((r) => r.id !== 'g' && r.position < snap.botTop).sort((a, b) => b.position - a.position)
-    expect(below.map((r) => r.name)).toEqual(['Gym Leader', 'Membre', 'Raid Pings', 'Patch Notes Pings', 'Event Pings'])
+    expect(below.map((r) => r.name)).toEqual(['Gym Leader', 'Membre', 'Raid Pings', 'Patch Notes Pings', 'Event Pings', 'Video Pings'])
   })
 
   it('never edits a role above the bot, and says how to fix it', () => {
@@ -200,7 +201,7 @@ describe('Discord server setup', () => {
     const roles = matchRoles(snap, LAYOUT)
     const chans = matchChannels(snap, LAYOUT)
     const [pings, langs] = snap.onboarding!.prompts
-    expect(pings!.options.map((o) => o.role_ids[0])).toEqual([roles.get('raidPings')!.id, roles.get('patchPings')!.id, roles.get('eventPings')!.id])
+    expect(pings!.options.map((o) => o.role_ids[0])).toEqual([roles.get('raidPings')!.id, roles.get('patchPings')!.id, roles.get('eventPings')!.id, roles.get('videoPings')!.id])
     expect(langs!.options.map((o) => o.channel_ids[0])).toEqual([chans.get('fr')!.id])
     expect(snap.onboarding!.default_channel_ids).not.toContain(chans.get('fr')!.id)
     expect(snap.onboarding!.default_channel_ids).toContain(chans.get('general')!.id)

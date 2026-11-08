@@ -1,21 +1,20 @@
 // "Support me": the developer's three asks, as a rules pop-up (docs/15 §17): join the Discord (the one that matters
 // most), invite friends, and support the developer on Ko-fi, under a line saying why the game itself can never be
 // paid for (Pokémon is a licence). The trainer menu's and Settings' SUPPORT ME open it whenever the admin has it
-// switched on with a Ko-fi link (engine/donation). Once per region, when its 5th badge is won, Home shows a note that
-// leads to it (`SupportNotice`; engine/popups.ts `homeNotices`).
-import { useState } from 'react'
+// switched on with a Ko-fi link (engine/donation). It also opens by itself on Home, at most once a day, from the 4th
+// session (`SupportPopup`; engine/donation `supportPopupDue`).
 import { discordUrl, donationEnabled, donationUrl } from '@/engine'
 import { artUrl } from '@/fx/areaArt'
 import { useT } from '@/i18n/react'
 import { useInbox } from '@/lib/feedback'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { closeDonation } from '@/store/actions'
+import { markSupportShown } from '@/lib/supportSession'
 import { useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
-import { NoticeCard } from './NoticeCard'
 import { PixelButton } from './PixelButton'
+import { useMyTurn, useOnScreen } from './popupTurn'
 import { RuleList, RulesBanner, type RuleRow, type RulesPicture } from './RulesModal'
 import { useInviteShare } from './ShareTutorial'
 
@@ -23,9 +22,9 @@ import { useInviteShare } from './ShareTutorial'
 export const SUPPORT_PICTURE: RulesPicture = { src: artUrl('village'), focus: '50% 58%' }
 
 /**
- * Whether Home may show the region's Support me note yet. A reload starts on the build's content, before the sign-in,
- * the cloud save and the developer's answers are in: any of them can still take the note away (the admin's settings, a
- * region seen on another device), so it waits for them rather than show and vanish.
+ * Whether Support me may open by itself yet. A reload starts on the build's content, before the sign-in, the cloud save
+ * and the developer's answers are in: any of them can still take it away (the admin's settings, the cloud save's
+ * badges) or come first (the answers' pop-up), so it waits for them rather than show and vanish.
  */
 export function useDonationReady(): boolean {
   const status = useGame((s) => s.auth.status)
@@ -36,54 +35,18 @@ export function useDonationReady(): boolean {
 }
 
 /**
- * Support me on Home, once per region at its 5th badge (docs/43 §7: a note in the page, no longer a pop-up on
- * arrival): the village, one line, and SUPPORT ME, which opens the three asks. ✕ or the asks' OK count as this
- * region's showing (`closeDonation`).
+ * Support me opening by itself (engine/donation `supportPopupDue`): on Home, between fights, from the 4th session, 5
+ * minutes into it, with a badge won, at most once a day. Its turn comes from the pop-ups' queue (PopupQueue).
  */
-export function SupportNotice() {
-  const [open, setOpen] = useState(false)
-  return (
-    <>
-      <SupportNoticeView onClose={closeDonation} onOpen={() => setOpen(true)} />
-      <SupportModal open={open} onClose={() => setOpen(false)} />
-    </>
-  )
-}
-
-/** The note itself (the kitchen sink shows it without the admin's config). */
-export function SupportNoticeView({ onClose, onOpen }: { onClose: () => void; onOpen: () => void }) {
-  const { t } = useT()
-  return (
-    <NoticeCard
-      picture={
-        <span
-          className="block h-14 w-14 bg-cover shadow-ring-thin"
-          style={{
-            backgroundImage: `url(${SUPPORT_PICTURE.src})`,
-            backgroundPosition: SUPPORT_PICTURE.focus,
-            imageRendering: 'pixelated',
-          }}
-          aria-hidden
-        />
-      }
-      title={t('ui.support.title')}
-      onClose={onClose}
-      testId="support-notice"
-      action={
-        <PixelButton size="sm" onClick={onOpen}>
-          <PixelIcon name="heart" size={18} className="shrink-0" />
-          {t('ui.support.button')}
-        </PixelButton>
-      }
-    >
-      {t('ui.home.supportLine')}
-    </NoticeCard>
-  )
+export function SupportPopup() {
+  const mine = useMyTurn('donation')
+  useOnScreen('donation', mine)
+  return <SupportModal open={mine} onClose={() => {}} />
 }
 
 const openTab = (url: string) => window.open(url, '_blank', 'noopener,noreferrer')
 
-/** The pop-up itself. Closing it, either way, also counts as this region's showing. */
+/** The pop-up itself. Closing it, either way, also counts as today's showing (opened by SUPPORT ME too). */
 export function SupportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const kofi = useGame((s) => donationUrl(s.data))
   const discord = useGame((s) => discordUrl(s.data))
@@ -94,7 +57,7 @@ export function SupportModal({ open, onClose }: { open: boolean; onClose: () => 
       kofi={kofi ?? ''}
       discord={discord}
       onClose={() => {
-        closeDonation()
+        markSupportShown()
         onClose()
       }}
     />

@@ -395,6 +395,8 @@ Today ~28 one-time pop-ups take turns (`PopupQueue`). This pass:
 
 - **Moves to the page** what asks nothing of the player: Support me (its 5th-badge pop-up → a Home notice card), Prof.
   Oak's leaderboard tip and the invite (→ Home notice cards). They stay once-only and keep their "seen" flags.
+  *Since 2026-11-06 (the user's rule) Support me is a pop-up again, but never on arrival: on Home only, 5 minutes into
+  a session past the third, with a badge won, once a day (docs/15 §20).*
 - **Keeps** the feature rules pop-ups as modals (CLAUDE.md, the user's rule) and the region offer.
 - **Rules where they apply** (proposed here, approved by the user on 2026-10-26): a feature with a page of its own shows
   its rules the first time that page opens, as a card at its top (`RulesCard`: the same rows as its pop-up, GOT IT puts

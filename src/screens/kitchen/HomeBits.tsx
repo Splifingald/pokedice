@@ -1,7 +1,7 @@
 // Kitchen sink (dev only): Home's pieces (docs/43 §5.2) — the area button (plain, a secret area new, shut by the
 // nightmare), the big button as CONTINUE, a challenge, greyed out and GO TO (with "Stay here" under
 // it, or under CONTINUE in green once that area is started), Home's one card (plain, gold, with a gauge), the notices that replaced the arrival pop-ups (Prof. Oak's
-// leaderboard tip, his invite with and without the gauge's room, Support me, a feature opened, a new region on offer), and the "Coming
+// leaderboard tip, his invite with and without the gauge's room, a feature opened, a new region on offer), and the "Coming
 // up" line for each thing still to open.
 import { type ReactNode } from 'react'
 import type { ComingUp, ConditionStatus } from '@/engine'
@@ -9,7 +9,6 @@ import { AreaStrip } from '@/components/AreaStrip'
 import { Chip, NewTag } from '@/components/Chip'
 import { LeaderboardNoticeView } from '@/components/LeaderboardTutorial'
 import { ConnectHint, ShareNoticeView } from '@/components/ShareTutorial'
-import { SupportNoticeView } from '@/components/SupportModal'
 import { useT } from '@/i18n/react'
 import { useGame } from '@/store/game'
 import { AreaButton, ContinueButton, GoToNext, MapButton, StayHere } from '@/screens/home/ContinueBar'
@@ -186,9 +185,6 @@ export function HomeBits() {
       </Frame>
       <Frame name="Notice: Prof. Oak's invite (no rewards)">
         <ShareNoticeView onClose={noop} onShare={noop} />
-      </Frame>
-      <Frame name="Notice: Support me (SUPPORT ME opens the three asks)">
-        <SupportNoticeView onClose={noop} onOpen={noop} />
       </Frame>
       <Frame name="Notice: a feature opened (✕ puts it away for this visit; its page's rules card for good)">
         <FeatureNotice

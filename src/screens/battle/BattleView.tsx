@@ -57,7 +57,7 @@ import {
   gymTypeOf,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
-import { AutoCureOffer } from '@/components/AutoCure'
+import { AutoCureOffer, StunCureActions } from '@/components/AutoCure'
 import { feelSound } from '@/audio/feel'
 import { sfx } from '@/audio/sfx'
 import { useBattleMusic } from '@/audio/useBattleMusic'
@@ -628,6 +628,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const cureKey = auto && stunned && !versus ? autoCureItem(st, data, save?.inventory) : null
   const [cureGone, setCureGone] = useState(-1)
   const cureHold = !!cureKey && cureGone !== battle.log.length
+  // By hand, the same cure gets its own button next to SKIP TURN.
+  const handCure = !auto && stunned && !versus && canItem ? autoCureItem(st, data, save?.inventory) : null
 
   // Auto-mode: every player move once the log has caught up. A reroll shows its selected dice for a moment first.
   const autoPhase =
@@ -1177,6 +1179,14 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
         onTimeout={() => setCureGone(battle.log.length)}
       />
     ) : null
+  else if (stunned && handCure && data.items[handCure])
+    actions = (
+      <StunCureActions
+        item={data.items[handCure]!}
+        onUse={() => dispatch({ t: 'USE_ITEM', key: handCure, targetUid: active.uid })}
+        onPass={() => dispatch({ t: 'PASS' })}
+      />
+    )
   else if (stunned)
     actions = (
       <PixelButton variant="primary" size="lg" className="w-full" onClick={() => dispatch({ t: 'PASS' })}>

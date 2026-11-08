@@ -62,6 +62,9 @@ star (`star`, "In your shiny Pokédex") under the caught ball, top right. A pure
   passes as before. A dialog over the fight holds the gauge.
 - **Which item**: the narrowest cure first (Paralyze Heal before a cure of several statuses), then the cheapest.
 - Not in Versus (no Bag there). Idle keeps "never an item but Poké Balls" for itself: the button waits for a tap.
+- **By hand too** (the user, 2026-11-06): stunned outside auto-mode with that same cure in the Bag, SKIP TURN turns
+  white and a red "USE {item}" (the same item, picked the same way) sits beside it, no gauge: the player decides. The
+  Bag still holds the other items. Not in a raid (its own panel).
 
 ## 6. Rules and INFO
 

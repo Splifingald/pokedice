@@ -5,7 +5,7 @@
 > question for pings and languages, and pinned welcome and rules posts. Five automatic posts come with it: **the daily
 > raid** at 00:00 UTC, **the patch notes** of each update once it is live, **the week's live events calendar** every
 > Monday and **each live event** as it starts ([docs/50](50-DISCORD-LIVE-EVENTS.md)), and **the week's Ko-fi update**
-> every Saturday.
+> every Saturday. Your new **YouTube and TikTok videos** go to `#🎬-videos` through the Pingcord bot (§14).
 >
 > **How:** the server is described in one file, `scripts/discord/layout.ts`. `pnpm discord` compares the live server
 > with that file and lists the differences without changing anything. `pnpm discord --apply` makes them. It adopts
@@ -18,7 +18,7 @@
 
 | Category | Channels | For |
 | --- | --- | --- |
-| **Start here** (read-only) | `#👋-welcome` · `#📜-rules` · `#📣-announcements` · `#📝-patch-notes` · `#🔥-daily-raid` · `#🎉-events` · `#💖-support-me` | The welcome and rules posts (by the bot), news, the automatic posts. Announcements, patch notes, the raid and the events are announcement channels, so other servers can follow them. A `#support-me` or `#events` you made yourself is adopted. |
+| **Start here** (read-only) | `#👋-welcome` · `#📜-rules` · `#📣-announcements` · `#📝-patch-notes` · `#🔥-daily-raid` · `#🎉-events` · `#🎬-videos` · `#💖-support-me` | The welcome and rules posts (by the bot), news, the automatic posts, your new YouTube and TikTok videos (by Pingcord, §14). Announcements, patch notes, the raid, the events and the videos are announcement channels, so other servers can follow them. A `#support-me` or `#events` you made yourself is adopted. |
 | **Pokédice** | `#🎲-general` · `#🙋-help` (forum) · `#🧠-strategy` · `#🫂-raid-squad` (30 s slowmode) · `#✨-show-off` · `#💬-off-topic` · `#🥖-français` | Chat, questions that stay findable, team building, finding raid friends, best catches, the rest, and French (opt-in: members pick it in Channels & Roles). |
 | **Feedback** | `#🐛-bug-reports` (forum) · `#💡-suggestions` (forum, 👍 to vote) | One post per bug or idea, with tags. Status tags (Confirmed, Fixed, Planned, Done…) are moderator-only. |
 | **Voice** | 🎧 Lounge · 🐉 Raid Room (3 people, like a raid group) | |
@@ -28,7 +28,7 @@
 | --- | --- | --- |
 | **Professor** | admins (you, co-admins) | everything (Administrator) |
 | **Gym Leader** | moderators | delete messages, time out, kick, ban, manage threads and tags, see the audit log and Staff |
-| **Raid Pings** · **Patch Notes Pings** · **Event Pings** | members who asked | nothing extra: they get pinged by the daily raid, the patch notes, and the live events (and your event news) |
+| **Raid Pings** · **Patch Notes Pings** · **Event Pings** · **Video Pings** | members who asked | nothing extra: they get pinged by the daily raid, the patch notes, the live events (and your event news), and each new video |
 
 Server settings: members must have a verified e-mail and be on Discord for 5 minutes before talking. Images from
 everyone are scanned. Notifications default to mentions only. Discord's join messages land in `#🎲-general`. AutoMod
@@ -303,6 +303,32 @@ Every update and every live event is posted again in French in `#🥖-français`
 
 Previews: `pnpm discord:patch-notes patch-notes/<file>.fr.md --dry`; `pnpm discord:live --dry` and
 `pnpm discord:live-week --dry` print the French post after the English one.
+
+## 14. YouTube and TikTok videos (`#🎬-videos`)
+
+Each new video on your YouTube channel or your TikTok account is posted in `#🎬-videos`, pinging **Video Pings**
+(members pick it in Channels & Roles). The posts come from **[Pingcord](https://pingcord.xyz)**, a ready-made bot, not
+from this repository: TikTok has no public feed, and Pingcord reads it by linking your account. Its free plan covers
+one YouTube channel and one TikTok account per server ([its docs](https://docs.pingcord.xyz/introduction.html)).
+
+### Setting it up
+
+1. `pnpm discord` then `pnpm discord --apply`: it makes `#🎬-videos` in Start here, the **Video Pings** role, and its
+   Channels & Roles answer, and links the channel in the welcome post.
+2. [pingcord.xyz](https://pingcord.xyz) → **Add to Discord** → pick the Pokédice server, keep the permissions it asks
+   for.
+3. Start here is read-only, so allow the bot in the channel: `#🎬-videos` → **Edit Channel** → **Permissions** →
+   **Add members or roles** → **Pingcord** → allow **View Channel**, **Send Messages**, **Embed Links**. The setup
+   script keeps this permission: it never touches roles it doesn't manage.
+4. Pingcord's dashboard → the server → **YouTube** → **Add** → paste your channel's URL → channel `#🎬-videos` → role
+   to ping **Video Pings** → tick new videos (and Shorts and lives if you want them). Its
+   [YouTube guide](https://docs.pingcord.xyz/integrations/youtube/guide.html).
+5. Same for **TikTok**: **Add** → **link** your TikTok account (log in once) → `#🎬-videos` → **Video Pings**. Pingcord
+   only follows TikTok accounts you can log into. Its [TikTok guide](https://docs.pingcord.xyz/integrations/tiktok/guide.html).
+6. Check: post a video (or use the dashboard's test message if it shows one). It appears within a few minutes.
+
+`#🎬-videos` is an announcement channel: Pingcord's messages aren't published to following servers by themselves;
+**Publish** one by hand if you want it to reach them.
 
 ---
 
