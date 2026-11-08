@@ -7,6 +7,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { ReplyBox } from '@/components/ContactModal'
+import { GiftPresent } from '@/components/Gifts'
+import { RichText } from '@/components/RichText'
 import {
   BROADCAST_BADGES_MAX,
   BROADCAST_BODY_MAX,
@@ -187,10 +189,19 @@ function Composer({ onSent }: { onSent: (row: BroadcastRow) => void }) {
         </PixelButton>
       )}
       {preview && body.trim() && (
-        <div className="flex flex-col gap-1 bg-paper p-3 shadow-card">
-          <p className="text-base text-muted">How it reads in the game (the pop-up and My messages):</p>
-          <p className="break-words text-2xl leading-tight">{title.trim() || '(no title)'}</p>
-          <ReplyBox reply={body.trim()} at={new Date().toISOString()} fromDev />
+        <div className="flex flex-col gap-2">
+          <p className="text-base text-muted">The pop-up on Home, as players see it:</p>
+          {/* The pop-up's own frame and sizes (Modal, ReplyModal): the message is the pop-up. */}
+          <div className="pixel-panel flex w-full max-w-lg flex-col gap-3 self-center p-4">
+            <h4 className="break-words text-title leading-none">{title.trim() || '(no title)'}</h4>
+            <RichText text={body.trim()} className="text-xl leading-snug" />
+            {gifts.length > 0 && <GiftPresent count={gifts.length} wait={null} className="mt-1" />}
+            <div className="flex justify-end">
+              <PixelButton variant="primary" tabIndex={-1}>
+                {gifts.length ? 'Open the gift' : 'OK'}
+              </PixelButton>
+            </div>
+          </div>
         </div>
       )}
       <div className="flex flex-wrap justify-end gap-2">
