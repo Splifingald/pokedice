@@ -1840,7 +1840,12 @@ Its switch is its own (`underground.access`, §20) on top of the live events' on
   edge to edge on top (a gap would show what lies beneath), each a button labelled "Row r, column c: n layers" / "dug
   out, part of the …", its depth as rock colour **and** dots; then what's still buried and the kits left; the footer
   with the rolled die (`PickaxeDie`, tumbling), the line that says what the roll did, and the die's faces with the one
-  that came up lifted and ringed. At the end: "Everything dug out!" or "The wall collapsed!" and the red SEE THE HAUL.
+  that came up lifted and ringed. At the end (`UgWallEnd`): "Everything dug out!" or "The wall collapsed!" and the red
+  SEE THE HAUL. A collapsed wall, with its own switch on (`refresh`, docs/34 §12), also offers a new gauge over it: the
+  gold DIG ON · USE A KIT (n) for a kit held, or DIG ON · BUY A KIT ₽… for one bought there at the Mart's price, drawn
+  disabled with NEED ₽… MORE or NO KIT LEFT TO BUY (its tap says why in a toast), and under it "Same wall, same finds:
+  only the gauge starts again." It keeps the wall as it is; the toast "New gauge: dig on!" and the footer's die come
+  back. The end line counts the strikes of every gauge.
 - **The haul** (`HaulList` in a `Modal`): a line per thing, a new plate first (gold card, NEW, "Arceus can now turn
   Fire!"), then the fossil (to the Box, reviving), orbs (Orb bag / To Dawn, with whose colour it is), and what was lost
   in the rubble (a grey line); DONE and the red NEXT WALL · n.

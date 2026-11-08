@@ -330,19 +330,69 @@ export function dealWallWith(
   }
 }
 
+/** One kit spent, a free one first; spending a free kit from the cap starts its clock. */
+function spendKit(u: UndergroundSave, cfg: UndergroundConfig, now: number): UndergroundSave {
+  if (u.freeKits > 0) return refillKits({ ...u, freeKits: u.freeKits - 1 }, cfg, now)
+  return { ...u, boughtKits: u.boughtKits - 1 }
+}
+
 /** Opens a wall with a kit (a free one first). Null without a kit, with a wall already open, or outside the event. */
 export function openWall(save: SaveData, data: GameData, now: number | null, rng: Rng): SaveData | null {
   const u = save.underground
   if (!u || u.wall || !undergroundLive(save, data, now) || kitsHeld(u) <= 0) return null
-  const cfg = ugCfg(data)
-  const free = u.freeKits > 0
-  const spent: UndergroundSave = free
-    ? { ...u, freeKits: u.freeKits - 1 }
-    : { ...u, boughtKits: u.boughtKits - 1 }
-  // Spending a free kit from the cap starts its clock.
-  const ticking = free ? refillKits(spent, cfg, now!) : spent
   const wall = dealWall(save, data, `${u.eventId}:${u.walls + 1}`, rng)
-  return { ...save, underground: { ...ticking, walls: u.walls + 1, wall } }
+  return { ...save, underground: { ...spendKit(u, ugCfg(data), now!), walls: u.walls + 1, wall } }
+}
+
+// ------------------------------------------------------------------ a collapsed wall's new gauge (docs/34 §12)
+
+/** Its own switch, inside the Underground's: a collapsed wall can take another kit for a new gauge. */
+export const ugRefreshOn = (data: GameData): boolean => ugOn(data) && eventOpenTo(ugCfg(data).refresh, data)
+
+/**
+ * What a new gauge for the collapsed wall takes: a kit held (a free one first), or, with none, one bought on the spot
+ * at the Mart's price (`short`: ₽ missing; `soldOut`: the limit reached). Null when the open wall isn't collapsed, its
+ * haul is already taken, or the switch or the event says no.
+ */
+export function refreshOffer(
+  save: SaveData,
+  data: GameData,
+  now: number | null,
+): { kind: 'kit'; held: number } | { kind: 'buy'; price: number; short: number; soldOut: boolean } | null {
+  const u = save.underground
+  const wall = u?.wall
+  if (!u || !wall || wallStatus(wall) !== 'collapsed' || u.hauls.includes(wall.id)) return null
+  if (!ugRefreshOn(data) || !undergroundLive(save, data, now)) return null
+  const held = kitsHeld(u)
+  if (held > 0) return { kind: 'kit', held }
+  const cfg = ugCfg(data)
+  const price = kitPrice(cfg)
+  return { kind: 'buy', price, short: Math.max(0, price - save.gold), soldOut: kitsLeftToBuy(u, cfg) === 0 }
+}
+
+/**
+ * Gives the collapsed wall a new gauge for a kit: one held (a free one first), else one bought here at the Mart's price,
+ * within the limit. Its layers and what it hides stay as they are; the strikes used so far are kept in `usedBefore`.
+ * Null when `refreshOffer` says no, or the purse or the limit does.
+ */
+export function refreshWall(save: SaveData, data: GameData, now: number | null): SaveData | null {
+  const offer = refreshOffer(save, data, now)
+  if (!offer) return null
+  let next: SaveData | null = save
+  if (offer.kind === 'buy') {
+    if (offer.short > 0 || offer.soldOut) return null
+    next = buyKits(save, data, now, 1)
+    if (!next) return null
+  }
+  const u = next.underground!
+  const wall = u.wall!
+  return {
+    ...next,
+    underground: {
+      ...spendKit(u, ugCfg(data), now!),
+      wall: { ...wall, used: 0, usedBefore: (wall.usedBefore ?? 0) + wall.used },
+    },
+  }
 }
 
 // ------------------------------------------------------------------ digging

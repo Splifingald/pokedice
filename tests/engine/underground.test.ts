@@ -28,6 +28,8 @@ import {
   pickaxeFaces,
   plateTypes,
   reduce,
+  refreshOffer,
+  refreshWall,
   regionOfSpecies,
   sellOrbs,
   sellValue,
@@ -36,6 +38,7 @@ import {
   strikeWall,
   thingDone,
   thingTiles,
+  ugRefreshOn,
   ugRulesDue,
   undergroundLive,
   uniformLevels,
@@ -359,6 +362,88 @@ describe('the haul', () => {
     const again = applyHaul(withWall(once, dig(wall(things))), data, null, T0, newId)!.save
     expect(again.underground!.bag).toEqual(once.underground!.bag)
     expect(again.plates).toEqual(['fire'])
+  })
+})
+
+describe('a collapsed wall’s new gauge (docs/34 §12)', () => {
+  const on = world({ cfg: { refresh: 'all' } })
+  const orb = [{ kind: 'orbS' as const, x: 0, y: 0, w: 1, h: 1, colour: 'red' as const }]
+  const collapsed = (s: SaveData) => withWall(s, wall(orb, 2, { used: 10 }))
+  const kits = (s: SaveData, freeKits: number, boughtKits: number): SaveData => ({
+    ...s,
+    underground: { ...s.underground!, freeKits, boughtKits },
+  })
+
+  it('has its own switch, Off by default, inside the Underground’s', () => {
+    expect(UG.refresh).toBe('off')
+    expect(ugRefreshOn(data)).toBe(false)
+    expect(ugRefreshOn(on)).toBe(true)
+    expect(ugRefreshOn(world({ access: 'off', cfg: { refresh: 'all' } }))).toBe(false)
+    const admin = world({ cfg: { refresh: 'admin' } })
+    expect(ugRefreshOn(admin)).toBe(false)
+    expect(ugRefreshOn({ ...admin, viewer: { admin: true } })).toBe(true)
+    expect(refreshOffer(collapsed(inEvent(100_000, data)), data, T0)).toBeNull()
+  })
+
+  it('only for a collapsed wall whose haul isn’t taken, during the event', () => {
+    const s = collapsed(inEvent(100_000, on))
+    expect(refreshOffer(s, on, T0)).toEqual({ kind: 'kit', held: 3 })
+    expect(refreshOffer(withWall(s, wall(orb, 2)), on, T0)).toBeNull()
+    expect(refreshOffer(withWall(s, dig(wall(orb))), on, T0)).toBeNull()
+    expect(refreshOffer(s, on, T0 + 72 * H)).toBeNull()
+    const taken = { ...s, underground: { ...s.underground!, hauls: ['ug1:1'] } }
+    expect(refreshOffer(taken, on, T0)).toBeNull()
+    expect(refreshWall(taken, on, T0)).toBeNull()
+  })
+
+  it('a kit held (a free one first) gives the same wall a new gauge', () => {
+    const s = kits(collapsed(inEvent(100_000, on)), 1, 1)
+    const a = refreshWall(s, on, T0)!
+    const w = a.underground!.wall!
+    expect(a.underground!.freeKits).toBe(0)
+    expect(a.underground!.boughtKits).toBe(1)
+    expect(a.underground!.freeAt).toBe(T0 + 8 * H)
+    expect(a.gold).toBe(100_000)
+    expect(w).toEqual({ ...s.underground!.wall!, used: 0, usedBefore: 10 })
+    expect(wallStatus(w)).toBe('digging')
+    // It digs on from where it was, and collapses again with its strikes counted on top.
+    const again = { ...strikeWall(w, 4, 1), used: 10 }
+    const b = refreshWall(withWall(a, again), on, T0)!
+    expect(b.underground!.boughtKits).toBe(0)
+    expect(b.underground!.wall!.usedBefore).toBe(20)
+  })
+
+  it('with no kit, one is bought on the spot at the Mart’s price, within the purse and the limit', () => {
+    const s = kits(collapsed(inEvent(5_000, on)), 0, 0)
+    expect(refreshOffer(s, on, T0)).toEqual({ kind: 'buy', price: UG.kits.price, short: 0, soldOut: false })
+    const a = refreshWall(s, on, T0)!
+    expect(a.gold).toBe(5_000 - UG.kits.price)
+    expect(a.underground!.boughtKits).toBe(0)
+    expect(a.underground!.boughtCount).toBe(1)
+    expect(a.underground!.wall!.used).toBe(0)
+
+    const poor = { ...s, gold: 400 }
+    expect(refreshOffer(poor, on, T0)).toMatchObject({ kind: 'buy', short: UG.kits.price - 400 })
+    expect(refreshWall(poor, on, T0)).toBeNull()
+
+    const capped = { ...s, underground: { ...s.underground!, boughtCount: UG.kits.limit } }
+    expect(refreshOffer(capped, on, T0)).toMatchObject({ kind: 'buy', soldOut: true })
+    expect(refreshWall(capped, on, T0)).toBeNull()
+  })
+
+  it('the haul after a new gauge counts what was dug out across both', () => {
+    const s = kits(collapsed(inEvent(100_000, on)), 1, 0)
+    const a = refreshWall(s, on, T0)!
+    const done = withWall(a, { ...a.underground!.wall!, depth: a.underground!.wall!.depth.map(() => 0), used: 3 })
+    const r = applyHaul(done, on, null, T0, newId)!
+    expect(r.lines.map((l) => l.outcome)).toEqual(['bag'])
+    expect(r.save.underground!.wall).toBeNull()
+  })
+
+  it('a wall with a new gauge survives a round trip through the save', () => {
+    const a = refreshWall(kits(collapsed(inEvent(100_000, on)), 1, 0), on, T0)!
+    const back = parseSave(JSON.parse(JSON.stringify(a)))
+    expect(back.ok && back.save.underground!.wall!.usedBefore).toBe(10)
   })
 })
 

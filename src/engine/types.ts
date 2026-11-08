@@ -1484,6 +1484,11 @@ export interface PickaxeLevel {
 export interface UndergroundConfig {
   /** The switch (docs/15 §20): off (nowhere in the game, Arceus unlocked), on for the admin only, on for everyone. */
   access: EventAccess
+  /**
+   * Its own switch (docs/34 §12): a collapsed wall can take another kit (held, or bought on the spot), which gives it a
+   * new gauge; its layers and what it hides stay as they are.
+   */
+  refresh: EventAccess
   kits: {
     /** The Mart's price of an Explorakit (₽). */
     price: number
@@ -1555,6 +1560,8 @@ export interface Wall {
   /** Strikes this wall allows (the admin's number when it was dealt) and strikes used. */
   strikes: number
   used: number
+  /** Strikes used on its earlier gauges, before a kit gave it a new one (docs/34 §12). */
+  usedBefore?: number
   /** The neighbours' loss when it was dealt. */
   neighbourLoss: number
 }
