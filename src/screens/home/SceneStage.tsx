@@ -43,6 +43,7 @@ export function SceneStage({
   children,
   fill = false,
   focus = 0.5,
+  cover,
 }: {
   area: Area
   team: PokemonInstance[]
@@ -59,6 +60,11 @@ export function SceneStage({
    * team walks, so a short box never cuts them off (the user, 2026-10-27).
    */
   focus?: number
+  /**
+   * What lies over the scene's top (Home's area banner, the area screen's plate): the team keeps its heads under it, so
+   * nobody walks hidden behind it (the user's report, 2026-11-08).
+   */
+  cover?: RefObject<HTMLElement | null>
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
@@ -67,6 +73,7 @@ export function SceneStage({
   const back = useRef<HTMLCanvasElement>(null)
   const front = useRef<HTMLCanvasElement>(null)
   const imgs = useRef<(HTMLImageElement | null)[]>([])
+  const box = useRef<HTMLDivElement>(null)
   const [card, setCard] = useState<{ uid: string; x: number; y: number } | null>(null)
   const lastTap = useRef<{ uid: string; t: number } | null>(null)
   const lastCry = useRef(-Infinity)
@@ -117,6 +124,26 @@ export function SceneStage({
     herd.calm = calm
   }, [herd, calm])
 
+  // Where the cover ends, in the scene's art pixels: measured on both boxes, again when either changes size (a narrower
+  // phone makes the banner cover more of the scene).
+  useEffect(() => {
+    const el = cover?.current
+    const stage = box.current
+    if (!el || !stage) return
+    const measure = () => {
+      const s = stage.getBoundingClientRect()
+      if (!s.height) return
+      // A few pixels' gap, so a head doesn't brush the banner's shadow.
+      herd.setRoof(((el.getBoundingClientRect().bottom - s.top) / s.height) * H + 3)
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    ro.observe(stage)
+    return () => ro.disconnect()
+  }, [herd, cover])
+
   const sprites = useMemo(() => members.map((m) => m.sprite), [members])
   useHerdLoop(herd, sprites, { still, back, front, imgs })
 
@@ -154,6 +181,7 @@ export function SceneStage({
 
   const stage = (
     <div
+      ref={box}
       className={cx(
         'relative isolate z-0 select-none overflow-hidden',
         fill ? 'absolute left-1/2 -translate-x-1/2' : 'w-full',

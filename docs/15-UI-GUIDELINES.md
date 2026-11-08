@@ -621,7 +621,9 @@ Players shouldn't have to make many requests:
   steps across its whole width** (`RoundGauge banner`: met gold, the rest grey, the hearts, "round/total"; the rounds as
   pips where encounters aren't dealt from a deck); NEW when
   a secret area opened; shut by the nightmare with its reason), which opens the Areas sheet. On a phone the scene shows
-  **about 70 % of its height** (`SCENE_SHOWN`), its window kept on where the team walks. Under it one notice, then
+  **about 70 % of its height** (`SCENE_SHOWN`), its window kept on where the team walks. **The team keeps its heads under the banner** (`SceneStage cover`, as under
+  the area screen's plate): a tall one walks lower, a swimmer whose pond lies under it comes ashore (the user's report,
+  2026-11-08). Under it one notice, then
   Events (the region's **legendary raids open now first**, as cards of their own, then a small world, the live events
   and the rest), Secret areas and Features as Home's one card (`HomeCard`: the picture as a strip on the left, the name,
   one status line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The
@@ -1124,7 +1126,9 @@ Two rules for every feature that adds something players can do (an event, a mode
   with a page of its own shows **no rules on the page and no pop-up**: the page opens on the feature itself, and an
   **INFO** button at the bottom of its page shows its rules (`RulesModal`: 2–4 `RuleList` rows with the config's
   numbers, OK). Opening the page sets the feature's "seen" flag in the save (`useSeenOnOpen`), which ends Home's notice
-  for it. There is no `RulesCard` and no GOT IT any more. Its opening
+  for it. **Short rules** (the user's call of 2026-11-08): each row's text is one short sentence or two, about 80
+  characters in English at most, with only what a player acts on; the title already says the headline (don't repeat
+  it), and a mechanic the game keeps hidden (the real-player battles' level match) is never explained. There is no `RulesCard` and no GOT IT any more. Its opening
   is announced on Home as a notice card with a button to its page, never a modal over Home. A feature **with no page**
   of its own (day and night, the battle powers, a small world's opening, Extreme mode, the push question) keeps its
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the

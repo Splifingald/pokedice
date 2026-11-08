@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   areaVersusConfig,
-  levelMatchOn,
   areaVersusHere,
   daysAgo,
   familyTalent,
@@ -74,27 +73,14 @@ export function useAreaVersusRules(): RuleRow[] {
   const cfg = areaVersusConfig(data)
   return [
     { icon: 'user', title: t('ui.areaVersus.rule1Title'), text: t('ui.areaVersus.rule1Text') },
-    // The level match (the user's ask, 2026-11-03): only while its switch is on.
-    ...(levelMatchOn(data)
-      ? [
-          {
-            icon: 'shield' as const,
-            title: t('ui.areaVersus.ruleMatchTitle'),
-            text: t('ui.areaVersus.ruleMatchText', { n: cfg.levelMargin }),
-          },
-        ]
-      : []),
+    // The level match (docs/54 §9) stays unsaid: players meet a team their size, never a rule about it.
     { icon: 'heart', title: t('ui.areaVersus.rule2Title'), text: t('ui.areaVersus.rule2Text') },
     {
       icon: 'coin',
       title: t('ui.areaVersus.rule3Title', { x: cfg.prizeMultiplier }),
-      text: t('ui.areaVersus.rule3Text', { x: cfg.prizeMultiplier }),
+      text: t('ui.areaVersus.rule3Text'),
     },
-    {
-      icon: 'friends',
-      title: t('ui.areaVersus.rule4Title'),
-      text: t('ui.areaVersus.rule4Text', { days: cfg.requestDays }),
-    },
+    { icon: 'friends', title: t('ui.areaVersus.rule4Title'), text: t('ui.areaVersus.rule4Text') },
   ]
 }
 

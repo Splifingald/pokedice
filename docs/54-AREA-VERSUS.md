@@ -88,7 +88,8 @@ Migration `0099_area_versus.sql` (0098 is the legendary cinematics', docs/53).
 - **The card** (`PlayerFoeCard`, the encounter's pop-up): REAL PLAYER over their look, their name (golden for the
   rich), Friend, "Played here 2 days ago", their team (sprites, levels, shiny stars, talent gems), "Win ₽540 (×1.5 a
   trainer's)" and INFO. **FIGHT** (red) and **SKIP · no ₽**.
-- **Its rules** (the feature has no page): INFO on the card only (`RulesModal`, OK). No pop-up the first time any more
+- **Its rules** (the feature has no page): INFO on the card only (`RulesModal`, OK), four short rows (2026-11-08):
+  real players' teams, nothing to lose (healed, the round goes on), ×1.5 a trainer's ₽ per K.O., make friends. No pop-up the first time any more
   (the user's call, 2026-11-02); the save's `areaVersusRulesSeen` stays only so older saves still parse.
 - **The fight**: a trainer's, their look as the foe's sprite, their name.
 - **The result**: the victory card's ₽, then "You beat Misty's team!", "Your team is healed." and SEND FRIEND REQUEST;
@@ -198,7 +199,7 @@ weaker team first on the server), the user picked:
 | How | **Scale by one ratio**: their best Pokémon lands on the cap, every other level × the same ratio (rounded, Lv 1 at least). 45/42/38/30/22 against a best of 30 → 31/29/26/21/15 |
 | The cap | The player's **best level in the region being played, team and Box together** (a weak team fielded doesn't lower it), **+1** (admin: the margin) |
 | Their upgrades | **The area's dice and combo level** (its `enemyUpgradeLevel`, else game_config's), as the area's trainers fight, not their own, while the match is on |
-| The card | **Just the new levels**: no tag. The ₽ to win follows them (each K.O.'s ₽ is a level's). INFO gains a rule while the match is on |
+| The card | **Just the new levels**: no tag. The ₽ to win follows them (each K.O.'s ₽ is a level's). **Never in INFO**: the match stays hidden (the user's call, 2026-11-08) |
 
 - `matchFoe(foe, save, area, data)` (engine): the team the card brings, scaled; the same foe with the switch off.
   `bestOwnedLevel(save)` is the cap's base. The store applies it when it builds the encounter context
@@ -207,7 +208,8 @@ weaker team first on the server), the user picked:
 - Its own switch, **Off by default**: Admin › Config › Switches › **Real-player level match** (game_config
   `areaVersus.levelMatchAccess`; only with Real-player battles open). The margin: Admin › Config › Real-player battles
   › **Level match margin** (`areaVersus.levelMargin`, 1).
-- INFO's rule "Matched to your level" (`ui.areaVersus.ruleMatch*`), only while the match is on.
+- **Not explained anywhere** (the user's call, 2026-11-08): INFO's "Matched to your level" row and its strings are
+  gone; players just meet a team their size.
 - No migration: the fight is the game's side, the server only hands over the team.
 - Tests: `tests/engine/area-versus.test.ts` › the level match.
 

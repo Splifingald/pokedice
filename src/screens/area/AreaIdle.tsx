@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { autoAvailable, heldIn, portalLock, teamOf, type Area } from '@/engine'
 import { useT } from '@/i18n/react'
@@ -108,6 +108,8 @@ export function AreaSceneBox({ area }: { area: Area }) {
   const save = useGame((s) => s.save)
   const [details, setDetails] = useState(false)
   const [mon, setMon] = useState<SheetView | null>(null)
+  // The plate over the scene's top: the team keeps its heads under it.
+  const plate = useRef<HTMLButtonElement>(null)
   // Wide screens: the fight's 3:2 box, the scene filling it around where the team walks, so it fits the window with the
   // panel under it (the square scene, a column wide, ran past the window's foot: the user's report, 2026-10-28).
   const wide = useMediaQuery('(min-width: 1024px)')
@@ -122,11 +124,12 @@ export function AreaSceneBox({ area }: { area: Area }) {
         onOpen={(id) => setMon({ kind: 'inst', id })}
         fill={wide}
         focus={walkMid}
+        cover={plate}
       />
       {/* Over the box, not the scene (which a wide box crops at its sides): the round's encounters as the fight's strip,
           and the plate under it counting the rounds (no second gauge). */}
       <RunRoundGauge strip className="absolute inset-x-0 top-0 z-[480]" />
-      <AreaPlate area={area} onOpen={() => setDetails(true)} />
+      <AreaPlate area={area} onOpen={() => setDetails(true)} plateRef={plate} />
       <AreaDetails area={details ? area : null} onClose={() => setDetails(false)} />
       <SheetModal view={mon} onClose={() => setMon(null)} manage />
     </div>
