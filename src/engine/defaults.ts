@@ -187,8 +187,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   },
   // Gifts with the developer's messages (docs/15 §23): off until the admin switches them on.
   gifts: { access: 'off' },
-  // Global messages (docs/69): off until the admin switches them on. Migration 0143 inserts the same row.
-  broadcasts: { access: 'off' },
   // Friend invite rewards (docs/15 §25): off until the admin switches them on. Migration 0051 inserts the same row.
   inviteRewards: {
     access: 'off',

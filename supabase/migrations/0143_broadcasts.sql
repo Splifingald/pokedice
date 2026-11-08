@@ -3,8 +3,8 @@
 -- every region's together. Each player it reaches gets their own copy: a developer's message like the admin's own
 -- (0048: the gift under it, its opening, My messages), written by the server, which the game pops up on Home.
 --
--- 1. game_config `broadcasts`: the switch (Off / On for admin / On for everyone, Off: docs/15 §20), inserted only if
---    missing so seeding never clobbers the admin's; broadcasts_open().
+-- 1. No switch, on for everyone (the user's call, 2026-11-08: an exception to docs/15 §20). The first version of this
+--    file had one: its game_config row and broadcasts_open() go.
 -- 2. broadcasts: the messages, written in Admin › Messages (admin-only, as everything here but the claim): title,
 --    body, the badge range (min_badges, max_badges or none), gifts (0048's check; no Heart Scales: a guest has no
 --    wallet, 0121), active (a stopped message reaches no one new; its copies stay).
@@ -15,28 +15,19 @@
 --    else on the game's word, as a guest is. It writes the caller's copy of every active message whose range takes that
 --    count and that they don't have yet, and returns how many it wrote. A guest's copies on this device follow them
 --    into their account the first time they ask signed in (one already in the account wins), as a welcome back does
---    (0103), so another device of theirs never gets a second one. Off (or On for admin and not the admin): refused.
+--    (0103), so another device of theirs never gets a second one.
 -- 5. my_feedback() also says which messages are global ones (`broadcast`): the game pops those up on Home.
 -- 6. broadcast_stats(): for the admin, each message's copies, how many were seen, how many gifts opened.
--- 7. configVersion + 1, so players fetch the new content.
 --
 -- Run after 0048 and 0103 (its feedback_system()), 0121 and 0033 / 0039 where they ran. Safe to run again.
 -- supabase/seed.sql doesn't inline it (feedback isn't in its prelude).
 
 begin;
 
--- ---------------------------------------------------------------- 1. the switch
+-- ---------------------------------------------------------------- 1. no switch
 
-insert into game_config (key, value) values ('broadcasts', '{"access": "off"}'::jsonb)
-on conflict (key) do nothing;
-
--- On for everyone, or for the admin only (their JWT). An odd value is off.
-create or replace function broadcasts_open()
-returns boolean
-language sql stable security definer set search_path = public as $$
-  select coalesce(a = 'all' or (a = 'admin' and is_admin()), false)
-  from (select (select value ->> 'access' from game_config where key = 'broadcasts' and jsonb_typeof(value) = 'object') as a) x
-$$;
+delete from game_config where key = 'broadcasts';
+drop function if exists broadcasts_open();
 
 -- ---------------------------------------------------------------- 2. the messages
 
@@ -119,9 +110,6 @@ declare
 begin
   if p_device_id is null or length(p_device_id) = 0 or length(p_device_id) > 64 then
     raise exception 'bad device id' using errcode = '22023';
-  end if;
-  if not broadcasts_open() then
-    raise exception 'broadcasts_off' using errcode = 'P0001';
   end if;
   dev := 'device:' || p_device_id;
   -- Two tabs at once: one at a time per key (the account's, then the device's), always in the same order.
@@ -207,16 +195,11 @@ $$;
 
 -- ---------------------------------------------------------------- who may call what
 
-revoke all on function broadcasts_open() from public, anon, authenticated;
 revoke all on function broadcast_claim(text, int) from public;
 grant execute on function broadcast_claim(text, int) to anon, authenticated;
 revoke all on function my_feedback(text) from public;
 grant execute on function my_feedback(text) to anon, authenticated;
 revoke all on function broadcast_stats() from public, anon;
 grant execute on function broadcast_stats() to authenticated;
-
--- ---------------------------------------------------------------- 7. the content version
-
-insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
 commit;

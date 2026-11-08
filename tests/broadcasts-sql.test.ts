@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { broadcastReaches, DEFAULT_CONFIG } from '@/engine'
+import { broadcastReaches } from '@/engine'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
@@ -41,11 +41,6 @@ async function fails(user: string | null, q: string, params: unknown[] = []): Pr
   }
   return 'no error'
 }
-
-const setAccess = (access: string) =>
-  db.query(`update game_config set value = jsonb_build_object('access', $1::text) where key = 'broadcasts'`, [
-    access,
-  ])
 
 const GOLD = [{ kind: 'gold', amount: 500, region: 'latest' }]
 
@@ -117,9 +112,14 @@ beforeAll(async () => {
     '0028_analytics_minimal.sql',
     '0048_message_gifts.sql',
     '0103_welcome_back.sql',
-    '0143_broadcasts.sql',
   ])
     await db.exec(sql(f))
+  // A database that ran this file's first version, which had a switch: its row and its function.
+  await db.exec(`
+    insert into game_config (key, value) values ('broadcasts', '{"access": "off"}');
+    create function broadcasts_open() returns boolean language sql as $$ select false $$;
+  `)
+  await db.exec(sql('0143_broadcasts.sql'))
   // Safe to run again.
   await db.exec(sql('0143_broadcasts.sql'))
   // The trainer cards' badges (0033's table, with 0039's realm), as much of it as the claim reads.
@@ -139,24 +139,18 @@ afterAll(async () => {
   await db?.close()
 })
 
-describe('the switch', () => {
-  it('ships off, as the game’s default: Off refuses everyone; On for admin only the admin', async () => {
-    const [row] = await as<{ value: unknown }>(null, `select value from game_config where key = 'broadcasts'`)
-    expect(row!.value).toEqual(DEFAULT_CONFIG.broadcasts)
+describe('no switch (the user’s call, 2026-11-08)', () => {
+  it('reaches every player at once, and a run of the first version (with a switch) is cleaned up', async () => {
     await post('Hello')
-    expect(await fails(null, `select broadcast_claim('dev-off', 3)`)).toContain('broadcasts_off')
-    expect(await fails(U.admin, `select broadcast_claim('dev-adm', 3)`)).toContain('broadcasts_off')
-    await setAccess('admin')
-    expect(await fails(U.ash, `select broadcast_claim('dev-ash', 3)`)).toContain('broadcasts_off')
-    expect(await fails(null, `select broadcast_claim('dev-off', 3)`)).toContain('broadcasts_off')
-    expect(await claim(U.admin, 'dev-adm', 3)).toBe(1)
-    await setAccess('all')
-    // Nothing was written while it was refused.
-    const [n] = await as<{ n: number }>(
-      U.admin,
-      'select count(*)::int n from feedback where broadcast_id is not null',
+    expect(await claim(null, 'dev-any', 3)).toBe(1)
+    expect(await claim(U.ash, 'dev-ash', 3)).toBe(1)
+    const [row] = await as<{ n: number }>(
+      null,
+      `select count(*)::int n from game_config where key = 'broadcasts'`,
     )
-    expect(n!.n).toBe(1)
+    expect(row!.n).toBe(0)
+    const [fn] = await as<{ f: string | null }>(null, `select to_regproc('broadcasts_open')::text f`)
+    expect(fn!.f).toBeNull()
     await as(U.admin, 'delete from broadcasts')
   })
 

@@ -14,8 +14,8 @@ const at = new Date().toISOString()
 
 const LINKS =
   'Version 3.0 is out! Read everything on https://example.com/patch-notes, and come say hi on www.discord.gg/pokedice.\nA link at the end of a sentence keeps its full stop out: https://example.com/faq.'
-const VIDEO = 'Here is the new trailer:\n\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ\n\nSee you on Route 1!'
-const INLINE = 'Inside a sentence a YouTube address stays a link: https://youtu.be/dQw4w9WgXcQ (no video).'
+const VIDEO = 'Here is the new trailer:\n\nhttps://www.youtube.com/watch?v=JQKydm46JBI\n\nSee you on Route 1!'
+const INLINE = 'Inside a sentence a YouTube address stays a link: https://youtu.be/JQKydm46JBI (no video).'
 
 const GIFTS: Gift[] = [
   { kind: 'gold', amount: 1000, region: 'latest' },
@@ -86,7 +86,7 @@ export function BroadcastBits() {
       <p className={label}>In the developer’s message box (the pop-up’s and My messages’)</p>
       <ReplyBox reply={LINKS} at={at} fromDev />
       <p className={label}>The video on its own, starting at 1:30</p>
-      <YouTubeEmbed id="dQw4w9WgXcQ" start={90} />
+      <YouTubeEmbed id="JQKydm46JBI" start={90} />
       <p className={label}>Global messages’ pop-up (Home only)</p>
       <div className="flex flex-wrap gap-2">
         <PixelButton size="sm" onClick={() => setOpen('alone')}>

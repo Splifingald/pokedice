@@ -2,7 +2,7 @@
 // region's), and the server writes the player's copy of each message running that reaches them, once (migration 0143,
 // broadcast_claim). A copy is a developer's message, so all that is left here is to load the messages again when one
 // was just written: the pop-up on Home, the wrapped gift and its opening follow (BroadcastPopup, Gifts).
-// Nothing at all without Supabase, or while the switch is off for the player.
+// Nothing at all without Supabase. No switch: the user's call (2026-11-08).
 import { broadcastBadges, broadcastsAsk } from '@/engine'
 import { deviceId } from '@/lib/device'
 import { useInbox } from '@/lib/feedback'
@@ -42,7 +42,7 @@ const playerKey = () => {
 export async function askBroadcasts(now = Date.now()): Promise<void> {
   if (!isSupabaseConfigured || asking) return
   const { auth, save, data } = useGame.getState()
-  if (!save || auth.status === 'unknown' || !broadcastsAsk(save, data)) return
+  if (!save || auth.status === 'unknown' || !broadcastsAsk(save)) return
   const player = playerKey()
   const badges = broadcastBadges(save, data)
   if (last && last.player === player && last.badges === badges && now - last.at < BROADCAST_ASK_MS) return

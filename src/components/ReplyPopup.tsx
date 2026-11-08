@@ -6,10 +6,12 @@
 // server when a player returns after days away: it comes the same way. A global message (docs/69) is one too, but it
 // takes its own turn, on Home only (BroadcastPopup), with its own title.
 import { useEffect } from 'react'
+import { hushGame } from '@/audio/hush'
 import { useLocation } from 'react-router-dom'
 import { giftsWait, parseGifts, WELCOME_BACK_TITLE, type GiftsWait } from '@/engine'
 import { useT } from '@/i18n/react'
 import { unopenedGifts, unseenReplies, useInbox, type MyMessage } from '@/lib/feedback'
+import { hasVideo } from '@/lib/richText'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { LEAGUE_REWARD_TITLE } from '@/lib/versusLeague'
 import { askBroadcasts } from '@/store/broadcasts'
@@ -174,6 +176,9 @@ export function ReplyModal({
   // One global message (docs/69) alone: its own title is the pop-up's.
   const broadcast = shown.length === 1 && shown[0]!.broadcast ? shown[0]! : null
   const giftOf = (m: MyMessage) => (wait === 'off' || m.gifts_claimed ? [] : parseGifts(m.gifts))
+  // A video in it: the game goes quiet while the pop-up is open (the user's call, 2026-11-08), back on closing.
+  const video = open && shown.some((m) => hasVideo(m.reply))
+  useEffect(() => (video ? hushGame() : undefined), [video])
   return (
     <Modal
       open={open}

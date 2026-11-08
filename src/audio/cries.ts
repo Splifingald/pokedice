@@ -22,6 +22,16 @@ let busy = false
 // The latest `start`: a play() promise from an earlier one (a cry cut off) is no news.
 let current = 0
 
+let hushed = false
+/** No cry while `on` (src/audio/hush.ts): the one playing stops, the one waiting is dropped. */
+export function setCriesHushed(on: boolean) {
+  hushed = on
+  if (!on) return
+  waiting = null
+  busy = false
+  player?.pause()
+}
+
 export function setCriesEnabled(on: boolean) {
   enabled = on
   if (on) return
@@ -88,7 +98,7 @@ function start(a: HTMLAudioElement, url: string, rate = 1) {
  * F4a).
  */
 export function playCry(dex: number, { wait = false, rate = 1 }: { wait?: boolean; rate?: number } = {}) {
-  if (!enabled) return
+  if (!enabled || hushed) return
   const url = cryUrl(dex)
   const a = url && element()
   if (!a) return

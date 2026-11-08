@@ -1,7 +1,7 @@
 // Global messages (docs/69): the game tells the server how many badges the player holds (broadcast_claim, with the
 // device), the server writes the player's copy of each message their badges reach, and it pops up on Home only, under
 // its own title: the words with their links (blue, underlined, a new tab), a YouTube video played in the message, and
-// the gift for everyone, opened into the save. My messages keeps it. Nothing is asked while the switch is off.
+// the gift for everyone, opened into the save. My messages keeps it. No switch (the user's call, 2026-11-08).
 import { expect, test, type Page } from '@playwright/test'
 import { EVENTS_ON, FAST, makeSave, mockSupabase, SUPABASE } from './helpers'
 
@@ -10,11 +10,11 @@ const TITLE = 'The 3.0 trailer is here!'
 const BODY =
   'Read the notes on https://example.com/notes.\n\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ\n\nHave fun!'
 
-/** The switches for everyone (both ship off): global messages and the gifts. */
-async function switches(page: Page, broadcasts: 'all' | 'off') {
+/** The gifts on for everyone (they ship off). Global messages have no switch (the user's call, 2026-11-08). */
+async function giftsOn(page: Page) {
   await page.addInitScript(
     (cfg) => localStorage.setItem('pokedice.devConfig', cfg),
-    JSON.stringify({ ...EVENTS_ON, gifts: { access: 'all' }, broadcasts: { access: broadcasts } }),
+    JSON.stringify({ ...EVENTS_ON, gifts: { access: 'all' } }),
   )
 }
 
@@ -93,7 +93,7 @@ test('a global message pops up on Home with its links, its video and its gift, o
   page,
 }) => {
   await mockSupabase(page)
-  await switches(page, 'all')
+  await giftsOn(page)
   const { asks, opened } = await server(page)
   await load(page)
 
@@ -147,7 +147,7 @@ test('a global message pops up on Home with its links, its video and its gift, o
 
 test('it waits off Home, and comes on the way back', async ({ page }) => {
   await mockSupabase(page)
-  await switches(page, 'all')
+  await giftsOn(page)
   let release = () => {}
   const hold = new Promise<void>((r) => (release = r))
   const { asks } = await server(page, hold)
@@ -160,15 +160,4 @@ test('it waits off Home, and comes on the way back', async ({ page }) => {
   await expect(page.getByRole('dialog', { name: TITLE })).toHaveCount(0)
   await page.getByRole('link', { name: 'Home', exact: true }).click()
   await expect(page.getByRole('dialog', { name: TITLE })).toBeVisible({ timeout: 10_000 })
-})
-
-test('the switch off: nothing is asked, nothing pops up', async ({ page }) => {
-  await mockSupabase(page)
-  await switches(page, 'off')
-  const { asks } = await server(page)
-  await load(page)
-  await expect(page.getByRole('button', { name: 'Your trainer menu' })).toBeVisible()
-  await page.waitForTimeout(1500)
-  expect(asks).toHaveLength(0)
-  await expect(page.getByRole('dialog', { name: TITLE })).toHaveCount(0)
 })

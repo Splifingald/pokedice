@@ -1,8 +1,8 @@
 // Admin › Messages › Global messages (docs/69): one message for every player, or only those holding so many badges
 // (every region's together), with a title, words (addresses become links, a YouTube address alone on its line the
 // video) and gifts if you like. The server writes each player's copy when their game asks (migration 0143,
-// broadcast_claim), and it pops up on Home. Its switch sits here, as the gifts' does; a message can be stopped (no one
-// new gets it) or deleted (every copy goes).
+// broadcast_claim), and it pops up on Home. No switch: a message goes to every player it reaches as soon as it's sent
+// (the user's call, 2026-11-08). It can be stopped (no one new gets it) or deleted (every copy goes).
 import { useCallback, useEffect, useState } from 'react'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
@@ -19,8 +19,7 @@ import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
 import { GiftEditor, GiftList } from './GiftEditor'
-import { useConfigRow } from './sections/ConfigSection'
-import { AccessSwitch, inputCls, NumInput } from './widgets'
+import { inputCls, NumInput } from './widgets'
 
 async function client() {
   const c = await getSupabase()
@@ -61,29 +60,6 @@ export function audienceLabel(min: number, max: number | null): string {
   if (max == null) return min === 0 ? 'Every player' : `${b(min)} or more`
   if (min === max) return `Exactly ${b(min)}`
   return `${min} to ${b(max)}`
-}
-
-/** The switch, where the messages are written: Off by default, saved with Save changes. */
-export function BroadcastsSwitch() {
-  const [cfg, setCfg] = useConfigRow('broadcasts')
-  const access = cfg?.access ?? 'off'
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-lg">Global messages</span>
-      <AccessSwitch
-        value={access}
-        onChange={(a) => setCfg({ ...cfg, access: a })}
-        label="Global messages: who gets them"
-      />
-      <span className="text-base text-muted">
-        {access === 'all'
-          ? 'Every player the message’s badges reach gets it, on Home.'
-          : access === 'admin'
-            ? 'Only you get them (to try one first): no player is sent anything.'
-            : 'Off: nobody is sent anything; the messages wait here until you switch this on.'}
-      </span>
-    </div>
-  )
 }
 
 /** The form: title, words, badges, gifts, and how the player will see it. */
@@ -312,7 +288,7 @@ function BroadcastCard({
   )
 }
 
-/** The section: the switch, the form, and every message sent, newest first. */
+/** The section: the form, and every message sent, newest first. */
 export function BroadcastsPanel() {
   const [rows, setRows] = useState<BroadcastRow[] | null>(null)
   const [stats, setStats] = useState<Record<number, Stats>>({})
@@ -364,11 +340,11 @@ export function BroadcastsPanel() {
           {writing ? 'Close the form' : 'Write one'}
         </PixelButton>
       </div>
-      <BroadcastsSwitch />
       <p className="text-base leading-snug text-muted">
         One message for every player, or for those with so many badges (every region’s together). Each player
         who qualifies gets their copy the next time their game asks (on load, on the way to Home, at most
-        every 10 minutes), and it pops up on Home. Gifts need the Gifts switch above.
+        every 10 minutes), and it pops up on Home. No switch: a message goes out as soon as you send it. Gifts
+        need the Gifts switch above.
       </p>
       {writing && (
         <Composer

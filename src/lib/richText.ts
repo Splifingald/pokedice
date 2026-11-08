@@ -118,3 +118,7 @@ export function richBlocks(text: string, { videos = true }: { videos?: boolean }
   flush()
   return blocks
 }
+
+/** The words hold a video (a YouTube address alone on its line): its pop-up silences the game (docs/69). */
+export const hasVideo = (text: string | null | undefined): boolean =>
+  !!text && richBlocks(text).some((b) => b.kind === 'video')

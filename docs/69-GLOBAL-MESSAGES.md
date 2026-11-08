@@ -8,9 +8,9 @@ The ask, 2026-11-08, three parts:
    included) displayed on the home page, with custom title, text and potential reward for all."
 3. "Let's also add the possibility to include embedded YouTube videos inside the pop-up."
 
-**Status (2026-11-08): built** on `claude/elegant-bell-v3kqyh` (from `version/2_9_6`). Global messages sit behind their
-own switch, **Off**. Links and videos in the developer's words need no switch: they only change how words already sent
-look (docs/15 §20, "a purely visual change"). Migration `0143_broadcasts.sql`.
+**Status (2026-11-08): built** on `claude/elegant-bell-v3kqyh` (from `version/2_9_6`). The user's calls the same day: **no
+switch at all, no rules or INFO, the game's sound cut while a pop-up with a video is open, no patch note** (exceptions to
+docs/15 §20 and to the patch-note rule). Migration `0143_broadcasts.sql`.
 
 ## 1. Links and videos (every developer's message)
 
@@ -40,14 +40,15 @@ look (docs/15 §20, "a purely visual change"). Migration `0143_broadcasts.sql`.
 | Badges counted | A guest: the game's count. A signed-in player: their **trainer card's** badges when the server has it (what Trades reads), else the game's |
 | Extreme mode | Not asked from the Extreme save (its badges aren't the player's own count); a gift waits for the main game as every message's does |
 | Stop / delete | **Stop**: no one new gets it, every copy stays. **Delete**: the message and every copy go |
-| Rules and INFO (§20) | **None**, as a welcome back (docs/58): it is a developer's message that says everything on its face |
+| Rules and INFO (§20) | **None** (the user's call, 2026-11-08), as a welcome back (docs/58): it is a developer's message that says everything on its face |
+| Sound | While a pop-up holding a video is open (any developer's message, a global one or not), **the game is silent**: effects, cries and music (`hushGame`, src/audio/hush.ts: the shared audio context suspended, no cry played). Closing it brings the sound back. My messages doesn't hush: the player starts a video there on purpose |
 | One language | The words are shown as the admin writes them |
 
-### The switch
+### No switch
 
-Admin › Messages › **Global messages**: Off / On for admin / On for everyone, **Off by default**, saved with Save
-changes (beside the Gifts switch, as the gifts keep theirs there). The server checks it in `broadcast_claim`: Off,
-nothing is written; On for admin, only the admin gets copies (to try one on themselves first).
+The user's call (2026-11-08): **no switch** — a message reaches every player in its range as soon as it is sent (Send to
+players asks for a confirm naming who first), and the server writes copies for anyone who asks. The file's first
+version had one: running this version deletes its game_config row and `broadcasts_open()`.
 
 ### The admin
 
@@ -64,13 +65,14 @@ GLOBAL MESSAGE.
   (0048's check, no Heart Scales), `active`.
 - `feedback.broadcast_id` (on delete cascade): a player's copy. One per account (a unique index), one per guest device
   (the claim's lock). Only the claim or the admin writes one (`feedback_broadcast_stamp` clears it on a player's insert).
-- `broadcast_claim(p_device_id, p_badges) returns int`: refuses `broadcasts_off`; moves a guest's copies on this device
+- `broadcast_claim(p_device_id, p_badges) returns int`: moves a guest's copies on this device
   into their account the first time they ask signed in (one the account has already wins); counts the badges (the card,
   else the game's word, held to 0–999); writes the caller's copy of every active message in range they don't have, and
   returns how many.
 - `my_feedback()` adds `broadcast` (the copy of a global message).
 - `broadcast_stats()`: the admin's numbers.
-- configVersion + 1. Safe to run again. `supabase/seed.sql` doesn't inline it.
+- No switch: deletes game_config `broadcasts` and drops `broadcasts_open()` where the first version ran. Safe to run
+  again. `supabase/seed.sql` doesn't inline it.
 
 ## 4. Setting it up
 
@@ -78,14 +80,14 @@ GLOBAL MESSAGE.
    it):
    <https://github.com/Splifingald/pokedice/blob/claude/elegant-bell-v3kqyh/supabase/migrations/0143_broadcasts.sql>
 2. Admin › Messages: the **Gifts** switch on, if the message carries a gift.
-3. Admin › Messages › Global messages: **On for admin**, **Save changes**, write one and go to Home in the game: it pops
-   up for you only. Then **On for everyone** and Save changes.
+3. Admin › Messages › Global messages › **Write one**: it goes to every player in range as soon as you send it (no
+   switch), so check it with **Preview** first.
 
 ## 5. Tests
 
 - `tests/rich-text.test.ts`: links (www., punctuation, brackets, line breaks, only http(s)), every YouTube form and start
   time, other sites and odd ids refused, the no-cookie frame, a video only alone on its line.
-- `tests/broadcasts-sql.test.ts` (PGlite, 0019/0025/0028/0048/0103/0143): the switch (Off, admin only), the device id,
+- `tests/broadcasts-sql.test.ts` (PGlite, 0019/0025/0028/0048/0103/0143): no switch (everyone, the first version's row and function gone), the device id,
   each message in range once, a new badge bringing more, odd counts held, the engine and SQL agreeing on the ranges,
   stop and delete, the form's limits (range, words, no Heart Scales), the trainer card counted for an account, a guest's
   copies following them into their account with no second one, the gift opened once, a player's forged copy stripped,
@@ -94,5 +96,6 @@ GLOBAL MESSAGE.
 - `tests/daybreak.test.ts`: the `link` blue at 4.5:1 on every surface, both themes and both scopes.
 - `e2e/broadcasts.spec.ts`: the pop-up on Home (asked with the badges, the link blue, underlined, in a new tab, the video
   from the no-cookie host, the gift opened into the save, My messages keeping it); it waits off Home and comes on the
-  way back; nothing asked with the switch off.
+  way back.
+- `tests/hush.test.ts`: the shared context suspended and no sound or cry while held, holds stacking, back on release.
 - `/kitchen-sink`: "Links and videos in the developer's words, and global messages" (`BroadcastBits`).

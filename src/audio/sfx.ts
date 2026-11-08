@@ -23,12 +23,24 @@ export function setSfxEnabled(on: boolean) {
   enabled = on
 }
 
+let hushed = false
+/**
+ * Every sound made on the shared context (the effects, the battle music) stops while `on`: the context is suspended,
+ * and nothing new asks for it. Off, it picks up where it was (src/audio/hush.ts).
+ */
+export function setSfxHushed(on: boolean) {
+  hushed = on
+  if (!ctx) return
+  if (on) void ctx.suspend()
+  else if (ctx.state === 'suspended') void ctx.resume()
+}
+
 /**
  * The one AudioContext every sound shares; null while sound is off. The battle music (src/audio/music.ts) asks
  * `always`: it checks the Sound setting itself, and a fight resumed on load starts before App has applied it here.
  */
 export function audio(always = false): AudioContext | null {
-  if ((!enabled && !always) || typeof window === 'undefined') return null
+  if ((!enabled && !always) || hushed || typeof window === 'undefined') return null
   try {
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AC) return null
