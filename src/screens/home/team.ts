@@ -55,11 +55,14 @@ export class Mon {
   target: { x: number; y: number } | null = null
   plan: 'meet' | null = null
   readonly tired: boolean
-  readonly water: boolean
+  /** Swims in the pond (a water type, where there is one); ashore when the pond lies under the roof. */
+  water: boolean
   singer = false
   readonly speed: number
   readonly hop: number
   readonly sz: { w: number; h: number }
+  /** The scene's top that something covers (Home's area banner), in art pixels: it keeps its head under it. */
+  roof = -Infinity
 
   constructor(def: MonDef, r: Rng, world: World) {
     this.def = def
@@ -74,6 +77,12 @@ export class Mon {
     this.hop = this.water ? 0 : def.w < 50 ? 4 : def.w < 70 ? 2 : 1
   }
 
+  /** The highest its feet may go: the walk's top, or low enough that its head clears the roof (but never off the walk). */
+  top(world: World) {
+    const { y0, y1 } = world.walk
+    return clamp(this.roof + this.sz.h, y0, Math.max(y0, y1))
+  }
+
   get free() {
     return this.state === 'idle' && !this.with
   }
@@ -82,7 +91,8 @@ export class Mon {
   }
 
   spot(world: World, others: Mon[] = []) {
-    const { x0, x1, y0, y1 } = world.walk
+    const { x0, x1, y1 } = world.walk
+    const y0 = this.top(world)
     for (let i = 0; i < 48; i++) {
       let x: number
       let y: number
@@ -110,7 +120,8 @@ export class Mon {
 
   /** A short stroll from where it stands. */
   wander(world: World, mons: Mon[]) {
-    const { x0, x1, y0, y1 } = world.walk
+    const { x0, x1, y1 } = world.walk
+    const y0 = this.top(world)
     for (let i = 0; i < 12; i++) {
       if (this.water) {
         const p = this.spot(world, mons)
@@ -141,7 +152,7 @@ export class Mon {
         world.walk.x0 + land.sz.w * 0.3,
         world.walk.x1 - land.sz.w * 0.3,
       )
-      const ly = clamp(p.y + Math.sin(a) * (p.ry + 11), world.walk.y0, world.walk.y1)
+      const ly = clamp(p.y + Math.sin(a) * (p.ry + 11), land.top(world), world.walk.y1)
       if (inPond(world, lx, ly, land.sz.w * 0.45) || !pathClear(world, land, lx, ly)) return false
       sea.goTo(p.x + Math.cos(a) * p.rx * 0.45, p.y + Math.sin(a) * p.ry * 0.45 + 4, 'meet')
       land.goTo(lx, ly, 'meet')
@@ -150,7 +161,7 @@ export class Mon {
       const side = this.x < friend.x ? -1 : 1
       let x = friend.x + side * gap
       if (x < world.walk.x0 || x > world.walk.x1) x = friend.x - side * gap
-      const y = clamp(friend.y + this.r.range(-3, 3), world.walk.y0, world.walk.y1)
+      const y = clamp(friend.y + this.r.range(-3, 3), this.top(world), world.walk.y1)
       if (inPond(world, x, y, this.sz.w * 0.5) || !pathClear(world, this, x, y)) return false
       this.goTo(x, y, 'meet')
       friend.state = 'wait'
@@ -315,6 +326,30 @@ export class Herd {
     ;[...this.mons]
       .sort((a, b) => Number(b.water) - Number(a.water))
       .forEach((m) => Object.assign(m, m.spot(world, this.mons)))
+  }
+
+  /**
+   * Something now covers the scene down to `y` (art pixels): Home's area banner. Each keeps its head under it from now
+   * on; one already standing too high steps down (at once while the scene first shows, so nobody starts hidden).
+   */
+  setRoof(y: number) {
+    const pond = this.world.pond
+    for (const m of this.mons) {
+      m.roof = y
+      // A swimmer whose head would stay under the roof even at the pond's near edge comes ashore.
+      if (m.water && pond && pond.y + pond.ry * 0.6 + 4 - m.sz.h < y) {
+        m.water = false
+        const p = m.spot(this.world, this.mons)
+        if (this.t < 0.5) Object.assign(m, p)
+        else m.goTo(p.x, p.y)
+        continue
+      }
+      if (m.water) continue
+      const top = m.top(this.world)
+      if (m.y >= top) continue
+      if (this.t < 0.5) m.y = top
+      else if (m.state === 'idle' && !m.with) m.goTo(m.x, top + 2)
+    }
   }
 
   private emit(kind: keyof typeof FLOAT, x: number, y: number, t0: number, col?: string) {

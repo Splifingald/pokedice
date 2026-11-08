@@ -621,7 +621,9 @@ Players shouldn't have to make many requests:
   steps across its whole width** (`RoundGauge banner`: met gold, the rest grey, the hearts, "round/total"; the rounds as
   pips where encounters aren't dealt from a deck); NEW when
   a secret area opened; shut by the nightmare with its reason), which opens the Areas sheet. On a phone the scene shows
-  **about 70 % of its height** (`SCENE_SHOWN`), its window kept on where the team walks. Under it one notice, then
+  **about 70 % of its height** (`SCENE_SHOWN`), its window kept on where the team walks. **The team keeps its heads under the banner** (`SceneStage cover`, as under
+  the area screen's plate): a tall one walks lower, a swimmer whose pond lies under it comes ashore (the user's report,
+  2026-11-08). Under it one notice, then
   Events (the region's **legendary raids open now first**, as cards of their own, then a small world, the live events
   and the rest), Secret areas and Features as Home's one card (`HomeCard`: the picture as a strip on the left, the name,
   one status line, a thin gauge where time or progress runs; gold for one new thing), then the "Coming up" line. The
