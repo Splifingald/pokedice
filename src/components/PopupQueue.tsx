@@ -39,7 +39,7 @@ import { OutfitRulesPopup } from './Outfit'
 import { PushService } from './PushService'
 import { SupportPopup, useDonationReady } from './SupportModal'
 import { RaidGiftPopup } from './RaidGiftPopup'
-import { ReplyPopup, useRepliesWaiting } from './ReplyPopup'
+import { BroadcastPopup, ReplyPopup, useRepliesWaiting } from './ReplyPopup'
 import { TradesService } from './trades/TradesService'
 
 /**
@@ -52,6 +52,7 @@ const FOLLOWS_AT_ONCE = new Set<OneTimePopup>([
   'away',
   'offline',
   'replies',
+  'broadcast',
   'raidGifts',
   'inviteReward',
   'push',
@@ -70,6 +71,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const awayReport = useAwayReport((s) => !!s.report)
   const offlineReport = useOfflineReport((s) => !!s.report)
   const replies = useRepliesWaiting()
+  const broadcast = useRepliesWaiting(true)
   const raidGifts = useRaidGifts((s) => s.gifts.length > 0)
   const inviteReward = useInviteRewardWaiting()
   const asking = usePush((s) => !!s.asking)
@@ -115,6 +117,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
         awayReport,
         offlineReport,
         replies,
+        broadcast,
         raidGifts,
         inviteReward,
         pushAsking: asking && pushReady(data),
@@ -136,6 +139,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       awayReport,
       offlineReport,
       replies,
+      broadcast,
       raidGifts,
       inviteReward,
       asking,
@@ -173,6 +177,7 @@ export function OneTimePopups() {
       <OfflineReportModal />
       <DayCareNotice />
       <ReplyPopup />
+      <BroadcastPopup />
       <RaidGiftPopup />
       <GiftService />
       <ExtremeUnlockPopup />

@@ -10,6 +10,7 @@ import { FEEDBACK_MESSAGE_MAX, type FeedbackRow } from '@/lib/feedback'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { pushToast, useGame } from '@/store/game'
 import { cx } from '@/theme/util'
+import { BroadcastsPanel } from '../Broadcasts'
 import { GiftEditor, GiftList, GiftsSwitch } from '../GiftEditor'
 
 export async function client() {
@@ -144,7 +145,11 @@ export function MessageCard({
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h3 className="min-w-0 break-words text-2xl leading-none">
           {!m.read && <span className="mr-2 text-base text-danger">NEW</span>}
-          {mine && <span className="mr-2 bg-sky px-1 text-base text-ink shadow-ring-line">FROM YOU</span>}
+          {mine && (
+            <span className="mr-2 bg-sky px-1 text-base text-ink shadow-ring-line">
+              {m.broadcast_id ? 'GLOBAL MESSAGE' : 'FROM YOU'}
+            </span>
+          )}
           {m.title}
         </h3>
         <span className="ml-auto text-base text-muted">{when(m.created_at)}</span>
@@ -243,13 +248,15 @@ export function MessagesSection() {
   const load = useCallback(async () => {
     setError(null)
     try {
-      const { data, error } = await (
-        await client()
-      )
-        .from('feedback')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1000)
+      const c = await client()
+      // Not the players' copies of a global message (one per player): those are counted under Global messages.
+      const list = (copies: boolean) => {
+        const q = c.from('feedback').select('*')
+        return (copies ? q : q.is('broadcast_id', null)).order('created_at', { ascending: false }).limit(1000)
+      }
+      let { data, error } = await list(false)
+      // Before 0143 there is no such column, and no copy to leave out.
+      if (error?.message.includes('broadcast_id')) ({ data, error } = await list(true))
       if (error) throw error
       setRows((data ?? []) as FeedbackRow[])
     } catch (e) {
@@ -307,6 +314,7 @@ export function MessagesSection() {
           player). Saved with Save changes.
         </p>
       </div>
+      <BroadcastsPanel />
 
       {error ? (
         <div className="pixel-panel flex flex-col gap-2 p-4">

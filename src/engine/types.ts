@@ -1337,6 +1337,12 @@ export interface GameConfig {
   inviteRewards: InviteRewardsConfig
   /** Welcome-back gifts (docs/58): their switch, the cooldown and the tiers. The server reads the same row (0103). */
   welcomeBack: WelcomeBackConfig
+  /**
+   * Global messages (docs/69): the developer's message to every player, or those with so many badges, popping up on
+   * Home. Their switch; the messages themselves are rows of `broadcasts`, written in Admin › Messages. The server reads
+   * the same row (0143).
+   */
+  broadcasts: { access: EventAccess }
   /** Push notifications (docs/27): their switch, a game_config row of its own that seeding never writes. */
   push: PushConfig
   /** The areas' portal run (docs/28): its switch. The server reads the same row (0057). */

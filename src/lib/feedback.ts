@@ -39,6 +39,8 @@ export interface FeedbackRow {
   gifts?: Gift[] | null
   /** When the player opened the gifts. */
   gifts_claimed_at?: string | null
+  /** A player's copy of a global message (docs/69, migration 0143); null for every other message. */
+  broadcast_id?: number | null
 }
 
 /** One of the player's own messages, as my_feedback() returns it. */
@@ -55,6 +57,8 @@ export interface MyMessage {
   /** The gifts it carries, as the server sent them (engine/gifts.ts parses them); none while the switch is off. */
   gifts?: unknown
   gifts_claimed?: boolean
+  /** A global message (docs/69, migration 0143): the developer wrote it to every player; it pops up on Home. */
+  broadcast?: boolean
 }
 
 /** Answers the player hasn't seen yet, oldest first. */

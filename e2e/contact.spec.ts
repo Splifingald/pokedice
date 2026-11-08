@@ -130,7 +130,7 @@ test('admin → Messages lists what players sent, and marks one read', async ({ 
   )
   await page.goto('/admin/messages')
 
-  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Messages', exact: true })).toBeVisible()
   await expect(page.getByText('2 total · 1 unread')).toBeVisible()
   await expect(page.getByText('Leaf · guest abcdef12')).toBeVisible()
   await expect(page.getByText('Blue · blue@example.com')).toBeVisible()

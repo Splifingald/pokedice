@@ -91,6 +91,8 @@ export const THEMES = {
     'dialog-ring': '#cfe0f4',
     /** A golden name ("I am just rich", docs/25): a deep gold that still reads 4.8:1 on every light surface. */
     rich: '#8a5a00',
+    /** A link in a message's words (docs/15 §23): a blue that reads 5.4:1 on every light surface, always underlined. */
+    link: '#1d4ed8',
   },
   dark: {
     parchment: '#10172a',
@@ -120,6 +122,7 @@ export const THEMES = {
     dot: '#1a2238',
     'dialog-ring': '#35507e',
     rich: PALETTE.gold,
+    link: '#8ab4ff',
   },
 } as const satisfies Record<'light' | 'dark', Record<string, string>>
 
@@ -158,6 +161,7 @@ export const SCOPES = {
     dot: '#1a0c2c',
     'dialog-ring': '#6b2fc4',
     rich: PALETTE.gold,
+    link: '#a9c4ff',
   },
   // Darkrai's nightmare (docs/30, docs/15 §29): a moonlit night of deep blues, its area raid's page and pop-ups.
   nightmare: {
@@ -188,6 +192,7 @@ export const SCOPES = {
     dot: '#141a3a',
     'dialog-ring': '#5a3aa8',
     rich: PALETTE.gold,
+    link: '#a9c4ff',
   },
 } as const satisfies Record<string, Record<keyof (typeof THEMES)['light'], string>>
 

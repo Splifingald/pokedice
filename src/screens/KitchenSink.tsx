@@ -68,6 +68,7 @@ import { TracksBits } from './kitchen/TracksBits'
 import { GiftBits } from './kitchen/GiftBits'
 import { InviteBits } from './kitchen/InviteBits'
 import { WelcomeBackBits } from './kitchen/WelcomeBackBits'
+import { BroadcastBits } from './kitchen/BroadcastBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
 import { GiftCardBits } from './kitchen/GiftCardBits'
@@ -746,6 +747,10 @@ export function KitchenSink() {
 
       <Section title="Welcome back: the developer's message on a return (the pop-up, its words per tier, My messages in every state, INFO, the rules, the opening)">
         <WelcomeBackBits />
+      </Section>
+
+      <Section title="Links and videos in the developer's words, and global messages: the pop-up on Home (alone with a video and a gift, links, the gift waiting, two at once), My messages (docs/69)">
+        <BroadcastBits />
       </Section>
 
       <Section title="Support me: the developer's asks (Discord, invite, Ko-fi), with and without a Discord link">

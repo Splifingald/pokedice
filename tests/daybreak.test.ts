@@ -101,6 +101,13 @@ describe('themes', () => {
     expect(THEMES.light.muted).toBe(PALETTE.muted)
   })
 
+  it('keeps a message’s links readable in both themes and every scope: 4.5:1 on every surface (docs/15 §23)', () => {
+    for (const T of [THEMES.light, THEMES.dark, SCOPES.distortion, SCOPES.nightmare]) {
+      const surfaces = [T.parchment, T.panel, T.paper, T.well, T.sky, T.cream, T.sand, T['gold-pale'], T.rose]
+      for (const bg of surfaces) expect(contrast(T.link, bg), `${T.link} on ${bg}`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
   it('gives both themes the same tokens', () => {
     expect(Object.keys(THEMES.dark).sort()).toEqual(Object.keys(THEMES.light).sort())
   })

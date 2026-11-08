@@ -75,6 +75,7 @@ describe('the one-time pop-ups queue', () => {
       'away',
       'offline',
       'replies',
+      'broadcast',
       'raidGifts',
       'regionOffer',
       'extreme',
@@ -92,6 +93,15 @@ describe('the one-time pop-ups queue', () => {
       'push',
       'donation',
     ])
+  })
+
+  it('shows a global message (docs/69) on Home only, right after the developer’s answers', () => {
+    const save = start()
+    expect(nextOneTimePopup(save, on, { ...HOME, broadcast: true })).toBe('broadcast')
+    expect(nextOneTimePopup(save, on, { ...HOME, broadcast: true, replies: true })).toBe('replies')
+    expect(nextOneTimePopup(save, on, { ...HOME, path: '/area', broadcast: true })).toBeNull()
+    expect(nextOneTimePopup(save, on, { ...HOME, path: '/team', broadcast: true, replies: true })).toBe('replies')
+    expect(nextOneTimePopup(save, on, { ...HOME, calm: false, broadcast: true })).toBeNull()
   })
 
   it('has nothing to show a new game, or without a save', () => {

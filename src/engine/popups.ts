@@ -64,6 +64,8 @@ export interface PopupContext {
   offlineReport?: boolean
   /** The developer's answers, or gifts in their messages, not seen or opened yet. */
   replies?: boolean
+  /** A global message (docs/69), or its gift, not seen or opened yet: it pops up on Home. */
+  broadcast?: boolean
   /** Gifts friends' raids left, collected and not shown yet. */
   raidGifts?: boolean
   /** An invite reward is ready to open, and wasn't put off this visit. */
@@ -111,6 +113,8 @@ const QUEUE = {
   offline: { due: (_s, _d, c) => !!c.offlineReport },
   /** The developer's answers (and the gifts they carry). */
   replies: { due: (_s, _d, c) => !!c.replies },
+  /** A global message (docs/69) and its gift: on Home only, as the user asked. */
+  broadcast: { due: (_s, _d, c) => !!c.broadcast, away: (p) => p !== '/home' },
   /** What friends' raids left the player. */
   raidGifts: { due: (_s, _d, c) => !!c.raidGifts },
   /** The next region, once its league is won: only Home shows it (the Areas sheet's regions are there). */

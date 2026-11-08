@@ -23,6 +23,7 @@ import { cx } from '@/theme/util'
 import { GiftOpened, GiftPresent } from './Gifts'
 import { Sheet } from './Sheet'
 import { PixelButton } from './PixelButton'
+import { RichText } from './RichText'
 import { useWelcomeWords } from './WelcomeBack'
 
 const when = (iso: string) =>
@@ -30,7 +31,8 @@ const when = (iso: string) =>
 
 /**
  * The developer's answer to a message, framed so it reads apart from what the player wrote; or, `fromDev`, the message
- * the developer wrote first.
+ * the developer wrote first. Its addresses are links, and a YouTube address on a line of its own is the video
+ * (`RichText`).
  */
 export function ReplyBox({ reply, at, fromDev }: { reply: string; at: string | null; fromDev?: boolean }) {
   const { t } = useT()
@@ -55,7 +57,9 @@ export function ReplyBox({ reply, at, fromDev }: { reply: string; at: string | n
         <b>{t(league ? 'ui.league.title' : fromDev ? 'ui.contact.fromDev' : 'ui.contact.answer')}</b>
         {at && <span className="text-base text-muted">{when(at)}</span>}
       </p>
-      <p className="copy mt-1 whitespace-pre-wrap break-words text-lg leading-snug">{words}</p>
+      <div className="mt-1">
+        <RichText text={words} className="text-lg leading-snug" />
+      </div>
     </div>
   )
 }

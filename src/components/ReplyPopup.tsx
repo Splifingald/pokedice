@@ -3,13 +3,16 @@
 // (engine/popups.ts: after Prof. Oak's tutorials). A message carrying a gift (docs/15 §23) shows it under the words, and
 // pops up until it's opened: closing the message opens it (the rules first, the first time). Closing marks the answers
 // seen; they stay in Contact the developer → My messages. A welcome back (docs/58) is such a message, written by the
-// server when a player returns after days away: it comes the same way.
+// server when a player returns after days away: it comes the same way. A global message (docs/69) is one too, but it
+// takes its own turn, on Home only (BroadcastPopup), with its own title.
 import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { giftsWait, parseGifts, WELCOME_BACK_TITLE, type GiftsWait } from '@/engine'
 import { useT } from '@/i18n/react'
 import { unopenedGifts, unseenReplies, useInbox, type MyMessage } from '@/lib/feedback'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { LEAGUE_REWARD_TITLE } from '@/lib/versusLeague'
+import { askBroadcasts } from '@/store/broadcasts'
 import { requestGifts, useGiftMoment } from '@/store/gifts'
 import { useGame } from '@/store/game'
 import { useCloudSync } from '@/store/sync'
@@ -23,8 +26,12 @@ import { useMyTurn, useOnScreen } from './popupTurn'
 const AGAIN_MS = 5 * 60_000
 let lastLoad = 0
 
-/** What pops up: the answers not seen yet, and the messages whose gift isn't opened (where gifts open), oldest first. */
-function toShow(messages: MyMessage[], later: readonly number[], giftsHere: boolean): MyMessage[] {
+/**
+ * What pops up: the answers not seen yet, and the messages whose gift isn't opened (where gifts open), oldest first.
+ * `broadcast`: the global messages only (their own turn, on Home); otherwise every other message.
+ */
+function toShow(all: MyMessage[], later: readonly number[], giftsHere: boolean, broadcast = false): MyMessage[] {
+  const messages = all.filter((m) => !!m.broadcast === broadcast)
   const unseen = unseenReplies(messages)
   // Gifts not opened yet pop up again until they are, where they can open (and not put off this visit).
   const gifted = giftsHere ? unopenedGifts(messages).filter((m) => !later.includes(m.id)) : []
@@ -33,12 +40,12 @@ function toShow(messages: MyMessage[], later: readonly number[], giftsHere: bool
   )
 }
 
-/** Something is waiting to pop up: the queue's `replies` (engine/popups.ts). */
-export function useRepliesWaiting(): boolean {
+/** Something is waiting to pop up: the queue's `replies`, or (`broadcast`) its `broadcast` (engine/popups.ts). */
+export function useRepliesWaiting(broadcast = false): boolean {
   const messages = useInbox((s) => s.messages)
   const later = useInbox((s) => s.later)
   const giftsHere = useGame((s) => !!s.save && giftsWait(s.save, s.data) === null)
-  return !!messages && toShow(messages, later, giftsHere).length > 0
+  return !!messages && toShow(messages, later, giftsHere, broadcast).length > 0
 }
 
 export function ReplyPopup() {
@@ -74,7 +81,6 @@ export function ReplyPopup() {
   }, [])
 
   const giftsHere = wait === null
-  const unseen = messages ? unseenReplies(messages) : []
   const shown = messages ? toShow(messages, later, giftsHere) : []
   const giftOf = (m: MyMessage) => (wait === 'off' || m.gifts_claimed ? [] : parseGifts(m.gifts))
   const toOpen = giftsHere ? shown.filter((m) => giftOf(m).length > 0) : []
@@ -82,7 +88,58 @@ export function ReplyPopup() {
   useOnScreen('replies', open)
 
   const close = () => {
-    markSeen(unseen.map((m) => m.id))
+    markSeen(shown.filter((m) => m.reply && !m.reply_seen).map((m) => m.id))
+    requestGifts(toOpen.map((m) => m.id))
+  }
+
+  return <ReplyModal open={open} shown={shown} wait={wait} opens={toOpen.length} onClose={close} />
+}
+
+/**
+ * The global messages (docs/69): the game asks the server for those the player is owed (once the player is known and
+ * their sync has settled, again with a new badge, on the way to Home and back to the tab, at most every 10 minutes
+ * otherwise: store/broadcasts.ts), and the ones not seen yet, or whose gift isn't opened, pop up on Home, on their turn
+ * in the one-time pop-ups' queue (right after the developer's answers). Closing marks them seen and opens their gifts;
+ * they stay in My messages.
+ */
+export function BroadcastPopup() {
+  const status = useGame((s) => s.auth.status)
+  const userId = useGame((s) => s.auth.userId)
+  const data = useGame((s) => s.data)
+  const hasSave = useGame((s) => !!s.save)
+  const path = useLocation().pathname
+  const messages = useInbox((s) => s.messages)
+  const later = useInbox((s) => s.later)
+  const markSeen = useInbox((s) => s.markSeen)
+  const turn = useMyTurn('broadcast')
+  const wait = useGame((s) => (s.save ? giftsWait(s.save, s.data) : 'off'))
+  // A signed-in player tells their badges once the sign-in's sync has brought their save, and their gifts wait for it.
+  const synced = useCloudSync((s) => s.settled)
+  const syncWait = status === 'signed_in' && !synced
+  const giftsBusy = useGiftMoment((s) => s.busy || !!s.opening)
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || status === 'unknown' || !hasSave || syncWait) return
+    void askBroadcasts()
+  }, [status, userId, data, hasSave, syncWait, path])
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    const onShow = () => {
+      if (document.visibilityState === 'visible') void askBroadcasts()
+    }
+    document.addEventListener('visibilitychange', onShow)
+    return () => document.removeEventListener('visibilitychange', onShow)
+  }, [])
+
+  const giftsHere = wait === null
+  const shown = messages ? toShow(messages, later, giftsHere, true) : []
+  const giftOf = (m: MyMessage) => (wait === 'off' || m.gifts_claimed ? [] : parseGifts(m.gifts))
+  const toOpen = giftsHere ? shown.filter((m) => giftOf(m).length > 0) : []
+  const open = shown.length > 0 && turn && !giftsBusy && !(toOpen.length > 0 && syncWait)
+  useOnScreen('broadcast', open)
+
+  const close = () => {
+    markSeen(shown.filter((m) => m.reply && !m.reply_seen).map((m) => m.id))
     requestGifts(toOpen.map((m) => m.id))
   }
 
@@ -114,17 +171,21 @@ export function ReplyModal({
   // The pop-up is the league's (or the return's), not the developer's: its title says it, so each message's doesn't.
   const league = all(LEAGUE_REWARD_TITLE)
   const welcome = !league && all(WELCOME_BACK_TITLE)
+  // One global message (docs/69) alone: its own title is the pop-up's.
+  const broadcast = shown.length === 1 && shown[0]!.broadcast ? shown[0]! : null
   const giftOf = (m: MyMessage) => (wait === 'off' || m.gifts_claimed ? [] : parseGifts(m.gifts))
   return (
     <Modal
       open={open}
       onClose={onClose}
       title={
-        welcome
-          ? name
-            ? t('ui.welcome.popupTitle', { name })
-            : t('ui.welcome.title')
-          : t(league ? 'ui.league.reward.popupTitle' : fromDev ? 'ui.contact.newsTitle' : 'ui.contact.replyTitle')
+        broadcast
+          ? broadcast.title
+          : welcome
+            ? name
+              ? t('ui.welcome.popupTitle', { name })
+              : t('ui.welcome.title')
+            : t(league ? 'ui.league.reward.popupTitle' : fromDev ? 'ui.contact.newsTitle' : 'ui.contact.replyTitle')
       }
     >
       <div className="flex flex-col gap-3">
@@ -144,7 +205,7 @@ export function ReplyModal({
             const gifts = giftOf(m)
             return (
               <li key={m.id} className="flex flex-col gap-1">
-                {!league && !welcome && (
+                {!league && !welcome && !broadcast && (
                   <p className="break-words text-xl leading-tight">{messageTitle(t, m.title)}</p>
                 )}
                 {m.reply && <ReplyBox reply={m.reply} at={m.replied_at} fromDev={m.from_admin} />}
