@@ -2,8 +2,9 @@
 // landing, shaking, calm, collapsed), a wall in every state (fresh, half dug with a thing half uncovered, the pickaxe
 // striking where it was tapped at full and short motion, a thing popping out, cleared, collapsing), the pickaxe die
 // (unrolled, rolled) and its faces (now, the next level's), orbs of every colour and size, plates, the haul (every
-// outcome), the plates grid (none, some), the orb bag, the solo price's warning and its confirmation, the team seats
-// (solo, two, full) and the rules.
+// outcome), a wall's end in the dig's footer (cleared; collapsed with its new gauge for a kit held, for one to buy,
+// short of ₽, the limit reached, or switched off), the plates grid (none, some), the orb bag, the solo price's warning
+// and its confirmation, the team seats (solo, two, full) and the rules.
 import { useState, type ReactNode } from 'react'
 import { DEFAULT_CONFIG, ORB_COLOURS, ORB_SIZES, type HaulLine, type Wall } from '@/engine'
 import { PixelButton } from '@/components/PixelButton'
@@ -22,12 +23,24 @@ import {
   UgSellModal,
   UgSoloWarning,
   UgWall,
+  UgWallEnd,
+  type UgRefreshOffer,
 } from '@/components/Underground'
 import { UgTeamSeats, UgTeamSheet } from '@/screens/events/UndergroundTeam'
 import { useUgTeams } from '@/store/ugTeams'
 import { useGame } from '@/store/game'
 
 const CFG = DEFAULT_CONFIG.underground
+
+/** A wall's end in every state: cleared, and collapsed with each new-gauge offer the engine can make (docs/34 §12). */
+const WALL_ENDS: [string, boolean, UgRefreshOffer][] = [
+  ['UgWallEnd: cleared', true, null],
+  ['UgWallEnd: collapsed, a kit held', false, { kind: 'kit', held: 2 }],
+  ['UgWallEnd: collapsed, no kit: buy one', false, { kind: 'buy', price: 1000, short: 0, soldOut: false }],
+  ['UgWallEnd: collapsed, short of ₽', false, { kind: 'buy', price: 1000, short: 350, soldOut: false }],
+  ['UgWallEnd: collapsed, the limit reached', false, { kind: 'buy', price: 1000, short: 0, soldOut: true }],
+  ['UgWallEnd: collapsed, the switch off', false, null],
+]
 
 function Frame({ name, children }: { name: string; children: ReactNode }) {
   return (
@@ -153,6 +166,25 @@ export function UndergroundBits() {
       <PixelButton size="sm" className="self-start" onClick={() => setFlash((k) => k + 1)}>
         Replay the strike and the collapse
       </PixelButton>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {WALL_ENDS.map(([name, cleared, offer]) => (
+          <div key={name} className="flex flex-col gap-1">
+            <span className="font-pixel-sm text-[16px] text-muted">{name}</span>
+            <div className="w-full max-w-[390px] bg-panel p-3 shadow-ring">
+              <UgWallEnd
+                cleared={cleared}
+                found={cleared ? 4 : 1}
+                n={4}
+                used={cleared ? 12 : 15}
+                offer={offer}
+                onRefresh={() => {}}
+                onHaul={() => {}}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
 
       <div className="flex flex-wrap items-end gap-4 bg-panel p-3 shadow-ring">
         <span className="grid justify-items-center gap-1">

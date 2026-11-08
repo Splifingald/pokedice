@@ -361,3 +361,29 @@ gives one or two. The admin sets the rate (the plate weight, the kit price, the 
    admin** to try it, **On for everyone** to open it. Under "Teams and orb prices", the share orbs sell for outside a
    full team (10 %; 0 = not at all). Save & Publish.
 3. Teams need players signed in and friends with each other; signed out, players dig solo.
+
+## 12. A collapsed wall's new gauge (2026-11-08)
+
+The user's ask: when a wall collapses, the player can spend another Explorakit on the same wall, or buy one right there
+if they hold none; the wall stays as it is and the gauge starts again.
+
+- **Its own switch** inside the Underground's row, `underground.refresh` (Off / On for admin / On for everyone, **Off
+  by default**; Admin → Live events → an Underground event → "A collapsed wall's new gauge"). It works only with the
+  Underground itself on. Kits live in the save (as buying them in the Mart does), so no server function reads it: the
+  row only gains the key (migration 0141).
+- **The rule** (engine, `refreshOffer` / `refreshWall`): the open wall collapsed, its haul not taken, the event
+  running. A kit held is spent (a free one first, its clock starting from the cap, as opening a wall does); with none,
+  one is bought on the spot at the Mart's price, within the per-player limit, and spent at once. The wall keeps its
+  layers and what it hides; `used` goes back to 0 and the strikes used so far add up in `wall.usedBefore` (the end
+  line counts them all). As many times as there are kits.
+- **What players see**: the dig's footer at the collapse (`UgWallEnd`, docs/15 §32): the gold DIG ON · USE A KIT (n)
+  or DIG ON · BUY A KIT ₽…, a line that only the gauge starts again, then SEE THE HAUL as before. Taking the haul ends
+  the wall, as before. INFO's wall row says a kit gives a collapsed wall a new gauge while the switch is on.
+- **Tests**: `tests/engine/underground.test.ts` (the switch, when it's offered, a kit held, a kit bought, the purse and
+  the limit, the haul after, the save's round trip); `tests/underground-sql.test.ts` (the row with the key, run twice).
+
+Setting it up: run
+https://github.com/Splifingald/pokedice/blob/claude/underground-wall-explorakit-fzr4o0/supabase/migrations/0141_underground_refresh.sql
+in the Supabase SQL editor (`supabase/seed.sql` carries it too, inlined; without it the game reads the switch as Off),
+then Admin → Live events → an Underground event → "A collapsed wall's new gauge": On for admin to try it, On for
+everyone to open it. Save & Publish.

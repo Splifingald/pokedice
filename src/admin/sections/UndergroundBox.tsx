@@ -98,6 +98,17 @@ export function UndergroundBox() {
       </Box>
 
       <Box
+        title="A collapsed wall's new gauge (switch)"
+        hint="Off by default. On: when a wall collapses, the player can spend another kit on it, or buy one right there at the Mart's price (within the limit per player). The wall stays as it is (layers, what it hides); only the gauge starts again. Kits live in the player's save, so no server function reads it."
+      >
+        <AccessSwitch
+          value={cfg.refresh}
+          onChange={(refresh) => set({ refresh })}
+          label="Who can give a collapsed wall a new gauge"
+        />
+      </Box>
+
+      <Box
         title="Explorakits"
         hint="One kit opens one wall. Sold in every region's Poké Mart while the event runs, never in a small world's. Unused kits are lost when the event ends."
       >

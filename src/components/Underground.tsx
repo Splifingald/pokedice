@@ -5,10 +5,12 @@ import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import {
   freeKitRules,
   orbsValue,
+  refreshOffer,
   soloShare,
   thingDone,
   thingTiles,
   ugCfg,
+  ugRefreshOn,
   wallRules,
   type GameData,
   type HaulLine,
@@ -526,6 +528,64 @@ export function ThingIcon({ thing, data, size = 40 }: { thing: WallThing; data: 
   )
 }
 
+/** What a collapsed wall's new gauge takes, as the engine says (`refreshOffer`). */
+export type UgRefreshOffer = ReturnType<typeof refreshOffer>
+
+/**
+ * A wall's end, in the dig's footer: cleared or collapsed, what was dug out, SEE THE HAUL. A collapsed wall also offers
+ * a new gauge (docs/34 §12) when the engine does: for a kit held, or for one bought here (gold; drawn disabled with
+ * what's missing when the purse is short or the limit reached, its tap saying why).
+ */
+export function UgWallEnd({
+  cleared,
+  found,
+  n,
+  used,
+  offer,
+  onRefresh,
+  onHaul,
+}: {
+  cleared: boolean
+  found: number
+  n: number
+  used: number
+  offer: UgRefreshOffer
+  onRefresh: () => void
+  onHaul: () => void
+}) {
+  const { t } = useT()
+  const blocked = offer?.kind === 'buy' && (offer.soldOut || offer.short > 0)
+  return (
+    <div className="grid gap-2">
+      <p className="m-0 text-center text-[26px] leading-none" role="status">
+        {cleared ? t('ui.ug.clearedTitle') : t('ui.ug.collapsedTitle')}
+      </p>
+      <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">
+        {t('ui.ug.endLine', { found, n, used })}
+      </p>
+      {offer && (
+        <div className="grid gap-1" data-testid="ug-refresh">
+          <PixelButton variant={blocked ? 'secondary' : 'gold'} aria-disabled={blocked} onClick={onRefresh}>
+            {offer.kind === 'kit'
+              ? t('ui.ug.refreshKit', { n: offer.held })
+              : offer.soldOut
+                ? t('ui.ug.refreshSoldOut')
+                : offer.short > 0
+                  ? t('ui.shop.needMore', { price: money(offer.short) })
+                  : t('ui.ug.refreshBuy', { price: money(offer.price) })}
+          </PixelButton>
+          <span className="text-center font-pixel-sm text-[16px] leading-snug text-muted">
+            {t('ui.ug.refreshNote')}
+          </span>
+        </div>
+      )}
+      <PixelButton variant="primary" size="lg" onClick={onHaul}>
+        {t('ui.ug.seeHaul')}
+      </PixelButton>
+    </div>
+  )
+}
+
 /** The haul, one line per thing: its picture, its name, where it went. A new plate first, then in the wall's order. */
 export function HaulList({ lines, data }: { lines: HaulLine[]; data: GameData }) {
   const order: HaulLine['outcome'][] = ['plate', 'box', 'bag', 'sent', 'lost']
@@ -763,7 +823,11 @@ export function ugRuleRows(data: GameData): RuleRow[] {
     {
       icon: <PixelIcon name="pickaxe" size={26} />,
       title: t('ui.ug.rules.wall.title'),
-      text: t('ui.ug.rules.wall.text', { cols: w.cols, rows: w.rows, strikes: w.strikes }),
+      text: t(ugRefreshOn(data) ? 'ui.ug.rules.wall.textRefresh' : 'ui.ug.rules.wall.text', {
+        cols: w.cols,
+        rows: w.rows,
+        strikes: w.strikes,
+      }),
     },
     {
       icon: (

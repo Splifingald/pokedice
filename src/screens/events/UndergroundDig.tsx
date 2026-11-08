@@ -1,9 +1,19 @@
 // Digging a wall (docs/34; docs/15 §32), full screen: the crack gauge, the wall, what's still buried, the pickaxe's
 // roll. A tap on a tile strikes it (the engine rolls the die and digs); at the end the wall collapses or is cleared,
-// and the haul shows where each thing went. Leaving keeps the wall: it waits in the save.
+// and the haul shows where each thing went. A collapsed wall can take another kit for a new gauge (docs/34 §12).
+// Leaving keeps the wall: it waits in the save.
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { kitsHeld, pickaxeFaces, thingDone, ugCfg, wallStatus, type HaulLine, type Wall } from '@/engine'
+import {
+  kitsHeld,
+  pickaxeFaces,
+  refreshOffer,
+  thingDone,
+  ugCfg,
+  wallStatus,
+  type HaulLine,
+  type Wall,
+} from '@/engine'
 import { fxSound } from '@/audio/sfx'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
@@ -17,16 +27,18 @@ import {
   PlateArt,
   UG_IMPACT_MS,
   UgWall,
+  UgWallEnd,
   thingName,
   type FoundFx,
   type StrikeFx,
 } from '@/components/Underground'
 import { useT } from '@/i18n/react'
+import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
 import { useMotion } from '@/lib/motion'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, useGame } from '@/store/game'
-import { ugOpenWall, ugStrike, ugTakeHaul, useUnderground } from '@/store/underground'
+import { ugOpenWall, ugRefreshWall, ugStrike, ugTakeHaul, useUnderground } from '@/store/underground'
 import { cx } from '@/theme/util'
 import { flushUgOutbox } from '@/store/ugTeams'
 import { UgClosed } from './Underground'
@@ -38,6 +50,7 @@ export function UndergroundDig() {
   const { t } = useT()
   const navigate = useNavigate()
   const data = useGame((s) => s.data)
+  const save = useGame((s) => s.save)
   const { level, calm } = useMotion()
   const wide = useMediaQuery('(min-width: 1024px)')
   const { live, now, u } = useUnderground(5000)
@@ -93,6 +106,20 @@ export function UndergroundDig() {
     setHaul(lines)
     // Orbs owed to teammates go to the server now (they wait in the save if it can't be reached).
     void flushUgOutbox()
+  }
+
+  // A collapsed wall's new gauge (docs/34 §12): the same wall, its layers and finds kept, struck from a fresh start.
+  const offer = save ? refreshOffer(save, data, now) : null
+  const refresh = () => {
+    if (!offer) return
+    if (offer.kind === 'buy' && offer.soldOut) return pushToast(t('ui.ug.refreshSoldOut'), 'bad')
+    if (offer.kind === 'buy' && offer.short > 0)
+      return pushToast(t('ui.shop.needMore', { price: money(offer.short) }), 'bad')
+    if (!ugRefreshWall()) return
+    setFx(null)
+    setFreed(null)
+    setRoll(null)
+    pushToast(t('ui.ug.refreshed'), 'good')
   }
 
   const nextWall = () => {
@@ -253,17 +280,15 @@ export function UndergroundDig() {
               </div>
             </div>
           ) : (
-            <div className="grid gap-2">
-              <p className="m-0 text-center text-[26px] leading-none" role="status">
-                {status === 'cleared' ? t('ui.ug.clearedTitle') : t('ui.ug.collapsedTitle')}
-              </p>
-              <p className="m-0 text-center font-pixel-sm text-[16px] text-muted">
-                {t('ui.ug.endLine', { found, n: wall.things.length, used: wall.used })}
-              </p>
-              <PixelButton variant="primary" size="lg" onClick={takeHaul}>
-                {t('ui.ug.seeHaul')}
-              </PixelButton>
-            </div>
+            <UgWallEnd
+              cleared={status === 'cleared'}
+              found={found}
+              n={wall.things.length}
+              used={wall.used + (wall.usedBefore ?? 0)}
+              offer={offer}
+              onRefresh={refresh}
+              onHaul={takeHaul}
+            />
           )}
         </footer>
       </main>
