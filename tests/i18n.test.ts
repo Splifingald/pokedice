@@ -4,7 +4,7 @@ import diceTypes from '@/data/dice-types.json'
 import items from '@/data/items.json'
 import pokemon from '@/data/pokemon.json'
 import trainers from '@/data/trainers.json'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import regions from '@/data/regions.json'
 import { allKeys, CJK_LANGS, detectLang, hasKey, LANGS, searchFold, tableFor, tIn } from '@/i18n'
 import { CJK_RANGES, cjkFontFile, isCjkChar } from '@/i18n/cjk'
@@ -52,6 +52,20 @@ describe('the localization sheet', () => {
     const gaps: string[] = []
     for (const lang of LANGS) for (const key of allKeys()) if (!tableFor(lang)[key]) gaps.push(`${lang}:${key}`)
     expect(gaps).toEqual([])
+  })
+
+  // A row deleted while the code still asks for it shows its raw key on screen (Trades' "ui.home.freeSlot", 2026-11-08).
+  it('has a row for every whole key the code names', () => {
+    const keys = new Set(allKeys())
+    const named = new Set<string>()
+    for (const file of readdirSync('src', { recursive: true, encoding: 'utf8' })) {
+      if (!/\.tsx?$/.test(file) || file.includes('.test.')) continue
+      const code = readFileSync(`src/${file}`, 'utf8')
+      for (const m of code.matchAll(/['"](ui\.[A-Za-z0-9_.]+[A-Za-z0-9])['"]/g)) named.add(m[1])
+    }
+    // A prefix completed at run time (`${base}.title`) is fine; `ui.press` is a sound's name, not a string.
+    const isPrefix = (k: string) => [...keys].some((x) => x.startsWith(`${k}.`))
+    expect([...named].filter((k) => k !== 'ui.press' && !keys.has(k) && !isPrefix(k))).toEqual([])
   })
 
   it('interpolates {vars}, and shows the key when a row is missing', () => {
