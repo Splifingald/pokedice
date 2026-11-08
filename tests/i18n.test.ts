@@ -61,7 +61,7 @@ describe('the localization sheet', () => {
     for (const file of readdirSync('src', { recursive: true, encoding: 'utf8' })) {
       if (!/\.tsx?$/.test(file) || file.includes('.test.')) continue
       const code = readFileSync(`src/${file}`, 'utf8')
-      for (const m of code.matchAll(/['"](ui\.[A-Za-z0-9_.]+[A-Za-z0-9])['"]/g)) named.add(m[1])
+      for (const m of code.matchAll(/['"](ui\.[A-Za-z0-9_.]+[A-Za-z0-9])['"]/g)) named.add(m[1]!)
     }
     // A prefix completed at run time (`${base}.title`) is fine; `ui.press` is a sound's name, not a string.
     const isPrefix = (k: string) => [...keys].some((x) => x.startsWith(`${k}.`))
