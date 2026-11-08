@@ -186,6 +186,19 @@ const UNCUT = 'inset(-100% -100% -100% -100%)'
 const SINKING = 'inset(-100% -100% 0% -100%)'
 const SUNK = 'inset(-100% -100% 100% -100%)'
 
+/** The white rim every Pokémon wears on the stage, one sprite pixel thick (the user, 2026-11-08). */
+const RIM = '#ffffff'
+
+/**
+ * The rim on a page sprite, `px` page pixels thick (one sprite pixel), snapped to the screen's own pixels so it stays
+ * as crisp as the pixel art. Four hard shadows, as the canvas draws its still copies' (src/fx/sprites.ts).
+ */
+const rim = (px: number) => {
+  const dpr = window.devicePixelRatio || 1
+  const d = Math.max(1, Math.round(px * dpr)) / dpr
+  return [`${d}px 0`, `-${d}px 0`, `0 ${d}px`, `0 -${d}px`].map((o) => `drop-shadow(${o} 0 ${RIM})`).join(' ')
+}
+
 /** One Pokémon as the page's animated sprite, standing on its platform. */
 function Mon({
   b,
@@ -298,7 +311,11 @@ function Mon({
       <motion.div
         key={`${b.uid}:${b.dex}`}
         className="absolute inset-0"
-        style={{ transformOrigin: '50% 90%' }}
+        style={{
+          transformOrigin: '50% 90%',
+          // Its white rim, one sprite pixel (`s.k` art pixels, scaled like the sprite).
+          filter: rim(s.k * k * scale),
+        }}
         initial={still || entered ? false : back ? { opacity: 0, scale: 0 } : { opacity: 0, x: 60 * scale }}
         animate={
           fainted
@@ -923,6 +940,7 @@ export function BattleStage({
           hud={overlay.hud}
           onEnd={overlay.onEnd}
           label={overlay.label}
+          outline={RIM}
           className={cx('absolute inset-0', double && 'z-[4]')}
         />
       ) : (
@@ -935,6 +953,7 @@ export function BattleStage({
             live={liveOn ? liveSprites : undefined}
             onEnd={live ? onSceneDone : () => setLinger(null)}
             label={label}
+            outline={RIM}
             className={cx('absolute inset-0', !live && 'pointer-events-none', double && 'z-[4]')}
           />
         )
@@ -947,6 +966,7 @@ export function BattleStage({
             ready={sparkle.ready}
             onEnd={() => setSparkle(null)}
             label=""
+            outline={RIM}
             className="absolute inset-0"
           />
         </div>

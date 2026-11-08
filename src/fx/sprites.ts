@@ -302,17 +302,27 @@ export interface LiveSprite {
 }
 
 let live: Map<string, LiveSprite> | null = null
+/** The outline every still copy wears this frame unless the look gives its own (the battle stage's white rim). */
+let rim: string | null = null
 
-/** Draw one frame with these sprites kept on the page; one the frame didn't draw is hidden. */
-export function drawWithLive(map: Map<string, LiveSprite> | null, draw: () => void) {
-  if (!map?.size) return draw()
-  for (const l of map.values()) l.used = false
-  live = map
+/**
+ * Draw one frame with these sprites kept on the page; one the frame didn't draw is hidden. `outline`: the colour of
+ * the rim every Pokémon drawn still wears, as the page's own sprites do on that stage.
+ */
+export function drawWithLive(map: Map<string, LiveSprite> | null, draw: () => void, outline: string | null = null) {
+  rim = outline
   try {
-    draw()
+    if (!map?.size) return draw()
+    for (const l of map.values()) l.used = false
+    live = map
+    try {
+      draw()
+    } finally {
+      live = null
+      for (const l of map.values()) if (!l.used) l.el.style.opacity = '0'
+    }
   } finally {
-    live = null
-    for (const l of map.values()) if (!l.used) l.el.style.opacity = '0'
+    rim = null
   }
 }
 
@@ -351,7 +361,11 @@ export function drawSprite(g: G, key: string, x: number, y: number, o: SpriteLoo
     l.el.style.opacity = '0'
     l.used = true
   }
-  drawStill(g, key, x, y, o, false)
+  // The stage's rim on a Pokémon's still copy, as on the page's sprite (a trainer's picture or an item has none); a
+  // look with an outline of its own (an aura) or drawn as a silhouette (a catch beam) keeps its own shape. The live
+  // sprite above wears the page's.
+  const rimmed = rim && !o.outline && !o.sil && !/^(pic|item)\|/.test(key)
+  drawStill(g, key, x, y, rimmed ? { ...o, outline: rim! } : o, false)
 }
 
 function drawStill(g: G, key: string, x: number, y: number, o: SpriteLook, overlayOnly: boolean) {

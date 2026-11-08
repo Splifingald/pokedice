@@ -443,6 +443,8 @@ export class Player<S = unknown> {
   onEnd: (() => void) | null = null
   /** The page's sprites this timeline moves instead of drawing still copies (sprites.ts `LiveSprite`). */
   live: Map<string, LiveSprite> | null = null
+  /** The rim every Pokémon drawn still wears (the battle stage's white), or none. */
+  outline: string | null = null
   constructor(cv: HTMLCanvasElement, hud: Hud = {}) {
     this.g = cv.getContext('2d')!
     this.g.imageSmoothingEnabled = false
@@ -547,7 +549,7 @@ export class Player<S = unknown> {
     this.g.imageSmoothingEnabled = false
     const def = this.def
     const s = this.s
-    drawWithLive(this.live, () => def.draw(this.g, s, def.hold ? this.t : Math.min(this.t, def.dur)))
+    drawWithLive(this.live, () => def.draw(this.g, s, def.hold ? this.t : Math.min(this.t, def.dur)), this.outline)
     this.onTick?.(this.t)
   }
 }

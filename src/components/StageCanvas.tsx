@@ -39,9 +39,11 @@ export const StageCanvas = forwardRef<
     className?: string
     /** The page's sprites it moves instead of drawing them still (a fight's move: they stay animated). */
     live?: Map<string, LiveSprite>
+    /** The rim every Pokémon it draws still wears, matching the page's sprites (the battle stage's white). */
+    outline?: string
   }
 >(function StageCanvas(
-  { timeline, hud, ready, autoPlay = true, instant, onEnd, onTick, label, className, size, live },
+  { timeline, hud, ready, autoPlay = true, instant, onEnd, onTick, label, className, size, live, outline },
   ref,
 ) {
   const cv = useRef<HTMLCanvasElement>(null)
@@ -74,7 +76,9 @@ export const StageCanvas = forwardRef<
   }, [])
   // After the player is made (effects run in order): the sprites it moves, read at each frame.
   useEffect(() => {
-    if (player.current) player.current.live = live ?? null
+    if (!player.current) return
+    player.current.live = live ?? null
+    player.current.outline = outline ?? null
   })
 
   useEffect(() => {
