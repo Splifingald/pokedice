@@ -50,6 +50,7 @@ import {
   tracksFound,
   legendCinemaOn,
   championCinemaOn,
+  gymCinemaOn,
   roadblockOf,
   canPassCatch,
   autoCureItem,
@@ -84,6 +85,7 @@ import { abomasnowCinema } from '@/fx/timelines/cinema/abomasnow'
 import { stantlerCinema } from '@/fx/timelines/cinema/stantler'
 import { t as say } from '@/i18n'
 import { championCinemaFor } from '@/fx/timelines/cinema/champions'
+import { gymCinemaFor } from '@/fx/timelines/cinema/gymLeader'
 import { useT } from '@/i18n/react'
 import { effectText, zMoveText } from '@/i18n/text'
 import { trainerTitle, typeName } from '@/lib/format'
@@ -414,11 +416,14 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   const [bossIntro, setBossIntro] = useState(st.kind === 'boss' && level !== 'off' && !resumed && !swapped)
   const [trainerIntro, setTrainerIntro] = useState(isTrainerFight && !quick && !resumed && !swapped && !next)
   // A League Champion's own entrance (docs/56) in place of the trainer stepping onto the field: when the switch is on
-  // and its scene is made. It ends with the champion's lead thrown out; the send-out step follows as for any trainer.
+  // and its scene is made. A Gym Leader's is the one stadium film in its gym type's colours (docs/68), behind its own
+  // switch. Either ends with the lead thrown out; the send-out step follows as for any trainer.
   const champion =
     enc?.kind === 'gym' && enc.role === 'champion' && championCinemaOn(data)
       ? championCinemaFor(trainerSprite)
-      : undefined
+      : enc?.kind === 'gym' && enc.role === 'leader' && gymType && gymCinemaOn(data)
+        ? gymCinemaFor(gymType)
+        : undefined
   const [champIntro, setChampIntro] = useState(trainerIntro && !!champion)
   const [foeOut, setFoeOut] = useState(!bossIntro && !trainerIntro)
   const stayed = battle.next === 'stay'
@@ -973,7 +978,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bossIntro])
 
-  // A champion's entrance (docs/56): its scene, its card, its lead thrown out; its trainer sprite isn't shown meanwhile.
+  // A champion's or Gym Leader's entrance (docs/56, 68): its scene, its card, its lead thrown out; its trainer sprite
+  // isn't shown meanwhile.
   const championIntro = useMemo<StageOverlay | null>(() => {
     if (!champIntro || !champion || enc?.kind !== 'gym') return null
     const foe = st.enemy

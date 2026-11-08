@@ -38,6 +38,12 @@ export const legendCinemaOn = (data: GameData): boolean => eventOpenTo(data.conf
  */
 export const championCinemaOn = (data: GameData): boolean => eventOpenTo(data.config.championCinema?.access, data)
 
+/**
+ * The Gym Leaders' entrance (docs/68): a stadium lit in the gym type's colours instead of the trainer stepping onto
+ * the field. Purely visual: the fights are the same either way.
+ */
+export const gymCinemaOn = (data: GameData): boolean => eventOpenTo(data.config.gymCinema?.access, data)
+
 /** This event is switched on for whoever is playing. */
 export const eventOn = (data: GameData, id: EventId): boolean => eventOpenTo(eventDef(data, id)?.access, data)
 

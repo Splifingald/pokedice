@@ -27,6 +27,7 @@ import { LEGEND_RAID_SCENES } from '@/fx/timelines/legendRaidScenes'
 import { BOSS_CINEMAS, RAID_CINEMAS } from '@/fx/timelines/cinema'
 import { CHAMPION_CINEMAS } from '@/fx/timelines/cinema/champions'
 import { sampleParams } from '@/fx/timelines/cinema/champion'
+import { GYM_CINEMA_TYPES, gymCinemaFor } from '@/fx/timelines/cinema/gymLeader'
 import { raidEntranceTimeline } from '@/fx/timelines/portalRaid'
 import {
   nightmareIntroTimeline,
@@ -518,6 +519,16 @@ const PRESETS: Preset[] = [
       make: () => c.makeBattle(sampleParams(c.sample)),
     }),
   ),
+  // The Gym Leaders' entrance (docs/68): the same film in each type's colours, with that type's sample leader.
+  ...GYM_CINEMA_TYPES.map((type): Preset => {
+    const c = gymCinemaFor(type)
+    return {
+      name: `Cinematic: Gym Leader (${type}, ${c.sample.name})`,
+      sprites: [[6, true], ...[c.sample.lead, c.sample.ace].map((d): [number, boolean] => [d, false])],
+      load: () => loadPicture(c.sample.trainer),
+      make: () => c.makeBattle(sampleParams(c.sample)),
+    }
+  }),
   // Darkrai's nightmare (docs/30): the intro, the strike after a round, the waking, the raid's entrance.
   {
     name: 'Nightmare: the intro (drawn field)',

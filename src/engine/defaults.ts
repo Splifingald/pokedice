@@ -466,6 +466,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   giftCalendar: { access: 'off' },
   // The champions' own cinematics (docs/56): off until the admin switches it on. Migration 0101 inserts the same row.
   championCinema: { access: 'off' },
+  // The Gym Leaders' entrance (docs/68): off until the admin switches it on. Migration 0141 inserts the same row.
+  gymCinema: { access: 'off' },
   // Friendship streaks and the Friend Market (docs/60): off until the admin switches it on. 3 to 7 Heart Scales a
   // streak day by tier, 50 a day at most; the market's weekly shelf and the shiny of the week turning through Pokémon
   // that grow with friendship. Migration 0107 holds the same numbers (friendship_defaults()).

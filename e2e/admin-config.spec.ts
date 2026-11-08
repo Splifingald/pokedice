@@ -74,11 +74,11 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
     'page',
   )
 
-  // One row per feature (42 with the Versus global board, the hidden talents, the legendary intros, real-player
+  // One row per feature (43 with the Versus global board, the hidden talents, the legendary intros, real-player
   // battles, the champion intros, welcome back, the outfits, friendship, 2.9's four side quests and five region
-  // flavours, Friend Battles, 2.9.1's rival loss and real-player level match, the rival teams matched): its name and
-  // its switch, nothing else; energy and the retired switches are gone.
-  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(42)
+  // flavours, Friend Battles, 2.9.1's rival loss and real-player level match, the rival teams matched, the Gym Leader
+  // intros): its name and its switch, nothing else; energy and the retired switches are gone.
+  await expect(page.getByRole('radiogroup', { name: /: who has it$/ })).toHaveCount(43)
   // "On for beta testers" only where the server reads it (docs/65 §3): Friend Battles, not the others.
   const battles = page.getByRole('radiogroup', { name: 'Friend Battles: who has it' })
   await expect(battles.getByRole('radio', { name: 'On for beta testers' })).toBeVisible()
@@ -96,6 +96,7 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
   await expect(page.getByRole('radiogroup', { name: 'Legendary intros: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Real-player battles: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Champion intros: who has it' })).toBeVisible()
+  await expect(page.getByRole('radiogroup', { name: 'Gym Leader intros: who has it' })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Versus global board: who has it' })).toBeVisible()
   for (const gone of [
     'Energy',
@@ -222,7 +223,7 @@ const BOARD = {
   ],
 }
 
-test('Intros: every champion listed, each one watched on a battle stage (docs/56)', async ({ page }) => {
+test('Intros: every champion listed, each one watched on a battle stage (docs/56); the gym film by type (docs/68)', async ({ page }) => {
   test.setTimeout(120_000)
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
@@ -243,6 +244,15 @@ test('Intros: every champion listed, each one watched on a battle stage (docs/56
   await page.waitForTimeout(2500)
   await film.click()
   await expect(film).toHaveCount(0)
+  // The Gym Leaders' one film (docs/68): a row per type, watched in that type's colours with a leader of the type.
+  const gyms = page.getByRole('list').filter({ has: page.getByText('electric', { exact: true }) })
+  await expect(gyms.getByRole('listitem')).toHaveCount(18)
+  await gyms.getByRole('listitem').filter({ hasText: /^electric\s*Watch$/ }).getByRole('button').click()
+  const surge = page.getByRole('dialog', { name: 'Lt. Surge' })
+  await expect(surge.locator('canvas')).toBeVisible()
+  await page.waitForTimeout(2500)
+  await surge.click()
+  await expect(surge).toHaveCount(0)
   expect(errors).toEqual([])
 })
 

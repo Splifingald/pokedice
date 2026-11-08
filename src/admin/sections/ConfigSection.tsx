@@ -59,7 +59,7 @@ import { GiftEditor, giftName } from '../GiftEditor'
 import { addRows, rowKey, updateRow, useAdmin, useAdminData } from '../store'
 import { AccessSwitch, Box, Field, NumInput, PokemonPicker, inputCls } from '../widgets'
 import { LegendIntrosBox } from './LegendIntrosBox'
-import { ChampionIntrosBox } from './ChampionIntrosBox'
+import { ChampionIntrosBox, GymIntrosBox } from './ChampionIntrosBox'
 import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
 import { AreaVersusBox } from './AreaVersusBox'
@@ -1643,6 +1643,7 @@ const FEATURES: Feature[] = [
   bare('League heal', 'leagueHeal'),
   own('Legendary intros', 'legendCinema', 'intros'),
   own('Champion intros', 'championCinema', 'intros'),
+  own('Gym Leader intros', 'gymCinema', 'intros'),
   bare('Route 1 opening & tutorial', 'openingRounds'),
   // The side quests (docs/61).
   bare('Pokémon posing as items', 'disguises'),
@@ -1909,6 +1910,7 @@ export function ConfigSection() {
       {tab === 'talents' && <HiddenTalentsBox />}
       {tab === 'intros' && <LegendIntrosBox />}
       {tab === 'intros' && <ChampionIntrosBox />}
+      {tab === 'intros' && <GymIntrosBox />}
       {tab === 'support' && (
         <div className="grid gap-4 xl:grid-cols-2">
           <DonationBox />

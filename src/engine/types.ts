@@ -1416,6 +1416,11 @@ export interface GameConfig {
    */
   championCinema: { access: EventAccess }
   /**
+   * The Gym Leaders' entrance (docs/68): one stadium film for every leader, in its gym type's colours, with its name and
+   * picture. Only how it looks and sounds, so no server function reads it. Migration 0141 inserts the same row.
+   */
+  gymCinema: { access: EventAccess }
+  /**
    * Friendship streaks and the Friend Market (docs/60): the switch, what a streak's day pays by tier, the day's cap
    * across every friend, and the weekly market (items with a price and a weekly limit, and the shiny of the week drawn
    * from a pool). The server prices and pays from the same row (migration 0107, friendship_cfg()).
