@@ -207,7 +207,6 @@
 
 /* The strikes left, over the gauge: the number gives a two-frame bump with each strike, on the impact. */
 .ug-count.bump {
-  display: inline-block;
   animation: ug-bump 180ms steps(1, end) both;
   animation-delay: var(--ug-impact, 0ms);
 }
@@ -291,36 +290,79 @@
   outline: 3px solid #ffbe2e;
   outline-offset: -3px;
 }
+/*
+ * The rock, by layers left (docs/34 §13): hard rock (3: dark, a lit bevel, mineral flecks), stone (2: pebbles, a
+ * hairline crack) and crumbly dirt (1: light, cracked through, crumbs). A tile looks more broken as layers come off.
+ * Each tile's flecks sit at one of four places (`v0`–`v3`), so the wall never reads as one stamp repeated.
+ */
+.ug-tile {
+  --fa: 62% 30%;
+  --fb: 28% 70%;
+  --fc: 80% 78%;
+}
+.ug-tile.v1 {
+  --fa: 30% 24%;
+  --fb: 70% 62%;
+  --fc: 18% 84%;
+}
+.ug-tile.v2 {
+  --fa: 74% 66%;
+  --fb: 22% 34%;
+  --fc: 54% 86%;
+}
+.ug-tile.v3 {
+  --fa: 44% 80%;
+  --fb: 78% 26%;
+  --fc: 24% 52%;
+}
 .ug-tile.d3 {
-  background-color: #5a3d25;
-  background-image: linear-gradient(#3f2a18, #3f2a18), linear-gradient(#74522f, #74522f);
+  background-color: #4e3523;
+  background-image:
+    linear-gradient(#2f1f13, #2f1f13), linear-gradient(#6b4a2f, #6b4a2f), linear-gradient(#9fb6c8, #9fb6c8),
+    linear-gradient(#2f1f13, #2f1f13);
   background-size:
-    6px 4px,
-    4px 4px;
-  background-position:
-    62% 30%,
-    28% 70%;
+    8px 4px,
+    4px 4px,
+    3px 3px,
+    4px 6px;
+  background-position: var(--fa), var(--fb), var(--fc), var(--fb);
   box-shadow:
-    inset 3px 3px 0 #74522f,
-    inset -3px -3px 0 #3f2a18;
+    inset 4px 4px 0 #6e4d31,
+    inset -4px -4px 0 #2f1f13,
+    inset 0 0 0 1px #1a130e;
 }
 .ug-tile.d2 {
-  background-color: #8f6a43;
-  background-image: linear-gradient(#6b4a2f, #6b4a2f);
-  background-size: 6px 4px;
-  background-position: 45% 62%;
+  background-color: #8a6440;
+  background-image:
+    linear-gradient(#a98257, #a98257), linear-gradient(#6b4a2f, #6b4a2f), linear-gradient(#5a3d25, #5a3d25),
+    linear-gradient(#5a3d25, #5a3d25);
+  background-size:
+    6px 4px,
+    4px 4px,
+    2px 9px,
+    7px 2px;
+  background-position: var(--fa), var(--fc), var(--fb), var(--fb);
   box-shadow:
     inset 3px 3px 0 #a98257,
-    inset -3px -3px 0 #6b4a2f;
+    inset -3px -3px 0 #5f4229,
+    inset 0 0 0 1px #3f2a18;
 }
 .ug-tile.d1 {
   background-color: #c49a63;
-  background-image: linear-gradient(#9c7646, #9c7646);
-  background-size: 4px 4px;
-  background-position: 70% 40%;
+  background-image:
+    linear-gradient(#7d5c36, #7d5c36), linear-gradient(#7d5c36, #7d5c36), linear-gradient(#7d5c36, #7d5c36),
+    linear-gradient(#e3c08a, #e3c08a), linear-gradient(#9c7646, #9c7646);
+  background-size:
+    2px 12px,
+    10px 2px,
+    2px 8px,
+    4px 4px,
+    3px 3px;
+  background-position: var(--fa), var(--fa), var(--fb), var(--fc), var(--fb);
   box-shadow:
     inset 3px 3px 0 #dbb47c,
-    inset -3px -3px 0 #9c7646;
+    inset -3px -3px 0 #9c7646,
+    inset 0 0 0 1px #7d5c36;
 }
 .ug-tile.open {
   background: transparent;
@@ -514,52 +556,6 @@
   }
 }
 
-/* A thing just dug out: its name pops over it, rises in steps and goes. */
-.ug-pop {
-  position: absolute;
-  z-index: 3;
-  max-width: 90%;
-  padding: 1px 6px 3px;
-  font-size: 16px;
-  font-weight: normal;
-  line-height: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #24304f;
-  background: #ffe066;
-  box-shadow:
-    0 0 0 2px #24304f,
-    0 3px 0 2px #24304f;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  animation: ug-pop 1400ms steps(1, end) forwards;
-  animation-delay: var(--ug-impact, 0ms);
-}
-@keyframes ug-pop {
-  0% {
-    transform: translate(-50%, -20%);
-    opacity: 1;
-  }
-  8% {
-    transform: translate(-50%, -60%);
-  }
-  16%,
-  80% {
-    transform: translate(-50%, -80%);
-    opacity: 1;
-  }
-  90% {
-    transform: translate(-50%, -100%);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate(-50%, -110%);
-    opacity: 0;
-  }
-}
-
 /* The collapse: the tiles fall in steps (full), or the wall gives one thud (short). */
 .ug-wall.fall .ug-tile:not(.open) {
   animation: ug-fall 700ms steps(6, end) both;
@@ -575,7 +571,7 @@
     transform: translateY(0);
   }
   to {
-    transform: translateY(18px);
+    transform: translateY(6px);
     filter: brightness(0.6);
   }
 }
@@ -588,10 +584,597 @@
   }
 }
 
+/* A thin tile over something buried glints now and then, as in the games: the last layer, worth a tap. */
+.ug-glint {
+  position: absolute;
+  right: 18%;
+  top: 16%;
+  width: 3px;
+  height: 3px;
+  background: #fff;
+  box-shadow:
+    -3px 0 0 #fff8c8,
+    3px 0 0 #fff8c8,
+    0 -3px 0 #fff8c8,
+    0 3px 0 #fff8c8;
+  opacity: 0;
+  pointer-events: none;
+  animation: ug-twinkle 2400ms steps(1, end) infinite;
+  animation-delay: var(--gd, 0ms);
+}
+@keyframes ug-twinkle {
+  0%,
+  86% {
+    opacity: 0;
+  }
+  87%,
+  93% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  94%,
+  99% {
+    opacity: 0.8;
+    transform: scale(0.6);
+  }
+}
+
+/* How many layers a strike took off, popping over each tile it hit: bigger on the tile struck, gold for a 3. */
+.ug-dmg {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  z-index: 2;
+  font-style: normal;
+  font-size: 22px;
+  line-height: 1;
+  color: #fff;
+  text-shadow:
+    2px 0 0 #1a130e,
+    -2px 0 0 #1a130e,
+    0 2px 0 #1a130e,
+    0 -2px 0 #1a130e,
+    2px 2px 0 #1a130e;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 0);
+  animation: ug-dmg 700ms steps(7, end) forwards;
+  animation-delay: var(--ug-impact, 0ms);
+}
+.ug-dmg.main {
+  font-size: 30px;
+}
+.ug-dmg.crit {
+  font-size: 38px;
+  color: #ffe066;
+}
+@keyframes ug-dmg {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.4);
+  }
+  20% {
+    transform: translate(-50%, -12px) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, -22px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -30px);
+  }
+}
+
+/* Rock flying off a strike: chunks thrown up and falling back, more of them the bigger the roll. */
+.ug-debris {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.ug-debris b {
+  position: absolute;
+  width: var(--sz, 6px);
+  height: var(--sz, 6px);
+  background: var(--rc, #8a6440);
+  box-shadow: inset -2px -2px 0 rgb(0 0 0 / 0.35);
+  opacity: 0;
+  animation: ug-chunk 560ms steps(7, end) forwards;
+  animation-delay: var(--ug-impact, 0ms);
+}
+@keyframes ug-chunk {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+  35% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.55), calc(var(--up) * -1)) rotate(90deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(200deg);
+  }
+}
+
+/* A 3: the wall's box flashes white from the tile struck. */
+.ug-burst {
+  position: absolute;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.ug-burst::before {
+  content: '';
+  position: absolute;
+  left: -60px;
+  top: -60px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, #fff 0 30%, rgb(255 224 102 / 0.8) 31% 50%, transparent 51%);
+  opacity: 0;
+  animation: ug-burst 260ms steps(4, end) forwards;
+  animation-delay: var(--ug-impact, 0ms);
+}
+@keyframes ug-burst {
+  0% {
+    opacity: 1;
+    transform: scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+
+/* The end over the wall: a stamp (red COLLAPSED!, gold ALL DUG OUT!) slammed down, dust for the collapse, confetti for
+   a wall cleared. */
+.ug-stamp {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 4;
+  padding: 6px 14px 9px;
+  font-size: clamp(30px, 9vw, 48px);
+  line-height: 1;
+  white-space: nowrap;
+  color: #fff;
+  background: #d8432f;
+  box-shadow:
+    0 0 0 3px #1a130e,
+    0 6px 0 3px #1a130e,
+    inset 0 -4px 0 #a52c1d;
+  transform: translate(-50%, -50%) rotate(-7deg);
+  pointer-events: none;
+}
+.ug-stamp.gold {
+  color: #24304f;
+  background: #ffbe2e;
+  box-shadow:
+    0 0 0 3px #1a130e,
+    0 6px 0 3px #1a130e,
+    inset 0 -4px 0 #e08e00;
+}
+.ug-stamp.slam {
+  animation: ug-slam 420ms steps(6, end) both;
+  animation-delay: 500ms;
+}
+@keyframes ug-slam {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-16deg) scale(2.6);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-5deg) scale(0.92);
+  }
+  75% {
+    transform: translate(-50%, -50%) rotate(-8deg) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-7deg) scale(1);
+  }
+}
+.ug-cloud {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.ug-cloud b {
+  position: absolute;
+  width: 34%;
+  aspect-ratio: 1;
+  /* An octagon: a puff drawn in pixels, not a smooth disc. */
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  background: rgb(219 180 124 / 0.85);
+  box-shadow: inset -8px -8px 0 rgb(156 118 70 / 0.8);
+  opacity: 0;
+  animation: ug-puff 1100ms steps(8, end) forwards;
+}
+.ug-cloud b:nth-child(1) {
+  left: 4%;
+  top: 50%;
+}
+.ug-cloud b:nth-child(2) {
+  left: 34%;
+  top: 58%;
+  animation-delay: 80ms;
+}
+.ug-cloud b:nth-child(3) {
+  left: 62%;
+  top: 48%;
+  animation-delay: 140ms;
+}
+.ug-cloud b:nth-child(4) {
+  left: 18%;
+  top: 22%;
+  animation-delay: 220ms;
+}
+.ug-cloud b:nth-child(5) {
+  left: 50%;
+  top: 16%;
+  animation-delay: 300ms;
+}
+@keyframes ug-puff {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) translateY(20%);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5) translateY(-25%);
+  }
+}
+.ug-wall.fall {
+  animation: ug-quake 600ms steps(1, end) both;
+}
+@keyframes ug-quake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  12% {
+    transform: translate(-5px, 3px);
+  }
+  25% {
+    transform: translate(5px, -2px);
+  }
+  38% {
+    transform: translate(-4px, 2px);
+  }
+  50% {
+    transform: translate(4px, 1px);
+  }
+  62% {
+    transform: translate(-2px, -1px);
+  }
+  75% {
+    transform: translate(2px, 1px);
+  }
+}
+.ug-confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ug-confetti b {
+  position: absolute;
+  top: -8%;
+  left: var(--x);
+  width: 7px;
+  height: 10px;
+  background: var(--c);
+  opacity: 0;
+  animation: ug-confetti 1600ms steps(12, end) forwards;
+  animation-delay: var(--d);
+}
+@keyframes ug-confetti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+  50% {
+    transform: translate(var(--sx), 220px) rotate(240deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--sx) * -0.5), 460px) rotate(520deg);
+  }
+}
+
+/* The gauge given anew: its slabs come back from the left, one by one. */
+.ug-slab.rebuild {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: ug-rebuild 260ms steps(3, end) both;
+  animation-delay: var(--k, 0ms);
+}
+@keyframes ug-rebuild {
+  0% {
+    fill: #140d09;
+    transform: scaleY(0.2);
+  }
+  60% {
+    fill: #fff;
+    transform: scaleY(1.2);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+/* The strikes left: a big number on a plate at the gauge's end. */
+.ug-left {
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  height: 40px;
+  padding: 0 6px 2px;
+  font-size: 30px;
+  line-height: 1;
+  color: #ffe066;
+  background: #1a130e;
+  box-shadow: 0 0 0 2px rgb(var(--c-edge));
+}
+.ug-left.hot {
+  color: #ff9a6a;
+}
+
+/* What's buried: one slot per thing, its shape as a dark silhouette with "?" until it's dug out, then its picture. */
+.ug-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: #1a130e;
+  box-shadow:
+    0 0 0 2px rgb(var(--c-edge)),
+    inset 0 0 0 2px #3a2b20;
+}
+.ug-slot.done {
+  background: #3a2b20;
+  box-shadow:
+    0 0 0 2px #ffbe2e,
+    inset 0 0 0 2px #5a3d25;
+}
+.ug-slot .ug-shape {
+  display: grid;
+  gap: 2px;
+}
+.ug-slot .ug-shape i {
+  width: 9px;
+  height: 9px;
+  background: #4a372a;
+}
+.ug-slot .ug-q {
+  position: absolute;
+  font-size: 20px;
+  line-height: 1;
+  color: #c49a63;
+}
+.ug-slot.pop {
+  animation: ug-slotpop 420ms steps(5, end) both;
+  animation-delay: var(--fly, 0ms);
+}
+/* Until the flying thing lands, its slot stays as it was. */
+.ug-slot.pop > span {
+  animation: ug-slotin 1ms steps(1, end) both;
+  animation-delay: var(--fly, 0ms);
+}
+@keyframes ug-slotin {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes ug-slotpop {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.35);
+    box-shadow:
+      0 0 0 2px #fff,
+      0 0 0 6px #ffbe2e;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* A thing dug out flies from the wall to its slot (full motion), shining. */
+.ug-fly {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px #fff8c8) drop-shadow(2px 2px 0 rgb(26 19 14 / 0.6));
+}
+
+/* The haul's cards turn over one by one. */
+.ug-card {
+  animation: ug-card 380ms steps(5, end) both;
+  animation-delay: var(--i, 0ms);
+}
+@keyframes ug-card {
+  0% {
+    opacity: 0;
+    transform: perspective(400px) rotateY(90deg) scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: perspective(400px) rotateY(-8deg) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ug-card.plate {
+  animation-name: ug-card-plate;
+  animation-duration: 600ms;
+}
+@keyframes ug-card-plate {
+  0% {
+    opacity: 0;
+    transform: perspective(400px) rotateY(90deg) scale(0.9);
+  }
+  40% {
+    opacity: 1;
+    transform: perspective(400px) rotateY(-8deg) scale(1.08);
+    box-shadow:
+      0 0 0 4px #fff,
+      0 0 18px 6px #ffe066;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The kits: one slot per free kit the cap allows, the next one's clock a ring filling round it; bought kits beside. */
+.ug-kitslot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  background: rgb(var(--c-well));
+  box-shadow: inset 0 0 0 2px rgb(var(--c-line));
+}
+.ug-kitslot.held {
+  background: #fff3cf;
+  box-shadow: inset 0 0 0 2px #e08e00;
+}
+.ug-kitslot.bought {
+  background: #e3f2ff;
+  box-shadow: inset 0 0 0 2px #3a7bd5;
+}
+.ug-kitslot.next::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: conic-gradient(#ffbe2e calc(var(--p) * 1%), transparent 0);
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%);
+  mask: radial-gradient(circle, transparent 58%, #000 60%);
+}
+.ug-kitslot .ug-kit-time {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  padding: 0 4px 1px;
+  font-size: 15px;
+  line-height: 1.1;
+  white-space: nowrap;
+  color: #fff;
+  background: #24304f;
+}
+.ug-kitslot.fresh {
+  animation: ug-slotpop 420ms steps(5, end) both;
+}
+
+/* The pickaxe on its stand: its tier's metal, a glow from gold up, sparkles at the top. */
+.ug-pickstand {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  background: radial-gradient(circle at 50% 60%, #5a3d25 0 45%, #2b211a 46%);
+  box-shadow: 0 0 0 2px rgb(var(--c-edge));
+}
+.ug-pickstand.t3 {
+  background: radial-gradient(circle at 50% 60%, #8a6a1c 0 45%, #2b211a 46%);
+}
+.ug-pickstand.t4 {
+  background: radial-gradient(circle at 50% 60%, #1f6f9a 0 45%, #15202b 46%);
+}
+.ug-pickstand.t3 > svg,
+.ug-pickstand.t4 > svg {
+  animation: ug-shine 1600ms steps(1, end) infinite;
+}
+@keyframes ug-shine {
+  0%,
+  80% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  81%,
+  100% {
+    filter: drop-shadow(0 0 4px #fff8c8);
+  }
+}
+.ug-pickstand .ug-lv {
+  position: absolute;
+  right: -6px;
+  bottom: -8px;
+  padding: 0 5px 2px;
+  font-size: 18px;
+  line-height: 1.1;
+  color: #24304f;
+  background: #ffe066;
+  box-shadow: 0 0 0 2px #24304f;
+}
+.ug-pickstand.up > svg {
+  animation: ug-levelup 700ms steps(7, end) both;
+}
+@keyframes ug-levelup {
+  0% {
+    transform: scale(1) rotate(0);
+  }
+  30% {
+    transform: scale(1.4) rotate(-20deg);
+    filter: drop-shadow(0 0 8px #fff);
+  }
+  60% {
+    transform: scale(0.9) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+/* The orb heap: the bag's orbs piled up, bigger ones lower. */
+.ug-heap {
+  position: relative;
+  height: 96px;
+  background: radial-gradient(ellipse at 50% 100%, #5a3d25 0 40%, transparent 41%), #2b211a;
+  box-shadow: 0 0 0 2px rgb(var(--c-edge));
+  overflow: hidden;
+}
+.ug-heap > span {
+  position: absolute;
+  transform: translate(-50%, 0);
+}
+.ug-heap .ug-heap-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0.35;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ug-gauge.shake,
   .ug-gauge-band.jolt,
-  .ug-thing.done::after {
+  .ug-thing.done::after,
+  .ug-glint,
+  .ug-wall.fall,
+  .ug-pickstand > svg {
     animation: none;
   }
 }
@@ -599,13 +1182,26 @@ html.reduce-motion .ug-gauge.shake,
 html.reduce-motion .ug-thing.done::after,
 html.reduce-motion .ug-flash,
 html.reduce-motion .ug-dust b,
+html.reduce-motion .ug-debris b,
+html.reduce-motion .ug-dmg,
+html.reduce-motion .ug-burst::before,
+html.reduce-motion .ug-glint,
+html.reduce-motion .ug-wall.fall,
 html.reduce-motion .ug-wall.fall .ug-tile,
 html.reduce-motion .ug-wall.thud,
 html.reduce-motion .ug-gauge-band.jolt,
 html.reduce-motion .ug-slab-flash,
+html.reduce-motion .ug-slab.rebuild,
 html.reduce-motion .ug-chips b,
 html.reduce-motion .ug-pick > span,
 html.reduce-motion .ug-count.bump,
-html.reduce-motion .ug-pop {
+html.reduce-motion .ug-stamp.slam,
+html.reduce-motion .ug-cloud b,
+html.reduce-motion .ug-confetti b,
+html.reduce-motion .ug-slot.pop,
+html.reduce-motion .ug-slot.pop > span,
+html.reduce-motion .ug-card,
+html.reduce-motion .ug-kitslot.fresh,
+html.reduce-motion .ug-pickstand > svg {
   animation: none;
 }

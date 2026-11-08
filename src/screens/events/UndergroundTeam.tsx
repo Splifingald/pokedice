@@ -14,11 +14,15 @@ import { avatarOf } from '@/lib/avatars'
 import { loadFriendList, useFriends } from '@/lib/friends'
 import { pushToast, useGame } from '@/store/game'
 import { ugAnswer, ugCancelInvite, ugInvite, ugLeave, useUgTeams } from '@/store/ugTeams'
+import { useDetails } from '@/store/hooks'
 import { useUgTeam } from '@/store/underground'
 import { cx } from '@/theme/util'
 
-/** The three seats: who holds each colour (you, a friend, or free), and the line under them. */
-export function UgTeamSeats({ team }: { team: UgTeam | null }) {
+/**
+ * The three seats: who holds each colour (you, a friend, or free; the orb says which colour, its name read out), and,
+ * with `note` (the team's sheet, or More details on the page), the line under them.
+ */
+export function UgTeamSeats({ team, note }: { team: UgTeam | null; note?: boolean }) {
   const { t } = useT()
   const cfg = useGame((s) => ugCfg(s.data))
   // Solo, orbs still sell, for the admin's small share: say so where the player decides to team up or not.
@@ -41,14 +45,16 @@ export function UgTeamSeats({ team }: { team: UgTeam | null }) {
               <span className="max-w-full truncate text-[18px] leading-none">
                 {me ? t('ui.ug.you') : (seat?.name ?? (team ? t('ui.ug.freeSeat') : '—'))}
               </span>
-              <span className="font-pixel-sm text-[16px] text-muted">{t(`ui.ug.colour.${c}`)}</span>
+              <span className="sr-only">{t(`ui.ug.colour.${c}`)}</span>
             </li>
           )
         })}
       </ul>
-      <UgNote>
-        {team ? t('ui.ug.teamNote') : share > 0 ? t('ui.ug.teamSoloShare', { share }) : t('ui.ug.teamSolo')}
-      </UgNote>
+      {note && (
+        <UgNote>
+          {team ? t('ui.ug.teamNote') : share > 0 ? t('ui.ug.teamSoloShare', { share }) : t('ui.ug.teamSolo')}
+        </UgNote>
+      )}
     </div>
   )
 }
@@ -102,7 +108,7 @@ export function UgTeamSheet({ open, onClose }: { open: boolean; onClose: () => v
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <UgTeamSeats team={team} />
+          <UgTeamSeats team={team} note />
 
           {invites.length > 0 && (
             <SheetSection title={t('ui.ug.invitations')}>
@@ -210,6 +216,7 @@ export function UgTeamPanel() {
   const team = useUgTeam((s) => s.team)
   const invites = useUgTeams((s) => s.invites.length)
   const [open, setOpen] = useState(false)
+  const details = useDetails()
   return (
     <section aria-labelledby="ug-team" className="pixel-panel flex flex-col gap-2 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -220,7 +227,7 @@ export function UgTeamPanel() {
           {invites ? t('ui.ug.invitesWaiting', { n: invites }) : team ? t('ui.ug.manage') : t('ui.ug.teamUp')}
         </PixelButton>
       </div>
-      <UgTeamSeats team={team} />
+      <UgTeamSeats team={team} note={details} />
       <UgTeamSheet open={open} onClose={() => setOpen(false)} />
     </section>
   )

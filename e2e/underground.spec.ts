@@ -1,7 +1,8 @@
 // The Underground (docs/34): a live event of its own type, its switch on, reaching the game as content (a newer
 // configVersion from the content cache), on the server's clock. Its rules on its page until GOT IT, Home's square with the kits,
 // the page, a wall dug to its haul (a plate, an orb), the resumed wall, the orb sold solo for a tenth after a warning,
-// the pickaxe striking where tapped, the Mart's Explorakits; a phone.
+// the pickaxe striking where tapped, a collapsed wall's new gauge (a kit held, one bought there, switched off), the
+// Mart's Explorakits; a phone.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import {
@@ -45,7 +46,11 @@ const FILES = {
 
 const dig: LiveEvent = { ...newLiveEvent('ug', START, END), type: 'underground', minBadges: 0 }
 
-async function boot(page: Page, save: SaveData, opts: { session?: boolean; rpc?: SupabaseMock['rpc'] } = {}) {
+async function boot(
+  page: Page,
+  save: SaveData,
+  opts: { session?: boolean; rpc?: SupabaseMock['rpc']; refresh?: boolean } = {},
+) {
   await mockSupabase(page, { rpc: { event_time: () => ({ now: NOW, day: NOW.slice(0, 10) }), ...opts.rpc } })
   await page.route(`${SUPABASE}/rest/v1/game_config*`, async (route) => {
     if (!route.request().url().includes('configVersion')) return route.fallback()
@@ -59,7 +64,7 @@ async function boot(page: Page, save: SaveData, opts: { session?: boolean; rpc?:
     ...bundle.config,
     configVersion: VERSION,
     liveEvents: { access: 'all', list: [dig] },
-    underground: { ...DEFAULT_CONFIG.underground, access: 'all' },
+    underground: { ...DEFAULT_CONFIG.underground, access: 'all', refresh: opts.refresh ? 'all' : 'off' },
   }
   await page.addInitScript(
     ([s, f, b, v, key, session]) => {
@@ -139,9 +144,11 @@ test('no rules on its page (opening it is enough), Home’s square with the kits
   await expect.poll(async () => (await stored(page)).events?.liveSeen).toEqual(['ug'])
   expect((await stored(page)).underground?.rulesSeen).toBe(true)
   await expect(page.getByRole('heading', { level: 1, name: 'The Underground' })).toBeVisible()
-  await expect(page.getByTestId('ug-kits')).toContainText('3')
-  await expect(page.getByText('Free kits full: dig to start the clock')).toBeVisible()
-  await expect(page.getByText('Lv.0 / 8 · this event only')).toBeVisible()
+  // Pictures over words (docs/34 §13): the kits are slots, read out as one line; the pickaxe's level is on its tag.
+  await expect(page.getByRole('img', { name: '3 kits. Free kits full: dig to start the clock' })).toBeVisible()
+  await expect(page.locator('.ug-kitslot.held')).toHaveCount(3)
+  await expect(page.getByText('Lv.0 / 8 · this event only')).toBeAttached()
+  await expect(page.locator('.ug-pickstand')).toContainText('Lv.0')
   await shot(page, 'page')
 
   await page.goto('/home')
@@ -179,7 +186,11 @@ test('a wall dug to its haul: the plate for Arceus, an orb in the bag', async ({
     '14',
   )
   await page.getByRole('button', { name: 'Row 3, column 3: 1 layer' }).click()
-  await expect(page.getByText('Everything dug out!')).toBeVisible()
+  await expect(page.getByText('Everything dug out!')).toBeAttached()
+  // Pictures over words (docs/34 §13): the gold stamp over the wall, both slots showing what came out.
+  await expect(page.locator('.ug-stamp.gold')).toHaveText('All dug out!')
+  await expect(page.getByRole('list', { name: '2 things buried · 2 dug out' }).getByRole('listitem')).toHaveText(['', ''])
+  await expect(page.locator('[data-slot].done')).toHaveCount(2)
   await shot(page, 'dig-cleared')
   await page.getByRole('button', { name: 'See the haul' }).click()
   const haul = page.getByRole('dialog', { name: '2 things dug out' })
@@ -238,6 +249,57 @@ test('the pickaxe strikes where the finger lands, and the gauge cracks a slab', 
   await expect(page.locator('.ug-slab.broken')).toHaveCount(1)
   await expect(page.locator('.ug-slab')).toHaveCount(15)
   await shot(page, 'dig-strike')
+})
+
+/** The open wall one strike from collapsing, `kits` free kits held. */
+function lastStrike(gold: number, kits: number): SaveData {
+  const s = inEvent(gold, { freeKits: kits })
+  return { ...s, underground: { ...s.underground!, wall: { ...s.underground!.wall!, used: 14 } } }
+}
+const gauge = (page: Page) => page.getByRole('meter', { name: 'Strikes before the wall collapses' })
+/** The middle tile: whatever the roll, the orb and the plate in the corners stay buried, and the wall collapses. */
+const collapse = async (page: Page) => {
+  await page.getByRole('button', { name: 'Row 2, column 2: 1 layer' }).click({ timeout: 15_000 })
+  await expect(page.getByText('The wall collapsed!', { exact: false })).toBeAttached()
+  await expect(page.locator('.ug-stamp')).toHaveText('Collapsed!')
+}
+
+test('a collapsed wall takes a kit held for a new gauge; the wall stays as it is', async ({ page }) => {
+  await boot(page, lastStrike(5_000, 1), { refresh: true })
+  await page.goto('/underground/dig')
+  await collapse(page)
+  await shot(page, 'dig-collapsed-kit')
+  await page.getByRole('button', { name: 'Dig on · use a kit (1)' }).click()
+  await expect(page.getByText('New gauge: dig on!')).toBeAttached()
+  await expect(gauge(page)).toHaveAttribute('aria-valuenow', '15')
+  await expect(page.getByRole('button', { name: 'Row 1, column 1: 1 layer' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Row 2, column 2: dug out' })).toBeVisible()
+  await expect.poll(async () => (await stored(page)).underground?.wall?.used).toBe(0)
+  const u = (await stored(page)).underground!
+  expect(u.freeKits).toBe(0)
+  expect(u.wall!.usedBefore).toBe(15)
+  expect((await stored(page)).gold).toBe(5_000)
+})
+
+test('with no kit, one is bought there at the Mart’s price', async ({ page }) => {
+  await boot(page, lastStrike(5_000, 0), { refresh: true })
+  await page.goto('/underground/dig')
+  await collapse(page)
+  await shot(page, 'dig-collapsed-buy')
+  await page.getByRole('button', { name: 'Dig on · buy a kit ₽1,000' }).click()
+  await expect(gauge(page)).toHaveAttribute('aria-valuenow', '15')
+  await expect.poll(async () => (await stored(page)).gold).toBe(4_000)
+  const u = (await stored(page)).underground!
+  expect(u.boughtCount).toBe(1)
+  expect(u.boughtKits).toBe(0)
+})
+
+test('switched off, a collapsed wall offers only its haul', async ({ page }) => {
+  await boot(page, lastStrike(5_000, 1))
+  await page.goto('/underground/dig')
+  await collapse(page)
+  await expect(page.getByRole('button', { name: 'See the haul' })).toBeVisible()
+  await expect(page.getByTestId('ug-refresh')).toHaveCount(0)
 })
 
 test('the Mart sells Explorakits while it runs', async ({ page }) => {

@@ -196,24 +196,21 @@ function PityBox({
 }
 
 /**
- * "Support me": the developer's pop-up (Discord, invite, Ko-fi), behind the SUPPORT ME button. Each player also sees
- * it once per region, when its 5th badge is won. The monthly goal and currency only feed the weekly #support-me post
- * on Discord (docs/23 §11).
- * Ticking the reset bumps the round, so on the next Save + Publish everyone who has seen it gets it once more; the
- * box then reads unticked again, ready for the next time.
+ * "Support me": the developer's pop-up (Discord, invite, Ko-fi), behind the SUPPORT ME button. It also opens by itself
+ * on Home (engine/donation): from a player's 4th session, 5 minutes into it, with a badge won, once a day. The monthly
+ * goal and currency only feed the weekly #support-me post on Discord (docs/23 §11). The old reset went with the
+ * 5th-badge rule: once a day needs none.
  */
 function DonationBox() {
   const [raw, setRaw] = useConfigRow('donation')
   const cfg: DonationConfig = { ...DEFAULT_CONFIG.donation, ...raw }
   const set = (patch: Partial<DonationConfig>) => setRaw({ ...cfg, ...patch })
-  const saved = useAdmin((st) => st.base.game_config.find((r) => r.key === 'donation')?.value as Partial<DonationConfig> | undefined)
-  const savedRound = Number(saved?.round ?? 0)
   const url = cfg.kofiUrl.trim()
   const urlOk = isDonationUrl(url)
   return (
     <Box
       title="Support me (donations)" icon="heart"
-      hint="The SUPPORT ME button (side menu, Settings) and its pop-up: join the Discord, invite friends, and a Ko-fi button to support the developer, saying the game itself can never be paid for. It also shows once per region, when its 5th badge is won, between fights. Save, then Publish, for players to get the change."
+      hint="The SUPPORT ME button (side menu, Settings) and its pop-up: join the Discord, invite friends, and a Ko-fi button to support the developer, saying the game itself can never be paid for. It also opens by itself on Home, between fights: from a player's 4th session (a new one after 30 min away), 5 minutes into it, with at least 1 badge, at most once a day. Save, then Publish, for players to get the change."
     >
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="flex items-center gap-2 text-lg">
@@ -256,21 +253,6 @@ function DonationBox() {
           <NumInput min={0} value={cfg.raisedBefore} onChange={(v) => set({ raisedBefore: Math.max(0, v ?? 0) })} />
         </Field>
       </div>
-      <label className="flex items-start gap-2 text-lg">
-        <input
-          type="checkbox"
-          className="mt-1.5"
-          checked={cfg.round > savedRound}
-          onChange={(e) => set({ round: e.target.checked ? savedRound + 1 : savedRound })}
-        />
-        <span>
-          Reset — show it again to everyone
-          <span className="block text-sm text-muted">
-            Every player who has already seen it gets it once more, at their next quiet moment (those with a region at 5
-            badges). Unticks itself once saved · reset {savedRound} time{savedRound === 1 ? '' : 's'} so far.
-          </span>
-        </span>
-      </label>
       {cfg.enabled && !urlOk && <p className="text-lg text-danger">Enabled, but hidden from players until the Ko-fi link is set.</p>}
     </Box>
   )

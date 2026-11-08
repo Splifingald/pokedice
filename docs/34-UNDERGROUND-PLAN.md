@@ -361,3 +361,52 @@ gives one or two. The admin sets the rate (the plate weight, the kit price, the 
    admin** to try it, **On for everyone** to open it. Under "Teams and orb prices", the share orbs sell for outside a
    full team (10 %; 0 = not at all). Save & Publish.
 3. Teams need players signed in and friends with each other; signed out, players dig solo.
+
+## 12. A collapsed wall's new gauge (2026-11-08)
+
+The user's ask: when a wall collapses, the player can spend another Explorakit on the same wall, or buy one right there
+if they hold none; the wall stays as it is and the gauge starts again.
+
+- **Its own switch** inside the Underground's row, `underground.refresh` (Off / On for admin / On for everyone, **Off
+  by default**; Admin → Live events → an Underground event → "A collapsed wall's new gauge"). It works only with the
+  Underground itself on. Kits live in the save (as buying them in the Mart does), so no server function reads it: the
+  row only gains the key (migration 0141).
+- **The rule** (engine, `refreshOffer` / `refreshWall`): the open wall collapsed, its haul not taken, the event
+  running. A kit held is spent (a free one first, its clock starting from the cap, as opening a wall does); with none,
+  one is bought on the spot at the Mart's price, within the per-player limit, and spent at once. The wall keeps its
+  layers and what it hides; `used` goes back to 0 and the strikes used so far add up in `wall.usedBefore` (the end
+  line counts them all). As many times as there are kits.
+- **What players see**: the dig's footer at the collapse (`UgWallEnd`, docs/15 §32): the gold DIG ON [kit] ×1 or
+  DIG ON [kit] ₽… (§13), then SEE THE HAUL as before; the gauge rebuilds slab by slab. Taking the haul ends
+  the wall, as before. INFO's wall row says a kit gives a collapsed wall a new gauge while the switch is on.
+- **Tests**: `tests/engine/underground.test.ts` (the switch, when it's offered, a kit held, a kit bought, the purse and
+  the limit, the haul after, the save's round trip); `tests/underground-sql.test.ts` (the row with the key, run twice).
+
+Setting it up: run
+https://github.com/Splifingald/pokedice/blob/claude/underground-wall-explorakit-fzr4o0/supabase/migrations/0141_underground_refresh.sql
+in the Supabase SQL editor (`supabase/seed.sql` carries it too, inlined; without it the game reads the switch as Off),
+then Admin → Live events → an Underground event → "A collapsed wall's new gauge": On for admin to try it, On for
+everyone to open it. Save & Publish.
+
+## 13. Pictures over words, and juice (2026-11-08)
+
+The user's ask: the event had too much text and wasn't impressive or juicy enough. Everything below is presentation:
+no rule or number changed, and the engine decides as before. docs/15 §32 has the details.
+
+- **Less text**: the dig shows the strikes left as a big number on the gauge, what the wall hides as slots
+  (silhouettes with "?", then the picture), the kits as kit ×n, the die with its level tag and faces. The sentence
+  explaining each roll, "The wall holds", the buried list's words, "Pickaxe Lv.n: its die" and "Same wall, same finds"
+  are gone from sight (still read out, or in INFO). The end's title is a stamp over the wall, and the end line is read
+  out. The page's kits are slots with a timer ring, the pickaxe stands in its tier's metal, the orb bag is a heap with a
+  chip per colour, and the team's line and the bag's table moved under More details. The haul's cards drop the line
+  that repeated their tag.
+- **The rock**: three textures by layers left (hard rock, stone, crumbly dirt), varied per tile, more broken as layers
+  come off; a last-layer tile over something buried glints, as in the games.
+- **Juice**: the layers taken pop over the tiles hit; rock chunks fly; a 3 bursts white, shows a gold number and shakes
+  the screen; a thing dug out flies to its slot; the collapse quakes and raises dust under a red COLLAPSED! stamp; a
+  cleared wall rains confetti under a gold ALL DUG OUT!; a new gauge rebuilds slab by slab; the haul's worth counts up
+  and its cards turn over one by one; buying a pickaxe level spins and flashes it. New sounds: `ug.crit`, `ug.stamp`,
+  `ug.clear`, `ug.reveal`, `ug.refill`. Every effect follows the motion levels (full, short, off) and calm.
+- **Code**: `src/components/Underground.tsx` (`UgWall` reworked; `UgBuriedSlots`, `UgFlight`, `UgWallEnd` reworked,
+  `HaulWorth`, `UgKitSlots`, `UgPickStand`, `UgOrbHeap`), `src/styles/underground.css`, the dig and the page, the
+  pickaxe's tier palettes (`PixelIcon`'s `palette`), the kitchen sink.

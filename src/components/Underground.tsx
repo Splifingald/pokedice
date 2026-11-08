@@ -4,11 +4,14 @@
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import {
   freeKitRules,
+  orbPrice,
   orbsValue,
+  refreshOffer,
   soloShare,
   thingDone,
   thingTiles,
   ugCfg,
+  ugRefreshOn,
   wallRules,
   type GameData,
   type HaulLine,
@@ -26,6 +29,7 @@ import { cx } from '@/theme/util'
 import sheet from '@/assets/underground.png'
 import atlas from '@/data/underground-atlas.json'
 import { Die } from './Die'
+import { useCountUp } from './GoldPill'
 import { ItemSprite } from './ItemSprite'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
@@ -201,6 +205,7 @@ export function CrackGauge({
   used,
   calm,
   hitKey,
+  rebuildKey,
   motion = 'full',
   className,
 }: {
@@ -208,6 +213,8 @@ export function CrackGauge({
   used: number
   calm?: boolean
   hitKey?: number
+  /** A new gauge (docs/34 §12): its slabs come back from the left, one by one. */
+  rebuildKey?: number
   motion?: 'full' | 'short' | 'off'
   className?: string
 }) {
@@ -216,6 +223,7 @@ export function CrackGauge({
   const broken = (k: number) => k >= left
   // The slab the last strike broke: the leftmost broken one.
   const fresh = hitKey != null && used > 0 && motion !== 'off' ? left : null
+  const rebuild = rebuildKey != null && used === 0 && motion !== 'off'
   const crack: string[] = []
   for (let k = left; k < strikes; k++) {
     const [a, b] = zig(k)
@@ -238,7 +246,7 @@ export function CrackGauge({
       className={cx('ug-gauge', hot && 'hot', hot && left > 0 && !calm && 'shake', className)}
     >
       <div
-        key={hitKey}
+        key={`${hitKey}:${rebuildKey}`}
         className={cx('ug-gauge-band', fresh != null && motion === 'full' && !calm && 'jolt')}
       >
         <svg
@@ -248,7 +256,12 @@ export function CrackGauge({
           className="block h-full w-full"
         >
           {Array.from({ length: strikes }, (_, k) => (
-            <polygon key={k} points={segPoints(k)} className={cx('ug-slab', broken(k) && 'broken')} />
+            <polygon
+              key={k}
+              points={segPoints(k)}
+              className={cx('ug-slab', broken(k) && 'broken', rebuild && !broken(k) && 'rebuild')}
+              style={rebuild ? ({ '--k': `${k * 35}ms` } as CSSProperties) : undefined}
+            />
           ))}
           {crack.length > 0 && <polyline points={crack.join(' ')} className="ug-crack" />}
           {fresh != null && <polygon points={segPoints(fresh)} className="ug-slab-flash" />}
@@ -289,10 +302,83 @@ const tileCentre = (wall: Pick<Wall, 'cols' | 'rows'>, tile: number) => ({
   top: `calc(6px + (100% - 12px) * ${(Math.floor(tile / wall.cols) + 0.5) / wall.rows})`,
 })
 
+/** Where a tile's flecks sit (`v0`–`v3`), so neighbouring tiles of the same rock don't look stamped. */
+const tileVariant = (i: number, cols: number) => (i * 7 + Math.floor(i / cols) * 3) % 4
+
+/** Rock flying off a strike: more and bigger chunks the bigger the roll, thrown both ways. */
+function Debris({ roll }: { roll: number }) {
+  const n = 2 + roll * 2
+  return (
+    <i className="ug-debris" aria-hidden>
+      {Array.from({ length: n }, (_, k) => {
+        const side = k % 2 ? 1 : -1
+        const spread = 10 + ((k * 13) % 22) + roll * 6
+        return (
+          <b
+            key={k}
+            style={
+              {
+                '--dx': `${side * spread}px`,
+                '--up': `${14 + ((k * 7) % 16) + roll * 5}px`,
+                '--dy': `${18 + ((k * 11) % 20)}px`,
+                '--sz': `${4 + ((k + roll) % 3) * 2}px`,
+                '--rc': ['#8a6440', '#c49a63', '#4e3523'][k % 3],
+              } as CSSProperties
+            }
+          />
+        )
+      })}
+    </i>
+  )
+}
+
+const CONFETTI = ['#ffbe2e', '#f2553f', '#34c97a', '#3a7bd5', '#ff9a85', '#fff']
+
+/** The end over the wall: the stamp, and the collapse's dust or a cleared wall's confetti (full motion). */
+function WallEndFx({ end, motion }: { end: 'cleared' | 'collapsed'; motion: 'full' | 'short' | 'off' }) {
+  return (
+    <>
+      {motion === 'full' && end === 'collapsed' && (
+        <i className="ug-cloud" aria-hidden>
+          <b />
+          <b />
+          <b />
+          <b />
+          <b />
+        </i>
+      )}
+      {motion === 'full' && end === 'cleared' && (
+        <i className="ug-confetti" aria-hidden>
+          {Array.from({ length: 18 }, (_, k) => (
+            <b
+              key={k}
+              style={
+                {
+                  '--x': `${(k * 37) % 100}%`,
+                  '--c': CONFETTI[k % CONFETTI.length],
+                  '--d': `${(k * 90) % 700}ms`,
+                  '--sx': `${((k * 23) % 60) - 30}px`,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </i>
+      )}
+      <b
+        className={cx('ug-stamp font-normal', end === 'cleared' && 'gold', motion !== 'off' && 'slam')}
+        aria-hidden
+      >
+        {end === 'cleared' ? t('ui.ug.stampCleared') : t('ui.ug.stampCollapsed')}
+      </b>
+    </>
+  )
+}
+
 /**
- * The wall: what it hides drawn underneath, each tile on top a button (its layers as rock and as dots, its row,
- * column and layers read out). A dug tile shows what lies beneath. `fx` swings the pickaxe where the finger landed
- * and flashes the tiles the strike hit on its impact; `found` pops the name of a thing just dug out.
+ * The wall: what it hides drawn underneath, each tile on top a button (its rock by layers left and its dots, its row,
+ * column and layers read out). A dug tile shows what lies beneath; a thin tile over something buried glints. `fx`
+ * swings the pickaxe where the finger landed, and on its impact the tiles hit flash, show the layers taken, and throw
+ * rock (a 3 bursts white); `found` shines on a thing just dug out; `end` stamps the wall cleared or collapsed.
  */
 export function UgWall({
   wall,
@@ -303,7 +389,7 @@ export function UgWall({
   found,
   motion = 'full',
   calm,
-  collapsing,
+  end,
 }: {
   wall: Wall
   data: GameData
@@ -313,16 +399,17 @@ export function UgWall({
   found?: FoundFx | null
   motion?: 'full' | 'short' | 'off'
   calm?: boolean
-  collapsing?: boolean
+  end?: 'cleared' | 'collapsed' | null
 }) {
   const box = useRef<HTMLDivElement>(null)
   const owner = new Map<number, WallThing>()
   for (const th of wall.things) for (const i of thingTiles(wall, th)) owner.set(i, th)
+  const side = fx ? fx.roll - wall.neighbourLoss : 0
   const near = (i: number) => {
     if (!fx) return false
     const dx = Math.abs((i % wall.cols) - (fx.tile % wall.cols))
     const dy = Math.abs(Math.floor(i / wall.cols) - Math.floor(fx.tile / wall.cols))
-    return dx + dy === 1 && fx.roll - wall.neighbourLoss > 0
+    return dx + dy === 1 && side > 0
   }
   const animate = motion !== 'off'
   const swing = motion === 'full'
@@ -333,15 +420,16 @@ export function UgWall({
   useEffect(() => {
     const el = box.current
     if (fxKey == null || !el || !swing || calm || typeof el.animate !== 'function') return
-    const d = 1 + fxRoll
+    const d = 1 + fxRoll * (fxRoll >= 3 ? 2 : 1)
     el.animate(
       [
         { transform: 'translate(0, 0)' },
         { transform: `translate(0, ${d}px)` },
         { transform: `translate(${-d / 2}px, ${-1}px)` },
+        { transform: `translate(${d / 3}px, 0)` },
         { transform: 'translate(0, 0)' },
       ],
-      { duration: 150, delay: UG_IMPACT_MS, easing: 'steps(4, end)' },
+      { duration: fxRoll >= 3 ? 220 : 150, delay: UG_IMPACT_MS, easing: 'steps(5, end)' },
     )
   }, [fxKey, fxRoll, swing, calm])
 
@@ -350,15 +438,11 @@ export function UgWall({
       ? { left: `${fx.at.x * 100}%`, top: `${fx.at.y * 100}%` }
       : tileCentre(wall, fx.tile)
     : null
-  const pop = found ? wall.things[found.thing] : undefined
+  const shine = found ? wall.things[found.thing] : undefined
   return (
     <div
       ref={box}
-      className={cx(
-        'ug-wall relative',
-        swing && 'swing',
-        collapsing && animate && (motion === 'full' ? 'fall' : 'thud'),
-      )}
+      className={cx('ug-wall relative', swing && 'swing', end === 'collapsed' && animate && (swing ? 'fall' : 'thud'))}
       style={{ aspectRatio: `${wall.cols} / ${wall.rows}` }}
     >
       <div className="ug-soil absolute inset-0" aria-hidden>
@@ -393,7 +477,9 @@ export function UgWall({
               : th
                 ? t('ui.ug.tileThing', { row, col, thing: thingName(th, data) })
                 : t('ui.ug.tileOpen', { row, col })
-          const hit = animate && fx && (fx.tile === i || near(i))
+          const main = !!fx && fx.tile === i
+          const hit = animate && fx && (main || near(i))
+          const glint = d === 1 && th && !end && !thingDone(wall, th)
           return (
             <button
               key={i}
@@ -409,18 +495,23 @@ export function UgWall({
                     : undefined
                 onStrike?.(i, at)
               }}
-              className={cx('ug-tile relative', d > 0 ? `d${d}` : 'open')}
+              className={cx('ug-tile relative', d > 0 ? `d${d} v${tileVariant(i, wall.cols)}` : 'open')}
             >
               {d > 0 && <i className={cx('ug-dots', `n${d}`)} aria-hidden />}
-              {hit && <i key={fx!.key} className={cx('ug-flash', fx!.tile === i && 'main')} aria-hidden />}
-              {hit && fx!.tile === i && swing && (
-                <i key={`d${fx!.key}`} className="ug-dust" aria-hidden>
-                  <b />
-                  <b />
-                  <b />
-                  <b />
+              {glint && animate && (
+                <i className="ug-glint" style={{ '--gd': `${(i * 373) % 2400}ms` } as CSSProperties} aria-hidden />
+              )}
+              {hit && <i key={fx!.key} className={cx('ug-flash', main && 'main')} aria-hidden />}
+              {hit && (
+                <i
+                  key={`n${fx!.key}`}
+                  className={cx('ug-dmg', main && 'main', main && fx!.roll >= 3 && 'crit')}
+                  aria-hidden
+                >
+                  -{main ? fx!.roll : side}
                 </i>
               )}
+              {hit && main && swing && <Debris key={`d${fx!.key}`} roll={fx!.roll} />}
             </button>
           )
         })}
@@ -432,19 +523,21 @@ export function UgWall({
           </span>
         </i>
       )}
-      {animate && pop && found && (
-        <b
+      {swing && fx && pickAt && fx.roll >= 3 && !calm && (
+        <i key={`b${fx.key}`} className="ug-burst" style={pickAt} aria-hidden />
+      )}
+      {animate && shine && found && (
+        <i
           key={`f${found.key}`}
-          className="ug-pop font-pixel-sm"
+          className="ug-burst"
           style={{
-            left: `calc(6px + (100% - 12px) * ${(pop.x + pop.w / 2) / wall.cols})`,
-            top: `calc(6px + (100% - 12px) * ${pop.y / wall.rows})`,
+            left: `calc(6px + (100% - 12px) * ${(shine.x + shine.w / 2) / wall.cols})`,
+            top: `calc(6px + (100% - 12px) * ${(shine.y + shine.h / 2) / wall.rows})`,
           }}
           aria-hidden
-        >
-          {thingName(pop, data)}
-        </b>
+        />
       )}
+      {end && <WallEndFx end={end} motion={motion} />}
     </div>
   )
 }
@@ -526,8 +619,214 @@ export function ThingIcon({ thing, data, size = 40 }: { thing: WallThing; data: 
   )
 }
 
+/** What a collapsed wall's new gauge takes, as the engine says (`refreshOffer`). */
+export type UgRefreshOffer = ReturnType<typeof refreshOffer>
+
+/**
+ * A wall's end, in the dig's footer: the stamp over the wall says how it ended, so this is only what to do next. A
+ * collapsed wall offers a new gauge (docs/34 §12) when the engine does: DIG ON with a kit, or with a kit's price (gold;
+ * drawn disabled with what's missing when the purse is short or the limit reached, its tap saying why). Then SEE THE
+ * HAUL. The title and the count are read out.
+ */
+export function UgWallEnd({
+  cleared,
+  found,
+  n,
+  used,
+  offer,
+  onRefresh,
+  onHaul,
+}: {
+  cleared: boolean
+  found: number
+  n: number
+  used: number
+  offer: UgRefreshOffer
+  onRefresh: () => void
+  onHaul: () => void
+}) {
+  const { t } = useT()
+  const blocked = offer?.kind === 'buy' && (offer.soldOut || offer.short > 0)
+  const name = !offer
+    ? ''
+    : offer.kind === 'kit'
+      ? t('ui.ug.refreshKit', { n: offer.held })
+      : offer.soldOut
+        ? t('ui.ug.refreshSoldOut')
+        : offer.short > 0
+          ? t('ui.shop.needMore', { price: money(offer.short) })
+          : t('ui.ug.refreshBuy', { price: money(offer.price) })
+  return (
+    <div className="grid gap-2">
+      <p className="sr-only" role="status">
+        {cleared ? t('ui.ug.clearedTitle') : t('ui.ug.collapsedTitle')} {t('ui.ug.endLine', { found, n, used })}
+      </p>
+      {offer && (
+        <PixelButton
+          data-testid="ug-refresh"
+          variant={blocked ? 'secondary' : 'gold'}
+          aria-disabled={blocked}
+          aria-label={name}
+          onClick={onRefresh}
+        >
+          {offer.kind === 'buy' && offer.soldOut ? (
+            t('ui.live.shop.soldOut')
+          ) : offer.kind === 'buy' && offer.short > 0 ? (
+            t('ui.shop.needMore', { price: money(offer.short) })
+          ) : (
+            <>
+              {t('ui.ug.digOn')}
+              <PixelIcon name="kit" size={26} />
+              {offer.kind === 'kit' ? '×1' : money(offer.price)}
+            </>
+          )}
+        </PixelButton>
+      )}
+      <PixelButton variant="primary" size="lg" onClick={onHaul}>
+        {t('ui.ug.seeHaul')}
+      </PixelButton>
+    </div>
+  )
+}
+
+/**
+ * What the wall hides, one slot per thing: its shape as a dark silhouette with "?" while it's buried, its picture once
+ * dug out (`popped` makes a slot pop, after `delay`, as the thing flying to it lands). Each slot's name is read out.
+ */
+export function UgBuriedSlots({
+  wall,
+  data,
+  popped,
+  delay = 0,
+}: {
+  wall: Wall
+  data: GameData
+  popped?: FoundFx | null
+  delay?: number
+}) {
+  const found = wall.things.filter((th) => thingDone(wall, th)).length
+  return (
+    <ul
+      aria-label={t('ui.ug.buried', { n: wall.things.length, found })}
+      className="m-0 flex list-none flex-wrap gap-2.5 p-0"
+    >
+      {wall.things.map((th, k) => {
+        const done = thingDone(wall, th)
+        const pop = popped?.thing === k
+        const id = thingSprite(th)
+        const cols = Math.min(th.w, 3)
+        return (
+          <li
+            key={`${k}:${pop ? popped!.key : 0}`}
+            data-slot={k}
+            aria-label={done ? thingName(th, data) : t('ui.ug.stillBuried')}
+            className={cx('ug-slot', done && 'done', pop && done && 'pop')}
+            style={{ '--fly': `${delay}ms` } as CSSProperties}
+          >
+            {done ? (
+              <span className="absolute inset-[6px]" aria-hidden>
+                {id ? (
+                  <UgSprite id={id} fit={{ w: 1, h: 1 }} />
+                ) : (
+                  <ItemSprite item={data.items[th.item ?? '']} size={36} />
+                )}
+              </span>
+            ) : (
+              <>
+                <span
+                  className="ug-shape"
+                  style={{ gridTemplateColumns: `repeat(${cols}, 9px)` }}
+                  aria-hidden
+                >
+                  {Array.from({ length: cols * Math.min(th.h, 3) }, (_, c) => (
+                    <i key={c} />
+                  ))}
+                </span>
+                <b className="ug-q font-normal" aria-hidden>
+                  ?
+                </b>
+              </>
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+/** A thing just dug out, on its way from the wall to its slot. */
+export interface UgFlightFx {
+  key: number
+  thing: WallThing
+  from: { x: number; y: number; w: number; h: number }
+  to: { x: number; y: number; w: number; h: number }
+}
+
+/** How long a thing takes to fly to its slot, after the pickaxe's impact. */
+export const UG_FLY_MS = 620
+
+/** The flight: the thing's picture rises out of the wall in an arc, shining, and shrinks into its slot. */
+export function UgFlight({ fx, data, delay = 0 }: { fx: UgFlightFx; data: GameData; delay?: number }) {
+  const el = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const node = el.current
+    if (!node || typeof node.animate !== 'function') return
+    const dx = fx.to.x + fx.to.w / 2 - (fx.from.x + fx.from.w / 2)
+    const dy = fx.to.y + fx.to.h / 2 - (fx.from.y + fx.from.h / 2)
+    const k = Math.min(fx.to.w / fx.from.w, fx.to.h / fx.from.h)
+    node.animate(
+      [
+        { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+        { transform: `translate(${dx * 0.3}px, ${Math.min(dy * 0.3, 0) - 60}px) scale(1.35)`, opacity: 1 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${k})`, opacity: 1 },
+      ],
+      { duration: UG_FLY_MS, delay, easing: 'steps(9, end)', fill: 'both' },
+    )
+  }, [fx, delay])
+  const id = thingSprite(fx.thing)
+  return (
+    <span
+      ref={el}
+      className="ug-fly"
+      style={{ left: fx.from.x, top: fx.from.y, width: fx.from.w, height: fx.from.h }}
+      aria-hidden
+    >
+      {id ? <UgSprite id={id} fit={{ w: fx.thing.w, h: fx.thing.h }} /> : <ItemSprite item={data.items[fx.thing.item ?? '']} size={48} />}
+    </span>
+  )
+}
+
+/** The haul's cards turn over this far apart. */
+export const UG_CARD_MS = 280
+
+/** What the orbs of a haul that went into the bag are worth, counting up from 0 as the cards turn. */
+export function HaulWorth({ lines, data, reveal }: { lines: HaulLine[]; data: GameData; reveal?: boolean }) {
+  const cfg = ugCfg(data)
+  const worth = lines.reduce((n, l) => {
+    const size = sizeOf(l.thing.kind)
+    return l.outcome === 'bag' && size ? n + orbPrice(cfg, l.thing.colour!, size) : n
+  }, 0)
+  const shown = useCountUp(worth, reveal ? 300 + lines.length * UG_CARD_MS : 0, reveal ? 0 : worth)
+  if (!worth) return null
+  return (
+    <p className="m-0 flex items-center justify-center gap-2 bg-cream px-3 py-1.5 text-[22px] leading-none shadow-card-gold">
+      <OrbArt colour="red" px={20} />
+      <span className="tabular-nums">{t('ui.ug.bagWorth', { price: money(shown) })}</span>
+    </p>
+  )
+}
+
 /** The haul, one line per thing: its picture, its name, where it went. A new plate first, then in the wall's order. */
-export function HaulList({ lines, data }: { lines: HaulLine[]; data: GameData }) {
+export function HaulList({
+  lines,
+  data,
+  reveal,
+}: {
+  lines: HaulLine[]
+  data: GameData
+  /** The cards turn over one by one (`UG_CARD_MS` apart), a new plate with a flash. */
+  reveal?: boolean
+}) {
   const order: HaulLine['outcome'][] = ['plate', 'box', 'bag', 'sent', 'lost']
   const sorted = [...lines].sort((a, b) => order.indexOf(a.outcome) - order.indexOf(b.outcome))
   return (
@@ -542,9 +841,8 @@ export function HaulList({ lines, data }: { lines: HaulLine[]; data: GameData })
               ? t('ui.ug.out.boxSub', { species: species?.name ?? '' })
               : l.outcome === 'sent'
                 ? t('ui.ug.out.sentSub', { colour: t(`ui.ug.colour.${l.thing.colour}`), name: l.to!.name })
-                : l.outcome === 'bag'
-                  ? t('ui.ug.out.bagSub')
-                  : t('ui.ug.out.lostSub')
+                : // The tag says where an orb went; a lost thing's name says it all.
+                  null
         const tag =
           l.outcome === 'sent'
             ? t('ui.ug.out.sent', { name: l.to!.name })
@@ -554,8 +852,11 @@ export function HaulList({ lines, data }: { lines: HaulLine[]; data: GameData })
         return (
           <li
             key={k}
+            style={reveal ? ({ '--i': `${k * UG_CARD_MS}ms` } as CSSProperties) : undefined}
             className={cx(
               'flex items-center gap-2.5 p-2',
+              reveal && 'ug-card',
+              reveal && l.outcome === 'plate' && 'plate',
               l.outcome === 'plate'
                 ? 'bg-cream shadow-card-gold'
                 : l.outcome === 'lost'
@@ -577,7 +878,7 @@ export function HaulList({ lines, data }: { lines: HaulLine[]; data: GameData })
               <b className="truncate text-[20px] font-normal leading-none">
                 {l.outcome === 'lost' ? t('ui.ug.out.lost') : thingName(l.thing, data)}
               </b>
-              <small className="font-pixel-sm text-[16px] text-muted">{sub}</small>
+              {sub && <small className="font-pixel-sm text-[16px] text-muted">{sub}</small>}
             </span>
             {l.outcome !== 'lost' && (
               <span
@@ -763,7 +1064,11 @@ export function ugRuleRows(data: GameData): RuleRow[] {
     {
       icon: <PixelIcon name="pickaxe" size={26} />,
       title: t('ui.ug.rules.wall.title'),
-      text: t('ui.ug.rules.wall.text', { cols: w.cols, rows: w.rows, strikes: w.strikes }),
+      text: t(ugRefreshOn(data) ? 'ui.ug.rules.wall.textRefresh' : 'ui.ug.rules.wall.text', {
+        cols: w.cols,
+        rows: w.rows,
+        strikes: w.strikes,
+      }),
     },
     {
       icon: (
@@ -810,6 +1115,151 @@ export function UgRulesModal({
       icon="pickaxe"
       rules={ugRuleRows(data)}
     />
+  )
+}
+
+/**
+ * The Explorakits as pictures: one slot per free kit the cap allows (held ones gold; the next one with its clock as a
+ * ring filling round it and the time under it; the rest empty), and the bought kits in a blue slot with their count.
+ * The whole row is read out as one line.
+ */
+export function UgKitSlots({
+  freeKits,
+  cap,
+  bought,
+  tillFree,
+  everyMs,
+  label,
+}: {
+  freeKits: number
+  cap: number
+  bought: number
+  /** ms until the next free kit; null at the cap. */
+  tillFree: number | null
+  everyMs: number
+  label: string
+}) {
+  const slots = Math.max(cap, freeKits)
+  const p = tillFree != null && Number.isFinite(everyMs) ? Math.round((1 - tillFree / everyMs) * 100) : 0
+  return (
+    <div role="img" aria-label={label} className="flex flex-wrap items-center gap-2 pb-2">
+      {Array.from({ length: slots }, (_, k) => {
+        const held = k < freeKits
+        const next = !held && k === freeKits && tillFree != null
+        return (
+          <span
+            key={k}
+            className={cx('ug-kitslot', held && 'held', next && 'next')}
+            style={next ? ({ '--p': Math.max(0, Math.min(100, p)) } as CSSProperties) : undefined}
+          >
+            <PixelIcon name="kit" size={34} className={cx(!held && 'opacity-25 grayscale')} />
+            {next && <b className="ug-kit-time font-normal">{countdownShort(tillFree!)}</b>}
+          </span>
+        )
+      })}
+      {bought > 0 && (
+        <span className="ug-kitslot bought">
+          <PixelIcon name="kit" size={34} />
+          <b className="absolute -right-1.5 -top-1.5 bg-ink px-1 text-[16px] font-normal leading-tight text-paper">
+            {bought}
+          </b>
+        </span>
+      )}
+    </div>
+  )
+}
+
+/** "5h", "42m", "30s": the next free kit's time, short enough for a badge. */
+function countdownShort(ms: number): string {
+  const m = Math.ceil(ms / 60_000)
+  if (m >= 60) return `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}`
+  return m > 1 ? `${m}m` : `${Math.max(1, Math.ceil(ms / 1000))}s`
+}
+
+/** The pickaxe's metal by tier: stone, bronze, steel, gold, crystal, as it climbs its levels. */
+const PICK_TIERS: Record<string, string>[] = [
+  { d: '#5f5446', s: '#8f8270', S: '#bdb09a' },
+  { d: '#8a4f1e', s: '#c27a3a', S: '#f0b070' },
+  {},
+  { d: '#a8780a', s: '#f0c030', S: '#fff0a0' },
+  { d: '#1f6f9a', s: '#60c8f0', S: '#e0faff' },
+]
+
+/** Which tier a level is in: the levels spread over the five metals, the top level always crystal. */
+export const pickTier = (level: number, max: number): number =>
+  max > 0 ? Math.min(4, Math.round((level / max) * 4)) : 0
+
+/** The pickaxe on its stand, in its tier's metal, its level on a tag; `up` plays the level-up flourish. */
+export function UgPickStand({ level, max, up }: { level: number; max: number; up?: boolean }) {
+  const tier = pickTier(level, max)
+  return (
+    <span className={cx('ug-pickstand shrink-0', `t${tier}`, up && 'up')} aria-hidden>
+      <PixelIcon name="pickaxe" size={60} palette={PICK_TIERS[tier]} />
+      <b className="ug-lv font-normal">{t('ui.ug.lv', { level })}</b>
+    </span>
+  )
+}
+
+/** Where the heap's orbs lie, bottom row first: x (% of the width) and bottom (px). */
+const HEAP: [number, number][] = [
+  [50, 4], [32, 4], [68, 4], [16, 4], [84, 4],
+  [41, 28], [59, 28], [24, 26], [76, 26],
+  [50, 50], [34, 48], [66, 48],
+]
+const ORB_PX: Record<OrbSize, number> = { s: 20, m: 28, l: 34 }
+
+/**
+ * The orb bag as a heap: its orbs piled up, the large ones at the bottom (up to 12 drawn); under it, each colour's
+ * count. Each colour's sizes are read out.
+ */
+export function UgOrbHeap({ bag }: { bag: Record<OrbColour, Record<OrbSize, number>> }) {
+  const { t } = useT()
+  const colours: OrbColour[] = ['red', 'blue', 'green']
+  const sizes: OrbSize[] = ['l', 'm', 's']
+  const all: { colour: OrbColour; size: OrbSize }[] = []
+  for (const size of sizes)
+    for (let i = 0; i < 12; i++) for (const colour of colours) if (bag[colour][size] > i) all.push({ colour, size })
+  const pile = all.slice(0, HEAP.length)
+  return (
+    <div className="grid gap-2">
+      <div className="ug-heap" aria-hidden>
+        {pile.length === 0 && (
+          <span className="ug-heap-empty">
+            <OrbArt colour="red" px={28} className="grayscale" />
+          </span>
+        )}
+        {pile.map((o, k) => (
+          <span key={k} style={{ left: `${HEAP[k]![0]}%`, bottom: HEAP[k]![1] }}>
+            <OrbArt colour={o.colour} size={o.size} px={ORB_PX[o.size]} />
+          </span>
+        ))}
+      </div>
+      <ul className="m-0 grid list-none grid-cols-3 gap-1.5 p-0">
+        {colours.map((c) => {
+          const n = bag[c].s + bag[c].m + bag[c].l
+          return (
+            <li
+              key={c}
+              aria-label={t('ui.ug.bagRow', {
+                colour: t(`ui.ug.colour.${c}`),
+                s: bag[c].s,
+                m: bag[c].m,
+                l: bag[c].l,
+              })}
+              className={cx(
+                'flex items-center justify-center gap-1.5 py-1 text-[22px] leading-none',
+                n ? 'bg-paper shadow-ring-thin' : 'bg-well text-muted',
+              )}
+            >
+              <OrbArt colour={c} px={18} className={cx(!n && 'opacity-40 grayscale')} />
+              <span className="tabular-nums" aria-hidden>
+                ×{n}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }
 

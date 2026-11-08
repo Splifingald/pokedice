@@ -907,7 +907,7 @@ export interface DonationConfig {
   startMonth: string
   /** Raised before Ko-fi's webhook was connected (Ko-fi only reports new payments), counted in `startMonth`. */
   raisedBefore: number
-  /** Bumped by the admin's reset: every player who has already seen the pop-up gets it once more. */
+  /** The old reset's counter (it showed the 5th-badge pop-up again). No longer read: the pop-up now comes once a day. */
   round: number
 }
 
@@ -1484,6 +1484,11 @@ export interface PickaxeLevel {
 export interface UndergroundConfig {
   /** The switch (docs/15 §20): off (nowhere in the game, Arceus unlocked), on for the admin only, on for everyone. */
   access: EventAccess
+  /**
+   * Its own switch (docs/34 §12): a collapsed wall can take another kit (held, or bought on the spot), which gives it a
+   * new gauge; its layers and what it hides stay as they are.
+   */
+  refresh: EventAccess
   kits: {
     /** The Mart's price of an Explorakit (₽). */
     price: number
@@ -1555,6 +1560,8 @@ export interface Wall {
   /** Strikes this wall allows (the admin's number when it was dealt) and strikes used. */
   strikes: number
   used: number
+  /** Strikes used on its earlier gauges, before a kit gave it a new one (docs/34 §12). */
+  usedBefore?: number
   /** The neighbours' loss when it was dealt. */
   neighbourLoss: number
 }
@@ -2364,7 +2371,7 @@ export interface SaveData {
   merged?: RegionId[]
   /** Keys of the `unique` items the Mart has already sold here. They never come back, used or not. */
   boughtUnique?: string[]
-  /** The regions whose donation pop-up was shown, in the admin's current reset round (engine/donation). */
+  /** The regions whose 5th-badge donation pop-up was shown. No longer read (engine/donation's rule since 2026-11-06). */
   donationSeen?: { round: number; regions: RegionId[] }
   /** The regions whose "a new region is open" pop-up has been closed: it opens by itself once per region. */
   regionOfferSeen?: RegionId[]

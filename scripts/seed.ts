@@ -875,7 +875,7 @@ const RETIRED_CONFIG_KEYS = ['regenPercentPerHour']
  * later ones listed below (0108: the trade board's picks, after the trades' own; 0124: Tracks in the Snow's switch
  * and tracks_open; 0126: the race of time and space's switch and its raids' checks, after 0060's, its Spear Pillar patch
  * a no-op here, the bundle has no Snowglobe Valley; 0127: the Stairway of Plates' own switch, after 0057's
- * raid_progress_portal, which it redefines). Folded into
+ * raid_progress_portal, which it redefines; 0141: the Underground's row gains `refresh`, after 0063). Folded into
  * seed.sql
  * so there is
  * one file to run rather than several in a particular order. The
@@ -943,6 +943,7 @@ export async function regionsPrelude(): Promise<string> {
       '0136_rival_loss_heal.sql',
       '0138_rival_match.sql',
       '0139_versus_board_cache.sql',
+      '0141_underground_refresh.sql',
     ].map(async (name) => {
       const sql = (await readFile(path.join(ROOT, 'supabase', 'migrations', name), 'utf8')).replace(/^(begin|commit);\n/gm, '')
       return `-- ↓ supabase/migrations/${name}, inlined so this file stands alone.\n${sql}`

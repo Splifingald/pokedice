@@ -118,6 +118,8 @@ const undergroundSchema = z.object({
       things: z.array(wallThingSchema).max(20),
       strikes: z.number().int().min(1).max(200),
       used: count,
+      // Strikes used on its earlier gauges (docs/34 §12).
+      usedBefore: count.optional(),
       neighbourLoss: count,
     })
     .nullable(),

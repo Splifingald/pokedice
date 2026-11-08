@@ -195,7 +195,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `DiceLogo` | The title with the game feel on (docs/38 §9) | The word POKÉDICE as eight pixel-art dice on a canvas (`role="img"`, named Pokédice, inside the `<h1>`): thrown in and landing crooked on their letters (full), dropped in (short), two-step drops (calm), at rest (off); two rows under 768 px, one from 768; the white flash, the gold rings, the tagline; a tap throws it again. Off: the wordmark and its five dice |
 | `HowToPlay` / `ButtonLook` | How to play's animated cards (§17, docs/38 §8b), with the Game feel on | Four `figure`s (throw the dice, reroll, deal damage, catch), each a scene drawn with the battle's own pieces on a 280 × 224 stage, an `h3` and a line: looping (full motion), a still of its key moment with PLAY (calm: it plays once), PLAY showing the end (animations off). `ButtonLook`: a picture of a `PixelButton` (same frame, label fit, pressed look) in a span, for a scene with nothing to press |
 | `PageLoading` | A page split out of the main bundle loading (`Lazy` in `App.tsx`) | A Poké Ball drawn in code wobbling in pixel steps (`steps()`), still under calm; "Loading…" for screen readers (`role="status"`) |
-| `SupportModal` / `SupportView` | SUPPORT ME (side menu, Settings), and once per region at its 5th badge | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on Ko-fi under the line saying Pokémon is a licence so the game is never for sale; a big OK |
+| `SupportModal` / `SupportView` / `SupportPopup` | SUPPORT ME (side menu, Settings), and on Home by itself, between fights, from the player's 4th session (one starts on opening the game, or back after 30 min away), 5 minutes into it, with at least 1 badge, at most once a day (the user's rule, 2026-11-06; `supportPopupDue`, the queue's last) | A rules pop-up (the village banner) with a button per row: Join the Discord (left out with no link set), Share invite link, Support me on Ko-fi under the line saying Pokémon is a licence so the game is never for sale; a big OK |
 | `GiftPresent` / `GiftOpened` / `GiftResult` / `GiftMoment` | A gift from the developer (§23) | Under a message: the wrapped gift (wobbling, still when the OS asks for reduced motion), "3 things inside" and what happens next (close the message, OPEN IT in My messages, or why it waits); opened: what it held; the opening, full screen; what arrived and where |
 | `TrickGauge` / `TrickStage` / `NeedDie` / `TrickScreen` / `TrickPlate` / `TrickRecap` / `TrickCard` / `TierChip` / `TrickSprite` / `TrickRulesModal` / `SafariAskView` / `SafariPayButton` | Trick or Treat (§28) | The gauge: its value in numbers ("62/100") with what the last Treat or miss added (a gold "+18" that pops in; the added stretch flashes white twice once filled), its sections each in a colour of its own (red for a 6, the hardest, then orange, yellow, green and teal as it gets easier; lilac where no roll can) with a dark line between two, the flee zone striped night with a ghost, bright up to its value and as a pastel past it, the section it is in ringed in gold, the white post where it stands, and under each section the die a Trick Ball needs on a chip of the section's colour (`NeedDie`: the `Die` face with its "+", the face alone where a section is narrow; the current one ringed in gold), then Flees; a `meter`. The stage: the battle's (the area's picture as the battle cuts it, a night sky where there's none), the ghost at its centre floating in pixel steps (still when calm), its shadow, the timelines on top; at rest the ball on the ground (caught) or nobody (fled). The screen in every state (idle, after a Treat, a Treat and a throw playing, a miss, a flee, caught), the plate, the result card (caught: the battle's `CatchCard` with the Trick Ball, NEW, ✦ Shiny, where it went, a secret area; fled), the preview card, the rarity chip (a word, never colour alone), the two pictures, the rules; the Safari's round asked (free, paid, not enough ₽) and the area's CONTINUE with its price or free round |
 | `InviteGaugeBar` / `InviteRewardsCard` / `InviteGaugeCompact` / `InviteReadyModal` | Friend invite rewards (§25) | The gauge: a tile per tier (its reward; gold with the gift wobbling when ready; green with a check once opened), the gold track, the friends each needs; six tiers fit a phone. The Friends page's card (ready with OPEN IT, asking the server, every reward won); the compact one in Prof. Oak's invite; the reward's pop-up (who won their first badge, or a friend) |
@@ -638,7 +638,8 @@ Players shouldn't have to make many requests:
   area's details on the right, their CONTINUE HERE / TRAVEL HERE navy so the lead GO stays the one red. Area rows have
   Home's card shape: strip, name, one status line (levels · caught · to catch, or why it's locked), GO at the right.
 - **Notices** (`NoticeCard`, `homeNotices`): what never needs a pop-up over Home is a card in the page, one at a time: a
-  feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, opening the page ends it), Prof. Oak's leaderboard tip, Support me, a region on offer once its pop-up was seen. **His invite is the
+  feature with a page opening ("Versus is open!", SEE VERSUS; ✕ hides it for the visit, opening the page ends it),
+  Prof. Oak's leaderboard tip, a region on offer once its pop-up was seen. **His invite is the
   friends list's**, a line of the Friends page's INFO (the user's call, 2026-10-27: not on Home; 2026-11-01: no note on
   top of Friends). Never red. **A
   region on offer** is its own picture as the card, "{region} is available", and two buttons: NOT NOW (put away on this
@@ -1005,7 +1006,8 @@ pieces.
   (`/f/<code>`, opening it makes you friends), or the game's own link while signed out (no friend ID then). With the
   invite rewards on (§25) it shows the gauge, signed in, or a line saying an account earns them, signed out.
 - **Support me** (while the admin has donations on, with a Ko-fi link): the SUPPORT ME button at the bottom of the
-  side menu and at the top of Settings (white: red is for the game's actions), and once per region at its 5th badge.
+  side menu and at the top of Settings (white: red is for the game's actions), and on Home by itself, between fights, from the player's 4th session (one starts on opening the game, or back after 30 min away), 5 minutes into it, with at least 1 badge, at most once a day (the user's rule, 2026-11-06; `supportPopupDue`, the queue's last). Closing it, either
+  way (SUPPORT ME's too), counts as the day's showing.
   Three rows, most important first: join the Discord, invite friends (the same link as INVITE), and support the developer on Ko-fi, under a plain line
   that Pokémon is a licence, so Pokédice is never monetized and a donation gives nothing in the game. Never "keep the
   game alive" or hosting costs: the money is for the developer, not the game.
@@ -1144,8 +1146,9 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   nightmare's on their way in, the looks' at the first open, a world's finish or a live event asked for from Home) stay
   there, and being due holds nothing back. Every "seen" flag stays where it was in the save. What left the queue
   (docs/43 §7: the Day Care, the events, Versus, Trades, the General upgrades, the Shiny and Unown dexes, the invite
-  rewards' rules, the raids' overhaul, the Underground, Prof. Oak's tip and invite, Support me) is a Home notice
-  (`homeNotices`), ended by opening the feature's page.
+  rewards' rules, the raids' overhaul, the Underground, Prof. Oak's tip and invite) is a Home notice
+  (`homeNotices`), ended by opening the feature's page. Support me went back into the queue
+  (2026-11-06): its own pop-up, on Home only, never on arrival (5 minutes into a session).
 - **How to play lists every feature's rules** (`FeatureRulesList`, the user's ask of 2026-11-02): at the bottom of How
   to play, under "All the rules", **Game features**: a button per feature switched on for the player (its icon and its
   rules' title), each opening its `RulesModal` (OK). Several rules no longer open by themselves (2026-11-02: the
@@ -1820,36 +1823,60 @@ Its switch is its own (`underground.access`, §20) on top of the live events' on
   as its line ("Explorakits: 2 · +1 in 5h 12m"); a tap opens `/underground`. The Mart's tab wears KITS while it runs.
 - **Its pop-up is its rules** (`UgRulesModal`, the cave as banner): once per event (it also marks the live pop-up
   seen), Later / Let's go! to the page; INFO at the bottom of the page shows it again with OK.
-- **The page** (`/underground`): the cave banner with the plate (back, title, time left); Explorakits (warm card: kits
-  held, free over cap and bought, the next free kit or "full", BUY KITS and the red DIG A WALL, or RESUME THE WALL);
-  the pickaxe (level of max, its faces as dice, the next level's with its raised face ringed in gold, the gold upgrade
-  button or what's missing); the team seats; the orb bag (a table, colour × size; SELL in green in a full team; outside
-  one, the solo price: a red-ringed warning note with the share and both prices (`UgSoloWarning`), the white "Sell for
-  10% · ₽…", then a confirmation before anything sells (`UgSellModal`: both prices, the full one struck, "You give up
-  ₽…", KEEP MY ORBS / the red SELL FOR ₽…); with a solo share of 0, hatched with the reason in words); the plates (17 tiles, the held ones in their type's badge colours, a dashed "?"
-  for the rest); the end-of-event note; INFO. Outside the event (or before its content arrives) the page says it isn't
-  open and offers Back Home, never a silent redirect.
+- **Pictures over words** (the user's call of 2026-11-08, docs/34 §13): the page and the dig show things, not
+  sentences. What a sighted player reads off a picture is read out (labels, `sr-only` lines, a polite live line on the
+  dig); explanations live behind INFO or More details.
+- **The page** (`/underground`): the cave banner with the plate (back, title, time left); the Explorakits as slots
+  (`UgKitSlots`: one per free kit the cap allows, gold when held, the next one with its clock as a gold ring filling
+  round it and the time on a tag under it, the rest empty; the bought kits in a blue slot with their count; the row is
+  one label, "3 kits. Next free kit in …"); the pickaxe on its stand (`UgPickStand`: the pickaxe in its tier's metal,
+  stone, bronze, steel, gold, then crystal at the top level, shining from gold up, its level on a gold tag; a spin and
+  a flash when an upgrade is bought), its faces as dice, under them a gold arrow and the next level's faces with the
+  raised face ringed, then the gold upgrade button or what's missing); the team seats (the orb says the colour, its
+  name read out; the line under them only with More details); the orb bag (`UgOrbHeap`: its orbs piled on a dark
+  floor, the large ones lower, up to 12 drawn, then a chip per colour, orb ×n, each read out with its sizes; the
+  colour × size table with More details; SELL in green in a full team; outside one, the solo price: a red-ringed
+  warning note with the share and both prices (`UgSoloWarning`), the white "Sell for 10% · ₽…", then a confirmation
+  before anything sells (`UgSellModal`: both prices, the full one struck, "You give up ₽…", KEEP MY ORBS / the red SELL
+  FOR ₽…); with a solo share of 0, hatched with the reason in words); the plates (17 tiles, the held ones in their
+  type's badge colours, a dashed "?" for the rest); INFO. Outside the event (or before its content arrives) the page
+  says it isn't open and offers Back Home, never a silent redirect.
 - **The dig** (`/underground/dig`, full screen, `useHoldFullscreen`): the title and LEAVE FOR NOW (the wall waits in the
-  save); the crack gauge (`CrackGauge`: a zig-zag band of slanted slabs, one per strike, alternately falling and rising,
-  so it's both countable and a crack; intact slabs light rock, broken ones dark holes with a bright crack running
-  through them from the right; the rock left red in the last three, shaking unless calm; `role="meter"` with "N strikes
-  left", the count over it large, red in the last three); the wall (`UgWall`): what's buried drawn underneath, the tiles
-  edge to edge on top (a gap would show what lies beneath), each a button labelled "Row r, column c: n layers" / "dug
-  out, part of the …", its depth as rock colour **and** dots; then what's still buried and the kits left; the footer
-  with the rolled die (`PickaxeDie`, tumbling), the line that says what the roll did, and the die's faces with the one
-  that came up lifted and ringed. At the end: "Everything dug out!" or "The wall collapsed!" and the red SEE THE HAUL.
-- **The haul** (`HaulList` in a `Modal`): a line per thing, a new plate first (gold card, NEW, "Arceus can now turn
-  Fire!"), then the fossil (to the Box, reviving), orbs (Orb bag / To Dawn, with whose colour it is), and what was lost
-  in the rubble (a grey line); DONE and the red NEXT WALL · n.
+  save); the crack gauge (`CrackGauge`: a zig-zag band of slanted slabs, one per strike, alternately falling and rising;
+  intact slabs light rock, broken ones dark holes with a bright crack running through them from the right; the rock
+  left red in the last three, shaking unless calm; `role="meter"` with "N strikes left") with the strikes left as a big
+  number on a dark plate at its end (gold, red in the last three); the wall (`UgWall`): what's buried drawn underneath,
+  the tiles edge to edge on top, each a button labelled "Row r, column c: n layers" / "dug out, part of the …". The rock
+  shows its layers left as **texture and dots**: hard rock (3: dark, a lit bevel, mineral flecks), stone (2: pebbles, a
+  hairline crack), crumbly dirt (1: light, cracked through); each tile's flecks sit at one of four places so the wall
+  never reads as one stamp. A last-layer tile over something still buried **glints** now and then (a white sparkle, as
+  in the games). Under the wall, what it hides as slots (`UgBuriedSlots`: each thing's shape as a dark silhouette with
+  "?", its picture once dug out, gold-ringed) and the kits held (kit ×n). The footer: the rolled die (`PickaxeDie`, 64
+  px, tumbling), the pickaxe's level on a dark tag and the die's faces with the one that came up lifted and ringed; what
+  the roll did is read out, not written. At the end the wall wears a **stamp** (red COLLAPSED!, gold ALL DUG OUT!) and
+  the footer (`UgWallEnd`) has only what to do next: a collapsed wall, with its own switch on (`refresh`, docs/34 §12),
+  offers the gold DIG ON [kit] ×1 for a kit held, or DIG ON [kit] ₽… for one bought there at the Mart's price (named in
+  full for screen readers: "Dig on · use a kit (n)"), drawn disabled with NEED ₽… MORE or SOLD OUT (its tap says why in
+  a toast); then the red SEE THE HAUL. A new gauge keeps the wall as it is; its slabs come back from the left, one by
+  one, and the die comes back. The end's words (title, things dug out in n strikes, across every gauge) are read out.
+- **The haul** (`HaulList` in a `Modal`, over the wall just finished): first what its orbs going into the bag are worth
+  (`HaulWorth`, counting up as the cards turn); then a card per thing, turning over one by one (`UG_CARD_MS` apart,
+  a tick each): a new plate first (gold card, NEW, "Arceus can now turn Fire!", with a flash), then the fossil (Box,
+  with the Pokémon it revives into), orbs (an Orb bag tag, or To Dawn with whose colour), and what was lost in the
+  rubble (a grey line); no line repeats what its tag says. DONE and the red NEXT WALL · n.
 - **Motion**: the pickaxe strikes **where the finger landed** (a key press: the tile's centre): raised, a wind-up, down
   on the spot at 90 ms (`UG_IMPACT_MS`), a hit-stop, a recoil, frame by frame. Everything waits for that impact: the
-  tile flashes two white frames and its hit neighbours one, dust flies in steps, the wall gives (more for a bigger
-  roll), the gauge's broken slab flashes and sheds chips, the band jolts, the count bumps, the sounds play. Short: the
-  pickaxe's impact frame only and the flashes at once (no dust, give, chips or jolt); off: nothing moves. A thing
-  fully dug out glints, and its name pops over it in a gold tag ("Dug out: …!" in the footer's line). The collapse
-  drops the tiles in steps (full) or gives one thud (short). Calm stills the shakes, the jolts, the give and the
-  glint. Sounds: `ug.strike` (lower the bigger the roll), `ug.found`,
-  `ug.collapse`.
+  tile flashes two white frames and its hit neighbours one; the layers taken pop over each tile hit ("-2" on the tile
+  struck, "-1" beside it, rising and fading); rock chunks fly up and fall back (more and bigger for a bigger roll); the
+  wall gives (more for a bigger roll); the gauge's broken slab flashes and sheds chips, the band jolts, the count bumps,
+  the sounds play. **A 3** bursts white from the spot, its number gold and bigger, and shakes the whole screen. A thing
+  fully dug out shines and **flies to its slot** in an arc (`UgFlight`, `UG_FLY_MS`), the slot popping as it lands. The
+  collapse quakes the wall, drops the tiles a step, raises pixel dust puffs and slams the stamp down; a wall cleared
+  rains confetti under its stamp. Short: the pickaxe's impact frame, the flashes and numbers at once, no rock, give,
+  chips, jolt, flight, dust or confetti (a thing dug out shines and its slot pops), the collapse one thud; off: nothing
+  moves, the stamp is there. Calm stills the shakes, the jolts, the give, the burst and the glints. Sounds: `ug.strike`
+  (lower the bigger the roll), `ug.crit` (a 3), `ug.found`, `ug.collapse`, `ug.clear` (a wall cleared), `ug.stamp`
+  (the stamp landing), `ug.reveal` (each haul card), `ug.refill` (a new gauge).
 - **The team** (`UgTeamPanel`, `UgTeamSheet`): the three seats (you, a friend, a free seat; solo: dashes and the line
   that every orb is yours) and a button: TEAM UP, MANAGE, or a gold INVITATIONS: n. The sheet: invitations to answer
   (gold cards, DECLINE / the green JOIN, the line that joining leaves your team), the seats, your friends with INVITE
@@ -2620,6 +2647,8 @@ has a rules pop-up or INFO: each is explained where it happens, or only changes 
 - **Auto-mode's HEAL** (`components/AutoCure.tsx`): in the battle panel's actions, a `role="status"` line
   and a red `lg` "USE {item}" with the item's sprite and a 5 px gauge at its foot draining (the reverse of
   `AutoButton`'s filling: here the time runs out and the turn passes). A dialog over the fight holds it, gauge hidden.
+  By hand (`StunCureActions`), the same cure with no gauge: a white SKIP TURN and a red "USE {item}" side by side
+  (REROLL / ATTACK's grid), the cure the main action.
 
 **Area pictures on a new fight** (docs/67 §9): a picture already shown this session (`artSeen`) is there on the battle
 screen's first frame, decoded with it and with no fade, so a trainer's next Pokémon (a new fight, a new screen) never

@@ -1,4 +1,4 @@
-// Kitchen sink: the Support me pop-up (side menu / Settings → SUPPORT ME), with the Discord row and without it (no
+// Kitchen sink: the Support me pop-up (side menu / Settings → SUPPORT ME, and on its own on Home once a day), with the Discord row and without it (no
 // invite link set in the admin).
 import { useState } from 'react'
 import { PixelButton } from '@/components/PixelButton'

@@ -711,6 +711,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   // (tests/engine/underground.test.ts reports a wall's yield per pickaxe level).
   underground: {
     access: 'off',
+    // A collapsed wall taking another kit for a new gauge (docs/34 §12): off until the admin switches it on.
+    refresh: 'off',
     kits: { price: 1000, limit: 10, freeAmount: 3, freePeriodHours: 24, freeCap: 3 },
     wall: { cols: 6, rows: 6, strikes: 15, layers: [30, 40, 30], itemsMin: 2, itemsMax: 4, neighbourLoss: 1 },
     loot: {

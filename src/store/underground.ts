@@ -1,6 +1,7 @@
 // The Underground (docs/34), the game's side: the save's event block kept in step with the server's clock, and the
-// player's actions (buy kits, open a wall, strike, take the haul, upgrade the pickaxe, sell orbs). Every rule and
-// number is the engine's (engine/underground.ts); this only feeds it the time, the dice and the team.
+// player's actions (buy kits, open a wall, strike, a collapsed wall's new gauge, take the haul, upgrade the pickaxe,
+// sell orbs). Every rule and number is the engine's (engine/underground.ts); this only feeds it the time, the dice and
+// the team.
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import {
@@ -10,6 +11,7 @@ import {
   markUgRulesSeen,
   openWall,
   randomSeed,
+  refreshWall,
   settleUnderground,
   strike,
   undergroundLive,
@@ -71,6 +73,9 @@ export const ugBuyKits = (qty: number): boolean =>
   act((s) => buyKits(s, useGame.getState().data, serverNow(), qty))
 
 export const ugOpenWall = (): boolean => act((s) => openWall(s, useGame.getState().data, serverNow(), rng))
+
+/** A new gauge for the collapsed wall: a kit held, or one bought on the spot (docs/34 §12). */
+export const ugRefreshWall = (): boolean => act((s) => refreshWall(s, useGame.getState().data, serverNow()))
 
 /** A strike on the open wall: the face that came up and its roll, or null. */
 export function ugStrike(tile: number): { face: number; roll: number } | null {
