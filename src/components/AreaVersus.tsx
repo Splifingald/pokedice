@@ -78,13 +78,9 @@ export function useAreaVersusRules(): RuleRow[] {
     {
       icon: 'coin',
       title: t('ui.areaVersus.rule3Title', { x: cfg.prizeMultiplier }),
-      text: t('ui.areaVersus.rule3Text', { x: cfg.prizeMultiplier }),
+      text: t('ui.areaVersus.rule3Text'),
     },
-    {
-      icon: 'friends',
-      title: t('ui.areaVersus.rule4Title'),
-      text: t('ui.areaVersus.rule4Text', { days: cfg.requestDays }),
-    },
+    { icon: 'friends', title: t('ui.areaVersus.rule4Title'), text: t('ui.areaVersus.rule4Text') },
   ]
 }
 

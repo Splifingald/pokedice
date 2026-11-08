@@ -1124,7 +1124,9 @@ Two rules for every feature that adds something players can do (an event, a mode
   with a page of its own shows **no rules on the page and no pop-up**: the page opens on the feature itself, and an
   **INFO** button at the bottom of its page shows its rules (`RulesModal`: 2–4 `RuleList` rows with the config's
   numbers, OK). Opening the page sets the feature's "seen" flag in the save (`useSeenOnOpen`), which ends Home's notice
-  for it. There is no `RulesCard` and no GOT IT any more. Its opening
+  for it. **Short rules** (the user's call of 2026-11-08): each row's text is one short sentence or two, about 80
+  characters in English at most, with only what a player acts on; the title already says the headline (don't repeat
+  it), and a mechanic the game keeps hidden (the real-player battles' level match) is never explained. There is no `RulesCard` and no GOT IT any more. Its opening
   is announced on Home as a notice card with a button to its page, never a modal over Home. A feature **with no page**
   of its own (day and night, the battle powers, a small world's opening, Extreme mode, the push question) keeps its
   rules pop-up (`RulesModal`, Later / Let's go!), taking its turn in the one-time pop-ups' queue, below; so do the
