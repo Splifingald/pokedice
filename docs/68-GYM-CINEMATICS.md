@@ -50,7 +50,7 @@ Flashes: one full-screen, at the reveal; the crowd's camera flashes are single p
 ## 4. Setting it up
 
 1. Merge and deploy the client.
-2. Run [`supabase/migrations/0141_gym_cinema.sql`](https://github.com/Splifingald/pokedice/blob/ccr-bee48833-7qrj9q/supabase/migrations/0141_gym_cinema.sql)
+2. Run [`supabase/migrations/0141_gym_cinema.sql`](https://github.com/Splifingald/pokedice/blob/version/2_9_5/supabase/migrations/0141_gym_cinema.sql)
    in the SQL editor (safe to run again; `supabase/seed.sql` carries it inlined). The game works without it: a missing
    row reads as Off.
 3. Admin → Config → Switches → **Gym Leader intros**: On for admin to try it (Config → Intros → Watch, or a gym), then
