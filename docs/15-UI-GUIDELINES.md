@@ -1823,41 +1823,60 @@ Its switch is its own (`underground.access`, §20) on top of the live events' on
   as its line ("Explorakits: 2 · +1 in 5h 12m"); a tap opens `/underground`. The Mart's tab wears KITS while it runs.
 - **Its pop-up is its rules** (`UgRulesModal`, the cave as banner): once per event (it also marks the live pop-up
   seen), Later / Let's go! to the page; INFO at the bottom of the page shows it again with OK.
-- **The page** (`/underground`): the cave banner with the plate (back, title, time left); Explorakits (warm card: kits
-  held, free over cap and bought, the next free kit or "full", BUY KITS and the red DIG A WALL, or RESUME THE WALL);
-  the pickaxe (level of max, its faces as dice, the next level's with its raised face ringed in gold, the gold upgrade
-  button or what's missing); the team seats; the orb bag (a table, colour × size; SELL in green in a full team; outside
-  one, the solo price: a red-ringed warning note with the share and both prices (`UgSoloWarning`), the white "Sell for
-  10% · ₽…", then a confirmation before anything sells (`UgSellModal`: both prices, the full one struck, "You give up
-  ₽…", KEEP MY ORBS / the red SELL FOR ₽…); with a solo share of 0, hatched with the reason in words); the plates (17 tiles, the held ones in their type's badge colours, a dashed "?"
-  for the rest); the end-of-event note; INFO. Outside the event (or before its content arrives) the page says it isn't
-  open and offers Back Home, never a silent redirect.
+- **Pictures over words** (the user's call of 2026-11-08, docs/34 §13): the page and the dig show things, not
+  sentences. What a sighted player reads off a picture is read out (labels, `sr-only` lines, a polite live line on the
+  dig); explanations live behind INFO or More details.
+- **The page** (`/underground`): the cave banner with the plate (back, title, time left); the Explorakits as slots
+  (`UgKitSlots`: one per free kit the cap allows, gold when held, the next one with its clock as a gold ring filling
+  round it and the time on a tag under it, the rest empty; the bought kits in a blue slot with their count; the row is
+  one label, "3 kits. Next free kit in …"); the pickaxe on its stand (`UgPickStand`: the pickaxe in its tier's metal,
+  stone, bronze, steel, gold, then crystal at the top level, shining from gold up, its level on a gold tag; a spin and
+  a flash when an upgrade is bought), its faces as dice, under them a gold arrow and the next level's faces with the
+  raised face ringed, then the gold upgrade button or what's missing); the team seats (the orb says the colour, its
+  name read out; the line under them only with More details); the orb bag (`UgOrbHeap`: its orbs piled on a dark
+  floor, the large ones lower, up to 12 drawn, then a chip per colour, orb ×n, each read out with its sizes; the
+  colour × size table with More details; SELL in green in a full team; outside one, the solo price: a red-ringed
+  warning note with the share and both prices (`UgSoloWarning`), the white "Sell for 10% · ₽…", then a confirmation
+  before anything sells (`UgSellModal`: both prices, the full one struck, "You give up ₽…", KEEP MY ORBS / the red SELL
+  FOR ₽…); with a solo share of 0, hatched with the reason in words); the plates (17 tiles, the held ones in their
+  type's badge colours, a dashed "?" for the rest); INFO. Outside the event (or before its content arrives) the page
+  says it isn't open and offers Back Home, never a silent redirect.
 - **The dig** (`/underground/dig`, full screen, `useHoldFullscreen`): the title and LEAVE FOR NOW (the wall waits in the
-  save); the crack gauge (`CrackGauge`: a zig-zag band of slanted slabs, one per strike, alternately falling and rising,
-  so it's both countable and a crack; intact slabs light rock, broken ones dark holes with a bright crack running
-  through them from the right; the rock left red in the last three, shaking unless calm; `role="meter"` with "N strikes
-  left", the count over it large, red in the last three); the wall (`UgWall`): what's buried drawn underneath, the tiles
-  edge to edge on top (a gap would show what lies beneath), each a button labelled "Row r, column c: n layers" / "dug
-  out, part of the …", its depth as rock colour **and** dots; then what's still buried and the kits left; the footer
-  with the rolled die (`PickaxeDie`, tumbling), the line that says what the roll did, and the die's faces with the one
-  that came up lifted and ringed. At the end (`UgWallEnd`): "Everything dug out!" or "The wall collapsed!" and the red
-  SEE THE HAUL. A collapsed wall, with its own switch on (`refresh`, docs/34 §12), also offers a new gauge over it: the
-  gold DIG ON · USE A KIT (n) for a kit held, or DIG ON · BUY A KIT ₽… for one bought there at the Mart's price, drawn
-  disabled with NEED ₽… MORE or NO KIT LEFT TO BUY (its tap says why in a toast), and under it "Same wall, same finds:
-  only the gauge starts again." It keeps the wall as it is; the toast "New gauge: dig on!" and the footer's die come
-  back. The end line counts the strikes of every gauge.
-- **The haul** (`HaulList` in a `Modal`): a line per thing, a new plate first (gold card, NEW, "Arceus can now turn
-  Fire!"), then the fossil (to the Box, reviving), orbs (Orb bag / To Dawn, with whose colour it is), and what was lost
-  in the rubble (a grey line); DONE and the red NEXT WALL · n.
+  save); the crack gauge (`CrackGauge`: a zig-zag band of slanted slabs, one per strike, alternately falling and rising;
+  intact slabs light rock, broken ones dark holes with a bright crack running through them from the right; the rock
+  left red in the last three, shaking unless calm; `role="meter"` with "N strikes left") with the strikes left as a big
+  number on a dark plate at its end (gold, red in the last three); the wall (`UgWall`): what's buried drawn underneath,
+  the tiles edge to edge on top, each a button labelled "Row r, column c: n layers" / "dug out, part of the …". The rock
+  shows its layers left as **texture and dots**: hard rock (3: dark, a lit bevel, mineral flecks), stone (2: pebbles, a
+  hairline crack), crumbly dirt (1: light, cracked through); each tile's flecks sit at one of four places so the wall
+  never reads as one stamp. A last-layer tile over something still buried **glints** now and then (a white sparkle, as
+  in the games). Under the wall, what it hides as slots (`UgBuriedSlots`: each thing's shape as a dark silhouette with
+  "?", its picture once dug out, gold-ringed) and the kits held (kit ×n). The footer: the rolled die (`PickaxeDie`, 64
+  px, tumbling), the pickaxe's level on a dark tag and the die's faces with the one that came up lifted and ringed; what
+  the roll did is read out, not written. At the end the wall wears a **stamp** (red COLLAPSED!, gold ALL DUG OUT!) and
+  the footer (`UgWallEnd`) has only what to do next: a collapsed wall, with its own switch on (`refresh`, docs/34 §12),
+  offers the gold DIG ON [kit] ×1 for a kit held, or DIG ON [kit] ₽… for one bought there at the Mart's price (named in
+  full for screen readers: "Dig on · use a kit (n)"), drawn disabled with NEED ₽… MORE or SOLD OUT (its tap says why in
+  a toast); then the red SEE THE HAUL. A new gauge keeps the wall as it is; its slabs come back from the left, one by
+  one, and the die comes back. The end's words (title, things dug out in n strikes, across every gauge) are read out.
+- **The haul** (`HaulList` in a `Modal`, over the wall just finished): first what its orbs going into the bag are worth
+  (`HaulWorth`, counting up as the cards turn); then a card per thing, turning over one by one (`UG_CARD_MS` apart,
+  a tick each): a new plate first (gold card, NEW, "Arceus can now turn Fire!", with a flash), then the fossil (Box,
+  with the Pokémon it revives into), orbs (an Orb bag tag, or To Dawn with whose colour), and what was lost in the
+  rubble (a grey line); no line repeats what its tag says. DONE and the red NEXT WALL · n.
 - **Motion**: the pickaxe strikes **where the finger landed** (a key press: the tile's centre): raised, a wind-up, down
   on the spot at 90 ms (`UG_IMPACT_MS`), a hit-stop, a recoil, frame by frame. Everything waits for that impact: the
-  tile flashes two white frames and its hit neighbours one, dust flies in steps, the wall gives (more for a bigger
-  roll), the gauge's broken slab flashes and sheds chips, the band jolts, the count bumps, the sounds play. Short: the
-  pickaxe's impact frame only and the flashes at once (no dust, give, chips or jolt); off: nothing moves. A thing
-  fully dug out glints, and its name pops over it in a gold tag ("Dug out: …!" in the footer's line). The collapse
-  drops the tiles in steps (full) or gives one thud (short). Calm stills the shakes, the jolts, the give and the
-  glint. Sounds: `ug.strike` (lower the bigger the roll), `ug.found`,
-  `ug.collapse`.
+  tile flashes two white frames and its hit neighbours one; the layers taken pop over each tile hit ("-2" on the tile
+  struck, "-1" beside it, rising and fading); rock chunks fly up and fall back (more and bigger for a bigger roll); the
+  wall gives (more for a bigger roll); the gauge's broken slab flashes and sheds chips, the band jolts, the count bumps,
+  the sounds play. **A 3** bursts white from the spot, its number gold and bigger, and shakes the whole screen. A thing
+  fully dug out shines and **flies to its slot** in an arc (`UgFlight`, `UG_FLY_MS`), the slot popping as it lands. The
+  collapse quakes the wall, drops the tiles a step, raises pixel dust puffs and slams the stamp down; a wall cleared
+  rains confetti under its stamp. Short: the pickaxe's impact frame, the flashes and numbers at once, no rock, give,
+  chips, jolt, flight, dust or confetti (a thing dug out shines and its slot pops), the collapse one thud; off: nothing
+  moves, the stamp is there. Calm stills the shakes, the jolts, the give, the burst and the glints. Sounds: `ug.strike`
+  (lower the bigger the roll), `ug.crit` (a 3), `ug.found`, `ug.collapse`, `ug.clear` (a wall cleared), `ug.stamp`
+  (the stamp landing), `ug.reveal` (each haul card), `ug.refill` (a new gauge).
 - **The team** (`UgTeamPanel`, `UgTeamSheet`): the three seats (you, a friend, a free seat; solo: dashes and the line
   that every orb is yours) and a button: TEAM UP, MANAGE, or a gold INVITATIONS: n. The sheet: invitations to answer
   (gold cards, DECLINE / the green JOIN, the line that joining leaves your team), the seats, your friends with INVITE

@@ -1,7 +1,9 @@
-// Digging a wall (docs/34; docs/15 §32), full screen: the crack gauge, the wall, what's still buried, the pickaxe's
-// roll. A tap on a tile strikes it (the engine rolls the die and digs); at the end the wall collapses or is cleared,
-// and the haul shows where each thing went. A collapsed wall can take another kit for a new gauge (docs/34 §12).
-// Leaving keeps the wall: it waits in the save.
+// Digging a wall (docs/34; docs/15 §32), full screen: the crack gauge with the strikes left, the wall, what it hides as
+// slots, the pickaxe's die. Pictures over words (docs/34 §13): a tap strikes a tile (the engine rolls the die and digs),
+// the layers taken pop over the tiles hit, rock flies, a 3 bursts; a thing dug out flies to its slot; the end is a
+// stamp over the wall (dust for a collapse, confetti for a wall cleared), then the haul's cards turn over one by one.
+// A collapsed wall can take another kit for a new gauge (docs/34 §12). The words are still read out. Leaving keeps the
+// wall: it waits in the save.
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import {
@@ -21,20 +23,24 @@ import { PixelIcon } from '@/components/icons'
 import {
   CrackGauge,
   HaulList,
-  OrbArt,
+  HaulWorth,
   PickaxeDie,
   PickaxeFaces,
-  PlateArt,
+  UG_CARD_MS,
+  UG_FLY_MS,
   UG_IMPACT_MS,
+  UgBuriedSlots,
+  UgFlight,
   UgWall,
   UgWallEnd,
   thingName,
   type FoundFx,
   type StrikeFx,
+  type UgFlightFx,
 } from '@/components/Underground'
 import { useT } from '@/i18n/react'
-import { money } from '@/lib/format'
 import { useHoldFullscreen } from '@/lib/fullscreen'
+import { money } from '@/lib/format'
 import { useMotion } from '@/lib/motion'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { pushToast, useGame } from '@/store/game'
@@ -44,6 +50,9 @@ import { flushUgOutbox } from '@/store/ugTeams'
 import { UgClosed } from './Underground'
 
 const doneCount = (w: Wall) => w.things.filter((th) => thingDone(w, th)).length
+
+/** The stamp lands this long after the last strike's impact (underground.css's `ug-slam` delay). */
+const STAMP_MS = 500
 
 export function UndergroundDig() {
   useHoldFullscreen()
@@ -56,10 +65,17 @@ export function UndergroundDig() {
   const { live, now, u } = useUnderground(5000)
   const [fx, setFx] = useState<StrikeFx | null>(null)
   const [freed, setFreed] = useState<FoundFx | null>(null)
+  const [flight, setFlight] = useState<UgFlightFx | null>(null)
   const [roll, setRoll] = useState<{ face: number; roll: number } | null>(null)
   const [haul, setHaul] = useState<HaulLine[] | null>(null)
+  // The wall just finished stays drawn behind its haul.
+  const [past, setPast] = useState<Wall | null>(null)
+  const [rebuild, setRebuild] = useState<number | null>(null)
+  const [said, setSaid] = useState('')
   const keyRef = useRef(0)
-  const wall = u?.wall ?? null
+  const wallBox = useRef<HTMLDivElement>(null)
+  const mainRef = useRef<HTMLElement>(null)
+  const wall = u?.wall ?? (haul ? past : null)
   const status = wall ? wallStatus(wall) : null
 
   // A new wall starts with nothing rolled.
@@ -67,59 +83,108 @@ export function UndergroundDig() {
   useEffect(() => {
     setFx(null)
     setFreed(null)
+    setFlight(null)
     setRoll(null)
+    setRebuild(null)
   }, [wallId])
+
+  // The haul's cards turn over with a tick each, a chime for a new plate.
+  useEffect(() => {
+    if (!haul || level === 'off') return
+    const timers = haul.map((l, k) =>
+      setTimeout(() => fxSound(l.outcome === 'plate' ? 'ug.found' : 'ug.reveal'), 120 + k * UG_CARD_MS),
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [haul, level])
 
   if (now == null) return <p className="copy p-3 text-muted">{t('ui.common.loading')}</p>
   if (!live || !u) return <UgClosed />
-  if (!wall && !haul) return <Navigate to="/underground" replace />
+  if (!wall) return <Navigate to="/underground" replace />
 
   const cfg = ugCfg(data)
   const faces = pickaxeFaces(cfg, u.pickaxe)
+  const ended = status === 'cleared' || status === 'collapsed' ? status : null
 
   const onStrike = (tile: number, at?: { x: number; y: number }) => {
-    if (!wall || status !== 'digging') return
+    if (!u.wall || status !== 'digging') return
+    const before = u.wall
     const r = ugStrike(tile)
     if (!r) return
     const key = ++keyRef.current
     setRoll(r)
+    setRebuild(null)
     setFx({ tile, roll: r.roll, key, at })
     const after = useGame.getState().save?.underground?.wall
-    // The things this strike finished digging out: the first one's name pops over it.
+    // The things this strike finished digging out: the first one shines, and flies to its slot (full motion).
     const first = after
-      ? after.things.findIndex((th, k) => thingDone(after, th) && !thingDone(wall, wall.things[k]!))
+      ? after.things.findIndex((th, k) => thingDone(after, th) && !thingDone(before, before.things[k]!))
       : -1
     setFreed(first >= 0 ? { thing: first, key } : null)
-    // The sounds land with the pickaxe, not with the finger.
+    setFlight(first >= 0 && level === 'full' ? flightOf(after!, first, key) : null)
+    const end = after ? wallStatus(after) : 'digging'
+    // Read out what a sighted player sees: the roll, a find, the end.
+    setSaid(
+      first >= 0
+        ? t('ui.ug.dugOut', { thing: thingName(after!.things[first]!, data) })
+        : r.roll === 1
+          ? t('ui.ug.rolled1')
+          : r.roll - before.neighbourLoss <= 0
+            ? t('ui.ug.rolledHere', { n: r.roll })
+            : before.neighbourLoss === 0
+              ? t('ui.ug.rolledAll', { n: r.roll })
+              : t('ui.ug.rolledN', { n: r.roll, side: r.roll - before.neighbourLoss }),
+    )
+    // A 3 shakes the whole screen.
+    const main = mainRef.current
+    if (r.roll >= 3 && level === 'full' && !calm && main && typeof main.animate === 'function')
+      main.animate(
+        [
+          { transform: 'translate(0, 0)' },
+          { transform: 'translate(-6px, 4px)' },
+          { transform: 'translate(5px, -3px)' },
+          { transform: 'translate(-3px, 2px)' },
+          { transform: 'translate(0, 0)' },
+        ],
+        { duration: 260, delay: UG_IMPACT_MS, easing: 'steps(5, end)' },
+      )
+    // The sounds land with the pickaxe, not with the finger; the stamp's thud with the stamp.
     const sounds = () => {
       fxSound('ug.strike', r.roll)
+      if (r.roll >= 3) fxSound('ug.crit')
       if (first >= 0) fxSound('ug.found')
-      if (after && wallStatus(after) === 'collapsed') fxSound('ug.collapse')
+      if (end === 'collapsed') fxSound('ug.collapse')
+      if (end === 'cleared') fxSound('ug.clear')
     }
-    if (level === 'full') setTimeout(sounds, UG_IMPACT_MS)
-    else sounds()
+    const wait = level === 'full' ? UG_IMPACT_MS : 0
+    setTimeout(sounds, wait)
+    if (end !== 'digging' && level !== 'off') setTimeout(() => fxSound('ug.stamp'), wait + STAMP_MS)
+  }
+
+  /** Where the thing lies on screen, and where its slot is: the flight's ends. */
+  function flightOf(w: Wall, thing: number, key: number): UgFlightFx | null {
+    const box = wallBox.current?.querySelector('.ug-wall')?.getBoundingClientRect()
+    const slot = document.querySelector(`[data-slot="${thing}"]`)?.getBoundingClientRect()
+    const th = w.things[thing]
+    if (!box || !slot || !th) return null
+    // The tiles sit inside the frame's 6 px padding.
+    const cw = (box.width - 12) / w.cols
+    const ch = (box.height - 12) / w.rows
+    return {
+      key,
+      thing: th,
+      from: { x: box.left + 6 + th.x * cw, y: box.top + 6 + th.y * ch, w: th.w * cw, h: th.h * ch },
+      to: { x: slot.left, y: slot.top, w: slot.width, h: slot.height },
+    }
   }
 
   const takeHaul = () => {
+    const done = u.wall
     const lines = ugTakeHaul()
     if (!lines) return
+    setPast(done)
     setHaul(lines)
     // Orbs owed to teammates go to the server now (they wait in the save if it can't be reached).
     void flushUgOutbox()
-  }
-
-  // A collapsed wall's new gauge (docs/34 §12): the same wall, its layers and finds kept, struck from a fresh start.
-  const offer = save ? refreshOffer(save, data, now) : null
-  const refresh = () => {
-    if (!offer) return
-    if (offer.kind === 'buy' && offer.soldOut) return pushToast(t('ui.ug.refreshSoldOut'), 'bad')
-    if (offer.kind === 'buy' && offer.short > 0)
-      return pushToast(t('ui.shop.needMore', { price: money(offer.short) }), 'bad')
-    if (!ugRefreshWall()) return
-    setFx(null)
-    setFreed(null)
-    setRoll(null)
-    pushToast(t('ui.ug.refreshed'), 'good')
   }
 
   const nextWall = () => {
@@ -128,24 +193,29 @@ export function UndergroundDig() {
       return
     }
     setHaul(null)
+    setPast(null)
   }
 
-  const message =
-    freed && wall?.things[freed.thing]
-      ? t('ui.ug.dugOut', { thing: thingName(wall.things[freed.thing]!, data) })
-      : roll == null
-        ? t('ui.ug.tap')
-        : roll.roll === 1
-          ? t('ui.ug.rolled1')
-          : wall && roll.roll - wall.neighbourLoss <= 0
-            ? t('ui.ug.rolledHere', { n: roll.roll })
-            : wall && wall.neighbourLoss === 0
-              ? t('ui.ug.rolledAll', { n: roll.roll })
-              : t('ui.ug.rolledN', { n: roll.roll, side: roll.roll - (wall?.neighbourLoss ?? 1) })
+  // A collapsed wall's new gauge (docs/34 §12): the same wall, its layers and finds kept, struck from a fresh start.
+  const offer = save && !haul ? refreshOffer(save, data, now) : null
+  const refresh = () => {
+    if (!offer) return
+    if (offer.kind === 'buy' && offer.soldOut) return pushToast(t('ui.ug.refreshSoldOut'), 'bad')
+    if (offer.kind === 'buy' && offer.short > 0)
+      return pushToast(t('ui.shop.needMore', { price: money(offer.short) }), 'bad')
+    if (!ugRefreshWall()) return
+    setFx(null)
+    setFreed(null)
+    setFlight(null)
+    setRoll(null)
+    setRebuild(++keyRef.current)
+    setSaid(t('ui.ug.refreshed'))
+    if (level !== 'off') fxSound('ug.refill')
+  }
 
-  const left = wall ? wall.strikes - wall.used : 0
+  const left = wall.strikes - wall.used
   const hot = left <= 3
-  const found = wall ? doneCount(wall) : 0
+  const found = doneCount(wall)
 
   return (
     <div
@@ -170,113 +240,86 @@ export function UndergroundDig() {
         )}
       </header>
 
-      {/* Phones: the gauge, the wall, what's buried, the die pinned at the foot. PC (docs/43 §5.11): the wall large on
-          the left, as tall as the screen allows; the gauge, what's buried and the die docked at its right. */}
+      {/* Phones: the gauge, the wall, its slots, the die pinned at the foot. PC (docs/43 §5.11): the wall large on the
+          left, as tall as the screen allows; the gauge, the slots and the die docked at its right. */}
       <main
+        ref={mainRef}
         className={cx(
-          'mx-auto flex w-full max-w-[440px] flex-1 flex-col gap-2.5 px-3 pt-2.5',
+          'mx-auto flex w-full max-w-[440px] flex-1 flex-col gap-3 px-3 pt-2.5',
           'lg:grid lg:max-w-[1240px] lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_auto_1fr] lg:items-start lg:gap-x-8 lg:gap-y-4 lg:px-6 lg:pt-6',
         )}
       >
-        {wall && (
-          <div className="grid gap-1.5 lg:col-start-2 lg:row-start-1">
-            <div className="flex items-end justify-between gap-2">
-              <span className={cx('text-[19px] leading-none', hot ? 'text-[#ff9a6a]' : 'text-[#fbfdff]')}>
-                {status === 'collapsed'
-                  ? t('ui.ug.collapsedShort')
-                  : hot && status === 'digging'
-                    ? t('ui.ug.shaking')
-                    : t('ui.ug.holds')}
-              </span>
-              <span
-                key={wall.used}
-                className={cx(
-                  'ug-count light-scope font-pixel-sm text-[20px] leading-none tabular-nums',
-                  hot ? 'text-[#ff9a6a]' : 'text-gold-light',
-                  fx && level === 'full' && !calm && 'bump',
-                )}
-              >
-                {t(`ui.ug.strikesLeft.${left === 1 ? 'one' : 'other'}`, { count: left })}
-              </span>
-            </div>
-            <CrackGauge strikes={wall.strikes} used={wall.used} calm={calm} hitKey={fx?.key} motion={level} />
-          </div>
-        )}
-
-        {wall && (
-          <div
-            className="w-full lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:justify-self-center"
-            // As wide as the window's height allows for the wall's shape, so it's never cut by the fold.
-            style={wide ? { maxWidth: `calc((100dvh - 150px) * ${wall.cols / wall.rows})` } : undefined}
+        <div className="flex items-stretch gap-2 lg:col-start-2 lg:row-start-1">
+          <CrackGauge
+            strikes={wall.strikes}
+            used={wall.used}
+            calm={calm}
+            hitKey={fx?.key}
+            rebuildKey={rebuild ?? undefined}
+            motion={level}
+            className="min-w-0 flex-1"
+          />
+          <span
+            key={wall.used}
+            className={cx(
+              'ug-left ug-count light-scope font-normal tabular-nums',
+              hot && 'hot',
+              fx && level === 'full' && !calm && 'bump',
+            )}
+            aria-hidden
           >
-            <UgWall
-              wall={wall}
-              data={data}
-              onStrike={onStrike}
-              disabled={status !== 'digging'}
-              fx={fx}
-              found={freed}
-              motion={level}
-              calm={calm}
-              collapsing={status === 'collapsed'}
-            />
-          </div>
-        )}
+            {left}
+          </span>
+        </div>
 
-        {wall && (
-          <div className="grid gap-1 lg:col-start-2 lg:row-start-2">
-            <span className="light-scope flex items-center justify-between gap-2 font-pixel-sm text-[16px] text-gold-light">
-              <span>{t('ui.ug.buried', { n: wall.things.length, found })}</span>
-              <span className="inline-flex shrink-0 items-center gap-1">
-                <PixelIcon name="kit" size={14} />
-                {t('ui.ug.kitsLeft', { n: kitsHeld(u) })}
-              </span>
-            </span>
-            <ul className="m-0 grid list-none grid-cols-2 gap-1 p-0">
-              {wall.things.map((th, k) => {
-                const done = thingDone(wall, th)
-                return (
-                  <li
-                    key={k}
-                    className={cx(
-                      'flex min-w-0 items-center gap-1.5 px-1.5 py-0.5 font-pixel-sm text-[16px]',
-                      done
-                        ? 'bg-paper text-ink shadow-ring-thin'
-                        : 'bg-well-deep text-ink shadow-[inset_0_0_0_2px_rgb(var(--c-shadow))]',
-                    )}
-                  >
-                    {done ? (
-                      th.kind === 'plate' ? (
-                        <PlateArt type={th.plate!} px={16} />
-                      ) : th.colour ? (
-                        <OrbArt colour={th.colour} px={12} />
-                      ) : (
-                        <PixelIcon name="pickaxeSm" size={12} />
-                      )
-                    ) : (
-                      <span aria-hidden>?</span>
-                    )}
-                    <span className="truncate">{done ? thingName(th, data) : t('ui.ug.stillBuried')}</span>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        )}
+        <div
+          ref={wallBox}
+          className="w-full lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:justify-self-center"
+          // As wide as the window's height allows for the wall's shape, so it's never cut by the fold.
+          style={wide ? { maxWidth: `calc((100dvh - 150px) * ${wall.cols / wall.rows})` } : undefined}
+        >
+          <UgWall
+            wall={wall}
+            data={data}
+            onStrike={onStrike}
+            disabled={status !== 'digging' || !!haul}
+            fx={fx}
+            found={freed}
+            motion={level}
+            calm={calm}
+            end={ended}
+          />
+        </div>
 
-        {/* The die and its line, or the end: pinned at a phone's foot, the panel's last card on PC. */}
+        <div className="flex items-center justify-between gap-3 lg:col-start-2 lg:row-start-2">
+          <UgBuriedSlots
+            wall={wall}
+            data={data}
+            popped={freed}
+            delay={flight ? UG_IMPACT_MS + UG_FLY_MS - 80 : 0}
+          />
+          <span className="light-scope inline-flex shrink-0 items-center gap-1 text-[24px] leading-none text-gold-light">
+            <PixelIcon name="kit" size={26} />
+            <span aria-hidden>{kitsHeld(u)}</span>
+            <span className="sr-only">{t('ui.ug.kitsLeft', { n: kitsHeld(u) })}</span>
+          </span>
+        </div>
+
+        {/* The die and its faces, or what to do at the end: pinned at a phone's foot, the panel's last card on PC. */}
         <footer className="sticky bottom-0 z-10 -mx-3 mt-auto border-t-2 border-edge bg-panel px-3 pb-4 pt-2.5 lg:static lg:col-start-2 lg:row-start-3 lg:mx-0 lg:mt-0 lg:border-0 lg:p-3 lg:shadow-card">
-          {status === 'digging' || !wall ? (
+          <p className="sr-only" aria-live="polite">
+            {roll == null && !said ? t('ui.ug.tap') : said}
+          </p>
+          {status === 'digging' ? (
             <div className="flex items-center gap-3">
-              <PickaxeDie roll={roll?.roll ?? null} rollKey={fx?.key} />
-              <div className="grid min-w-0 flex-1 gap-1">
-                <span className="text-[19px] leading-tight" aria-live="polite">
-                  {message}
+              <PickaxeDie roll={roll?.roll ?? null} rollKey={fx?.key} size={64} />
+              <div className="grid min-w-0 flex-1 justify-items-start gap-1.5">
+                <span className="bg-ink px-1.5 pb-0.5 text-[16px] leading-tight text-paper">
+                  <PixelIcon name="pickaxeSm" size={12} className="mr-1 align-[-1px]" />
+                  <span aria-hidden>{t('ui.ug.lv', { level: u.pickaxe })}</span>
+                  <span className="sr-only">{t('ui.ug.dieLabel', { level: u.pickaxe })}</span>
                 </span>
-                <span className="font-pixel-sm text-[16px] text-muted">
-                  {t('ui.ug.dieLabel', { level: u.pickaxe })}
-                </span>
-                <PickaxeFaces faces={faces} face={roll?.face} size={26} />
+                <PickaxeFaces faces={faces} face={roll?.face} size={30} />
               </div>
             </div>
           ) : (
@@ -293,6 +336,8 @@ export function UndergroundDig() {
         </footer>
       </main>
 
+      {flight && <UgFlight key={flight.key} fx={flight} data={data} delay={UG_IMPACT_MS} />}
+
       <Modal
         open={!!haul}
         onClose={() => navigate('/underground')}
@@ -300,7 +345,8 @@ export function UndergroundDig() {
         className="max-w-md"
       >
         <div className="flex flex-col gap-3">
-          {haul && <HaulList lines={haul} data={data} />}
+          {haul && <HaulWorth lines={haul} data={data} reveal={level !== 'off'} />}
+          {haul && <HaulList lines={haul} data={data} reveal={level !== 'off'} />}
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-2.5">
             <PixelButton onClick={() => navigate('/underground')}>{t('ui.ug.done')}</PixelButton>
             <PixelButton variant="primary" aria-disabled={kitsHeld(u) === 0} onClick={nextWall}>

@@ -30,7 +30,10 @@ import {
   PickaxeFaces,
   PlateGrid,
   UgCave,
+  UgKitSlots,
   UgNote,
+  UgOrbHeap,
+  UgPickStand,
   UgRulesModal,
   UgSellModal,
   UgSoloWarning,
@@ -108,6 +111,8 @@ export function UndergroundScreen() {
   const { live, now, u } = useUnderground(1000)
   const [info, setInfo] = useState(false)
   const [confirm, setConfirm] = useState(false)
+  // The pickaxe's level-up flourish: a new key for each upgrade bought.
+  const [upKey, setUpKey] = useState(0)
   const details = useDetails()
   const wide = useMediaQuery('(min-width: 1024px)')
   // The team and the orbs between teammates, now and every minute while the page is open.
@@ -157,63 +162,71 @@ export function UndergroundScreen() {
     navigate('/underground/dig')
   }
 
-  // Kits: how many, and when the next free one comes; its split (free, bought) is More details'.
+  // Kits as pictures (docs/34 §13): a slot per free kit, the next one's clock as a ring; bought ones beside. The words
+  // are its label; the split (free, bought) is More details'.
   const kits = (
-    <section aria-labelledby="ug-kits" className="flex items-center gap-3 bg-cream p-3 shadow-card-gold">
-      <PixelIcon name="kit" size={48} />
-      <div className="grid min-w-0 flex-1 gap-1">
-        <h2 id="ug-kits" className="sr-only">
-          {t('ui.ug.kits')}
-        </h2>
-        <span className="text-[34px] leading-none" data-testid="ug-kits">
-          {held} <small className="text-[18px] text-muted">{t('ui.ug.kitsWord')}</small>
-        </span>
-        <span className="text-[18px] leading-tight text-muted">
-          {tillFree != null ? t('ui.ug.nextFree', { time: countdown(tillFree) }) : t('ui.ug.freeFull')}
-        </span>
-        {details && (
-          <span className="text-[16px] text-muted">
-            {t('ui.ug.kitsSplit', { free: u.freeKits, cap: free.cap, bought: u.boughtKits })}
-          </span>
-        )}
+    <section aria-labelledby="ug-kits" className="grid gap-1 bg-cream p-3 shadow-card-gold">
+      <h2 id="ug-kits" className="sr-only">
+        {t('ui.ug.kits')}
+      </h2>
+      <div data-testid="ug-kits">
+        <UgKitSlots
+          freeKits={u.freeKits}
+          cap={free.cap}
+          bought={u.boughtKits}
+          tillFree={tillFree}
+          everyMs={free.everyMs}
+          label={`${held} ${t('ui.ug.kitsWord')}. ${
+            tillFree != null ? t('ui.ug.nextFree', { time: countdown(tillFree) }) : t('ui.ug.freeFull')
+          }`}
+        />
       </div>
+      {details && (
+        <span className="text-[16px] text-muted">
+          {t('ui.ug.kitsSplit', { free: u.freeKits, cap: free.cap, bought: u.boughtKits })}
+        </span>
+      )}
     </section>
   )
 
+  // The pickaxe on its stand, in its tier's metal (docs/34 §13), its die now and, ringed, the face the next level raises.
   const pickaxe = (
-    <Section
-      id="ug-pick"
-      title={t('ui.ug.pickaxe')}
-      hint={t('ui.ug.pickaxeLevel', { level: u.pickaxe, max: pickaxeMax(cfg) })}
-    >
-      <PickaxeFaces faces={pickaxeFaces(cfg, u.pickaxe)} />
-      {next ? (
-        <>
-          <UgNote>{t('ui.ug.dieNext', { level: next.level })}</UgNote>
-          <div className="flex flex-wrap items-center gap-2">
-            <PickaxeFaces faces={next.faces} next={pickaxeFaces(cfg, u.pickaxe)} />
-            <PixelButton
-              variant={save.gold >= next.price ? 'gold' : 'secondary'}
-              size="sm"
-              className="ml-auto"
-              aria-disabled={save.gold < next.price}
-              onClick={() => {
-                if (save.gold < next.price)
-                  return pushToast(t('ui.shop.needMore', { price: money(next.price - save.gold) }), 'bad')
-                if (ugUpgrade()) {
-                  sfx('levelup')
-                  pushToast(t('ui.ug.upgraded', { level: next.level }), 'good')
-                }
-              }}
-            >
-              {save.gold >= next.price
-                ? t('ui.ug.upgrade', { price: money(next.price) })
-                : t('ui.shop.needMore', { price: money(next.price - save.gold) })}
-            </PixelButton>
-          </div>
-        </>
-      ) : (
-        <UgNote>{t('ui.ug.pickaxeTop')}</UgNote>
+    <Section id="ug-pick" title={t('ui.ug.pickaxe')}>
+      <span className="sr-only">{t('ui.ug.pickaxeLevel', { level: u.pickaxe, max: pickaxeMax(cfg) })}</span>
+      <div className="flex items-center gap-3">
+        <UgPickStand key={upKey} level={u.pickaxe} max={pickaxeMax(cfg)} up={upKey > 0} />
+        <div className="grid min-w-0 flex-1 gap-2">
+          <PickaxeFaces faces={pickaxeFaces(cfg, u.pickaxe)} />
+          {next ? (
+            <div className="flex items-center gap-1.5">
+              <PixelIcon name="arrowUp" size={14} className="shrink-0" />
+              <span className="sr-only">{t('ui.ug.dieNext', { level: next.level })}</span>
+              <PickaxeFaces faces={next.faces} next={pickaxeFaces(cfg, u.pickaxe)} size={22} />
+            </div>
+          ) : (
+            <UgNote>{t('ui.ug.pickaxeTop')}</UgNote>
+          )}
+        </div>
+      </div>
+      {next && (
+        <PixelButton
+          variant={save.gold >= next.price ? 'gold' : 'secondary'}
+          size="sm"
+          aria-disabled={save.gold < next.price}
+          onClick={() => {
+            if (save.gold < next.price)
+              return pushToast(t('ui.shop.needMore', { price: money(next.price - save.gold) }), 'bad')
+            if (ugUpgrade()) {
+              sfx('levelup')
+              setUpKey((k) => k + 1)
+              pushToast(t('ui.ug.upgraded', { level: next.level }), 'good')
+            }
+          }}
+        >
+          {save.gold >= next.price
+            ? t('ui.ug.upgrade', { price: money(next.price) })
+            : t('ui.shop.needMore', { price: money(next.price - save.gold) })}
+        </PixelButton>
       )}
     </Section>
   )
@@ -252,7 +265,8 @@ export function UndergroundScreen() {
         <>
           <UgTeamPanel />
           <Section id="ug-bag" title={t('ui.ug.bag')} hint={t('ui.ug.bagWorth', { price: money(worth) })}>
-            <OrbBagTable bag={u.bag} cfg={cfg} />
+            <UgOrbHeap bag={u.bag} />
+            {details && <OrbBagTable bag={u.bag} cfg={cfg} />}
             {orbs > 0 && !full && share > 0 && <UgSoloWarning share={share} price={soloPrice} full={worth} />}
             <PixelButton
               variant={sellable && full ? 'success' : 'secondary'}

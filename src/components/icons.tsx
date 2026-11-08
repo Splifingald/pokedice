@@ -609,6 +609,8 @@ export const ICONS = {
     'kBBBBBBBBBBk',
     'kkkkkkkkkkkk',
   ],
+  // The Underground's next pickaxe level (docs/34 §13): a gold arrow pointing up.
+  arrowUp: ['...k...', '..kyk..', '.kyyyk.', 'kyyyyyk', 'kkyyykk', '..kyk..', '..kyk..', '..kkk..'],
   // A Fortune Wheel ticket: a gold stub, notched at the sides, torn along its perforation.
   ticket: [
     '............',
@@ -792,6 +794,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   pickaxe: DIG_PAL,
   pickaxeSm: DIG_PAL,
   kit: DIG_PAL,
+  arrowUp: NAV_PAL,
   daySun: NAV_PAL,
   nightMoon: NAV_PAL,
   check: CHECK_PAL,
@@ -818,6 +821,7 @@ export function PixelIcon({
   style,
   title,
   color,
+  palette,
 }: {
   name: IconName
   size?: number
@@ -826,9 +830,12 @@ export function PixelIcon({
   title?: string
   /** Draw every pixel in this one colour: a silhouette (e.g. status faces on dice). */
   color?: string
+  /** Colours laid over the icon's own (the Underground's pickaxe in its tier's metal). */
+  palette?: Record<string, string>
 }) {
   const rows = ICONS[name]
-  const pal = OWN_PALETTE[name] ?? PAL
+  const own = OWN_PALETTE[name] ?? PAL
+  const pal = palette ? { ...own, ...palette } : own
   const h = rows.length
   const w = rows[0]!.length
   return (

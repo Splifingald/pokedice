@@ -1,6 +1,9 @@
 // Kitchen sink (dev only): the Underground (docs/34) — the cave, the zig-zag crack gauge (fresh, under way, a strike
-// landing, shaking, calm, collapsed), a wall in every state (fresh, half dug with a thing half uncovered, the pickaxe
-// striking where it was tapped at full and short motion, a thing popping out, cleared, collapsing), the pickaxe die
+// landing, shaking, calm, collapsed, a new gauge coming back), a wall in every state (fresh, half dug with a thing half
+// uncovered, the pickaxe striking where it was tapped at full and short motion, a 3, thin tiles glinting, a thing
+// shining out, cleared with confetti, collapsing with dust, the stamp at motion off), the buried things' slots (none,
+// some with one popping, all), the kit slots (full, ticking, bought), the pickaxe's nine levels and its level-up, the
+// orb heap (empty, some), the haul's cards turning with its worth counting up, the pickaxe die
 // (unrolled, rolled) and its faces (now, the next level's), orbs of every colour and size, plates, the haul (every
 // outcome), a wall's end in the dig's footer (cleared; collapsed with its new gauge for a kit held, for one to buy,
 // short of ₽, the limit reached, or switched off), the plates grid (none, some), the orb bag, the solo price's warning
@@ -22,6 +25,11 @@ import {
   UgRulesModal,
   UgSellModal,
   UgSoloWarning,
+  HaulWorth,
+  UgBuriedSlots,
+  UgKitSlots,
+  UgOrbHeap,
+  UgPickStand,
   UgWall,
   UgWallEnd,
   type UgRefreshOffer,
@@ -148,7 +156,16 @@ export function UndergroundBits() {
         <Frame name="UgWall: a strike at short motion (the pickaxe's impact frame only)">
           <UgWall wall={HALF} data={data} fx={{ tile: 21, roll: 1, key: flash }} motion="short" />
         </Frame>
-        <Frame name="UgWall: the fossil just dug out, its name popping">
+        <Frame name="UgWall: a 3 (the burst, gold -3, more rock flying)">
+          <UgWall wall={HALF} data={data} fx={{ tile: 20, roll: 3, key: flash }} />
+        </Frame>
+        <Frame name="UgWall: thin tiles over something buried glint">
+          <UgWall
+            wall={{ ...WALL, depth: WALL.depth.map((d, i) => ([7, 8, 13, 28, 34].includes(i) ? 1 : d)) }}
+            data={data}
+          />
+        </Frame>
+        <Frame name="UgWall: the fossil just dug out, shining">
           <UgWall
             wall={dug(WALL, [4, 5, 10, 11], 6)}
             data={data}
@@ -156,15 +173,32 @@ export function UndergroundBits() {
             found={{ thing: 3, key: flash }}
           />
         </Frame>
-        <Frame name="UgWall: cleared (everything glints)">
-          <UgWall wall={CLEARED} data={data} disabled />
+        <Frame name="UgWall: cleared (everything glints, confetti, the gold stamp)">
+          <UgWall key={flash} wall={CLEARED} data={data} disabled end="cleared" />
         </Frame>
-        <Frame name="UgWall: collapsing (full; short is one thud)">
-          <UgWall key={flash} wall={COLLAPSED} data={data} disabled collapsing />
+        <Frame name="UgWall: collapsing (full: quake, dust, the red stamp; short: one thud)">
+          <UgWall key={flash} wall={COLLAPSED} data={data} disabled end="collapsed" />
+        </Frame>
+        <Frame name="UgWall: collapsed, motion off (the stamp, still)">
+          <UgWall wall={COLLAPSED} data={data} disabled end="collapsed" motion="off" />
+        </Frame>
+        <Frame name="CrackGauge: a new gauge, its slabs coming back (replay below)">
+          <CrackGauge strikes={15} used={0} rebuildKey={flash} />
+        </Frame>
+        <Frame name="UgBuriedSlots: none found, two found (the fossil's slot popping), all found">
+          <div className="grid gap-2">
+            <UgBuriedSlots wall={WALL} data={data} />
+            <UgBuriedSlots
+              wall={dug(WALL, [4, 5, 10, 11, 24, 25, 26, 30, 31, 32], 9)}
+              data={data}
+              popped={{ thing: 3, key: flash }}
+            />
+            <UgBuriedSlots wall={CLEARED} data={data} />
+          </div>
         </Frame>
       </div>
       <PixelButton size="sm" className="self-start" onClick={() => setFlash((k) => k + 1)}>
-        Replay the strike and the collapse
+        Replay the strikes, the ends, the new gauge, the slots and the haul
       </PixelButton>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -218,15 +252,56 @@ export function UndergroundBits() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="bg-panel p-3 shadow-ring">
-          <HaulList lines={LINES} data={data} />
+          <div className="grid gap-3">
+            <HaulWorth key={flash} lines={LINES} data={data} reveal />
+            <HaulList key={`l${flash}`} lines={LINES} data={data} reveal />
+          </div>
         </div>
         <div className="flex flex-col gap-3 bg-panel p-3 shadow-ring">
           <PlateGrid held={[]} />
           <PlateGrid held={['fire', 'water', 'steel', 'fairy']} />
+          <UgOrbHeap
+            bag={{ red: { s: 0, m: 0, l: 0 }, blue: { s: 0, m: 0, l: 0 }, green: { s: 0, m: 0, l: 0 } }}
+          />
+          <UgOrbHeap
+            bag={{ red: { s: 6, m: 2, l: 1 }, blue: { s: 0, m: 0, l: 0 }, green: { s: 3, m: 1, l: 0 } }}
+          />
           <OrbBagTable
             bag={{ red: { s: 6, m: 2, l: 1 }, blue: { s: 0, m: 0, l: 0 }, green: { s: 3, m: 1, l: 0 } }}
             cfg={CFG}
           />
+          <div className="grid gap-3 bg-cream p-3">
+            <UgKitSlots
+              freeKits={3}
+              cap={3}
+              bought={0}
+              tillFree={null}
+              everyMs={8 * 3_600_000}
+              label="3 kits, full"
+            />
+            <UgKitSlots
+              freeKits={1}
+              cap={3}
+              bought={0}
+              tillFree={3 * 3_600_000}
+              everyMs={8 * 3_600_000}
+              label="1 kit, the next in 3 h"
+            />
+            <UgKitSlots
+              freeKits={0}
+              cap={3}
+              bought={4}
+              tillFree={20 * 60_000}
+              everyMs={8 * 3_600_000}
+              label="4 bought, the next free in 20 min"
+            />
+          </div>
+          <div className="flex flex-wrap gap-4 bg-panel p-3">
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((lv) => (
+              <UgPickStand key={lv} level={lv} max={8} />
+            ))}
+            <UgPickStand key={`up${flash}`} level={5} max={8} up />
+          </div>
           <UgSoloWarning share={CFG.soloShare} price={290} full={2900} />
           <PixelButton size="sm" className="self-start" onClick={() => setSell(true)}>
             Selling outside a full team (the confirmation)
@@ -236,7 +311,7 @@ export function UndergroundBits() {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="bg-panel p-3 shadow-ring">
-          <UgTeamSeats team={null} />
+          <UgTeamSeats team={null} note />
         </div>
         <div className="bg-panel p-3 shadow-ring">
           <UgTeamSeats

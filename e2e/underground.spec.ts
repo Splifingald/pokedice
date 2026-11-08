@@ -144,9 +144,11 @@ test('no rules on its page (opening it is enough), Home’s square with the kits
   await expect.poll(async () => (await stored(page)).events?.liveSeen).toEqual(['ug'])
   expect((await stored(page)).underground?.rulesSeen).toBe(true)
   await expect(page.getByRole('heading', { level: 1, name: 'The Underground' })).toBeVisible()
-  await expect(page.getByTestId('ug-kits')).toContainText('3')
-  await expect(page.getByText('Free kits full: dig to start the clock')).toBeVisible()
-  await expect(page.getByText('Lv.0 / 8 · this event only')).toBeVisible()
+  // Pictures over words (docs/34 §13): the kits are slots, read out as one line; the pickaxe's level is on its tag.
+  await expect(page.getByRole('img', { name: '3 kits. Free kits full: dig to start the clock' })).toBeVisible()
+  await expect(page.locator('.ug-kitslot.held')).toHaveCount(3)
+  await expect(page.getByText('Lv.0 / 8 · this event only')).toBeAttached()
+  await expect(page.locator('.ug-pickstand')).toContainText('Lv.0')
   await shot(page, 'page')
 
   await page.goto('/home')
@@ -184,7 +186,11 @@ test('a wall dug to its haul: the plate for Arceus, an orb in the bag', async ({
     '14',
   )
   await page.getByRole('button', { name: 'Row 3, column 3: 1 layer' }).click()
-  await expect(page.getByText('Everything dug out!')).toBeVisible()
+  await expect(page.getByText('Everything dug out!')).toBeAttached()
+  // Pictures over words (docs/34 §13): the gold stamp over the wall, both slots showing what came out.
+  await expect(page.locator('.ug-stamp.gold')).toHaveText('All dug out!')
+  await expect(page.getByRole('list', { name: '2 things buried · 2 dug out' }).getByRole('listitem')).toHaveText(['', ''])
+  await expect(page.locator('[data-slot].done')).toHaveCount(2)
   await shot(page, 'dig-cleared')
   await page.getByRole('button', { name: 'See the haul' }).click()
   const haul = page.getByRole('dialog', { name: '2 things dug out' })
@@ -254,7 +260,8 @@ const gauge = (page: Page) => page.getByRole('meter', { name: 'Strikes before th
 /** The middle tile: whatever the roll, the orb and the plate in the corners stay buried, and the wall collapses. */
 const collapse = async (page: Page) => {
   await page.getByRole('button', { name: 'Row 2, column 2: 1 layer' }).click({ timeout: 15_000 })
-  await expect(page.getByText('The wall collapsed!')).toBeVisible()
+  await expect(page.getByText('The wall collapsed!', { exact: false })).toBeAttached()
+  await expect(page.locator('.ug-stamp')).toHaveText('Collapsed!')
 }
 
 test('a collapsed wall takes a kit held for a new gauge; the wall stays as it is', async ({ page }) => {
@@ -263,7 +270,7 @@ test('a collapsed wall takes a kit held for a new gauge; the wall stays as it is
   await collapse(page)
   await shot(page, 'dig-collapsed-kit')
   await page.getByRole('button', { name: 'Dig on · use a kit (1)' }).click()
-  await expect(page.getByText('New gauge: dig on!')).toBeVisible()
+  await expect(page.getByText('New gauge: dig on!')).toBeAttached()
   await expect(gauge(page)).toHaveAttribute('aria-valuenow', '15')
   await expect(page.getByRole('button', { name: 'Row 1, column 1: 1 layer' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Row 2, column 2: dug out' })).toBeVisible()
