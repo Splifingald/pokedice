@@ -370,7 +370,7 @@ if they hold none; the wall stays as it is and the gauge starts again.
 - **Its own switch** inside the Underground's row, `underground.refresh` (Off / On for admin / On for everyone, **Off
   by default**; Admin → Live events → an Underground event → "A collapsed wall's new gauge"). It works only with the
   Underground itself on. Kits live in the save (as buying them in the Mart does), so no server function reads it: the
-  row only gains the key (migration 0141).
+  row only gains the key (migration 0142).
 - **The rule** (engine, `refreshOffer` / `refreshWall`): the open wall collapsed, its haul not taken, the event
   running. A kit held is spent (a free one first, its clock starting from the cap, as opening a wall does); with none,
   one is bought on the spot at the Mart's price, within the per-player limit, and spent at once. The wall keeps its
@@ -383,7 +383,7 @@ if they hold none; the wall stays as it is and the gauge starts again.
   the limit, the haul after, the save's round trip); `tests/underground-sql.test.ts` (the row with the key, run twice).
 
 Setting it up: run
-https://github.com/Splifingald/pokedice/blob/claude/underground-wall-explorakit-fzr4o0/supabase/migrations/0141_underground_refresh.sql
+https://github.com/Splifingald/pokedice/blob/version/2_9_5/supabase/migrations/0142_underground_refresh.sql
 in the Supabase SQL editor (`supabase/seed.sql` carries it too, inlined; without it the game reads the switch as Off),
 then Admin → Live events → an Underground event → "A collapsed wall's new gauge": On for admin to try it, On for
 everyone to open it. Save & Publish.
