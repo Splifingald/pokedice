@@ -47,6 +47,14 @@ export function FriendBattlesBox() {
             onChange={(v) => set({ shield: 100 - Math.max(0, Math.min(100, Math.round(v ?? 0))) })}
           />
         </Field>
+        <Field label="Switch cooldown (turns)" hint="after a switch, the side's own turns before it may switch again; 0 = none">
+          <NumInput
+            min={0}
+            max={20}
+            value={cfg.switchCooldown}
+            onChange={(v) => set({ switchCooldown: Math.max(0, Math.min(20, Math.floor(v ?? 0))) })}
+          />
+        </Field>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Battle tickets a midnight" hint="given at each UTC midnight while a player holds fewer than the cap">

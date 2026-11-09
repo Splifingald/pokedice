@@ -17,6 +17,7 @@ import {
   pvpHash,
   pvpLogFor,
   pvpStanding,
+  pvpSwitchWait,
   pvpView,
   startPvp,
   VERSUS_LEVEL,
@@ -153,6 +154,43 @@ describe('Friend Battles: the fight', () => {
     down.b[1]!.hp = 0
     down.step!.player[1]!.hp = 0
     expect(applyPvpMove(down, 'b', { k: 'switch', uid: 'b1' }, 1, data).match).toBe(down)
+  })
+
+  it('after a switch, that side waits 3 of its own turns before switching again (docs/65 §18)', () => {
+    // Tanky leads (Snorlax, Blissey-like bulk) so nobody faints over the turns counted here.
+    const { match } = startPvp(team([143, 143, 143]), team([135, 143, 135]), null, data, 7)
+    expect(match.switchCooldown).toBe(3)
+    let m = applyPvpMove(match, 'b', { k: 'switch', uid: 'b1' }, 5, data).match
+    expect(m.activeB).toBe(1)
+    expect(pvpSwitchWait(m, 'b')).toBe(3)
+    expect(pvpSwitchWait(m, 'a')).toBe(0)
+    // a may still switch: the cooldown is b's own. a attacks instead.
+    m = applyPvpMove(m, 'a', { k: 'attack' }, 6, data).match
+    expect(m.actor).toBe('b')
+    // b's next three turns: the switch changes nothing, and b's screen says how long is left.
+    for (const left of [3, 2, 1]) {
+      expect(pvpSwitchWait(m, 'b')).toBe(left)
+      expect(m.step!.switchWait).toBe(left)
+      expect(pvpView(m, 'b', data).switchWait).toBe(left)
+      expect(applyPvpMove(m, 'b', { k: 'switch', uid: 'b0' }, 9, data).match).toBe(m)
+      m = applyPvpMove(m, 'b', { k: 'attack' }, 10 + left, data).match
+      m = applyPvpMove(m, 'a', { k: 'attack' }, 20 + left, data).match
+      expect(m.winner).toBeUndefined()
+    }
+    // The fourth: free again.
+    expect(pvpSwitchWait(m, 'b')).toBe(0)
+    expect(pvpView(m, 'b', data).switchWait).toBeUndefined()
+    const back = applyPvpMove(m, 'b', { k: 'switch', uid: 'b0' }, 30, data).match
+    expect(back.activeB).toBe(0)
+    expect(pvpSwitchWait(back, 'b')).toBe(3)
+  })
+
+  it('no cooldown when the match is opened with 0', () => {
+    const { match } = startPvp(team([143, 143]), team([135, 143]), null, data, 7, undefined, 50, 0)
+    const m = applyPvpMove(match, 'b', { k: 'switch', uid: 'b1' }, 5, data).match
+    expect(pvpSwitchWait(m, 'b')).toBe(0)
+    const m2 = applyPvpMove(m, 'a', { k: 'attack' }, 6, data).match
+    expect(applyPvpMove(m2, 'b', { k: 'switch', uid: 'b0' }, 7, data).match.activeB).toBe(0)
   })
 
   it('a move out of turn, or a reroll with none left, changes nothing', () => {
