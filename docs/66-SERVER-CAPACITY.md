@@ -27,7 +27,7 @@ What gives first, in order:
    busiest hour. Supabase emails when it's hit; its metrics don't carry it, so the watch (§4) can't see it.
 2. **CPU and memory on Micro**: shared, burstable cores. §2 removed ~80 % of the database's work.
 
-Players online (docs/70, once switched on) adds one tiny call every 5 minutes per visible tab, ~12 per hour of play,
+Players online (docs/70) adds one tiny call every 5 minutes per visible tab, ~12 per hour of play,
 on an unlogged table; no Realtime.
 3. Far away: 100k signed-in players a month, 8 GB of database, 250 GB of egress a month (Pro's quotas).
 

@@ -181,7 +181,7 @@ export function SocialDeepBits() {
       </div>
 
       <h3 className="m-0 text-[20px] font-normal">
-        Players online, above SYNC ONLINE in the menu (one player, many; hidden with no count or the switch closed)
+        Players online, above SYNC ONLINE in the menu (one player, many; hidden until the server has a count)
       </h3>
       <div className="grid w-[360px] max-w-full gap-1.5 bg-panel p-3 shadow-ring">
         <PlayersOnlineView count={1} />

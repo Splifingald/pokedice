@@ -1,7 +1,6 @@
-// Migration 0144 against a real Postgres (PGlite, in process): players online (docs/70). Its row lands Off; Off, a
-// ping writes nothing and answers nothing; On for admin, every game is counted but only the admin gets the number; On
-// for everyone, each player (the account, else the device) counts once, for 6 minutes. Supabase's own pieces (the
-// auth schema, the roles) and 0131's access_open are stood in for at the top.
+// Migration 0144 against a real Postgres (PGlite, in process): players online (docs/70). No switch (the first
+// version's row and function go); each player (the account, else the device) counts once, for 6 minutes; a hand-made
+// device id counts as nobody. Supabase's own pieces (the auth schema, the roles) are stood in for at the top.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
@@ -15,7 +14,6 @@ const MISTY = '00000000-0000-4000-8000-000000000002'
 const ADMIN = '00000000-0000-4000-8000-000000000009'
 
 let db: PGlite
-let landed: unknown
 
 async function ping(user: string | null, device: string | null = 'dev-1'): Promise<number | null> {
   await db.query(`select set_config('request.jwt.claim.sub', $1, false)`, [user ?? ''])
@@ -24,8 +22,6 @@ async function ping(user: string | null, device: string | null = 'dev-1'): Promi
   ])
   return (await db.query<{ n: number | null }>(`select online_ping($1) as n`, [device])).rows[0]!.n
 }
-const setAccess = (access: string) =>
-  db.query(`update game_config set value = jsonb_build_object('access', $1::text) where key = 'playersOnline'`, [access])
 const rows = async () => (await db.query<{ n: number }>(`select count(*)::int as n from online_here`)).rows[0]!.n
 
 beforeAll(async () => {
@@ -41,15 +37,14 @@ beforeAll(async () => {
     grant usage on schema auth to anon, authenticated;
   `)
   await db.exec(sql('0001_init.sql').replace('create extension if not exists pgcrypto;', ''))
-  // 0131's switch reader, without the beta testers' list.
+  // The first version's switch, which running this one removes.
   await db.exec(`
-    create function access_open(p_access text) returns boolean language sql stable as $$
-      select coalesce(p_access, 'off') = 'all' or (p_access in ('admin', 'beta') and is_admin()) $$;
+    insert into game_config (key, value) values ('playersOnline', '{"access": "off"}');
+    create function players_online_access() returns text language sql as $$ select 'off' $$;
   `)
   await db.exec(sql('0144_players_online.sql'))
   // Safe to run again.
   await db.exec(sql('0144_players_online.sql'))
-  landed = (await db.query<{ value: unknown }>(`select value from game_config where key = 'playersOnline'`)).rows[0]!.value
 })
 
 afterAll(async () => {
@@ -58,29 +53,15 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await db.exec(`delete from online_here`)
-  await setAccess('all')
 })
 
 describe('players online', () => {
-  it('lands Off', () => {
-    expect(landed).toEqual({ access: 'off' })
+  it('has no switch: the first version’s row and function are gone', async () => {
+    expect((await db.query(`select 1 from game_config where key = 'playersOnline'`)).rows).toHaveLength(0)
+    expect((await db.query(`select 1 from pg_proc where proname = 'players_online_access'`)).rows).toHaveLength(0)
   })
 
-  it('Off: writes nothing and answers nothing', async () => {
-    await setAccess('off')
-    expect(await ping(ASH)).toBeNull()
-    expect(await ping(ADMIN)).toBeNull()
-    expect(await rows()).toBe(0)
-  })
-
-  it('On for admin: every game counted, only the admin told', async () => {
-    await setAccess('admin')
-    expect(await ping(ASH)).toBeNull()
-    expect(await ping(null, 'guest-1')).toBeNull()
-    expect(await ping(ADMIN)).toBe(3)
-  })
-
-  it('On for everyone: each account or device once, for 6 minutes', async () => {
+  it('each account or device once, for 6 minutes', async () => {
     expect(await ping(ASH, 'dev-a')).toBe(1)
     expect(await ping(ASH, 'dev-b')).toBe(1) // the same account on another device
     expect(await ping(null, 'guest-1')).toBe(2)

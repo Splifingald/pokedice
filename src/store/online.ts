@@ -1,14 +1,14 @@
-// Players online (docs/70): how many players have the game open, at the foot of the side menu. Each game says it's
-// open (online_ping, migration 0144) every 5 minutes while its tab is visible, and the answer is the count: one tiny
-// call, about 12 per hour of play, and none from a hidden tab. Opening the menu asks again when the last answer is more
-// than a minute old. The server counts the players heard from in the last 6 minutes.
+// Players online (docs/70): how many players have the game open, at the foot of the side menu, for everyone (no
+// switch, the user's call of 2026-11-09). Each game says it's open (online_ping, migration 0144) every 5 minutes while
+// its tab is visible, and the answer is the count: one tiny call, about 12 per hour of play, and none from a hidden tab.
+// Opening the menu asks again when the last answer is more than a minute old. The server counts the players heard from
+// in the last 6 minutes.
 import { create } from 'zustand'
-import { playersOnlineCounted } from '@/engine'
 import { deviceId } from '@/lib/device'
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useGame } from './game'
 
-/** The last count the server gave, or null: not asked yet, switched off, closed to this player, or failed. */
+/** The last count the server gave, or null: not asked yet, or never answered (offline, before migration 0144). */
 export const useOnlineCount = create<{ count: number | null }>(() => ({ count: null }))
 
 export const ONLINE_PING_MS = 5 * 60_000
@@ -23,13 +23,8 @@ let pinging = false
 /** Says this game is open and keeps the count, unless the last call was less than `minGap` ago. */
 export async function pingOnline(minGap = TIMER_GAP_MS): Promise<void> {
   if (!isSupabaseConfigured || pinging) return
-  const { data, auth } = useGame.getState()
   // Until the sign-in is known, the call would count the device and then the account: the same player twice.
-  if (auth.status === 'unknown') return
-  if (!playersOnlineCounted(data)) {
-    useOnlineCount.setState({ count: null })
-    return
-  }
+  if (useGame.getState().auth.status === 'unknown') return
   if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
   if (Date.now() - lastPing < minGap) return
   pinging = true
@@ -54,12 +49,12 @@ export function startOnlinePing() {
   started = true
   setInterval(() => void pingOnline(), ONLINE_PING_MS)
   document.addEventListener('visibilitychange', () => void pingOnline())
-  // The sign-in becoming known (or changing), or the switch arriving with fresh content.
+  // The sign-in becoming known (or changing): counted as who they are now.
   useGame.subscribe((s, prev) => {
     if (s.auth.status !== prev.auth.status || s.auth.userId !== prev.auth.userId) {
       lastPing = 0
       void pingOnline()
-    } else if (s.data.config.playersOnline?.access !== prev.data.config.playersOnline?.access) void pingOnline()
+    }
   })
   void pingOnline()
 }

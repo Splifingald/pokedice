@@ -893,7 +893,7 @@ export function startBackgroundServices() {
   // A small world ends on the server's clock (docs/21): it closes, or sends the player out when switched off.
   startWorldClock()
   startAnalytics()
-  // How many players are online (docs/70): a small call every 5 minutes while visible, once its switch is on.
+  // How many players are online (docs/70): a small call every 5 minutes while visible.
   startOnlinePing()
   // Welcome-back gifts (docs/58): the server is asked once a day whether the player is back from days away.
   startWelcomeBack()
