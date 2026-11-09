@@ -2900,6 +2900,8 @@ export interface FriendBattlesConfig {
   ticketWeekly: number
   /** Lv.100 battles offered beside Lv.50 (docs/65 §16). */
   lv100: boolean
+  /** After a switch, the side's own turns that go by before it may switch again (docs/65 §18). 0 = no cooldown. */
+  switchCooldown: number
 }
 
 export interface FriendshipConfig {

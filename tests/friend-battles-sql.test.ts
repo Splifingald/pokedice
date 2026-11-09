@@ -17,6 +17,7 @@ const FILE = '0131_friend_battles.sql'
 const TICKETS = '0132_battle_tickets.sql'
 const LEVELS = '0133_friend_battle_levels.sql'
 const SWITCH = '0137_friend_battle_switch.sql'
+const COOLDOWN = '0144_friend_battle_switch_cooldown.sql'
 const ADMIN = 'gregoire.ftn@gmail.com'
 
 const U = {
@@ -177,6 +178,7 @@ beforeAll(async () => {
     TICKETS,
     LEVELS,
     SWITCH,
+    COOLDOWN,
   ])
     await db.exec(sql(f))
   // Safe to run again.
@@ -184,6 +186,7 @@ beforeAll(async () => {
   await db.exec(sql(TICKETS))
   await db.exec(sql(LEVELS))
   await db.exec(sql(SWITCH))
+  await db.exec(sql(COOLDOWN))
   await db.exec(`insert into auth.users (id) values ${Object.values(U).map((u) => `('${u}')`).join(',')}`)
   for (const u of Object.values(U))
     await db.query(
@@ -531,8 +534,22 @@ describe('switching and the quarter shield (0137)', () => {
     expect(cfg.shield).toBe(75)
     await db.query(`update game_config set value = jsonb_set(value, '{shield}', '60') where key = 'friendBattles'`)
     await db.exec(sql(SWITCH))
+    await db.exec(sql(COOLDOWN))
     const again = (await db.query<{ c: { shield: number } }>(`select friend_battles_cfg() c`)).rows[0]!.c
     expect(again.shield).toBe(60)
     await db.query(`update game_config set value = jsonb_set(value, '{shield}', '75') where key = 'friendBattles'`)
   })
 })
+
+describe('the switch cooldown (0144)', () => {
+  it('sends the 3 turns with the rest, and keeps a number the admin set; safe to run again', async () => {
+    const cfg = (await db.query<{ c: { switchCooldown: number } }>(`select friend_battles_cfg() c`)).rows[0]!.c
+    expect(cfg.switchCooldown).toBe(3)
+    await db.query(`update game_config set value = jsonb_set(value, '{switchCooldown}', '2') where key = 'friendBattles'`)
+    await db.exec(sql(COOLDOWN))
+    const again = (await db.query<{ c: { switchCooldown: number } }>(`select friend_battles_cfg() c`)).rows[0]!.c
+    expect(again.switchCooldown).toBe(2)
+    await db.query(`update game_config set value = value - 'switchCooldown' where key = 'friendBattles'`)
+  })
+})
+

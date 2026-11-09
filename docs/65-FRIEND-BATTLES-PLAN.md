@@ -390,3 +390,29 @@ Friend Battles box, the rules card's first row ("Switching costs your turn.") an
 languages. Tests: the engine's (switches mixed into the 120 replica fights, a switch's turn and log, the refused ones,
 the quarter), the SQL suite's "switching and the quarter shield (0137)", e2e `friend-battles.spec.ts` (my switch sent and
 played; theirs arriving) and `versus-league.spec.ts` (a switch on your turn).
+
+## 18. A switch cooldown (version 2.9.6)
+
+A player's report, 2026-11-09: two friends switched back and forth for ten turns or more, each answering the other's
+switch with a Pokémon strong against the one just sent in. The user's answer: *"si tu switch tu dois attendre 3 tours
+avant de pouvoir switch de nouveau"* — some control, never an endless loop.
+
+| Question | Answer |
+|---|---|
+| The rule | After a switch, **that side's next 3 turns of its own can't switch**; the 4th can. The other side is free (its own cooldown runs only from its own switches) |
+| What counts | Every turn of that side's own, a stunned one passing by itself included. The other side's turns don't count |
+| After a K.O. | **Never held back**: the next one comes out as before, and a switch on the turn that follows still waits out the cooldown |
+| The number | `friendBattles.switchCooldown`, **3** by default, on the admin's Friend Battles box ("Switch cooldown (turns)", 0 = none). The match takes it from the config at its start (`startPvp`), so both games fight by the same number. The server needn't check it: a switch refused by the engine changes nothing on either game, as for every move |
+| The engine | `PvpMatch.switchWait` (each side's turns still to wait), `pvpSwitchWait`; the turn's duel step and `pvpView` carry it as `BattleState.switchWait`, and the battle engine's `SWITCH` refuses a voluntary switch while it's above 0 |
+| On screen | The team's pips still open the switch step (its BACK and its forfeit flag stay reachable), but its cards are held back: "You can switch again after 3 more turns." (`ui.battle.switchWait`) |
+| Rules | A row on Friend Battles' INFO: "Switching costs your turn. After a switch, your next 3 turns can't switch; a K.O.'s send-out always can." (`ui.rules.pvp.switch`) |
+
+Migration **`0144_friend_battle_switch_cooldown.sql`**: the server's `friend_battles_defaults()` carries
+`switchCooldown` 3, so `friend_battles_cfg()` sends it to both games with the rest (the server doesn't check switches
+itself). Tests: the engine's (the 3 turns refused then free, the other side free, 0 = none), the SQL suite's "the switch
+cooldown (0144)".
+
+**Setting it up**: run
+[`supabase/migrations/0144_friend_battle_switch_cooldown.sql`](https://github.com/Splifingald/pokedice/blob/claude/gracious-feynman-8gv8vm/supabase/migrations/0144_friend_battle_switch_cooldown.sql)
+in Supabase's SQL editor (after 0137; safe to run again). It isn't inlined in `supabase/seed.sql`.
+

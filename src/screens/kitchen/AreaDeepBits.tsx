@@ -95,6 +95,12 @@ export function AreaDeepBits() {
         <SwitchStep options={[]} foe={19} onPick={() => {}} onBack={() => {}} />
       </div>
 
+      <div className="flex w-[380px] max-w-full flex-col gap-2">
+        <b className="text-lg">A Friend Battle's switch cooldown (docs/65 §18): the cards held back, BACK and the flag</b>
+        <SwitchStep options={[]} wait={3} foe={19} onPick={() => {}} onBack={() => {}} />
+        <SwitchStep options={[]} wait={1} foe={19} onPick={() => {}} onBack={() => {}} />
+      </div>
+
       <div className="flex items-center gap-3">
         <span className="text-lg">The forfeit flag, at the side of a GO! row:</span>
         <ForfeitButton flag />

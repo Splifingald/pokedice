@@ -96,7 +96,7 @@ function openEngine(info: PvpInfo): { engine: PvpMatch; log: PvpEntry[] } | null
   const teamA = info.side === 'a' ? info.team : info.foeTeam
   const teamB = info.side === 'a' ? info.foeTeam : info.team
   const shield = info.mode === 'draft' ? info.firstPicker : null
-  const r = startPvp(teamA, teamB, shield, data(), info.seed, info.cfg.shield, info.level)
+  const r = startPvp(teamA, teamB, shield, data(), info.seed, info.cfg.shield, info.level, info.cfg.switchCooldown)
   return { engine: r.match, log: r.log }
 }
 

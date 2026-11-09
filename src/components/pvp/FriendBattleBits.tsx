@@ -227,6 +227,9 @@ export function useFriendBattleRules(): RuleRow[] {
     { icon: 'vs', title: t('ui.rules.pvp.challenge.title'), text: t('ui.rules.pvp.challenge.text', { n: Math.round(cfg.expiry / 60) || 1, turn: cfg.turn }) },
     { icon: 'dice', title: t('ui.rules.pvp.modes.title'), text: t('ui.rules.pvp.modes.text') },
     { icon: 'shield', title: t('ui.rules.pvp.shield.title'), text: t('ui.rules.pvp.shield.text', { pct: 100 - cfg.shield }) },
+    ...(cfg.switchCooldown > 0
+      ? [{ icon: 'trade', title: t('ui.rules.pvp.switch.title'), text: t('ui.rules.pvp.switch.text', { n: cfg.switchCooldown }) } as const]
+      : []),
     {
       icon: 'battleTicket',
       title: t('ui.rules.pvp.tickets.title'),

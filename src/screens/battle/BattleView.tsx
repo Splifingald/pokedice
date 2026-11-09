@@ -591,6 +591,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
   // Out on the field already: not one to switch in (a double battle has two out).
   const onField = (p: Battler) => (dbl ? dbl.ownSlots.some((i) => st.player[i]!.uid === p.uid) : p.uid === activeBattler(st).uid)
   const switchTargets = st.player.filter((p) => p.hp > 0 && !onField(p))
+  // A Friend Battle's switch cooldown (docs/65 §18): the step still opens (BACK and the flag), its cards held back.
+  const switchWait = st.switchWait ?? 0
   // After a K.O. with one Pokémon left to come in, it comes in: nothing to choose (the user, 2026-10-27).
   const lastOne = forced && !auto && switchTargets.length === 1 ? switchTargets[0]!.uid : null
   useEffect(() => {
@@ -1312,7 +1314,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
           onChange: setForcedPick,
         }
       : switchStep
-        ? { value: switching!, able: new Set(switchTargets.map((b) => b.uid)), onChange: setSwitching }
+        ? {
+            value: switching!,
+            able: new Set(switchWait > 0 ? [] : switchTargets.map((b) => b.uid)),
+            onChange: setSwitching,
+          }
         : null
 
   const stage = (
@@ -1558,7 +1564,8 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
               // Switching on your turn (docs/43 §5.3): the same cards, the one tapped picked; it costs the turn (the
               // line says so); BACK gives the dice back.
               <SwitchStep
-                options={switchTargets}
+                options={switchWait > 0 ? [] : switchTargets}
+                wait={switchWait}
                 first={switching!}
                 foe={foeFront.dex}
                 onPick={(uid) => {
@@ -2007,8 +2014,11 @@ export function SwitchStep({
   onBack,
   chosen,
   onForfeit,
+  wait = 0,
 }: {
   options: Battler[]
+  /** Turns still to play before a switch is allowed again (a Friend Battle's cooldown): the step says so. */
+  wait?: number
   first?: string
   foe: number
   onPick: (uid: string) => void
@@ -2021,7 +2031,7 @@ export function SwitchStep({
    */
   chosen?: { value: string | null; onChange: (uid: string) => void }
 }) {
-  const { t } = useT()
+  const { t, tPlural } = useT()
   const data = useGame((s) => s.data)
   const box = useGame((s) => s.save?.box)
   const [own, setOwn] = useState(first && options.some((b) => b.uid === first) ? first : (options[0]?.uid ?? ''))
@@ -2042,7 +2052,9 @@ export function SwitchStep({
   if (!members.length)
     return (
       <div className="flex flex-1 flex-col gap-3">
-        <p className="my-auto text-center text-[20px] leading-tight text-muted">{t('ui.battle.noneToSend')}</p>
+        <p className="my-auto text-center text-[20px] leading-tight text-muted">
+          {wait > 0 ? tPlural('ui.battle.switchWait', wait) : t('ui.battle.noneToSend')}
+        </p>
         <BottomDock>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2.5">
             {onBack && (

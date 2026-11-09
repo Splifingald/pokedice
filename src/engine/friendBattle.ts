@@ -52,6 +52,9 @@ export const FRIEND_BATTLES_DEFAULTS: FriendBattlesConfig = {
   ticketPrice: 10,
   ticketWeekly: 10,
   lv100: true,
+  // After a switch, this many of your own turns go by before you may switch again (docs/65 §18): two players answering
+  // each other's switch with a counter forever was no fight (a player's report, 2026-11-09).
+  switchCooldown: 3,
 }
 
 /** The Friend Market's key for battle tickets (docs/65 §15): never an item of the Bag, held by the server. */
@@ -137,7 +140,8 @@ export const coinFace = (first: PvpSide): 'heads' | 'tails' => (first === 'a' ? 
 
 /**
  * A player's move. `timeout`: the side whose turn it is ran out of time and attacks with the dice in hand. `switch`:
- * another of their able Pokémon comes in (its uid), and the turn is spent, as switching costs a turn in every fight.
+ * another of their able Pokémon comes in (its uid), and the turn is spent, as switching costs a turn in every fight;
+ * then that side's next `switchCooldown` turns can't switch (a K.O.'s send-out is never held back).
  */
 export type PvpMove =
   | { k: 'reroll'; mask: boolean[] }
@@ -165,6 +169,10 @@ export interface PvpMatch {
   step: BattleState | null
   shield: { side: PvpSide; pct: number; used: boolean } | null
   turn: number
+  /** The switch's cooldown, in the side's own turns (the match's rule, from its config at the start). */
+  switchCooldown?: number
+  /** Each side's own turns still to play before it may switch again (docs/65 §18). Absent = free. */
+  switchWait?: { a: number; b: number }
   winner?: PvpSide | 'draw'
   reason?: 'ko' | 'forfeit' | 'stalemate'
 }
@@ -197,6 +205,13 @@ export const pvpLogFor = (log: readonly PvpEntry[], viewer: PvpSide): PvpEntry[]
 const teamOf = (m: PvpMatch, s: PvpSide) => (s === 'a' ? m.a : m.b)
 const activeOf = (m: PvpMatch, s: PvpSide) => (s === 'a' ? m.activeA : m.activeB)
 const setActive = (m: PvpMatch, s: PvpSide, i: number) => (s === 'a' ? (m.activeA = i) : (m.activeB = i))
+
+/** The turns `s` still waits before it may switch on its turn again: 0 when it may. */
+export const pvpSwitchWait = (m: PvpMatch, s: PvpSide): number => m.switchWait?.[s] ?? 0
+
+function setSwitchWait(m: PvpMatch, s: PvpSide, n: number) {
+  m.switchWait = { a: pvpSwitchWait(m, 'a'), b: pvpSwitchWait(m, 'b'), [s]: Math.max(0, n) }
+}
 
 /** The levels a Friend Battle is fought at (docs/65 §16). */
 export const PVP_LEVELS = [50, 100] as const
@@ -247,6 +262,7 @@ function stepFor(m: PvpMatch, data: GameData): BattleState {
     lastDamage: null,
     itemUsedThisTurn: false,
     ...(shield && { shield }),
+    ...(pvpSwitchWait(m, actor) > 0 && { switchWait: pvpSwitchWait(m, actor) }),
   }
 }
 
@@ -293,10 +309,11 @@ function knockOut(m: PvpMatch, s: PvpSide, log: PvpEntry[]): boolean {
   return false
 }
 
-/** After a turn: the K.O.s, the end, and the other side's turn. */
+/** After a turn: the K.O.s, the end, and the other side's turn. The actor's switch cooldown counts one turn down. */
 function afterTurn(m: PvpMatch, log: PvpEntry[]) {
   const actor = m.actor
   const foe = otherSide(actor)
+  if (pvpSwitchWait(m, actor) > 0) setSwitchWait(m, actor, pvpSwitchWait(m, actor) - 1)
   // The foe fell first (the hit), then the attacker to its own recoil: the attacker's hit decided it.
   const foeOut = knockOut(m, foe, log)
   const actorOut = knockOut(m, actor, log)
@@ -360,6 +377,7 @@ export function startPvp(
   seed: number,
   shieldPct = FRIEND_BATTLES_DEFAULTS.shield,
   level: PvpLevel = 50,
+  switchCooldown = FRIEND_BATTLES_DEFAULTS.switchCooldown,
 ): { match: PvpMatch; log: PvpEntry[] } {
   if (!teamA.length || !teamB.length) throw new Error('pvp_empty_team')
   const rng = createRng(seed)
@@ -377,6 +395,7 @@ export function startPvp(
     step: null,
     shield: shield ? { side: shield, pct: shieldPct, used: false } : null,
     turn: 0,
+    switchCooldown: Math.max(0, Math.floor(switchCooldown)),
   }
   const log: PvpEntry[] = [{ kind: 'start', first: toSide(first) }]
   runTurns(match, data, rng, log)
@@ -423,7 +442,7 @@ export function applyPvpMove(
   }
   if (move.k === 'switch') {
     // The engine's own voluntary switch (the Pokémon out goes back, the dice are dropped, the turn ends), refused as it
-    // refuses it anywhere: an unknown, fainted or already-out Pokémon changes nothing.
+    // refuses it anywhere: an unknown, fainted or already-out Pokémon, or a side still cooling down, changes nothing.
     const r = reduce(step, { t: 'SWITCH', instanceId: String(move.uid) }, data, rng)
     if (r.state === step || r.state.activeIndex === step.activeIndex) return { match, log: [] }
     const entries: PvpEntry[] = r.log.map((e) =>
@@ -433,6 +452,8 @@ export function applyPvpMove(
     writeBack(m, r.state)
     m.step = null
     afterTurn(m, log)
+    // Its own next turns can't switch: set after the turn counted down, before the turns that follow run.
+    if (m.switchCooldown) setSwitchWait(m, side, m.switchCooldown)
     runTurns(m, data, rng, log)
     return { match: m, log }
   }
@@ -519,5 +540,6 @@ export function pvpView(m: PvpMatch, viewer: PvpSide, data: GameData, foeUid?: s
     ...(m.shield && {
       shield: { side: m.shield.side === viewer ? 'player' : 'enemy', pct: m.shield.pct, used: m.shield.used },
     }),
+    ...(pvpSwitchWait(m, viewer) > 0 && { switchWait: pvpSwitchWait(m, viewer) }),
   }
 }

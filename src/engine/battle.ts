@@ -154,6 +154,11 @@ export interface BattleState {
   noHealItems?: boolean
   /** The bag stays shut: no item at all (the whiteout's fights, docs/64 §4.3). */
   noBag?: boolean
+  /**
+   * Turns of your own still to play before you may switch on your turn again (a Friend Battle's cooldown, docs/65 §18).
+   * A K.O.'s send-out is never held back. Absent or 0 = free.
+   */
+  switchWait?: number
   /** The types the player's Arceus may take (its plates, docs/34). Absent = any. */
   plates?: PokeType[]
   lastDamage: DamageResult | null
@@ -2303,7 +2308,10 @@ export function reduce(
       const target = s.player[idx]
       if (!target || target.hp <= 0 || idx === s.activeIndex) return NOOP(state)
       const outgoing = activeBattler(s)
-      const switchable = s.phase === 'player_switch' || ((s.phase === 'player_roll' || s.phase === 'player_reroll') && data.config.allowVoluntarySwitch)
+      const voluntary = (s.phase === 'player_roll' || s.phase === 'player_reroll') && data.config.allowVoluntarySwitch
+      // Still cooling down from the last switch: two players swapping counters forever is no fight (docs/65 §18).
+      if (voluntary && (s.switchWait ?? 0) > 0) return NOOP(state)
+      const switchable = s.phase === 'player_switch' || voluntary
       // A Gigantamax Pokémon shrinks back when it leaves the field; so does a timed Mega (the gem rules) change back.
       if (switchable && outgoing.gmax) endGmax('player', outgoing, data, log)
       if (switchable && outgoing.megaTimer) endMega('player', outgoing, data, log)
@@ -2314,7 +2322,7 @@ export function reduce(
         log.push({ kind: 'switch', uid: target.uid, free: true })
         copyFoeDice(s, log)
         beginTurn(s, s.nextActor, data, log, rng)
-      } else if ((s.phase === 'player_roll' || s.phase === 'player_reroll') && data.config.allowVoluntarySwitch) {
+      } else if (voluntary) {
         // Before or after the roll (the UI rolls for you): the dice are dropped and the turn ends.
         s.activeIndex = idx
         if (!s.participants.includes(target.uid)) s.participants.push(target.uid)
