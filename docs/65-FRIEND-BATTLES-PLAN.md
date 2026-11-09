@@ -407,12 +407,12 @@ avant de pouvoir switch de nouveau"* — some control, never an endless loop.
 | On screen | The team's pips still open the switch step (its BACK and its forfeit flag stay reachable), but its cards are held back: "You can switch again after 3 more turns." (`ui.battle.switchWait`) |
 | Rules | A row on Friend Battles' INFO: "Switching costs your turn. After a switch, your next 3 turns can't switch; a K.O.'s send-out always can." (`ui.rules.pvp.switch`) |
 
-Migration **`0144_friend_battle_switch_cooldown.sql`**: the server's `friend_battles_defaults()` carries
+Migration **`0145_friend_battle_switch_cooldown.sql`**: the server's `friend_battles_defaults()` carries
 `switchCooldown` 3, so `friend_battles_cfg()` sends it to both games with the rest (the server doesn't check switches
 itself). Tests: the engine's (the 3 turns refused then free, the other side free, 0 = none), the SQL suite's "the switch
-cooldown (0144)".
+cooldown (0145)".
 
 **Setting it up**: run
-[`supabase/migrations/0144_friend_battle_switch_cooldown.sql`](https://github.com/Splifingald/pokedice/blob/claude/gracious-feynman-8gv8vm/supabase/migrations/0144_friend_battle_switch_cooldown.sql)
+[`supabase/migrations/0145_friend_battle_switch_cooldown.sql`](https://github.com/Splifingald/pokedice/blob/claude/gracious-feynman-8gv8vm/supabase/migrations/0145_friend_battle_switch_cooldown.sql)
 in Supabase's SQL editor (after 0137; safe to run again). It isn't inlined in `supabase/seed.sql`.
 

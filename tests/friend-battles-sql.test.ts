@@ -17,7 +17,7 @@ const FILE = '0131_friend_battles.sql'
 const TICKETS = '0132_battle_tickets.sql'
 const LEVELS = '0133_friend_battle_levels.sql'
 const SWITCH = '0137_friend_battle_switch.sql'
-const COOLDOWN = '0144_friend_battle_switch_cooldown.sql'
+const COOLDOWN = '0145_friend_battle_switch_cooldown.sql'
 const ADMIN = 'gregoire.ftn@gmail.com'
 
 const U = {
@@ -541,7 +541,7 @@ describe('switching and the quarter shield (0137)', () => {
   })
 })
 
-describe('the switch cooldown (0144)', () => {
+describe('the switch cooldown (0145)', () => {
   it('sends the 3 turns with the rest, and keeps a number the admin set; safe to run again', async () => {
     const cfg = (await db.query<{ c: { switchCooldown: number } }>(`select friend_battles_cfg() c`)).rows[0]!.c
     expect(cfg.switchCooldown).toBe(3)
