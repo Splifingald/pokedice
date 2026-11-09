@@ -1682,6 +1682,7 @@ const FEATURES: Feature[] = [
   own('Friendship & Friend Market', 'friendship', 'friendship'),
   own('Welcome back', 'welcomeBack', 'welcomeBack'),
   own('Push notifications', 'push', 'push'),
+  bare('Players online (side menu)', 'playersOnline'),
 ]
 
 const isAccess = (v: unknown): v is EventAccess => (EVENT_ACCESS as readonly unknown[]).includes(v)

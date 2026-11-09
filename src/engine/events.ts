@@ -44,6 +44,18 @@ export const championCinemaOn = (data: GameData): boolean => eventOpenTo(data.co
  */
 export const gymCinemaOn = (data: GameData): boolean => eventOpenTo(data.config.gymCinema?.access, data)
 
+/** How many players are online, at the foot of the side menu (docs/70): shown to those it's open to. */
+export const playersOnlineOn = (data: GameData): boolean => eventOpenTo(data.config.playersOnline?.access, data)
+
+/**
+ * Every game says it's open once the switch isn't Off, whoever it's open to: On for admin, the admin sees the real
+ * number of players rather than a count of one.
+ */
+export const playersOnlineCounted = (data: GameData): boolean => {
+  const access = data.config.playersOnline?.access
+  return !!access && access !== 'off'
+}
+
 /** This event is switched on for whoever is playing. */
 export const eventOn = (data: GameData, id: EventId): boolean => eventOpenTo(eventDef(data, id)?.access, data)
 

@@ -2,6 +2,7 @@
 import type { AuthError, RealtimeChannel, Session, SupabaseClient, User } from '@supabase/supabase-js'
 import { create } from 'zustand'
 import { startAnalytics } from '@/analytics/ping'
+import { startOnlinePing } from './online'
 import { checkContentVersion } from '@/config/remote'
 import { AUTH_PROVIDERS, loadAuthProviders } from '@/lib/authProviders'
 import { loadFriendStatus } from '@/lib/friends'
@@ -892,6 +893,8 @@ export function startBackgroundServices() {
   // A small world ends on the server's clock (docs/21): it closes, or sends the player out when switched off.
   startWorldClock()
   startAnalytics()
+  // How many players are online (docs/70): a small call every 5 minutes while visible, once its switch is on.
+  startOnlinePing()
   // Welcome-back gifts (docs/58): the server is asked once a day whether the player is back from days away.
   startWelcomeBack()
   void initAuth()

@@ -9,6 +9,7 @@ import { pushToast, useGame } from '@/store/game'
 import { useIsAdmin, useLockReason } from '@/store/hooks'
 import { cx } from '@/theme/util'
 import { CloudSyncButton } from './CloudSyncButton'
+import { PlayersOnline } from './PlayersOnline'
 import { SupportModal } from './SupportModal'
 import { ExtremeMark, SwitchSaveModal } from './Extreme'
 import { ContactModal, InboxModal, useInboxUnseen } from './ContactModal'
@@ -314,6 +315,8 @@ export function PlayerMenu() {
             }}
           />
           {isAdmin && <MenuRow icon="wrench" label={t('ui.nav.admin')} desc={t('ui.menu.admin')} onClick={go('/admin')} shut={shut} />}
+          {/* Mounted with the open menu, so opening it refreshes a stale count. */}
+          <PlayersOnline />
           <CloudSyncButton />
           {canConnect && (
             <MenuRow

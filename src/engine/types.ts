@@ -1421,6 +1421,11 @@ export interface GameConfig {
    */
   gymCinema: { access: EventAccess }
   /**
+   * How many players have the game open, at the foot of the side menu (docs/70). The server counts them
+   * (online_ping) and checks the same switch. Migration 0144 inserts the same row.
+   */
+  playersOnline: { access: EventAccess }
+  /**
    * Friendship streaks and the Friend Market (docs/60): the switch, what a streak's day pays by tier, the day's cap
    * across every friend, and the weekly market (items with a price and a weekly limit, and the shiny of the week drawn
    * from a pool). The server prices and pays from the same row (migration 0107, friendship_cfg()).

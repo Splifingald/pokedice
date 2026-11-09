@@ -26,6 +26,9 @@ What gives first, in order:
    refused just misses that signal and tries again 5 minutes later: nothing breaks. Roughly 500–1,000 players in the
    busiest hour. Supabase emails when it's hit; its metrics don't carry it, so the watch (§4) can't see it.
 2. **CPU and memory on Micro**: shared, burstable cores. §2 removed ~80 % of the database's work.
+
+Players online (docs/70, once switched on) adds one tiny call every 5 minutes per visible tab, ~12 per hour of play,
+on an unlogged table; no Realtime.
 3. Far away: 100k signed-in players a month, 8 GB of database, 250 GB of egress a month (Pro's quotas).
 
 ## 2. The Versus board, built at most once every 15 minutes (migration 0139)
