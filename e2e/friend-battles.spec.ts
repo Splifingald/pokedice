@@ -183,7 +183,7 @@ test('a challenge arrives: the banner, ACCEPT, the coin, then my first pick goes
     ...incoming,
     state: 'draft',
     firstPicker: 'b',
-    cand: [mon(149, 72), mon(6, 64), mon(94, 66), mon(135, 54)],
+    cand: [mon(149, 72), mon(6, 64), mon(94, 66), mon(135, 54), mon(669, 60)],
     deadline: Date.now() + 120_000,
   })
   const picks: unknown[] = []
@@ -205,6 +205,12 @@ test('a challenge arrives: the banner, ACCEPT, the coin, then my first pick goes
   await expect(page.getByText('Tails! You pick first')).toBeVisible()
   await shot(page, 'pvp-coin')
   await expect(page.getByText('Your pick', { exact: true })).toBeVisible({ timeout: 10_000 })
+  // The search forgives accents (a player's report: "electhor" didn't find Électhor): "flabebe" finds Flabébé.
+  const search = page.getByRole('textbox', { name: 'Search a Pokémon' })
+  await search.fill('flabebe')
+  await expect(page.getByRole('button', { name: /Flabébé/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Dragonite/ })).toHaveCount(0)
+  await search.fill('')
   await page.getByRole('button', { name: /Dragonite/ }).click()
   await shot(page, 'pvp-draft')
   await page.getByRole('button', { name: 'Pick Dragonite' }).click()

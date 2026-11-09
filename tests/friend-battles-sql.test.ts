@@ -323,6 +323,24 @@ describe('Classic', () => {
 })
 
 describe('Draft', () => {
+  it('drafts from every region’s Box, not only the one being played: Lv.50 or more, not waiting for a revive', async () => {
+    const row = (await db.query<{ data: Record<string, unknown> }>(`select data from saves where user_id = $1 and realm = 'main'`, [U.ash])).rows[0]!
+    const was = row.data
+    const parked = {
+      johto: { box: [mon('rk', 243, 62), mon('low', 144, 49)] },
+      hoenn: { box: [mon('zp', 145, 55), mon('down', 146, 70, { revivesAt: 1 })] },
+    }
+    await db.query(`update saves set data = $2 where user_id = $1 and realm = 'main'`, [U.ash, JSON.stringify({ ...was, parked })])
+    try {
+      const dexes = (await one<{ dex: number }[]>(U.ash, 'select pvp_candidates($1) r', [U.ash])).map((c) => c.dex)
+      expect(dexes).toEqual(expect.arrayContaining([243, 145, 94, 6, 9, 3, 130]))
+      expect(dexes).not.toContain(144)
+      expect(dexes).not.toContain(146)
+    } finally {
+      await db.query(`update saves set data = $2 where user_id = $1 and realm = 'main'`, [U.ash, JSON.stringify(was)])
+    }
+  })
+
   it('tosses the coin, then takes picks in turn, never a species already taken, and opens the order step', async () => {
     const m = await challenge(U.ash, U.misty, 'draft')
     const d = await answer(U.misty, m.id)

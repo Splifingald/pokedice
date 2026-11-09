@@ -416,3 +416,8 @@ cooldown (0145)".
 [`supabase/migrations/0145_friend_battle_switch_cooldown.sql`](https://github.com/Splifingald/pokedice/blob/claude/gracious-feynman-8gv8vm/supabase/migrations/0145_friend_battle_switch_cooldown.sql)
 in Supabase's SQL editor (after 0137; safe to run again). It isn't inlined in `supabase/seed.sql`.
 
+
+**The draft's search forgives accents** (the same report: "electhor" found nothing, the French name being Électhor):
+it folds both sides with `searchFold`, as the Box's search does. The draft's list itself was right: the server's
+`pvp_candidates` takes every region's Box (the one being played and every parked one), Lv.50 or more, not waiting for
+a revive. A test in the SQL suite now keeps it so, and the e2e's draft searches "flabebe" for Flabébé.

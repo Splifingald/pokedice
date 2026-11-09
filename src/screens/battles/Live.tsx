@@ -40,6 +40,7 @@ import {
 } from '@/components/pvp/FriendBattleBits'
 import { challengeError } from '@/components/pvp/ChallengeSheet'
 import { useT } from '@/i18n/react'
+import { searchFold } from '@/i18n/fold'
 import { avatarOf } from '@/lib/avatars'
 import { useMotion } from '@/lib/motion'
 import type { PvpInfo } from '@/lib/pvp'
@@ -329,10 +330,11 @@ export function DraftStep({ match, inline = false }: { match: PvpInfo; inline?: 
       />
     )
 
-  const q = search.trim().toLowerCase()
+  // Folded as the Box's search is: "electhor" finds Électhor (a player's report, 2026-11-09: it found nothing).
+  const q = searchFold(search)
   const listed = match.cand
     .filter((c) => !mine.some((m) => m.dex === c.dex))
-    .filter((c) => !q || speciesName(data, c.dex).toLowerCase().includes(q))
+    .filter((c) => !q || searchFold(speciesName(data, c.dex)).includes(q))
   const foeDexes = theirs.map((p) => p.dex)
   const go = async () => {
     if (!chosen) return
