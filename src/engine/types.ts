@@ -1261,7 +1261,7 @@ export interface LiveEvent {
   rush: { type: PokeType; rotate: PokeType[]; boost: number; quests: RushQuest[]; gauge: RushGaugeRow[] }
   /**
    * Community Boss (docs/71 §4): the boss (a species, shiny or not) and its HP gauges in the order they break. Runs
-   * once; the server counts the damage (migration 0146).
+   * once; the server counts the damage (migration 0147).
    */
   boss: { dex: number; shiny: boolean; gauges: BossGauge[] }
 }

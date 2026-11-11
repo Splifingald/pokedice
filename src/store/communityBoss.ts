@@ -1,4 +1,4 @@
-// The Community Boss (docs/71 §4), the game's side: the page's numbers from the server (boss_state, migration 0146),
+// The Community Boss (docs/71 §4), the game's side: the page's numbers from the server (boss_state, migration 0147),
 // placing a Pokémon (the server first, then it leaves its Box) and taking it back, and the placed Pokémon coming home
 // once the event is over. The damage is the server's alone: the game only shows it, and plays the hits in between.
 import {

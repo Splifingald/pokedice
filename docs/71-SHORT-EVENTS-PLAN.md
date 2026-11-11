@@ -367,7 +367,7 @@ in the last 7 days) and *Average hit* (prefilled 60), giving per gauge "≈ 9 h 
 
 ### 4.6 Built (2026-11-11)
 
-- **Server** (migration `0146_community_boss.sql`): `boss_event` (the event from the `liveEvents` row),
+- **Server** (migration `0147_community_boss.sql`): `boss_event` (the event from the `liveEvents` row),
   `boss_affinity` (the game's chart: both types multiplied, kept between ×½ and ×2 as `engine/typechart.ts` does, an
   immunity ×¼), `boss_slots`, `boss_place` / `boss_take_back` (signed in; refused outside the dates, above the trainer
   card's best level or the game's cap, for an unknown species; one Pokémon in one slot), `boss_state` (the cache
@@ -493,7 +493,7 @@ Nothing to run in Supabase.
 ### Community Boss
 
 1. Run the migration in Supabase → SQL Editor:
-   https://github.com/Splifingald/pokedice/blob/claude/great-cannon-5792yi/supabase/migrations/0146_community_boss.sql
+   https://github.com/Splifingald/pokedice/blob/version/2_9_7/supabase/migrations/0147_community_boss.sql
    (it isn't in `supabase/seed.sql`: it holds server functions, as Friend Battles' do).
 2. The developer's gifts must be on (Admin → Config → Gifts: *On for everyone*), or the rewards wait unseen in the
    messages.

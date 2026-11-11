@@ -1,7 +1,7 @@
 // The Community Boss (docs/71 §4): a live event where everyone hits one huge boss together. It never hits back: it is
 // a bag of HP in coloured gauges. Each player places up to 3 of their Pokémon on it; they leave the Box (as at the Day
 // Care) and hit in turn, one every 3 seconds, so each slot every 9 s, for its level × its affinity, all the time. The
-// damage is the server's (migration 0146: the game sends no number); this file holds the same rules for what the
+// damage is the server's (migration 0147: the game sends no number); this file holds the same rules for what the
 // screens show (each Pokémon's hit before it's placed, the gauges from a total, the admin's estimate), the boss's
 // settings, and the placed Pokémon kept in the save until they come home. No switch of its own (the user's call,
 // 2026-11-11): scheduling one is turning it on.
@@ -83,7 +83,7 @@ const typesOf = (data: GameData, dex: number): PokeType[] => {
 
 /**
  * A Pokémon's affinity against the boss: its best type on the game's chart against the boss's types (×½ to ×2), an
- * immunity counting ×¼ (migration 0146's boss_affinity, the same rule).
+ * immunity counting ×¼ (migration 0147's boss_affinity, the same rule).
  */
 export function bossAffinity(data: GameData, dex: number, bossDex: number): number {
   const mine = typesOf(data, dex)

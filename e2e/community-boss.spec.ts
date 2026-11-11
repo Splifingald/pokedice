@@ -1,6 +1,6 @@
 // The Community Boss (docs/71 §4): a live event on as soon as it's scheduled (no switch of its own, the user's call of
 // 2026-11-11). The admin's event reaches the game as content (as live.spec.ts does); the server's answers (boss_state,
-// boss_place, boss_take_back: migration 0146) are mocked. Its pop-up leads to its page: the gauges, the arena (yours,
+// boss_place, boss_take_back: migration 0147) are mocked. Its pop-up leads to its page: the gauges, the arena (yours,
 // a friend's, others), placing a Pokémon (the server told, the Pokémon out of the Box) and taking it back, the top;
 // a guest is asked to sign in; a phone.
 import { expect, test, type Page } from '@playwright/test'

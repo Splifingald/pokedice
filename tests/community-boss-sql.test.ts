@@ -1,4 +1,4 @@
-// Migration 0146 against a real Postgres (PGlite, in process): the Community Boss (docs/71 §4). The affinity from the
+// Migration 0147 against a real Postgres (PGlite, in process): the Community Boss (docs/71 §4). The affinity from the
 // type chart (an immunity counts ×¼), placing (signed in, while it runs, a level the trainer card allows), a slot's
 // damage over time (one hit every 9 s) and after a swap or a take-back, the cached numbers and the caller's own, the
 // arena's field (own, friends, others, at most 20), and settling once at the end: the gauges broken and each
@@ -123,9 +123,9 @@ beforeAll(async () => {
       primary key (user_id, realm, region));
     create table friendships (user_a uuid, user_b uuid, primary key (user_a, user_b));
   `)
-  await db.exec(sql('0146_community_boss.sql'))
+  await db.exec(sql('0147_community_boss.sql'))
   // Safe to run again.
-  await db.exec(sql('0146_community_boss.sql'))
+  await db.exec(sql('0147_community_boss.sql'))
   await db.exec(`
     insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)
