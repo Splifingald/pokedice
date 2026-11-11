@@ -1055,7 +1055,8 @@ pieces.
 - **The drop**: three Poké Balls fall onto the table, one after another (`starter.drop`, `starter.land`); a tap on the
   stage lands them at once. Then "Choose your partner! Tap a Poké Ball."
 - **The balls are the buttons**: three transparent buttons over the balls ("Poké Ball 2 of 3"); hover or focus lifts
-  one. Opening one lets its Pokémon out (`starter.open`) and asks "Do you want to pick Charmander?" in the message
+  one. **The starters' cards under the lab are their balls' twins** (2026-11-11): a tap on one opens its ball, hover or
+  focus lifts it, and it waits for the balls to land as they do. Opening one lets its Pokémon out (`starter.open`) and asks "Do you want to pick Charmander?" in the message
   box, with a card under it: its types, what it hits hard, what hits it hard, its dice and rerolls at the starting
   level. Not this one puts it back; another ball swaps it. **The lab picture stays on top; the message box, the card
   and its buttons sit at the bottom of the screen**, under the thumb, above the home indicator (docs/38 P2b).
@@ -1167,7 +1168,8 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
 - **Players online** (docs/70): **no switch, no rules and no INFO**, the user's call of 2026-11-09, as global messages:
   the side menu's "12 players online" above SYNC ONLINE, a green dot as a friend online's (§50), hidden until the
-  server has a count.
+  server has a count; VIEW (an eye, `sm`) at its end opens the list of up to 30, the closest to the player in badges,
+  as compact board rows (look, name, team) with INVITE (a friend request) at the right of those the player can ask.
 - **A rule explained where it happens** (the League's heal between its battles, docs/42): the switch, but no rules
   pop-up and no INFO: it adds nothing to do and no page, and the result card says so the moment it heals. The Versus
   league's global board (docs/44 §8) too: a tab of the league's board, whose line over its rows is its whole rule (no

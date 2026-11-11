@@ -3,7 +3,8 @@
 // (a side column), Versus rows with the one red FIGHT and the navy ones; ScoreMeter on its way and full; a view's two
 // columns (SocialColumns); the dock pinned at a phone's foot (SocialDock, shown on demand: it pins over this page); ADD
 // FRIENDS' pop-up and adding a friend in it; a friend's card's BATTLE foot (online, offline, no record yet); the compact
-// trainer card; the menu's foot tiles; the players online line above SYNC ONLINE (docs/70: one, many).
+// trainer card; the menu's foot tiles; the players online line above SYNC ONLINE and VIEW's list (docs/70: one, many;
+// loading, failed, nobody, the list, the list cut to the 30 closest).
 import { useState } from 'react'
 import { BoardRow, ScoreMeter } from '@/components/BoardRow'
 import { AddFriendForm } from '@/components/friends/AddFriendModal'
@@ -12,7 +13,8 @@ import { FriendBattleFoot } from '@/components/friends/FriendProfileSheet'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { FootTile } from '@/components/PlayerMenu'
-import { PlayersOnlineView } from '@/components/PlayersOnline'
+import { OnlinePlayersBody, PlayersOnlineView } from '@/components/PlayersOnline'
+import type { OnlinePlayer } from '@/store/online'
 import { SocialColumns, SocialDock } from '@/components/SocialTabs'
 import { TrainerCard } from '@/components/TrainerCard'
 
@@ -20,6 +22,15 @@ const TEAM = [
   { dex: 6, level: 52 },
   { dex: 25, level: 50 },
   { dex: 9, level: 48 },
+]
+
+// VIEW's list (docs/70): most badges first, you among them; INVITE (an account), Sent, a friend, a guest (none).
+const ONLINE: OnlinePlayer[] = [
+  { name: 'Blue', look: 'green', team: TEAM, me: false, friend: false, invite: 'yes', id: 'ks-1' },
+  { name: 'Sam', look: 'red', team: TEAM.slice(0, 2), me: true, friend: false, invite: null, id: null },
+  { name: 'Misty', look: null, team: [{ dex: 121, level: 40 }, { dex: 54, level: 38, shiny: true }], me: false, friend: true, invite: null, id: null },
+  { name: 'Brock', look: 'kanto/youngster', team: [{ dex: 95, level: 30 }], me: false, friend: false, invite: 'sent', id: 'ks-2' },
+  { name: 'Trainer', look: 'johto/silver', team: [], me: false, friend: false, invite: null, id: null },
 ]
 
 export function SocialDeepBits() {
@@ -184,8 +195,29 @@ export function SocialDeepBits() {
         Players online, above SYNC ONLINE in the menu (one player, many; hidden until the server has a count)
       </h3>
       <div className="grid w-[360px] max-w-full gap-1.5 bg-panel p-3 shadow-ring">
-        <PlayersOnlineView count={1} />
-        <PlayersOnlineView count={128} />
+        <PlayersOnlineView count={1} onView={() => {}} />
+        <PlayersOnlineView count={128} onView={() => {}} />
+      </div>
+
+      <h3 className="m-0 text-[20px] font-normal">
+        VIEW's pop-up, inside: loading, failed, nobody yet, the list (you, INVITE, Sent, a friend, a guest), cut to the 30 closest
+      </h3>
+      <div className="flex w-full flex-wrap items-start gap-3">
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'loading' }} count={3} />
+        </div>
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'error', message: "Couldn't load the list. Try again in a moment." }} count={3} />
+        </div>
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'ready', players: [] }} count={1} />
+        </div>
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'ready', players: ONLINE.slice(0, 3) }} count={3} />
+        </div>
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'ready', players: ONLINE }} count={128} />
+        </div>
       </div>
     </div>
   )

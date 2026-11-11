@@ -67,6 +67,7 @@ Migration `0099_area_versus.sql` (0098 is the legendary cinematics', docs/53).
   - `friend_request_send(to)`: only to someone you met in the last 30 days, not a friend; if they had asked you
     already, you're friends at once.
   - `friend_requests()`: yours to answer, not older than 30 days.
+    Since 0146 (docs/70) it lists them whatever this switch, with `via`: the players online's INVITE sends them too.
   - `friend_request_answer(from, accept)`: ACCEPT makes you friends (the friend cap as for an ID), NO drops it.
 - **The fill** (`area_versus_fill()`): every save written in the last 14 days, through the same writer. The migration
   runs it once; the admin's **Fill from recent saves** runs it again.
