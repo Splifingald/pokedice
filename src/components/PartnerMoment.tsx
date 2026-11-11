@@ -307,22 +307,30 @@ export function PartnerMoment({
               </button>
             )}
           </div>
-          {/* Who is in the balls, in ball order, while they drop and while you choose: just a look (the balls are what
-              you tap). Once a ball is open its own card says more, so the row steps aside. */}
+          {/* Who is in the balls, in ball order, while they drop and while you choose. A card is its ball's twin: a tap
+              opens that ball, just as the ball itself does. Once a ball is open its own card says more, so the row
+              steps aside. */}
           {(phase === 'intro' || phase === 'choose') && (
             <ul className="m-0 grid list-none grid-cols-3 gap-2 p-0 px-3 lg:px-0" aria-label={t('ui.partner.starters')}>
-              {starters.map((d) => (
-                <li
-                  key={d}
-                  className="grid min-w-0 content-start justify-items-center gap-1 bg-paper px-0.5 pb-2 pt-0.5 shadow-ring-line"
-                >
-                  <MiniSprite dex={d} size={56} />
-                  <b className="max-w-full truncate text-[18px] font-normal leading-none">{getSpecies(data, d).name}</b>
-                  <span className="flex flex-wrap justify-center gap-1">
-                    {speciesTypes(data, d).map((ty) => (
-                      <TypeBadge key={ty} type={ty} size="sm" />
-                    ))}
-                  </span>
+              {starters.map((d, i) => (
+                <li key={d} className="grid min-w-0">
+                  <button
+                    type="button"
+                    // As its ball: not before the balls have landed.
+                    disabled={!scene || phase === 'intro'}
+                    onClick={() => open(i)}
+                    onMouseEnter={() => phase === 'choose' && scene && (scene.focus = i)}
+                    onFocus={() => phase === 'choose' && scene && (scene.focus = i)}
+                    className="grid min-w-0 content-start justify-items-center gap-1 bg-paper px-0.5 pb-2 pt-0.5 text-ink shadow-ring-line transition-transform enabled:hover:-translate-y-1 enabled:active:translate-y-0 disabled:cursor-default"
+                  >
+                    <MiniSprite dex={d} size={56} />
+                    <b className="max-w-full truncate text-[18px] font-normal leading-none">{getSpecies(data, d).name}</b>
+                    <span className="flex flex-wrap justify-center gap-1">
+                      {speciesTypes(data, d).map((ty) => (
+                        <TypeBadge key={ty} type={ty} size="sm" />
+                      ))}
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>

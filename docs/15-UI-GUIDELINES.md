@@ -1055,7 +1055,8 @@ pieces.
 - **The drop**: three Poké Balls fall onto the table, one after another (`starter.drop`, `starter.land`); a tap on the
   stage lands them at once. Then "Choose your partner! Tap a Poké Ball."
 - **The balls are the buttons**: three transparent buttons over the balls ("Poké Ball 2 of 3"); hover or focus lifts
-  one. Opening one lets its Pokémon out (`starter.open`) and asks "Do you want to pick Charmander?" in the message
+  one. **The starters' cards under the lab are their balls' twins** (2026-11-11): a tap on one opens its ball, hover or
+  focus lifts it, and it waits for the balls to land as they do. Opening one lets its Pokémon out (`starter.open`) and asks "Do you want to pick Charmander?" in the message
   box, with a card under it: its types, what it hits hard, what hits it hard, its dice and rerolls at the starting
   level. Not this one puts it back; another ball swaps it. **The lab picture stays on top; the message box, the card
   and its buttons sit at the bottom of the screen**, under the thumb, above the home indicator (docs/38 P2b).
