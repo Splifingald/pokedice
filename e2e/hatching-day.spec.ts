@@ -1,10 +1,10 @@
-// Hatching Day (docs/71 §2): a live event of type `hatch`, behind its own switch. The admin's event reaches the game as
-// content (a newer configVersion from the content cache, as live.spec.ts does), on the server's clock: its pop-up once
-// (×3, its two rules, Go to the Day Care), Home's square and the Day Care card's chip and faster Egg check, the Day
-// Care page's strip reopening the pop-up; switched off, nothing of it.
+// Hatching Day (docs/71 §2): a live event of type `hatch`, on as soon as it's scheduled (no switch of its own, the
+// user's call of 2026-11-11). The admin's event reaches the game as content (a newer configVersion from the content
+// cache, as live.spec.ts does), on the server's clock: its pop-up once (×3, its two rules, Go to the Day Care), Home's
+// square and the Day Care card's chip and faster Egg check, the Day Care page's strip reopening the pop-up; a phone.
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import { createInstance, newLiveEvent, type EventAccess, type LiveEvent, type SaveData } from '../src/engine'
+import { createInstance, newLiveEvent, type LiveEvent, type SaveData } from '../src/engine'
 import {
   FAST,
   gameData,
@@ -47,7 +47,7 @@ const hatching: LiveEvent = {
 }
 
 /** The game on its bundle, then the content with Hatching Day from the cache; the server's clock says NOW. */
-async function boot(page: Page, save: SaveData, access: EventAccess = 'all') {
+async function boot(page: Page, save: SaveData) {
   await mockSupabase(page, { rpc: { event_time: () => ({ now: NOW, day: NOW.slice(0, 10) }) } })
   await page.route(`${SUPABASE}/rest/v1/game_config*`, async (route) => {
     if (!route.request().url().includes('configVersion')) return route.fallback()
@@ -61,7 +61,6 @@ async function boot(page: Page, save: SaveData, access: EventAccess = 'all') {
     ...bundle.config,
     configVersion: VERSION,
     liveEvents: { access: 'all', list: [hatching] },
-    hatchingDay: { access },
   }
   await page.addInitScript(
     ([s, f, b, v, key]) => {
@@ -136,19 +135,6 @@ test('Go to the Day Care from its pop-up', async ({ page }) => {
   await pop.getByRole('button', { name: 'Go to the Day Care' }).click()
   await expect(page).toHaveURL(/\/daycare$/)
   await expect(page.getByTestId('hatching-day-strip')).toBeVisible()
-})
-
-test('switched off: no pop-up, no square, no chip, the Egg check on its usual clock', async ({ page }) => {
-  await boot(page, pairSave(), 'off')
-  await page.goto('/home')
-  await expect(page.getByText(/Egg check in (11 h 5\d|12 h 00)/)).toBeVisible({ timeout: 15_000 })
-  // Long enough for the content and the server's clock to have arrived.
-  await page.waitForTimeout(2000)
-  await expect(page.getByRole('dialog', { name: 'Hatching Day' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /^Live event: Hatching Day/ })).toHaveCount(0)
-  await expect(page.getByRole('img', { name: /^Hatching Day:/ })).toHaveCount(0)
-  await page.goto('/daycare')
-  await expect(page.getByTestId('hatching-day-strip')).toHaveCount(0)
 })
 
 test('on a 360×640 phone: the pop-up, the square and the strip fit, in the Jersey fonts', async ({

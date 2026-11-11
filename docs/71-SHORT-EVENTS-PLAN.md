@@ -1,7 +1,8 @@
 # 71 — Short events: Hatching Day, Type Rush, Community Boss
 
 Status: **plan validated** by the user (2026-11-11), built one by one on `claude/great-cannon-5792yi` (from
-`version/2_9_7`): **Hatching Day built** (§2.4), behind its switch, **Off**; Type Rush and the Community Boss next
+`version/2_9_7`): **Hatching Day built** (§2.4), on as soon as it's scheduled (no switch, §1); Type Rush and the
+Community Boss next
 (§8).
 
 The user's ask (2026-11-11): ideas for short events of 2 to 4 days; then three picks, refined with the built-in
@@ -14,6 +15,7 @@ posts on Discord (docs/50).
 
 | Topic | Decision |
 |---|---|
+| Switches | **None** for the three (the user, 2026-11-11): the admin schedules one or doesn't. |
 | **Hatching Day** | Like Cash Flow or the Shiny Parade: while it runs, Day Care Eggs come **×3 faster** and are **×4 more often shiny** (both admin numbers, those by default). |
 | Which Eggs are boosted | Eggs **cracked during it** (that's when the hatchling is rolled), even one laid before. |
 | Flame Body | **Multiplies**: Flame Body's ×2 and the event's ×3 make ×6. |
@@ -46,12 +48,11 @@ posts on Discord (docs/50).
 - **Three new live types**: `LIVE_TYPES` gains `'hatch'`, `'rush'` and `'boss'` (`src/engine/types.ts`); each one's
   settings live on the `LiveEvent` as the others' do (`hatch`, `rush`, `boss`), so changing the type in the admin keeps
   them. `newLiveEvent` gives each its defaults.
-- **A switch each** (docs/15 §20): `hatchingDay.access`, `typeRush.access`, `communityBoss.access` in `game_config`,
-  **Off** by default, on top of the live events' own (as the Underground and the gift calendar have). `liveTypeOn`
-  reads them. Off: no square, no pop-up, no boost, no quest counted, no page. The Community Boss's switch also offers
-  **On for beta testers** (its server functions read `access_open`, migration 0131). Hatching Day and Type Rush have
-  no server function acting for a player (everything happens in the save, as the gift calendar's doors), so the switch
-  is the game's; their migrations only add the rows.
+- **No switch of their own** (the user's call, 2026-11-11: "I chose to schedule them or not", an exception to docs/15
+  §20): scheduling one in the admin is turning it on, and nothing runs while none is scheduled. The live events' own
+  switch (`liveEvents.access`) still covers them all, as it covers Cash Flow and the Shiny Parade. So no
+  `game_config` row and no server check for a switch: the Community Boss's server functions check that the event is
+  scheduled and running instead.
 - **Server time** (`event_time`), as every live event: changing the device's clock starts nothing early.
 - **The engine decides every rule and number** (`src/engine/hatchingDay.ts`, `typeRush.ts`, `communityBoss.ts`, pure).
   The screens show the state; the server alone counts the boss's damage (§4.3).
@@ -111,8 +112,8 @@ default 4), with the line "A pair makes an Egg about every 4 h instead of 12 h" 
   when the speed differs from the one the timer was set with (`followHatchingDay`).
 - **Screens** (docs/15 §52): the live pop-up (×3, two rows, **Go to the Day Care**), Home's square, the chip on the
   Day Care card's yard, the strip on the Day Care page (it reopens the pop-up). The push notice opens `/daycare`.
-- **Admin**: the type, its switch and numbers (`src/admin/sections/HatchingDayBox.tsx`), its colour in the calendar,
-  its bar hatched while the switch is off; the picture in *Event pictures*.
+- **Admin**: the type and its numbers (`src/admin/sections/HatchingDayBox.tsx`), its colour in the calendar; the
+  picture in *Event pictures*. Built first with a switch, taken out the same day (§1): no migration.
 - **Discord**: 🥚, its line and details, in English and French (`scripts/discord/live-event-post.ts`).
 - **Different from the plan**: no row in How to play's *Game features*: like Cash Flow and the Shiny Parade, its
   numbers are each event's own, so its pop-up is its rules, reopened from Home's square and the Day Care strip.
@@ -263,11 +264,11 @@ time**.
 
 The damage is the server's alone: the game can't write it.
 
-- `game_config` `communityBoss` `{"access": "off"}`; `community_boss_open()` through `access_open`.
+- No switch (§1): every function checks that the event is a scheduled Community Boss, running at the server's time.
 - **`boss_slots`**: `event_id`, `user_id`, `slot` (0–2), `dex`, `level`, `shiny`, `affinity`, `inst_id`,
   `placed_at`, `removed_at` (null while placed). Row-level security: a player reads their own; nobody writes but the
   functions.
-- **`boss_place(event_id, slot, inst_id, dex, level, shiny)`**: refused off, outside the event's dates (read from
+- **`boss_place(event_id, slot, inst_id, dex, level, shiny)`**: refused outside the event's dates (read from
   `game_config` `liveEvents`), for a guest (rewards and the board need an account), for a level above `maxLevel` or
   above the player's best level on their trainer card (`player_cards`, 0033) when they have one. **The server works
   out the affinity** from `pokemon.type1/type2` and `type_chart` (both in the database since 0001): the game sends no
@@ -389,9 +390,9 @@ One by one, each its own pull request into the version branch with its Netlify p
 next:
 
 1. **Hatching Day** (small): the type, the clock and the shiny roll, the pop-up and chips, the admin row, the
-   picture. Migration: the switch row.
+   picture. No migration.
 2. **Type Rush** (medium): the quests and facts, the boost, the pop-up and its animation, the last pop-up, the admin
-   editor, the talent on reward Pokémon (§5). Migration: the switch row and the gifts' talent check.
+   editor, the talent on reward Pokémon (§5). No migration (the gifts' talent check comes with the Community Boss).
 3. **Community Boss** (large): the server (§4.3), the page, the picker, the banner, the admin with the estimate,
    the settle in the scheduled function, Discord.
 
@@ -412,14 +413,13 @@ next:
 
 ### Hatching Day
 
-1. Run the migration in Supabase → SQL Editor:
-   https://github.com/Splifingald/pokedice/blob/claude/great-cannon-5792yi/supabase/migrations/0146_hatching_day.sql
-   (`supabase/seed.sql` carries it too, inlined). It only adds the switch, Off.
-2. The picture: make it in Gemini with §6.1's prompt, then
+Nothing to run in Supabase.
+
+1. The picture: make it in Gemini with §6.1's prompt, then
    `pnpm unpixel <the Gemini file> public/backgrounds/live-hatch.png --px <its width ÷ 400> --width 400` (it replaces
    the stand-in).
-3. Admin → Events → Live events → **New live event** → Type **Hatching Day**: set the switch to *On for admin* to try
-   it, its dates (or a weekly repeat), the Egg speed and shiny odds, *Add to the list*, then **Save & Publish**.
-4. When it looks right: the switch to *On for everyone*, Save & Publish.
+2. Admin → Events → Live events → **New live event** → Type **Hatching Day**: its dates (or a weekly repeat), the Egg
+   speed and shiny odds, *Add to the list*, then **Save & Publish**. It runs for everyone from its start (the live
+   events' own switch must be on, as for any live event).
 
 Type Rush and the Community Boss: written at their builds.

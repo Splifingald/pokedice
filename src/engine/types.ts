@@ -1416,11 +1416,6 @@ export interface GameConfig {
    */
   giftCalendar: { access: EventAccess }
   /**
-   * Hatching Day (docs/71 §2): live events of type `hatch` run only with this on. Everything happens in each player's
-   * save, on the server's clock, so no server function reads it. Migration 0146 inserts the same row.
-   */
-  hatchingDay: { access: EventAccess }
-  /**
    * The champions' own cinematics (docs/56): a League Champion's entrance in its own place before its fight. Only how
    * it looks and sounds, so no server function reads it. Migration 0101 inserts the same row.
    */

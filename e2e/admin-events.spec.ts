@@ -193,7 +193,7 @@ test('A gift calendar: its switch, the days, each day’s gift, the Advent propo
   await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
 })
 
-test('Hatching Day: its switch, its two numbers with what they mean, nothing saved that changes nothing (docs/71 §2)', async ({
+test('Hatching Day: its two numbers with what they mean, no switch, nothing saved that changes nothing (docs/71 §2)', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
@@ -202,9 +202,8 @@ test('Hatching Day: its switch, its two numbers with what they mean, nothing sav
   await expect(page.getByRole('button', { name: 'New live event' })).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: 'New live event' }).click()
   await page.getByLabel(/^Type/).selectOption({ label: 'Hatching Day' })
-  const access = page.getByRole('radiogroup', { name: 'Hatching Days: who gets them' })
-  await expect(access.getByRole('radio', { name: 'Off' })).toHaveAttribute('aria-checked', 'true')
-  await access.getByRole('radio', { name: 'On for admin' }).click()
+  // No switch of its own (the user's call, 2026-11-11): scheduling it is turning it on.
+  await expect(page.getByRole('radiogroup', { name: /Hatching Days/ })).toHaveCount(0)
   // ×3 and ×4 by default, each with what it means at today's Day Care settings (12 h; 1 in 100 → 1 in 25).
   const speed = page.getByLabel(/^Egg speed/)
   await expect(speed).toHaveValue('3')

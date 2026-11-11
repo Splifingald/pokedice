@@ -349,7 +349,7 @@ const TYPE_BAR: Record<LiveType, string> = {
   hatch: 'bg-[#f2a93b] text-ink',
 }
 const CAL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-// A gift calendar, Hatching Day or small world whose switch is off runs for nobody: its bar is hatched.
+// A gift calendar or small world whose switch is off runs for nobody: its bar is hatched.
 const HATCH = 'repeating-linear-gradient(135deg, rgba(255,255,255,.35) 0 4px, transparent 4px 8px)'
 const longDay = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
@@ -401,7 +401,6 @@ function LiveCalendar({
   const runs = calEntries(list, worlds, first, Date.parse(`${shiftMonth(month, 1)}-01T00:00:00Z`)).length
   const label = new Date(first).toLocaleString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })
   const calendarOff = (data?.config.giftCalendar?.access ?? 'off') === 'off'
-  const hatchOff = (data?.config.hatchingDay?.access ?? 'off') === 'off'
   const raidsOff = (data?.config.events?.raid?.access ?? 'off') === 'off'
   // The day's raid, from the raid calendar (plan and days set by hand), when they're shown.
   const raidOf = (d: string) => (raids && data ? raidOfDay(data, d) : null)
@@ -499,7 +498,7 @@ function LiveCalendar({
                 const off =
                   e.kind === 'world'
                     ? worldsAccess === 'off'
-                    : (e.run.type === 'calendar' && calendarOff) || (e.run.type === 'hatch' && hatchOff)
+                    : e.run.type === 'calendar' && calendarOff
                 const name = e.kind === 'world' ? worldTitle(e.world, data) : titleOf(e.rule)
                 const kind = e.kind === 'world' ? 'Small world' : TYPE_NAME[e.run.type]
                 const repeat = e.kind === 'live' && e.rule.repeat ? `, ${repeatText(e.rule.repeat)}` : ''

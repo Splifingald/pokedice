@@ -6,7 +6,7 @@
 //  - the Underground (docs/34) and the gift calendar (docs/55, engine/calendar.ts), each with a page and a switch of
 //    its own;
 //  - Hatching Day (docs/71 §2): the Day Care's Eggs come faster and hatch shiny more often (engine/breeding.ts and
-//    daycare.ts read it), with a switch of its own.
+//    daycare.ts read it). No switch of its own (the user's call, 2026-11-11): scheduling one is turning it on.
 // Two of a kind add up: two Cash Flows of +50 % pay +100 %, two Shiny Parades of ×5 make ×9 where both cover.
 // An event runs once (a start and an end) or comes back (§9): every year on a date, or on a weekday, every week or on
 // some weeks of the month. Each run of a recurring event is an event of its own for players (its own id, pop-up and
@@ -165,11 +165,7 @@ export function liveState(e: Pick<LiveEvent, 'start' | 'end'> & Partial<LiveEven
 
 /** Its type is switched on: a gift calendar has a switch of its own beyond the live events' one (docs/55). */
 export const liveTypeOn = (data: GameData, e: Pick<LiveEvent, 'type'>): boolean =>
-  e.type === 'calendar'
-    ? eventOpenTo(data.config.giftCalendar?.access, data)
-    : e.type === 'hatch'
-      ? eventOpenTo(data.config.hatchingDay?.access, data)
-      : true
+  e.type !== 'calendar' || eventOpenTo(data.config.giftCalendar?.access, data)
 
 /**
  * The events (and recurring events' runs) running at that server time, the earliest started first; none while the

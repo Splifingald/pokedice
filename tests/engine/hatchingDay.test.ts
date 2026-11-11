@@ -16,7 +16,6 @@ import {
   normaliseLiveEvent,
   processDayCare,
   rollHatchling,
-  type EventAccess,
   type GameData,
   type LiveEvent,
   type SaveData,
@@ -144,18 +143,12 @@ describe('Hatching Day: shinier Eggs', () => {
   })
 })
 
-describe('Hatching Day: its switch', () => {
-  const with_ = (access: EventAccess) =>
-    makeData({ liveEvents: { access: 'all', list: [HD] }, hatchingDay: { access } })
+describe("Hatching Day: no switch of its own (the user's call, 2026-11-11)", () => {
   const save = newSave(4, data, 0, newId)
 
-  it('off (the default), it runs for nobody', () => {
-    expect(livesFor(save, makeData({ liveEvents: { access: 'all', list: [HD] } }), T0)).toEqual([])
-    expect(livesFor(save, with_('off'), T0)).toEqual([])
-  })
-
-  it('on for everyone, it runs between its dates', () => {
-    expect(livesFor(save, with_('all'), T0).map((e) => e.id)).toEqual(['hd'])
-    expect(livesFor(save, with_('all'), T0 + 80 * HOUR)).toEqual([])
+  it('scheduled, it runs between its dates', () => {
+    const d = makeData({ liveEvents: { access: 'all', list: [HD] } })
+    expect(livesFor(save, d, T0).map((e) => e.id)).toEqual(['hd'])
+    expect(livesFor(save, d, T0 + 80 * HOUR)).toEqual([])
   })
 })
