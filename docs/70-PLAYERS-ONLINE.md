@@ -28,7 +28,7 @@ switch, on for everyone** (an exception to docs/15 §20, as global messages, doc
 - Hidden until the server has answered (no "0", no placeholder): offline, or before the migration is run.
 - **VIEW** at the line's end (a white `sm` button, an eye drawn for it, `PixelIcon` `eye`): a pop-up, **Players
   online**, lists them as board rows (`BoardRow`, compact): their look, their name and their **current team** (the
-  main save's, up to 6), most badges first (the badges themselves aren't shown); your own row is gold with the board's
+  main save's, up to 3), most badges first (the badges themselves aren't shown); your own row is gold with the board's
   "you" tag, a friend's blue with the Friend tag. **Up to 30**: when more are online, the 30 **closest to you
   in badges** (every region's badges together, the main save's, as global messages count them, docs/69; then the most
   recently heard from), and a line over the list says so. Loading, a failure in words ("You're offline" when it is),
@@ -80,7 +80,7 @@ One tiny call, `online_ping(device id, name, look, badges, team)` (`src/store/on
   card (`p_name`, `p_look`, `p_badges`, `p_team`, all optional: the older signatures go, so an older build's call lands
   on this one); a name is trimmed to 12 characters ("Trainer" when empty), a look must look like an avatar id
   (`[a-z0-9/_-]`, else none: the game draws Red), badges 0–999 (else no card), the team rebuilt from what checks out
-  (6 at most, `dex` and `level` whole numbers, `shiny` only when true, nothing else kept).
+  (3 at most, a team's size; `dex` and `level` whole numbers, `shiny` only when true, nothing else kept).
 - `online_players(p_device_id text) returns jsonb`, for anon and authenticated: `[{name, look, team, me, friend,
   invite, id}]`, up to 30 rows with a card heard from in the last 6 minutes, the closest to the caller's badges first
   (a caller with no card is taken as 0), returned most badges first. `invite`: 'yes' / 'sent' / null as above; `id`
@@ -104,7 +104,7 @@ One tiny call, `online_ping(device id, name, look, badges, team)` (`src/store/on
 - `tests/players-online-sql.test.ts` (PGlite, 0001…0099/0144/0146): no switch (the first version's row and function
   gone); each account or device counted once, for 6 minutes; a hand-made device id counts as nobody; each card as sent
   (the name cut, an odd look dropped, "Trainer", the team; no badges out), most badges first, the caller marked; the
-  team rebuilt (6 at most, numbers only); an older build's ping counted but not listed; odd badges are no card; over
+  team rebuilt (3 at most, numbers only); an older build's ping counted but not listed; odd badges are no card; over
   30, the closest in badges; a caller with no card taken as 0. The invite: accounts only, never yourself or a guest
   (and nothing, no id, for a guest asking); a friend marked instead; a request the other's `friend_requests()` lists
   (`via` 'online'), "sent", then "pending"; friends at once when they had asked; a full list on either side (no button,

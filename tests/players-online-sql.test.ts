@@ -185,9 +185,9 @@ describe('the list', () => {
     expect(JSON.stringify(r)).not.toContain(ASH)
   })
 
-  it('the team rebuilt from what is checked: six at most, numbers only, nothing else carried', async () => {
+  it('the team rebuilt from what is checked: three at most (a team’s size), numbers only, nothing else carried', async () => {
     await card(null, 'g1', 'A', 1, { team: [{ dex: 10013, level: 30, shiny: 'yes', hack: 1 }, { dex: 'x', level: 2 }] })
-    await card(null, 'g2', 'B', 1, { team: Array.from({ length: 7 }, () => ({ dex: 1, level: 1 })) })
+    await card(null, 'g2', 'B', 1, { team: Array.from({ length: 4 }, () => ({ dex: 1, level: 1 })) })
     await card(null, 'g3', 'C', 1, { team: { dex: 1 } })
     const r = await list(null, 'g1')
     expect(r.find((p) => p.name === 'A')!.team).toEqual([{ dex: 10013, level: 30 }])

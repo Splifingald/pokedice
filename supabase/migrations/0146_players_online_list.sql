@@ -4,8 +4,8 @@
 --
 -- 1. online_here gets each player's card, sent with the ping: their name (12 characters, as the leaderboard's), their
 --    look (an avatar id, the game draws it; an unknown one is Red), their badges, every region's together (the main
---    save's, as global messages count them, docs/69: only to pick the closest, never shown) and their team (up to 6
---    {dex, level, shiny}). On the game's word, as a guest's badges are for those messages: a card says no more than the
+--    save's, as global messages count them, docs/69: only to pick the closest, never shown) and their team (up to 3, as a
+--    team holds: {dex, level, shiny}). On the game's word, as a guest's badges are for those messages: a card says no more than the
 --    leaderboard already shows.
 -- 2. online_ping(device id, name, look, badges, team): the same call, now with the card. The older ones (the device id
 --    alone, 0144; without the team, this file's first version) go, so an older build's call lands on this one.
@@ -54,14 +54,14 @@ declare
   bd int := case when p_badges between 0 and 999 then p_badges end;
   tm jsonb;
 begin
-  -- The team rebuilt from what is checked: six at most, whole numbers, nothing else carried.
+  -- The team rebuilt from what is checked: three at most (a team's size), whole numbers, nothing else carried.
   select coalesce(jsonb_agg(
            jsonb_build_object('dex', (e ->> 'dex')::int, 'level', (e ->> 'level')::int)
              || case when e ->> 'shiny' = 'true' then '{"shiny": true}'::jsonb else '{}'::jsonb end
            order by i), '[]'::jsonb)
     into tm
     from jsonb_array_elements(
-      case when jsonb_typeof(p_team) = 'array' and jsonb_array_length(p_team) <= 6 then p_team else '[]'::jsonb end
+      case when jsonb_typeof(p_team) = 'array' and jsonb_array_length(p_team) <= 3 then p_team else '[]'::jsonb end
     ) with ordinality as x(e, i)
     where e ->> 'dex' ~ '^[0-9]{1,6}$' and e ->> 'level' ~ '^[0-9]{1,4}$';
   -- A device id is the game's own (a UUID); anything longer is a hand-made call, counted as nobody.

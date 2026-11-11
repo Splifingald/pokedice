@@ -24,6 +24,9 @@ const TIMER_GAP_MS = ONLINE_PING_MS - 15_000
 let lastPing = 0
 let pinging = false
 
+/** A team holds 3 Pokémon: the most a card carries (the server keeps no more). */
+export const ONLINE_TEAM_MAX = 3
+
 /** A Pokémon of a team as the list shows it. */
 export interface OnlineMon {
   dex: number
@@ -43,7 +46,7 @@ function myCard(): { p_name?: string | null; p_look?: string; p_badges?: number;
   const team = main.team
     .map((id) => main.box.find((p) => p.id === id))
     .filter((p) => !!p)
-    .slice(0, 6)
+    .slice(0, ONLINE_TEAM_MAX)
     .map((p) => ({ dex: p.dex, level: p.level, ...(p.shiny && { shiny: true }) }))
   return {
     p_name: main.player?.name?.trim() || null,
@@ -126,7 +129,10 @@ export const parseOnlinePlayer = (v: unknown): OnlinePlayer | null => {
   return {
     name: o.name,
     look: typeof o.look === 'string' ? o.look : null,
-    team: (Array.isArray(o.team) ? o.team : []).map(parseMon).filter((m): m is OnlineMon => !!m).slice(0, 6),
+    team: (Array.isArray(o.team) ? o.team : [])
+      .map(parseMon)
+      .filter((m): m is OnlineMon => !!m)
+      .slice(0, ONLINE_TEAM_MAX),
     me: o.me === true,
     friend: o.friend === true,
     // No account, nothing to send it to.
