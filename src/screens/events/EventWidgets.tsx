@@ -11,6 +11,7 @@ import {
   inWorld,
   jackpotStage,
   kitsHeld,
+  rushPending,
   liveLeft,
   previewState,
   rebattleEncounter,
@@ -58,6 +59,7 @@ import {
   liveTime,
   openLivePopup,
 } from './live'
+import { rushSub } from './rushBits'
 import { goIntoWorld, MythicalArt, ShinyTag, WorldTag, worldVars } from './world'
 import { PreviewGauge } from './worldPreview'
 import { bannerUrl, EVENT_ICON, EventPicture, RewardIcon, rewardName } from './shared'
@@ -284,18 +286,22 @@ function LiveCard({ live, now }: { live: LiveEvent; now: number }) {
   const cal = live.type === 'calendar'
   const kits = dig && ug?.eventId === live.id ? kitsHeld(ug) : null
   // A gift calendar says the door to open now, or when the next one opens.
+  // A Type Rush with something done waits to be opened: a red dot and its line say so (docs/71 §3.6).
+  const rushWaits = live.type === 'rush' && !!save && rushPending(save, live)
   const sub =
     cal && save
       ? calendarSub(save, live, now)
-      : kits == null
-        ? liveSub(live, data)
+      : live.type === 'rush'
+        ? rushSub(save, live, t)
+        : kits == null
+          ? liveSub(live, data)
         : ug!.freeAt != null
           ? t('ui.live.underground.kitsNext', { n: kits, time: countdown(Math.max(0, ug!.freeAt - now)) })
           : t('ui.live.underground.kits', { n: kits })
   const time = t('ui.live.endsIn', { time: liveTime(left.ms) })
   const hot = left.ms < 3 * HOUR
   // A calendar door to open is the one new thing on the card: gold (docs/15 §40).
-  const ready = cal && !!save && calendarReady(save, live, now).length > 0
+  const ready = (cal && !!save && calendarReady(save, live, now).length > 0) || rushWaits
   return (
     <HomeCard
       tone={ready ? 'gold' : undefined}
@@ -303,6 +309,7 @@ function LiveCard({ live, now }: { live: LiveEvent; now: number }) {
       picture={
         <LivePicture e={live} className="absolute inset-0">
           <LiveFx e={live} data={data} />
+          {rushWaits && <i className="rush-dot" data-testid="rush-dot" aria-hidden />}
         </LivePicture>
       }
       name={name}

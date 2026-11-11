@@ -155,6 +155,133 @@
   left: calc(7% + var(--i) * 70%);
 }
 
+/* Type Rush (docs/71 §3; docs/15 §53): its type over the picture — the die, the badge, the boost. */
+.rush-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.rush-art.big {
+  gap: 12px;
+}
+.rush-boost {
+  font-size: 26px;
+  line-height: 1;
+  color: #ffe7a8;
+  text-shadow:
+    0 3px 0 #24304f,
+    2px 0 0 #24304f,
+    -2px 0 0 #24304f,
+    0 -2px 0 #24304f;
+}
+.rush-art.big .rush-boost {
+  font-size: 40px;
+}
+/* Something to collect: a red dot in the square's corner. */
+.rush-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  background: #f2553f;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px #24304f;
+  animation: lv-blink 1.6s steps(2) infinite;
+}
+/* The reward gauge: a bar of Rush points, each reward a tile hanging at its mark. */
+.rush-bar {
+  background: rgb(var(--c-line));
+  box-shadow: inset 0 0 0 2px rgb(var(--c-edge));
+}
+.rush-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(#ffe7a8 0 35%, #ffbe2e 35% 70%, #e08e00 70%);
+  box-shadow: inset 0 0 0 2px rgb(var(--c-edge));
+  transition: width 0.9s steps(12);
+}
+.rush-tile {
+  position: absolute;
+  top: 0;
+  transform: translateX(-100%);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  min-height: 62px;
+  padding: 2px 0;
+  background: rgb(var(--c-paper));
+  box-shadow: inset 0 0 0 2px rgb(var(--c-edge));
+}
+.rush-tile.got {
+  background: rgb(var(--c-gold-pale));
+}
+.rush-tile .rush-got {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+}
+.rush-tile.pop {
+  animation: rush-pop 0.65s steps(4) 2;
+}
+@keyframes rush-pop {
+  50% {
+    transform: translateX(-100%) translateY(-8px) scale(1.15);
+  }
+}
+/* A quest's card: its icon, its line and counter, a bar, its step and points. Ready: gold; ticked: green. */
+.rush-card {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: rgb(var(--c-paper));
+  box-shadow: inset 0 0 0 2px rgb(var(--c-line));
+}
+.rush-card.ready {
+  background: rgb(var(--c-gold-pale));
+  box-shadow: inset 0 0 0 2px #e08e00;
+}
+.rush-card.ticked {
+  background: #dff7e8;
+  box-shadow: inset 0 0 0 2px #34c97a;
+  animation: rush-tick 0.45s steps(3);
+}
+.rush-card.finished {
+  opacity: 0.6;
+}
+.rush-card-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  background: rgb(var(--c-line));
+}
+.rush-card-bar {
+  background: rgb(var(--c-line));
+}
+.rush-card-bar i {
+  display: block;
+  height: 100%;
+  background: #34c97a;
+}
+.rush-pts.on {
+  color: #1e8a50;
+}
+@keyframes rush-tick {
+  50% {
+    transform: scale(1.03);
+  }
+}
+[data-theme='dark'] .rush-card.ticked {
+  background: #173528;
+}
+
 /* The pop-up's big number: ×5, +50%. */
 .lv-big {
   position: absolute;
@@ -197,8 +324,14 @@
   .lv-spk i,
   .lv-coins i,
   .lv-shelf i,
-  .lv-eggs i {
+  .lv-eggs i,
+  .rush-dot,
+  .rush-tile.pop,
+  .rush-card.ticked {
     animation: none;
+  }
+  .rush-bar i {
+    transition: none;
   }
   .lv-coins i {
     top: calc(8% + var(--i) * 14%);

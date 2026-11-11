@@ -27,6 +27,14 @@ export interface UpgradeLevels {
   typeFlat?: Partial<Record<PokeType, number>>
   /** The area's weather (docs/62 §2): × on attacks of its types, both sides alike (shown in the damage recap). */
   weather?: { kind: Weather; boost: Partial<Record<PokeType, number>> }
+  /** A Type Rush (docs/71 §3.4): × on the player's attacks of its type, never the foe's (shown in the damage recap). */
+  rush?: { type: PokeType; multiplier: number }
+}
+
+/** × an attack of this type gets from a Type Rush (1 without one, or another type, or untyped). */
+export const rushBoostOf = (levels: UpgradeLevels, type: PokeType | null): number => {
+  const r = levels.rush
+  return r && type === r.type && Number.isFinite(r.multiplier) && r.multiplier > 0 ? r.multiplier : 1
 }
 
 /** × an attack of this type gets from the weather (1 without one, or untyped). */
@@ -155,6 +163,8 @@ export interface DamageResult {
   boost?: { type: PokeType; multiplier: number } | null
   /** The weather's × on this attack's type (docs/62 §2), after the type's: rain on a Water attack. */
   weather?: { kind: Weather; type: PokeType; multiplier: number } | null
+  /** A Type Rush's × on the player's attack of its type (docs/71 §3.4), after the type's. */
+  rush?: { type: PokeType; multiplier: number } | null
   /** A portal run's boost on this attack's type (docs/28): + `amount`, like the combo's bonus, before the multipliers. */
   flat?: { type: PokeType; amount: number } | null
   /** A Z-Move of a type with no effect of its own (docs/35): `final` is this % more than the dice made. */
@@ -209,10 +219,12 @@ export function computeDamage(
   const boost = typeBoostOf(levels, type)
   // The weather's comes after it too, both sides alike (docs/62 §2), and stays out of the effectiveness as well.
   const wx = weatherBoostOf(levels, type)
-  const raw = typed * boost * wx * times * (mods?.guardTimes ?? 1)
+  // A Type Rush's on the player's attacks of its type (docs/71 §3.4), after the type's too.
+  const rx = rushBoostOf(levels, type)
+  const raw = typed * boost * wx * rx * times * (mods?.guardTimes ?? 1)
   const final = immune ? 0 : Math.max(1, Math.round(raw))
   // The hit before the target's side softened it: what the attacker's talents made of it.
-  const up = immune ? 0 : Math.max(1, Math.round(typed * boost * wx * times))
+  const up = immune ? 0 : Math.max(1, Math.round(typed * boost * wx * rx * times))
   const boosted = !!plain && up !== plain.final && (!!mods?.talent || !!mods?.powerSpot)
   const guarded = !!mods?.guards?.length && final < up
   return {
@@ -225,6 +237,7 @@ export function computeDamage(
     effectiveness: immune ? 0 : neutral > 0 ? typed / neutral : 1,
     ...(boost !== 1 && type && { boost: { type, multiplier: boost } }),
     ...(wx !== 1 && type && levels.weather && { weather: { kind: levels.weather.kind, type, multiplier: wx } }),
+    ...(rx !== 1 && type && { rush: { type, multiplier: rx } }),
     ...(flat > 0 && type && { flat: { type, amount: flat } }),
     ...(plain &&
       mods &&

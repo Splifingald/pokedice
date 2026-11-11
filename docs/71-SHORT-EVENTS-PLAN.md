@@ -226,6 +226,38 @@ gauge (a row per reward: points, then the reward picker the calendar uses, with 
 **two Type Rushes overlapping** (`liveProblems`), a gauge whose last reward is beyond the points the quests can pay,
 and an empty quest list.
 
+### 3.8 Built (2026-11-11)
+
+- **Engine** (`src/engine/typeRush.ts`): the defaults (`defaultRushQuests`, `defaultRushGauge` with a Pokémon of each
+  type, `RUSH_TYPE_MON`), `normaliseRush`, `rushType` (a rotation: the run's week since 1970, so every weekly run
+  moves one step), `rushBoost` / `withRush`, `countRush` (facts, only while it runs), `rushCards` (one step at a time,
+  closest to done first, finished last), `rushPending` (the red dot), `validateRush` (steps, points, then rewards
+  through `placeGifts`), `rushToSettle` (the last pop-up), `rushFightFacts` (a fight's or a raid's log), and
+  `rushProblems`. `liveEvents.ts`: the type, its defaults, one at a time (`liveOverlap`), its picture.
+- **The boost** is on **the hit's type** (`UpgradeLevels.rush`, `computeDamage`, after the type's multiplier, as the
+  weather's), on the player's side only: adventure fights (`startBattle`), raids (the player's own side, not a
+  friend's or an NPC's: `RaidState.rush`), Versus and the League (`VersusSides.rush`). Friend Battles never get it.
+  The recap shows it as its own chip (`RushBoostChip`).
+- **What counts** (`src/store/typeRush.ts`): a fight's hits, combos and K.O.s are held and counted once when it ends
+  (one save write a fight, not one a hit); catches (the throw, a raid's), evolutions (after a win, a stone, a Rare
+  Candy, at the level cap), hatches and raids won are counted with the commit they come with. **Not counted**: the
+  Safari's catches (its own engine, docs/61 §4) and trade evolutions.
+- **The save**: `events.rush[runId]` (`RushProgress`), in the save's schema (`src/save/schema.ts`) so it syncs; kept
+  30 days after the end.
+- **Screens** (docs/15 §53): Home's card (its type's die, badge and +20 % over the gym stage, the red dot and a gold
+  card while something waits, "2 to collect: open me!"), the pop-up (`src/screens/events/rush.tsx`: the gauge, what
+  arrived, the cards, INFO, OK; validation plays as it opens, skipped by a tap, at once without motion), the last
+  pop-up after the end (`RushEndPopup`, its own turn in the queue: `rushEnd`, after the live events').
+- **Admin**: `src/admin/sections/RushBox.tsx`; the calendar's reward row is shared (`RewardKindSelect`,
+  `RewardFields`), with the new **Hidden talent** box (the calendar has it too).
+- **Discord** (⚡, its type and boost, its rewards) and **push** (its type and boost), in English and French.
+- **The picture**: its type's gym stage by default (`gym-<type>`, docs/67's pictures), its type's die and badge drawn
+  over it.
+- **No migration**: everything is in the save and the live events' row. The gifts' talent check on the server comes
+  with the Community Boss.
+- **Tests**: `tests/engine/typeRush.test.ts`; `e2e/type-rush.spec.ts` (its pictures in `docs/71-short-events/`); the
+  admin's in `e2e/admin-events.spec.ts`; the kitchen sink's `TypeRushBits`.
+
 ## 4. Community Boss
 
 ### 4.1 Data (on the live event)
@@ -422,4 +454,12 @@ Nothing to run in Supabase.
    speed and shiny odds, *Add to the list*, then **Save & Publish**. It runs for everyone from its start (the live
    events' own switch must be on, as for any live event).
 
-Type Rush and the Community Boss: written at their builds.
+### Type Rush
+
+Nothing to run in Supabase.
+
+1. Admin → Events → Live events → **New live event** → Type **Type Rush**: its dates (2 to 4 days), its type (or, for
+   a weekly one, *Rotate each week*), the boost, the quests and the gauge (the default list is there to start from),
+   *Add to the list*, then **Save & Publish**. It runs for everyone from its start.
+
+The Community Boss: written at its build.

@@ -416,6 +416,19 @@ export const saveSchema = z.object({
       liveBought: z.record(z.record(z.number().int().min(0))).optional(),
       calendarOpened: z.record(z.array(z.number().int().min(1).max(31)).max(31)).optional(),
       calendarRulesSeen: z.boolean().optional(),
+      // Type Rushes (docs/71 §3.5), per run id: each quest's counter and steps validated, the points, the rewards given.
+      rush: z
+        .record(
+          z.object({
+            type: z.string().max(20),
+            end: z.string().max(40),
+            counts: z.record(z.number().int().min(0)),
+            done: z.record(z.number().int().min(0)),
+            points: z.number().int().min(0),
+            given: z.number().int().min(0),
+          }),
+        )
+        .optional(),
       // Small worlds (docs/21): the one held, the pop-ups shown, the mythicals waiting for their home region.
       world: z
         .object({

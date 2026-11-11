@@ -24,6 +24,7 @@ import { chancePercent, comboName, typeName } from '@/lib/format'
 import { cx } from '@/theme/util'
 import { talentLogText, TIER_ICON } from '@/components/Talent'
 import { plateKey, plateType } from '@/components/portalSkin'
+import { RushBoostChip } from '@/components/RushBoostChip'
 
 /**
  * How a hit adds up, in one line: ( dice + combo ) × the type multiplier = the damage dealt.
@@ -80,6 +81,13 @@ export function DamageRecap({ result, dice, className }: { result: DamageResult;
           <>
             <span aria-hidden>×</span>
             <WeatherBoostChip kind={result.weather.kind} n={result.weather.multiplier} />
+          </>
+        )}
+        {/* A Type Rush's (docs/71 §3.4): its own factor too. */}
+        {result.rush && (
+          <>
+            <span aria-hidden>×</span>
+            <RushBoostChip type={result.rush.type} n={result.rush.multiplier} />
           </>
         )}
         <span aria-hidden>=</span>

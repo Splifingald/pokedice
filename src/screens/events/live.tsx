@@ -2,7 +2,7 @@
 // pop-up once per event, and the pieces other screens show while they run: the Shiny Parade's chip where it applies,
 // Cash Flow's "+50 %" on the purse and on the ₽ won (two at once add up). The Special Shop's sections are the Poké
 // Mart's (screens/Shop.tsx).
-import { type ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
@@ -20,6 +20,8 @@ import {
   livePopupNext,
   queuedLives,
   liveShopRows,
+  rushPending,
+  rushType,
   shinyBoost,
   type Area,
   type GameData,
@@ -44,13 +46,18 @@ import { UgCave, UgRulesModal } from '@/components/Underground'
 import { HeadTag, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
 import { cx } from '@/theme/util'
 import { bannerUrl } from './shared'
+import { RushArt, RushTag, rushSub } from './rushBits'
+import { typeName } from '@/lib/format'
 
 const HOUR = 3_600_000
 const DAY = 24 * HOUR
 
 /** Its title: the admin's custom one for this language (or English), else the type's own name. */
 export function liveName(e: LiveEvent): string {
-  return e.title[getLang()]?.trim() || e.title.en?.trim() || t(`ui.live.${e.type}.name`)
+  const own = e.title[getLang()]?.trim() || e.title.en?.trim()
+  if (own) return own
+  // A Type Rush is named by its run's type: "Fire Rush" (docs/71 §3).
+  return e.type === 'rush' ? t('ui.live.rush.nameOf', { type: typeName(rushType(e)) }) : t(`ui.live.${e.type}.name`)
 }
 
 /** Time left: "2d 5h" from a day on, else the usual countdown ("5h 12m", "12:30"). */
@@ -73,6 +80,7 @@ export function liveSub(e: LiveEvent, data: GameData): string {
   if (e.type === 'calendar') return t('ui.live.calendar.sub', { n: e.calendar.days.length })
   if (e.type === 'cash') return t('ui.live.cash.sub', { pct: pct(e.cash.multiplier) })
   if (e.type === 'hatch') return t('ui.live.hatch.sub', { speed: times(e.hatch.speed), shiny: times(e.hatch.shiny) })
+  if (e.type === 'rush') return rushSub(null, e, t)
   if (e.type === 'shop') {
     const n = e.shop.items.length
     return t(`ui.live.shop.sub.${n === 1 ? 'one' : 'other'}`, { count: n })
@@ -138,6 +146,7 @@ export function LiveTag({ e, className }: { e: LiveEvent; className?: string }) 
         {times(e.hatch.speed)}
       </Chip>
     )
+  if (e.type === 'rush') return <RushTag e={e} className={className} />
   return (
     <Chip tone="green" className={className}>
       {t('ui.live.pct', { pct: pct(e.cash.multiplier) })} ₽
@@ -180,6 +189,8 @@ export function LivePicture({ e, className, children }: { e: LiveEvent; classNam
 /** What floats over the picture: sparkles, falling coins, the shop's first items. */
 export function LiveFx({ e, data, big }: { e: LiveEvent; data: GameData; big?: boolean }) {
   if (e.type === 'underground') return null
+  // A Type Rush: its type's die, badge and boost over the picture (docs/71 §3.6).
+  if (e.type === 'rush') return <RushArt e={e} big={big} />
   // A gift calendar: three wrapped gifts bobbing (what's inside is each door's surprise).
   if (e.type === 'calendar')
     return (
@@ -233,6 +244,9 @@ export function LiveFx({ e, data, big }: { e: LiveEvent; data: GameData; big?: b
   )
 }
 
+/** Type Rush's pop-up, loaded when first needed: it brings the gifts' art, which the battle screen's imports mustn't. */
+const RushModal = lazy(() => import('./rush').then((m) => ({ default: m.RushModal })))
+
 /** Asked from Home's square: that event's pop-up again (its id). */
 const usePopupAsked = create<{ asked: string | null }>(() => ({ asked: null }))
 export const openLivePopup = (id: string) => usePopupAsked.setState({ asked: id })
@@ -280,10 +294,14 @@ export function LiveSquare({ live, now }: { live: LiveEvent; now: number }) {
   // The Underground's square says what the player holds: kits, and when the next free one comes.
   const kits = dig && ug?.eventId === live.id ? kitsHeld(ug) : null
   const save = useGame((s) => s.save)
+  // A Type Rush with something done waits for its square to be opened: a red dot says so (docs/71 §3.6).
+  const dot = live.type === 'rush' && !!save && rushPending(save, live)
   const sub =
     cal && save
       ? calendarSub(save, live, now)
-      : kits == null
+      : live.type === 'rush'
+        ? rushSub(save, live, t)
+        : kits == null
         ? liveSub(live, data)
         : ug!.freeAt != null
           ? t('ui.live.underground.kitsNext', { n: kits, time: countdown(Math.max(0, ug!.freeAt - now)) })
@@ -301,6 +319,7 @@ export function LiveSquare({ live, now }: { live: LiveEvent; now: number }) {
       className="pixel-panel lv-square relative isolate flex min-w-0 flex-col gap-[5px] overflow-hidden px-2.5 pb-2.5 pt-2 text-left"
     >
       <LivePicture e={live} className="absolute inset-0 -z-10" />
+      {dot && <i className="rush-dot" data-testid="rush-dot" aria-hidden />}
       <span className="lv-ink flex w-full items-center gap-1.5 text-[19px] leading-none">
         <span className="min-w-0 flex-1 truncate">{name}</span>
         <HeadTag>
@@ -423,6 +442,13 @@ export function LivePopup() {
     if (pushReady(data)) askPush('live')
   }
   // The Underground's pop-up is its rules (docs/15 §20): Later, or Let's go! to its page.
+  // A Type Rush's pop-up is its own (docs/71 §3.6): the gauge, the quests, what's done validated as it opens.
+  if (live.type === 'rush')
+    return (
+      <Suspense fallback={null}>
+        <RushModal key={live.id} e={live} open={open} onClose={close} />
+      </Suspense>
+    )
   if (live.type === 'underground')
     return (
       <UgRulesModal

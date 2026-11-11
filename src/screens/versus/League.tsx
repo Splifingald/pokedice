@@ -22,6 +22,7 @@ import {
   type BattleEvent,
   type LeagueOutcome,
   type VersusMatch,
+  rushBoost,
 } from '@/engine'
 import { BoardGap, BoardRow } from '@/components/BoardRow'
 import { Chip } from '@/components/Chip'
@@ -60,6 +61,7 @@ import {
 } from '@/lib/versusLeague'
 import { markVersusRulesSeen } from '@/store/actions'
 import { pushToast, useGame, type BattleSlice } from '@/store/game'
+import { currentLive } from '@/store/live'
 import { holdReload } from '@/store/sync'
 import { useServerNow } from '@/store/serverTime'
 import { cx } from '@/theme/util'
@@ -636,6 +638,8 @@ export function LeagueFightView({
     startVersus(team, start.foe.team, data, start.seed, {
       attacker: save ? versusPowersOf(save, data) : undefined,
       defender: start.foe.powers,
+      // A Type Rush running (docs/71 §3.4): the player's attacks of its type hit harder.
+      rush: rushBoost(currentLive()),
     }),
   )
   const match = useRef<VersusMatch>(opened.match)

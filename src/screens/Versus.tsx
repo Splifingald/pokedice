@@ -24,6 +24,7 @@ import {
   type BattleEvent,
   type PokeType,
   type VersusFight,
+  rushBoost,
 } from '@/engine'
 import { BoardGap, BoardRow, TeamIcons } from '@/components/BoardRow'
 import { FriendProfileSheet } from '@/components/friends/FriendProfileSheet'
@@ -64,6 +65,7 @@ import {
 } from '@/lib/versus'
 import { markVersusRulesSeen } from '@/store/actions'
 import { pushToast, useGame, type BattleSlice } from '@/store/game'
+import { currentLive } from '@/store/live'
 import { holdReload, pushSaveNow } from '@/store/sync'
 import { cx } from '@/theme/util'
 import { BattleView, type VersusReplay } from './battle/BattleView'
@@ -131,6 +133,8 @@ function VersusScreenMain() {
     const result = simulateVersus(me.team, foe.team, data, seed, {
       attacker: save ? versusPowersOf(save, data) : undefined,
       defender: foe.powers,
+      // A Type Rush running (docs/71 §3.4): the player's attacks of its type hit harder.
+      rush: rushBoost(currentLive()),
     })
     try {
       await recordVersus(foe, seed, result.winner === 'attacker')

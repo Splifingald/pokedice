@@ -1,6 +1,9 @@
 // Run flow: map → area → encounter preview → battle → rewards → next. Thin glue over the pure engine.
 import { friendBallBoostNow } from './friendship'
 import {
+  withRush,
+  rushFightFacts,
+  rushFightSides,
   areaVersusHere,
   foeGoldMultiplier,
   foeLevels,
@@ -239,6 +242,7 @@ import { areaFoeFor, noteMeet } from './areaVersus'
 import { localHour } from './dayTime'
 import { resumedRngs, trackRngs } from './resume'
 import { currentLive } from './live'
+import { eventFacts, flushRush, holdRush, rushRunning, withRushFacts } from './typeRush'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
@@ -1244,11 +1248,15 @@ function startBattle(kind: BattleKind, enemy: FoeSeed, leadUid?: string, double?
       enemy,
       // A small world's boosters on both sides (docs/21); its tracks are its own, like a region's.
       // …and a portal run's damage boosts on yours (docs/28).
-      playerLevels: portalLevels(
-        withWorldBoost({ comboLevels: save.comboLevels, dieLevels: save.dieLevels }, data, area),
-        save,
-        data,
-        run.areaId,
+      // …and a Type Rush's on the player's attacks of its type (docs/71 §3.4).
+      playerLevels: withRush(
+        portalLevels(
+          withWorldBoost({ comboLevels: save.comboLevels, dieLevels: save.dieLevels }, data, area),
+          save,
+          data,
+          run.areaId,
+        ),
+        currentLive(),
       ),
       // A real player's team fights with their own dice and combo upgrades (docs/54).
       enemyLevels: withWorldBoost(isPlayerFoe(run.encounter) ? foeLevels(run.encounter.player) : uniformLevels(upgradeLevel), data, area),
@@ -1402,6 +1410,11 @@ export function dispatchBattle(e: BattleEvent) {
   if (r.state === battle.state) return
   if (e.t === 'USE_ITEM' && r.log.some((l) => l.kind === 'item')) mutateSave((s) => consumeItem(s, e.key))
   useGame.setState({ battle: { ...battle, state: r.state, log: [...battle.log, ...r.log] } })
+  // A Type Rush (docs/71 §3.3): the player's hits, combos and K.O.s count, for the Pokémon that made them.
+  if (rushRunning()) {
+    const { attacker, own } = rushFightSides(battle.state)
+    holdRush(rushFightFacts(r.log, attacker, own, data))
+  }
   // The reroll lesson's ATTACK: it has played, for good (a fight that ends before it carries it to the next one).
   if (r.state.lesson?.step === 'done' && battle.state.lesson?.step !== 'done') mutateSave(finishRerollLesson)
   const phase = r.state.phase
@@ -1428,6 +1441,8 @@ function trainerRewards(trainer: NonNullable<RunState['trainer']>, events: RunEv
 }
 
 function settleBattle(stalemate: boolean) {
+  // The fight's hits and K.O.s count for a Type Rush now, in one commit (docs/71 §3.3).
+  flushRush()
   const { battle, run, data } = useGame.getState()
   const save = useGame.getState().save
   if (!battle || !save || !run.areaId) return
@@ -1456,7 +1471,7 @@ function settleBattle(stalemate: boolean) {
         runRng,
         currentLive(),
       )
-      commitSave(res.save)
+      commitSave(withRushFacts(res.save, eventFacts(res.events, data)))
       const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
       if (res.events.some((e) => e.kind === 'rebattle_cleared'))
         useRebattleMedal.setState({ medal: { regionId: run.rebattle.regionId, tier, gold } })
@@ -1516,7 +1531,8 @@ function settleBattle(stalemate: boolean) {
     // A rival's set meeting (docs/61 §5.2) is met once its last Pokémon falls.
     const meeting = enc?.kind === 'trainer' && enc.moment && !trainerHasNext() ? enc.moment : null
     const won = raced?.save ?? dream?.save ?? white?.save ?? glade?.save ?? res.save
-    commitSave(meeting ? markMomentDone(won, meeting) : won)
+    // A Type Rush counts the evolutions the win brought (docs/71 §3.3).
+    commitSave(withRushFacts(meeting ? markMomentDone(won, meeting) : won, eventFacts(res.events, data)))
     queuePickup(res.events)
     const dreamEvents: RunEvent[] = dream
       ? [
@@ -1648,6 +1664,8 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
     events = [...events, ...res.events]
     gold += res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
   })
+  // A Type Rush counts the evolutions the K.O.s brought (docs/71 §3.3).
+  next = withRushFacts(next, eventFacts(events, data))
   if (result === 'lost') {
     if (loseToRival(next)) return
     commitSave(applyWipe(next, run.areaId, data))
@@ -1771,7 +1789,8 @@ function settleThrow(save: SaveData, roll: CatchRoll, ballKey: string | null, ba
       if (res.needsTeamChoice) pendingCatchId = res.caughtId
     }
   }
-  commitSave(next)
+  // A Type Rush counts the catch (docs/71 §3.3).
+  commitSave(withRushFacts(next, eventFacts(events, data)))
   setRun({ catch: { ...c, result: { ...roll, ballKey, events, pendingCatchId, ...(baited && { baited }), ...(stays && { stays }) } } })
 }
 

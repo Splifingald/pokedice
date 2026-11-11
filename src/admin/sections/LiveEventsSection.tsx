@@ -48,6 +48,7 @@ import { useConfigRow } from './ConfigSection'
 import { CalendarEditor } from './CalendarBox'
 import { UndergroundBox } from './UndergroundBox'
 import { HatchingDayEditor } from './HatchingDayBox'
+import { RushEditor } from './RushBox'
 
 const TYPE_NAME: Record<LiveType, string> = {
   shiny: 'Shiny Parade',
@@ -56,6 +57,7 @@ const TYPE_NAME: Record<LiveType, string> = {
   underground: 'Underground',
   calendar: 'Gift calendar',
   hatch: 'Hatching Day',
+  rush: 'Type Rush',
 }
 const STATE_CLS = { live: 'bg-good text-white', scheduled: 'bg-[#2f4f8f] text-white', ended: 'bg-shadow text-muted' }
 const HOUR = 3_600_000
@@ -116,6 +118,8 @@ function summary(e: LiveEvent, data: GameData | null): string {
   if (e.type === 'shop') return `${e.shop.items.length} item${e.shop.items.length === 1 ? '' : 's'}`
   if (e.type === 'underground') return 'walls to dig, orbs, fossils and plates (its settings are shared)'
   if (e.type === 'hatch') return `Day Care Eggs ×${e.hatch.speed} faster, shiny odds ×${e.hatch.shiny}`
+  if (e.type === 'rush')
+    return `${e.rush.rotate.length ? `${e.rush.rotate.length} types in turn` : e.rush.type}, +${pct(e.rush.boost)} %, ${e.rush.quests.length} quests, ${e.rush.gauge.length} rewards`
   if (e.type === 'calendar') {
     const n = e.calendar.days.length
     return `a gift a day for ${n} day${n === 1 ? '' : 's'}`
@@ -347,6 +351,7 @@ const TYPE_BAR: Record<LiveType, string> = {
   underground: 'bg-[#7a5a3a] text-white',
   calendar: 'bg-[#c8372a] text-white',
   hatch: 'bg-[#f2a93b] text-ink',
+  rush: 'bg-[#e0457b] text-white',
 }
 const CAL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // A gift calendar or small world whose switch is off runs for nobody: its bar is hatched.
@@ -706,6 +711,7 @@ function LiveEditor({
         {draft.type === 'shiny' && <ShinyEditor e={draft} set={(shiny) => patch({ shiny })} data={data} />}
         {draft.type === 'underground' && <UndergroundBox />}
         {draft.type === 'hatch' && <HatchingDayEditor e={draft} set={(hatch) => patch({ hatch })} data={data} />}
+        {draft.type === 'rush' && <RushEditor e={draft} set={(rush) => patch({ rush })} data={data} />}
         {cal && <CalendarEditor e={draft} set={(days) => patch({ calendar: { days } })} data={data} />}
         {draft.type === 'shop' && <ShopEditor items={draft.shop.items} set={(items) => patch({ shop: { items } })} data={data} />}
         {draft.type === 'cash' && (

@@ -13,6 +13,7 @@
 // (the Day Care, Versus, the special events, Trades, the shiny and Unown Pokédexes, the raid overhaul, the
 // Underground), whose rules are now a card at the top of that page (`RulesCard`).
 // Every "seen" flag stays where it was in the save.
+import { rushToSettle } from './typeRush'
 import { calendarRulesDue } from './calendar'
 import { dayCareTutorialDue, leaderboardTutorialDue } from './daycare'
 import { supportPopupDue, type SupportSession } from './donation'
@@ -140,6 +141,8 @@ const QUEUE = {
   worldBye: { due: (s, d, c) => !!worldByeDue(s, d, c.now) },
   /** A live event runs (but the Underground: `queuedLives`). */
   live: { due: (s, d, c) => livePopupDue(s, queuedLives(livesFor(s, d, c.now))), away: under('/shop') },
+  /** A Type Rush ended with something done in time and never collected: its last pop-up (docs/71 §3.6). */
+  rushEnd: { due: (s, d, c) => c.now != null && rushToSettle(s, d, c.now).length > 0 },
   /** A listing the player posted was taken: its scene plays on Home. */
   tradeScene: {
     due: (s, d, c) => !!c.online && !isExtreme(s) && !inWorldRegion(s, d) && tradesToWatch(s).length > 0,

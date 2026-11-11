@@ -89,6 +89,7 @@ describe('the one-time pop-ups queue', () => {
       'worldFinish',
       'worldBye',
       'live',
+      'rushEnd',
       'tradeScene',
       'push',
       'donation',

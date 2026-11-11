@@ -5,6 +5,9 @@
 import { raidWithFriends } from './friendship'
 import { create } from 'zustand'
 import {
+  rushBoost,
+  rushFightFacts,
+  typesOf,
   applyMegaRaidWin,
   applyProgressRaidCatch,
   applyRaidCatch,
@@ -51,6 +54,8 @@ import {
   portalRaidRules,
 } from '@/engine'
 import { t } from '@/i18n'
+import { currentLive } from './live'
+import { flushRush, holdRush, raidFact, rushRunning, withRushFacts } from './typeRush'
 import { avatarOf, playerAvatarId } from '@/lib/avatars'
 import { closeProgressRaid, closeRaid, setProgressRaidTeam, setRaidTeam, type RaidFriend } from '@/lib/raid'
 import { commitSave, mutateSave, pushToast, useGame } from './game'
@@ -287,6 +292,7 @@ function startFight(
       sides,
       kind: source.kind === 'progress' ? 'progress' : 'daily',
       areaId: raid.areaId,
+      rush: rushBoost(currentLive()),
     },
     data,
     rng,
@@ -363,10 +369,18 @@ export function raidAct(e: RaidEvent) {
   if (r.state === run.state) return
   if (e.t === 'USE_ITEM' && r.log.some((l) => l.kind === 'item' && !l.side)) mutateSave((s) => consumeItem(s, e.key))
   useRaidRun.setState({ run: { ...run, state: r.state, log: [...run.log, ...r.log] } })
+  // A Type Rush (docs/71 §3.3): the player's own side's hits and combos count (not a friend's or an NPC's).
+  if (rushRunning()) holdRush(rushFightFacts(r.log, null, ownSide(run.state), data))
 }
+
+/** The player's own raid Pokémon, by uid → dex (side 0 is theirs). */
+const ownSide = (s: RaidState): Record<string, number> =>
+  Object.fromEntries((s.sides.find((x) => x.kind === 'me')?.mons ?? []).map((b) => [b.uid, b.dex]))
 
 /** The fight has played out: the catch when it was won, else the result. */
 export function raidFightOver() {
+  // The fight's hits count for a Type Rush now, in one commit (docs/71 §3.3).
+  flushRush()
   const run = useRaidRun.getState().run
   if (!run || run.stage !== 'fight') return
   // A Mega raid (docs/40): won, its gem or orb is the player's, and nothing is caught.
@@ -379,7 +393,8 @@ export function raidFightOver() {
       run.source.kind === 'progress' ? run.source.key : null,
     )
   if (run.state.phase === 'won' && save && mega?.mega) {
-    commitSave(applyMegaRaidWin(save, mega))
+    // A Type Rush counts the raid won (docs/71 §3.3).
+    commitSave(withRushFacts(applyMegaRaidWin(save, mega), [raidFact(Object.values(ownSide(run.state)), data)]))
     void closeOnServer(run.source, run.friends.map((f) => f.userId))
     useRaidRun.setState({ run: { ...run, stage: 'result', gem: mega.mega.gem } })
     return
@@ -460,6 +475,11 @@ function settleRaidThrow(save: SaveData, roll: CatchRoll, ballKey: string | null
       landing = { region: res.region, live: res.live, locked: res.locked }
     }
     void closeOnServer(source, run.friends.map((f) => f.userId))
+    // A Type Rush counts the catch and the raid won (docs/71 §3.3).
+    next = withRushFacts(next, [
+      { kind: 'catch', types: typesOf(data, run.raid.dex) },
+      raidFact(Object.values(ownSide(run.state)), data),
+    ])
   }
   commitSave(next)
   useRaidRun.setState({ run: { ...run, catch: { result: { ...roll, ballKey, ...(baited && { baited }) }, ...landing } } })

@@ -21,6 +21,7 @@ import { useRaidGifts } from '@/store/raidGifts'
 import { useNow } from '@/store/hooks'
 import { useServerNow } from '@/store/serverTime'
 import { LivePopup } from '@/screens/events/live'
+import { RushEndPopup } from '@/screens/events/rush'
 import { WorldByePopup, WorldFinishPopup, WorldPopup } from '@/screens/events/world'
 import { WorldPick } from '@/screens/events/worldPick'
 import { PortalUnlockPopup } from '@/screens/area/PortalRun'
@@ -192,6 +193,7 @@ export function OneTimePopups() {
       <WorldFinishPopup />
       <WorldByePopup />
       <LivePopup />
+      <RushEndPopup />
       <FriendsService />
       <AreaVersusService />
       <TradesService />

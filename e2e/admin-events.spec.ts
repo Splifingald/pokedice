@@ -222,6 +222,34 @@ test('Hatching Day: its two numbers with what they mean, no switch, nothing save
   await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
 })
 
+test('Type Rush: its type, boost, default quests and gauge; a reward beyond the quests refused (docs/71 §3.7)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await admin(page)
+  await page.goto('/admin/events?tab=live')
+  await expect(page.getByRole('button', { name: 'New live event' })).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('button', { name: 'New live event' }).click()
+  await page.getByLabel(/^Type/).first().selectOption({ label: 'Type Rush' })
+  // No switch of its own: scheduling it is turning it on.
+  await expect(page.getByRole('radiogroup', { name: /Type Rush/ })).toHaveCount(0)
+  // The default list: seven quests, 330 points, five rewards, the last one a Pokémon of the type.
+  await expect(page.getByText('7 · 330 points in all')).toBeVisible()
+  await expect(page.getByRole('combobox', { name: /^Quest \d+: what it counts$/ })).toHaveCount(7)
+  await expect(page.getByRole('combobox', { name: /^Reward \d+: kind$/ })).toHaveCount(5)
+  // Water: the default gauge's Pokémon follows (Squirtle).
+  await page.getByRole('combobox', { name: /^Type Its Pokémon count/ }).selectOption('water')
+  await expect(page.getByLabel(/^Boost/)).toHaveValue('20')
+  // A reward the quests can't pay for is refused.
+  const marks = page.getByLabel(/^At points/)
+  await marks.last().fill('999')
+  await expect(page.getByRole('alert')).toContainText('The last reward needs 999 points; the quests pay 330.')
+  await marks.last().fill('300')
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Add to the list' }).click()
+  await expect(page.getByText(/Type Rush · water, \+20 %, 7 quests, 5 rewards/)).toBeVisible()
+})
+
 test('Trick or Treat: its switch, the tiers’ exact rates, an area’s ghosts prefilled from its wild pool', async ({ page }) => {
   test.setTimeout(120_000)
   await page.setViewportSize({ width: 1440, height: 1000 })

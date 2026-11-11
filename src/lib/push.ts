@@ -7,6 +7,7 @@
 // can say yes while a computer says no.
 import { create } from 'zustand'
 import {
+  rushType,
   PUSH_TOPICS,
   isExtreme,
   liveShopRows,
@@ -25,6 +26,7 @@ import { deviceId } from './device'
 import { platform, platformTag, pushSupport, type PushSupport } from './platform'
 import { monArt, pictureArt, type PushArt } from './pushArt'
 import { getSupabase, isSupabaseConfigured } from './supabase'
+import { typeName } from './format'
 
 /** The VAPID public key the push services know the sender by (its private half is the sender's, netlify/). */
 export const VAPID_PUBLIC_KEY = (import.meta.env ?? ({} as ImportMetaEnv)).VITE_VAPID_PUBLIC_KEY?.trim() || ''
@@ -266,7 +268,9 @@ const speciesName = (data: GameData, dex: number) => data.species[dex]?.name ?? 
 
 /** A live event's title: the admin's for this language (or English), else its type's name. */
 const liveTitle = (e: LiveEvent) =>
-  e.title[getLang()]?.trim() || e.title.en?.trim() || t(`ui.live.${e.type}.name`)
+  e.title[getLang()]?.trim() ||
+  e.title.en?.trim() ||
+  (e.type === 'rush' ? t('ui.live.rush.nameOf', { type: typeName(rushType(e)) }) : t(`ui.live.${e.type}.name`))
 
 /** A live event's line: what it does, in a sentence. */
 function liveLine(e: LiveEvent, data: GameData, save: SaveData): string {
@@ -274,6 +278,8 @@ function liveLine(e: LiveEvent, data: GameData, save: SaveData): string {
   if (e.type === 'cash') return t('ui.push.live.cash', { pct })
   if (e.type === 'underground') return t('ui.push.live.underground')
   if (e.type === 'hatch') return t('ui.push.live.hatch', { speed: e.hatch.speed, shiny: e.hatch.shiny })
+  if (e.type === 'rush')
+    return t('ui.push.live.rush', { type: typeName(rushType(e)), pct: Math.round((e.rush.boost - 1) * 100) })
   if (e.type === 'calendar') return t('ui.push.live.calendar', { n: e.calendar.days.length })
   if (e.type === 'shop') {
     const names = liveShopRows(save, data, e).map((r) => r.item.name)

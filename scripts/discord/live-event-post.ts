@@ -22,6 +22,7 @@ import {
   liveStartsBetween,
   liveTypeOn,
   liveState,
+  rushType,
   ugCfg,
   type GameData,
   type LiveEvent,
@@ -30,7 +31,7 @@ import {
 import { postWebhook, type DEmbed } from './api'
 import { liveData } from './content'
 import { loadEnv } from './env'
-import { frenchData, frenchTypeName, type PostLang } from './french'
+import { fr, frenchData, frenchTypeName, type PostLang } from './french'
 import { COLORS, SITE } from './layout'
 
 /** How long before its start an event is posted: at the start itself (the Monday calendar gives the notice). */
@@ -46,6 +47,7 @@ export const TYPE_NAME: Record<LiveEvent['type'], string> = {
   underground: 'The Underground',
   calendar: 'Gift Calendar',
   hatch: 'Hatching Day',
+  rush: 'Type Rush',
 }
 
 export const TYPE_EMOJI: Record<LiveEvent['type'], string> = {
@@ -55,6 +57,7 @@ export const TYPE_EMOJI: Record<LiveEvent['type'], string> = {
   underground: '⛏️',
   calendar: '🎁',
   hatch: '🥚',
+  rush: '⚡',
 }
 
 /** Each type's colour on Discord, so the channel reads at a glance. */
@@ -65,6 +68,7 @@ const TYPE_COLOR: Record<LiveEvent['type'], number> = {
   underground: COLORS.ink,
   calendar: COLORS.red,
   hatch: COLORS.green,
+  rush: COLORS.red,
 }
 
 /** A type's name in the post's language: the game's own French name in French. */
@@ -73,7 +77,15 @@ export const typeName = (type: LiveEvent['type'], lang: PostLang = 'en'): string
 
 /** The name players see: the admin's title in the post's language, else the English one, else the type's. */
 export const liveName = (e: LiveEvent, lang: PostLang = 'en'): string =>
-  (lang === 'fr' ? e.title.fr?.trim() : '') || e.title.en?.trim() || typeName(e.type, lang)
+  (lang === 'fr' ? e.title.fr?.trim() : '') ||
+  e.title.en?.trim() ||
+  // A Type Rush is named by its run's type: "Fire Rush", "Ruée Feu" (docs/71 §3).
+  (e.type === 'rush'
+    ? frenchOr(lang, 'ui.live.rush.nameOf', '{type} Rush').replace('{type}', rushTypeName(e, lang))
+    : typeName(e.type, lang))
+
+/** The game's French for a key in French posts, the English given otherwise. */
+const frenchOr = (lang: PostLang, key: string, english: string) => (lang === 'fr' ? fr(key, english) : english)
 
 /**
  * The events this run posts, soonest first, each with when to post it: those whose start (minus the lead) falls in the
@@ -125,10 +137,26 @@ const cashBonus = (e: LiveEvent, lang: PostLang) =>
 /** Hatching Day's numbers (docs/71 §2): "3× faster", "4× more often shiny"; a decimal comma in French. */
 const times = (n: number, lang: PostLang) => `${String(Math.round(n * 10) / 10).replace('.', lang === 'fr' ? ',' : '.')}×`
 
+/** A Type Rush's type in the post's language ("Fire", "Feu"), its boost ("+20%", "+20 %") and its rewards' names. */
+const rushTypeName = (e: LiveEvent, lang: PostLang) => frenchOr(lang, `ui.type.${rushType(e)}`, cap(rushType(e)))
+const rushPct = (e: LiveEvent, lang: PostLang) => `+${Math.round((e.rush.boost - 1) * 100)}${lang === 'fr' ? ' %' : '%'}`
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+function rushRewards(data: GameData, e: LiveEvent): string[] {
+  return e.rush.gauge.map(({ reward: r }) =>
+    r.kind === 'gold'
+      ? `₽${r.amount.toLocaleString('en')}`
+      : r.kind === 'item'
+        ? `${data.items[r.key]?.name ?? r.key}${r.qty > 1 ? ` ×${r.qty}` : ''}`
+        : `${r.shiny ? '✨' : ''}${data.species[r.dex]?.name ?? `#${r.dex}`}`,
+  )
+}
+
 /** What it does, in one line, with its numbers. */
 export function liveLine(data: GameData, e: LiveEvent, lang: PostLang = 'en'): string {
   if (lang === 'fr') {
     if (e.type === 'cash') return `${cashBonus(e, lang)} sur chaque ₽ gagné.`
+    if (e.type === 'rush')
+      return `Les attaques ${rushTypeName(e, lang)} frappent ${rushPct(e, lang)} plus fort, et des quêtes ${rushTypeName(e, lang)} remplissent une jauge de récompenses.`
     if (e.type === 'hatch')
       return `Les Œufs de la Pension arrivent ${times(e.hatch.speed, lang)} plus vite et éclosent ${times(e.hatch.shiny, lang)} plus souvent chromatiques.`
     if (e.type === 'underground') return 'Creuse les Souterrains pour des orbes, des fossiles et des plaques.'
@@ -143,6 +171,8 @@ export function liveLine(data: GameData, e: LiveEvent, lang: PostLang = 'en'): s
     return `Les Pokémon sauvages ont ${e.shiny.multiplier}× plus de chances d’être chromatiques, ${shinyPlace(data, e, 3, lang)}.`
   }
   if (e.type === 'cash') return `${cashBonus(e, lang)} on every ₽ you earn.`
+  if (e.type === 'rush')
+    return `${rushTypeName(e, lang)} attacks hit ${rushPct(e, lang)} harder, and ${rushTypeName(e, lang)} quests fill a reward gauge.`
   if (e.type === 'hatch')
     return `Day Care Eggs come ${times(e.hatch.speed, lang)} faster and hatch shiny ${times(e.hatch.shiny, lang)} more often.`
   if (e.type === 'underground') return 'Dig for orbs, fossils and plates in the Underground.'
@@ -227,6 +257,11 @@ export function liveDetails(data: GameData, e: LiveEvent, lang: PostLang = 'en')
     return [
       `✨ Wild Pokémon are **${e.shiny.multiplier}×** more likely to be shiny, ${shinyPlace(data, e, 12)}.`,
     ]
+  if (e.type === 'rush')
+    return [
+      `⚡ ${rushTypeName(e, 'en')} attacks hit **${rushPct(e, 'en')}** harder.`,
+      `🎯 ${e.rush.quests.length} quests about ${rushTypeName(e, 'en')} Pokémon fill a reward gauge: ${someNames(rushRewards(data, e))}.`,
+    ]
   if (e.type === 'hatch')
     return [
       `🥚 Day Care Eggs come **${times(e.hatch.speed, 'en')}** faster.`,
@@ -270,6 +305,11 @@ export function liveDetails(data: GameData, e: LiveEvent, lang: PostLang = 'en')
 function liveDetailsFr(data: GameData, e: LiveEvent): string[] {
   if (e.type === 'cash')
     return [`💰 **${cashBonus(e, 'fr')}** sur chaque ₽ gagné : Dresseurs, raids, la roue… (hors ventes).`]
+  if (e.type === 'rush')
+    return [
+      `⚡ Les attaques ${rushTypeName(e, 'fr')} frappent **${rushPct(e, 'fr')}** plus fort.`,
+      `🎯 ${e.rush.quests.length} quêtes ${rushTypeName(e, 'fr')} remplissent une jauge de récompenses : ${someNames(rushRewards(data, e), 3, 'fr')}.`,
+    ]
   if (e.type === 'hatch')
     return [
       `🥚 Les Œufs de la Pension arrivent **${times(e.hatch.speed, 'fr')}** plus vite.`,

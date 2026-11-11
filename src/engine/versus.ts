@@ -167,6 +167,8 @@ const attackerUid = (i: number) => `a${i}`
 export interface VersusSides {
   attacker?: VersusPowers
   defender?: VersusPowers
+  /** A Type Rush running (docs/71 §3.4): × on the attacker's (the player's) attacks of its type. */
+  rush?: { type: PokeType; multiplier: number } | null
 }
 
 /** What one side has spent of its powers, the whole fight being one battle (docs/35 §5): each power once. */
@@ -251,7 +253,7 @@ function openRound(m: Omit<VersusMatch, 'state'>, d: number, data: GameData): { 
       team,
       leadUid: m.lead,
       enemy: { dex: foe.dex, ...versusSeedLevels(foe.level), shiny: foe.shiny, talent: foe.talent },
-      playerLevels: levels,
+      playerLevels: m.sides.rush ? { ...levels, rush: m.sides.rush } : levels,
       enemyLevels: levels,
       ...attackerPowers(m.sides.attacker, data),
       used: m.used,

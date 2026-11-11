@@ -35,6 +35,7 @@ import { BoosterChip } from '@/screens/events/world'
 import { WeatherBoostChip } from '@/components/Weather'
 import { PALETTE } from '@/theme/colors'
 import { cx } from '@/theme/util'
+import { RushBoostChip } from '@/components/RushBoostChip'
 
 export interface TrayDice {
   side: Side
@@ -446,6 +447,7 @@ export function Readout({
       )}
       {r.boost && <BoosterChip type={r.boost.type} n={r.boost.multiplier} />}
       {r.weather && <WeatherBoostChip kind={r.weather.kind} n={r.weather.multiplier} />}
+      {r.rush && <RushBoostChip type={r.rush.type} n={r.rush.multiplier} />}
       <Effectiveness r={r} />
       {preview.statuses.map((s) => (
         <StatusChip key={s.status} status={s.status} count={statusCount(s)} />

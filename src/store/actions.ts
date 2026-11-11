@@ -50,6 +50,7 @@ import {
 } from '@/engine'
 import { tickDayCare } from './daycare'
 import { currentLive } from './live'
+import { eventFacts, hatchFact, withRushFacts } from './typeRush'
 import { mutateSave, pushToast, useGame } from './game'
 import { newId } from './run'
 import { t } from '@/i18n'
@@ -101,7 +102,8 @@ export function applyBagItem(key: string, instId: string): { evolved: { uid: str
     pushToast(t('ui.toast.noEffect'), 'bad')
     return null
   }
-  mutateSave(() => res.save)
+  // A Type Rush counts an evolution a stone or a Rare Candy brought (docs/71 §3.3).
+  mutateSave(() => withRushFacts(res.save, eventFacts(res.events, data)))
   const evo = res.events.find((e) => e.kind === 'evolve')
   const up = [...res.events].reverse().find((e) => e.kind === 'level_up')
   if (up && up.kind === 'level_up')
@@ -117,7 +119,7 @@ export function evolveAtLevelCap(instId: string): { uid: string; fromDex: number
   const res = applyLevelEvolution(save, instId, data, createRng(randomSeed()))
   const evo = res?.events.find((e) => e.kind === 'evolve')
   if (!res || !evo || evo.kind !== 'evolve') return null
-  mutateSave(() => res.save)
+  mutateSave(() => withRushFacts(res.save, eventFacts(res.events, data)))
   toastTalents(res.events)
   return { uid: evo.uid, fromDex: evo.fromDex, toDex: evo.toDex }
 }
@@ -294,7 +296,8 @@ function hatchInto(save: SaveData, region?: RegionId): { placed: Hatch } | null 
   const { data } = useGame.getState()
   const res = hatchEgg(save, data, createRng(randomSeed()), Date.now(), newId, currentLive(), region)
   if (!res) return null
-  mutateSave(() => res.save)
+  // A Type Rush counts the hatchling (docs/71 §3.3).
+  mutateSave(() => withRushFacts(res.save, [hatchFact(res.inst.dex, data)]))
   // The clocks kept running while it waited: a check that came due meanwhile can leave the next one now.
   tickDayCare()
   return { placed: res }

@@ -61,6 +61,7 @@ export function normaliseCalendarReward(raw: unknown): CalendarReward | null {
           level,
           ...(o.shiny === true && { shiny: true }),
           ...(cleanOutfit(o.outfit, dex) && { outfit: o.outfit as string }),
+          ...(o.talent === true && { talent: true }),
           qty,
         }
       : null
@@ -148,6 +149,7 @@ export function calendarGifts(r: CalendarReward): Gift[] {
     level: r.level,
     ...(r.shiny && { shiny: true }),
     ...(r.outfit && { outfit: r.outfit }),
+    ...(r.talent && { talent: true }),
     region: GIFT_CURRENT,
   }
   return Array.from({ length: r.qty }, () => mon)

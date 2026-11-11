@@ -95,6 +95,150 @@ function switchKind(r: CalendarReward, kind: CalendarReward['kind']): CalendarRe
 
 const clamp = (v: number | null, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(v ?? lo)))
 
+/** A reward's kind (an item, Pokédollars, a Pokémon), keeping what fits from the one before. */
+export function RewardKindSelect({
+  r,
+  set,
+  label,
+}: {
+  r: CalendarReward
+  set: (r: CalendarReward) => void
+  label: string
+}) {
+  return (
+    <select
+      className={inputCls}
+      value={r.kind}
+      aria-label={label}
+      onChange={(e) => set(switchKind(r, e.target.value as CalendarReward['kind']))}
+    >
+      {(Object.keys(KIND_NAME) as CalendarReward['kind'][]).map((k) => (
+        <option key={k} value={k}>
+          {KIND_NAME[k]}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+/** What a reward is and how many: the ₽, the item and its count, the Pokémon (level, shiny, outfit, talent, how many). */
+export function RewardFields({
+  r,
+  set,
+  data,
+  items,
+}: {
+  r: CalendarReward
+  set: (r: CalendarReward) => void
+  data: GameData
+  items: ItemDef[]
+}) {
+  return (
+    <>
+      {r.kind === 'gold' && (
+        <label className="flex w-40 flex-col text-base">
+          ₽
+          <NumInput
+            value={r.amount}
+            min={1}
+            max={GIFT_GOLD_MAX}
+            onChange={(v) => set({ ...r, amount: clamp(v, 1, GIFT_GOLD_MAX) })}
+          />
+        </label>
+      )}
+      {r.kind === 'item' && (
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex min-w-[200px] flex-1 flex-col text-base">
+            Item
+            <SearchSelect
+              options={items}
+              value={data.items[r.key] ?? null}
+              onChange={(i) => i && set({ ...r, key: i.key })}
+              getKey={(i) => i.key}
+              getLabel={(i) => `${i.name} ${i.key}`}
+              renderOption={(i) => (
+                <span className="flex min-w-0 items-center gap-2">
+                  <ItemSprite item={i} size={24} />
+                  <span className="truncate">{i.name}</span>
+                </span>
+              )}
+              placeholder={data.items[r.key] ? 'Pick an item…' : `Unknown: ${r.key}`}
+            />
+          </label>
+          <label className="flex w-24 flex-col text-base">
+            How many
+            <NumInput
+              value={r.qty}
+              min={1}
+              max={GIFT_QTY_MAX}
+              onChange={(v) => set({ ...r, qty: clamp(v, 1, GIFT_QTY_MAX) })}
+            />
+          </label>
+        </div>
+      )}
+      {r.kind === 'pokemon' && (
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex min-w-[200px] flex-1 flex-col text-base">
+            Pokémon
+            <PokemonPicker
+              data={data}
+              value={r.dex}
+              // An outfit stays only on a species that wears it (docs/59).
+              onChange={(dex) => {
+                const { outfit, ...rest } = r
+                set({ ...rest, dex, ...(outfit && hasOutfit(outfit, dex) && { outfit }) })
+              }}
+            />
+          </label>
+          <label className="flex w-20 flex-col text-base">
+            Level
+            <NumInput
+              value={r.level}
+              min={1}
+              max={data.config.maxLevel}
+              onChange={(v) => set({ ...r, level: clamp(v, 1, data.config.maxLevel) })}
+            />
+          </label>
+          <label className="flex min-h-[34px] items-center gap-1.5 text-lg">
+            <input
+              type="checkbox"
+              checked={!!r.shiny}
+              onChange={(e) => set(e.target.checked ? { ...r, shiny: true } : { ...r, shiny: undefined })}
+            />
+            Shiny
+          </label>
+          {/* Its hidden talent for sure (docs/71 §5); unticked, the gifts' roll at the wild odds. */}
+          <label className="flex min-h-[34px] items-center gap-1.5 text-lg">
+            <input
+              type="checkbox"
+              checked={!!r.talent}
+              onChange={(e) => set(e.target.checked ? { ...r, talent: true } : { ...r, talent: undefined })}
+            />
+            Hidden talent
+          </label>
+          <OutfitSelect
+            dex={r.dex}
+            value={r.outfit}
+            onChange={(outfit) => {
+              const { outfit: _old, ...rest } = r
+              set({ ...rest, ...(outfit && { outfit }) })
+            }}
+          />
+          <label className="flex w-20 flex-col text-base">
+            How many
+            <NumInput
+              value={r.qty}
+              min={1}
+              max={CALENDAR_MON_MAX}
+              onChange={(v) => set({ ...r, qty: clamp(v, 1, CALENDAR_MON_MAX) })}
+            />
+          </label>
+        </div>
+      )}
+    </>
+  )
+}
+
 /** One day's reward: its kind, then what it is and how many. */
 function DayRow({
   day,
@@ -118,111 +262,10 @@ function DayRow({
         <div className="text-sm text-muted">{date}</div>
       </td>
       <td className="w-36 px-1 py-1">
-        <select
-          className={inputCls}
-          value={r.kind}
-          aria-label={`Day ${day}: kind of gift`}
-          onChange={(e) => set(switchKind(r, e.target.value as CalendarReward['kind']))}
-        >
-          {(Object.keys(KIND_NAME) as CalendarReward['kind'][]).map((k) => (
-            <option key={k} value={k}>
-              {KIND_NAME[k]}
-            </option>
-          ))}
-        </select>
+        <RewardKindSelect r={r} set={set} label={`Day ${day}: kind of gift`} />
       </td>
       <td className="px-1 py-1">
-        {r.kind === 'gold' && (
-          <label className="flex w-40 flex-col text-base">
-            ₽
-            <NumInput
-              value={r.amount}
-              min={1}
-              max={GIFT_GOLD_MAX}
-              onChange={(v) => set({ ...r, amount: clamp(v, 1, GIFT_GOLD_MAX) })}
-            />
-          </label>
-        )}
-        {r.kind === 'item' && (
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="flex min-w-[200px] flex-1 flex-col text-base">
-              Item
-              <SearchSelect
-                options={items}
-                value={data.items[r.key] ?? null}
-                onChange={(i) => i && set({ ...r, key: i.key })}
-                getKey={(i) => i.key}
-                getLabel={(i) => `${i.name} ${i.key}`}
-                renderOption={(i) => (
-                  <span className="flex min-w-0 items-center gap-2">
-                    <ItemSprite item={i} size={24} />
-                    <span className="truncate">{i.name}</span>
-                  </span>
-                )}
-                placeholder={data.items[r.key] ? 'Pick an item…' : `Unknown: ${r.key}`}
-              />
-            </label>
-            <label className="flex w-24 flex-col text-base">
-              How many
-              <NumInput
-                value={r.qty}
-                min={1}
-                max={GIFT_QTY_MAX}
-                onChange={(v) => set({ ...r, qty: clamp(v, 1, GIFT_QTY_MAX) })}
-              />
-            </label>
-          </div>
-        )}
-        {r.kind === 'pokemon' && (
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="flex min-w-[200px] flex-1 flex-col text-base">
-              Pokémon
-              <PokemonPicker
-                data={data}
-                value={r.dex}
-                // An outfit stays only on a species that wears it (docs/59).
-                onChange={(dex) => {
-                  const { outfit, ...rest } = r
-                  set({ ...rest, dex, ...(outfit && hasOutfit(outfit, dex) && { outfit }) })
-                }}
-              />
-            </label>
-            <label className="flex w-20 flex-col text-base">
-              Level
-              <NumInput
-                value={r.level}
-                min={1}
-                max={data.config.maxLevel}
-                onChange={(v) => set({ ...r, level: clamp(v, 1, data.config.maxLevel) })}
-              />
-            </label>
-            <label className="flex min-h-[34px] items-center gap-1.5 text-lg">
-              <input
-                type="checkbox"
-                checked={!!r.shiny}
-                onChange={(e) => set(e.target.checked ? { ...r, shiny: true } : { ...r, shiny: undefined })}
-              />
-              Shiny
-            </label>
-            <OutfitSelect
-              dex={r.dex}
-              value={r.outfit}
-              onChange={(outfit) => {
-                const { outfit: _old, ...rest } = r
-                set({ ...rest, ...(outfit && { outfit }) })
-              }}
-            />
-            <label className="flex w-20 flex-col text-base">
-              How many
-              <NumInput
-                value={r.qty}
-                min={1}
-                max={CALENDAR_MON_MAX}
-                onChange={(v) => set({ ...r, qty: clamp(v, 1, CALENDAR_MON_MAX) })}
-              />
-            </label>
-          </div>
-        )}
+        <RewardFields r={r} set={set} data={data} items={items} />
       </td>
     </tr>
   )

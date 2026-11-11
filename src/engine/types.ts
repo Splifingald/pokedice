@@ -1147,7 +1147,7 @@ export interface EventsConfig {
 }
 
 /** Live events (docs/20): the kinds the admin can schedule. */
-export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar', 'hatch'] as const
+export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar', 'hatch', 'rush'] as const
 export type LiveType = (typeof LIVE_TYPES)[number]
 
 /** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
@@ -1166,8 +1166,32 @@ export interface LiveShopItem {
 export type CalendarReward =
   | { kind: 'item'; key: string; qty: number }
   | { kind: 'gold'; amount: number }
-  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
-  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; qty: number }
+  /**
+   * `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). `talent` (docs/71 §5): it
+   * comes with its family's hidden talent; without it, the gifts' usual roll at the wild odds.
+   */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; talent?: boolean; qty: number }
+
+/** What a Type Rush quest counts (docs/71 §3.3), each for Pokémon of the event's type. */
+export const RUSH_QUEST_KINDS = ['catch', 'ko', 'evolve', 'damage', 'hatch', 'combo', 'raid'] as const
+export type RushQuestKind = (typeof RUSH_QUEST_KINDS)[number]
+
+/**
+ * A Type Rush quest (docs/71 §3.1): one counter, and its steps in order (Catch 10, then Catch 20), each paying its
+ * Rush points once reached and validated. `combo`: which combo a combo quest counts (any, by default).
+ */
+export interface RushQuest {
+  id: string
+  kind: RushQuestKind
+  combo?: ComboKey | 'any'
+  steps: { target: number; points: number }[]
+}
+
+/** A reward on a Type Rush's gauge: given once the player's Rush points reach `at`. */
+export interface RushGaugeRow {
+  at: number
+  reward: CalendarReward
+}
 
 /** A week of the month a weekly live event runs in: the 1st to the 4th of that weekday, or the month's last. */
 export type LiveWeek = 1 | 2 | 3 | 4 | 'last'
@@ -1223,6 +1247,24 @@ export interface LiveEvent {
    * while it runs is shiny at the Day Care's odds × `shiny`.
    */
   hatch: { speed: number; shiny: number }
+  /**
+   * Type Rush (docs/71 §3): the player's attacks of `type` hit × `boost`, and quests about Pokémon of that type pay
+   * Rush points into `gauge`. A weekly one can take its type from `rotate`, a week each, in order.
+   */
+  rush: { type: PokeType; rotate: PokeType[]; boost: number; quests: RushQuest[]; gauge: RushGaugeRow[] }
+}
+
+/**
+ * A Type Rush run's progress in the save (docs/71 §3.5): each quest's counter, its steps validated, the Rush points
+ * banked, the gauge's rewards given, and when it ends (so a last pop-up can settle it after).
+ */
+export interface RushProgress {
+  type: PokeType
+  end: string
+  counts: Record<string, number>
+  done: Record<string, number>
+  points: number
+  given: number
 }
 
 export interface GameConfig {
@@ -1940,8 +1982,8 @@ export type GiftRegion = string
  */
 export type Gift =
   | { kind: 'item'; key: string; qty: number; region: GiftRegion }
-  /** `outfit` (docs/59): the Pokémon comes dressed up (a key of `OUTFITS` its species wears). */
-  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; region: GiftRegion }
+  /** `outfit` (docs/59): the Pokémon comes dressed up. `talent` (docs/71 §5): with its hidden talent, for sure. */
+  | { kind: 'pokemon'; dex: number; level: number; shiny?: boolean; outfit?: string; talent?: boolean; region: GiftRegion }
   | { kind: 'gold'; amount: number; region: GiftRegion }
   /**
    * Heart Scales (docs/60), a message's only: the server adds them to the player's wallet as it hands the gifts over
@@ -2725,6 +2767,8 @@ export interface EventsSave {
   liveBought?: Record<string, Record<string, number>>
   /** Gift calendars' doors opened (docs/55), per live event id: the days (1 = the first). A door opens once. */
   calendarOpened?: Record<string, number[]>
+  /** Type Rushes' progress (docs/71 §3.5), per run id; kept 30 days after its end. */
+  rush?: Record<string, RushProgress>
   /** The gift calendar's rules card was read (GOT IT): once, for every calendar; INFO shows them again. */
   calendarRulesSeen?: boolean
   /** The small world this save holds (its block is the live region or a parked one), or the one that just closed. */

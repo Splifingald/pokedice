@@ -67,6 +67,7 @@ export function parseGifts(raw: unknown): Gift[] {
           level,
           ...(o.shiny === true && { shiny: true }),
           ...(cleanOutfit(o.outfit, dex) && { outfit: o.outfit as string }),
+          ...(o.talent === true && { talent: true }),
           region,
         })
     } else if (o.kind === 'gold') {
@@ -172,8 +173,9 @@ export function placeGifts(
     if (gift.shiny) inst.shiny = true
     // Its outfit (docs/59), only while outfits are on: off, the same gift brings the plain Pokémon.
     if (gift.outfit && outfitsOn(data) && hasOutfit(gift.outfit, inst.dex)) inst.outfit = gift.outfit
-    // Its family's hidden talent, at the wild odds (docs/51); a legendary always.
-    if (rollTalentFor(data, inst.dex, inst.id)) inst.talent = true
+    // Its family's hidden talent: for sure when the gift says so (docs/71 §5), else at the wild odds (docs/51); a
+    // legendary always.
+    if (gift.talent || rollTalentFor(data, inst.dex, inst.id)) inst.talent = true
     const dexBefore = region === regionOf(next) ? next.pokedex : (next.parked?.[region]?.pokedex ?? [])
     const teamBefore = region === regionOf(next) ? next.team.length : null
     const put = addToRegion(next, data, region, inst)

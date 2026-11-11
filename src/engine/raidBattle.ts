@@ -96,6 +96,8 @@ export interface RaidState {
    * says which), by bar; absent for every other raid.
    */
   plates?: PokeType[]
+  /** A Type Rush's boost on the player's own side (docs/71 §3.4); absent without one. */
+  rush?: { type: PokeType; multiplier: number }
 }
 
 /** What heals in a raid outside a duel step (docs/40). */
@@ -293,6 +295,8 @@ export interface CreateRaidOptions {
   /** The progression raid's area: a small world's fights at its boss's level (docs/26 §2.5). */
   areaId?: string
   auto?: boolean
+  /** A Type Rush running (docs/71 §3.4): × on the player's own side's attacks of its type, not the allies'. */
+  rush?: { type: PokeType; multiplier: number } | null
 }
 
 const live = (b: Battler) => b.hp > 0
@@ -392,6 +396,7 @@ export function createRaid(
     ...(special && { special }),
     ...(opts.auto && { auto: true }),
     ...(plates && plates.length > 0 && { plates }),
+    ...(opts.rush && { rush: opts.rush }),
   }
   const log: RaidLogEntry[] = [{ kind: 'raid_start', boss: boss.uid }]
   // Its first bar's Plate (none to announce when it starts in that type already).
@@ -503,7 +508,8 @@ function duelOf(s: RaidState, sideIdx: number, hit?: RaidHit): BattleState {
     enemy: structuredClone(s.boss),
     dice: [],
     selected: [],
-    playerLevels: s.sideLevels,
+    // A Type Rush boosts the player's own side only (docs/71 §3.4): friends' and NPCs' hit as usual.
+    playerLevels: s.rush && side.kind === 'me' ? { ...s.sideLevels, rush: s.rush } : s.sideLevels,
     enemyLevels: s.foeLevels,
     participants: [activeOf(side).uid],
     canRun: false,

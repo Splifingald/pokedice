@@ -6,7 +6,9 @@
 //  - the Underground (docs/34) and the gift calendar (docs/55, engine/calendar.ts), each with a page and a switch of
 //    its own;
 //  - Hatching Day (docs/71 §2): the Day Care's Eggs come faster and hatch shiny more often (engine/breeding.ts and
-//    daycare.ts read it). No switch of its own (the user's call, 2026-11-11): scheduling one is turning it on.
+//    daycare.ts read it);
+//  - a Type Rush (docs/71 §3, engine/typeRush.ts): one type hits harder and its quests fill a reward gauge.
+// Neither of those two has a switch of its own (the user's call, 2026-11-11): scheduling one is turning it on.
 // Two of a kind add up: two Cash Flows of +50 % pay +100 %, two Shiny Parades of ×5 make ×9 where both cover.
 // An event runs once (a start and an end) or comes back (§9): every year on a date, or on a weekday, every week or on
 // some weeks of the month. Each run of a recurring event is an event of its own for players (its own id, pop-up and
@@ -18,6 +20,7 @@ import { eventOpenTo } from './events'
 import { addFossil } from './fossils'
 import { sellPrice } from './items'
 import { inWorldRegion, regionCases, regionOf, regionOfArea } from './regions'
+import { newRush, normaliseRush, rushProblems, rushType } from './typeRush'
 import type {
   Area,
   GameData,
@@ -67,6 +70,7 @@ export function normaliseLiveEvent(raw: Partial<LiveEvent>): LiveEvent {
     ...(raw.type === 'calendar' && { repeat: null }),
     calendar: { days: Array.isArray(raw.calendar?.days) ? raw.calendar.days : [] },
     hatch: { ...d.hatch, ...raw.hatch },
+    rush: normaliseRush(raw.rush),
   } as LiveEvent
 }
 
@@ -361,12 +365,13 @@ const CHECK_YEARS = 2
  * Undergrounds: a player digs one at a time, with one team (the server keeps one running too).
  */
 export function liveOverlap(list: readonly LiveEvent[], e: LiveEvent, now: number): LiveEvent | null {
-  if (e.type !== 'underground') return null
+  // One Underground at a time, and one Type Rush (docs/71 §3): each has one page and one boost.
+  if (e.type !== 'underground' && e.type !== 'rush') return null
   const from = e.repeat ? now : Math.min(now, at(e.start))
   const to = Math.max(now, e.repeat ? now : at(e.end)) + CHECK_YEARS * 366 * DAY
   const mine = liveRuns(e, from, to)
   for (const o of list) {
-    if (o.id === e.id || o.type !== 'underground') continue
+    if (o.id === e.id || o.type !== e.type) continue
     for (const r of liveRuns(o, from, to)) if (mine.some((m) => at(r.start) < at(m.end) && at(m.start) < at(r.end))) return r
   }
   return null
@@ -390,7 +395,9 @@ export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: Gam
   }
   const clash = liveOverlap(list, e, now)
   if (clash)
-    out.push(`It overlaps another Underground (${clash.start.slice(0, 16).replace('T', ' ')} → ${clash.end.slice(0, 16).replace('T', ' ')} UTC): one at a time.`)
+    out.push(
+      `It overlaps another ${e.type === 'rush' ? 'Type Rush' : 'Underground'} (${clash.start.slice(0, 16).replace('T', ' ')} → ${clash.end.slice(0, 16).replace('T', ' ')} UTC): one at a time.`,
+    )
   if (e.type === 'shiny') {
     if (!(e.shiny.multiplier >= 1)) out.push('The shiny multiplier is below 1.')
     if (e.shiny.scope === 'areas' && !e.shiny.areaIds.length) out.push('No area picked.')
@@ -407,6 +414,7 @@ export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: Gam
     for (const r of e.shop.items) if (!data.items[r.key]) out.push(`Unknown item: ${r.key}.`)
   }
   if (e.type === 'calendar') out.push(...calendarProblems(e, data))
+  if (e.type === 'rush') out.push(...rushProblems(e, data))
   return out
 }
 
@@ -444,6 +452,8 @@ const TYPE_BANNER: Record<LiveType, keyof typeof LIVE_BANNERS> = {
   // A calendar outside the occasions is a celebration (Advent's dates make it the winter picture).
   calendar: 'celebration',
   hatch: 'hatch',
+  // A Type Rush's own is its type's gym stage (liveDefaultBanner).
+  rush: 'celebration',
 }
 
 /**
@@ -452,6 +462,9 @@ const TYPE_BANNER: Record<LiveType, keyof typeof LIVE_BANNERS> = {
  * no occasion fits it: its type's. The Underground is always its cave, the place players dig in.
  */
 export function liveDefaultBanner(e: LiveEvent): string {
+  // A Type Rush: its type's gym stage (docs/67's pictures, public/area-art/gym-<type>.png), whatever the date; a
+  // rotation's type changes each week, so a weekly one rotating takes its first type's.
+  if (e.type === 'rush') return `gym-${rushType(e)}`
   const own = LIVE_BANNERS[TYPE_BANNER[e.type]]
   const r = e.repeat
   if (e.type === 'underground' || r?.kind === 'weekly') return own
@@ -481,5 +494,6 @@ export function newLiveEvent(id: string, start: string, end: string): LiveEvent 
     cash: { multiplier: 1.5 },
     calendar: { days: [] },
     hatch: { speed: 3, shiny: 4 },
+    rush: newRush(),
   }
 }
