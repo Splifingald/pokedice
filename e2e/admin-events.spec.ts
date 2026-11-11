@@ -250,6 +250,27 @@ test('Type Rush: its type, boost, default quests and gauge; a reward beyond the 
   await expect(page.getByText(/Type Rush · water, \+20 %, 7 quests, 5 rewards/)).toBeVisible()
 })
 
+test('Community Boss: the boss, its gauges and rewards, the estimate; runs once (docs/71 §4.5)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await admin(page)
+  await page.goto('/admin/events?tab=live')
+  await expect(page.getByRole('button', { name: 'New live event' })).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('button', { name: 'New live event' }).click()
+  await page.getByLabel(/^Type/).first().selectOption({ label: 'Community Boss' })
+  // Runs once: no repeat to pick. No switch of its own.
+  await expect(page.getByLabel(/^When/)).toHaveCount(0)
+  await expect(page.getByRole('radiogroup', { name: /Community Boss/ })).toHaveCount(0)
+  // Snorlax and five gauges by default; 50 trainers × 3 × 400 hits × 60 = 3.6M an hour.
+  await expect(page.getByRole('combobox', { name: /^Gauge \d+: colour$/ })).toHaveCount(5)
+  await expect(page.getByTestId('boss-estimate')).toContainText('3,600,000 damage an hour')
+  await expect(page.getByTestId('boss-est-0')).toHaveText('≈ 2.8 h')
+  await page.getByRole('button', { name: '+ Gauge' }).click()
+  await expect(page.getByRole('combobox', { name: /^Gauge \d+: colour$/ })).toHaveCount(6)
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Add to the list' }).click()
+  await expect(page.getByText(/Community Boss · Snorlax, 6 gauges/)).toBeVisible()
+})
+
 test('Trick or Treat: its switch, the tiers’ exact rates, an area’s ghosts prefilled from its wild pool', async ({ page }) => {
   test.setTimeout(120_000)
   await page.setViewportSize({ width: 1440, height: 1000 })

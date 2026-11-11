@@ -416,6 +416,22 @@ export const saveSchema = z.object({
       liveBought: z.record(z.record(z.number().int().min(0))).optional(),
       calendarOpened: z.record(z.array(z.number().int().min(1).max(31)).max(31)).optional(),
       calendarRulesSeen: z.boolean().optional(),
+      // Pokémon placed on a Community Boss (docs/71 §4.2), per event id: away from their Box until it ends.
+      boss: z
+        .record(
+          z
+            .array(
+              z.object({
+                slot: z.number().int().min(0).max(2),
+                inst: instanceSchema,
+                region: z.string().max(80),
+                at: z.number(),
+                end: z.string().max(40),
+              }),
+            )
+            .max(3),
+        )
+        .optional(),
       // Type Rushes (docs/71 §3.5), per run id: each quest's counter and steps validated, the points, the rewards given.
       rush: z
         .record(

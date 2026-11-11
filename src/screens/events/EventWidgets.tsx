@@ -47,6 +47,7 @@ import { useWorld, worldName } from '@/store/worlds'
 import { CARD_STRIP_H, HomeCard, Meter } from '@/screens/home/Widget'
 import { Medal, tierName } from './RebattlePage'
 import {
+  bossPath,
   calendarPath,
   calendarSub,
   LiveFx,
@@ -324,7 +325,9 @@ function LiveCard({ live, now }: { live: LiveEvent; now: number }) {
             ? navigate('/underground')
             : cal
               ? navigate(calendarPath(live))
-              : openLivePopup(live.id)
+              : live.type === 'boss'
+                ? navigate(bossPath(live))
+                : openLivePopup(live.id)
       }
     />
   )

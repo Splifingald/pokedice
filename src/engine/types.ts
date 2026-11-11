@@ -1147,7 +1147,7 @@ export interface EventsConfig {
 }
 
 /** Live events (docs/20): the kinds the admin can schedule. */
-export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar', 'hatch', 'rush'] as const
+export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar', 'hatch', 'rush', 'boss'] as const
 export type LiveType = (typeof LIVE_TYPES)[number]
 
 /** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
@@ -1185,6 +1185,13 @@ export interface RushQuest {
   kind: RushQuestKind
   combo?: ComboKey | 'any'
   steps: { target: number; points: number }[]
+}
+
+/** A Community Boss's HP gauge (docs/71 §4.1): its HP, its colour, the reward every participant gets if it breaks. */
+export interface BossGauge {
+  hp: number
+  color: import('./communityBoss').BossColor
+  reward: CalendarReward
 }
 
 /** A reward on a Type Rush's gauge: given once the player's Rush points reach `at`. */
@@ -1252,6 +1259,11 @@ export interface LiveEvent {
    * Rush points into `gauge`. A weekly one can take its type from `rotate`, a week each, in order.
    */
   rush: { type: PokeType; rotate: PokeType[]; boost: number; quests: RushQuest[]; gauge: RushGaugeRow[] }
+  /**
+   * Community Boss (docs/71 §4): the boss (a species, shiny or not) and its HP gauges in the order they break. Runs
+   * once; the server counts the damage (migration 0146).
+   */
+  boss: { dex: number; shiny: boolean; gauges: BossGauge[] }
 }
 
 /**
@@ -2769,6 +2781,8 @@ export interface EventsSave {
   calendarOpened?: Record<string, number[]>
   /** Type Rushes' progress (docs/71 §3.5), per run id; kept 30 days after its end. */
   rush?: Record<string, RushProgress>
+  /** Pokémon placed on a Community Boss (docs/71 §4.2), per event id: away from their Box until it ends. */
+  boss?: Record<string, import('./communityBoss').BossPlaced[]>
   /** The gift calendar's rules card was read (GOT IT): once, for every calendar; INFO shows them again. */
   calendarRulesSeen?: boolean
   /** The small world this save holds (its block is the live region or a parked one), or the one that just closed. */

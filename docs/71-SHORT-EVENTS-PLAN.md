@@ -1,9 +1,8 @@
 # 71 — Short events: Hatching Day, Type Rush, Community Boss
 
 Status: **plan validated** by the user (2026-11-11), built one by one on `claude/great-cannon-5792yi` (from
-`version/2_9_7`): **Hatching Day built** (§2.4), on as soon as it's scheduled (no switch, §1); Type Rush and the
-Community Boss next
-(§8).
+`version/2_9_7`): **all three built**, Hatching Day (§2.4), Type Rush (§3.8) and the Community Boss (§4.6), each on
+as soon as it's scheduled (no switch, §1).
 
 The user's ask (2026-11-11): ideas for short events of 2 to 4 days; then three picks, refined with the built-in
 questions the same day. All three are **live events** (docs/20): three new types beside the Shiny Parade, the Special
@@ -366,6 +365,35 @@ in the last 7 days) and *Average hit* (prefilled 60), giving per gauge "≈ 9 h 
 "broken in about 2 days 6 h". During the event: the live numbers (`boss_state`) and **End now**. After: the result and
 **Send the rewards again** if settling failed.
 
+### 4.6 Built (2026-11-11)
+
+- **Server** (migration `0146_community_boss.sql`): `boss_event` (the event from the `liveEvents` row),
+  `boss_affinity` (the game's chart: both types multiplied, kept between ×½ and ×2 as `engine/typechart.ts` does, an
+  immunity ×¼), `boss_slots`, `boss_place` / `boss_take_back` (signed in; refused outside the dates, above the trainer
+  card's best level or the game's cap, for an unknown species; one Pokémon in one slot), `boss_state` (the cache
+  rebuilt at most once a minute: total, last hour, trainers, the top 10, a random sample of 40; the caller's damage,
+  rank and slots, live; the field: own, friends', others, at most 20), `boss_settle` (once: the gauges broken, one
+  developer's message per participant with those rewards, at most 20 gifts) and `boss_settle_due`, which the new
+  scheduled function `netlify/functions/community-boss.mts` calls every 5 minutes. The gifts' check (0048) already
+  takes a Pokémon's `talent`, so it needed no change.
+- **Different from the plan**: the affinity follows the game's chart, so no ×4 or ×¼ from two types (×2 and ×½ at
+  most), an immunity still ×¼. A boss's rewards are messages only while the developer's gifts are on (Admin → Config
+  → Gifts, as for every message with gifts). The arena's Pokémon are all menu icons (the boss alone is an animated
+  sprite): one request for the whole crowd. No post on Discord at the end (its start post and the calendar have it).
+  The admin's estimate takes the trainers by hand (50 by default), not from the analytics.
+- **Engine** (`src/engine/communityBoss.ts`): the boss's settings and checks (one at a time, runs once, at most 10
+  gauges, 20 gifts), `bossAffinity` / `bossHit` / `bossDealt` (the server's rules, for what the screens show),
+  `bossStanding` (the gauges from a total), `bossEstimate`, `bossCandidates` (every region's Box, the Day Care's
+  rule, best hit first), `placeOnBoss` / `takeBackFromBoss` / `bossHomecoming` (the placed Pokémon in the save's
+  `events.boss`, in its schema; each remembers the event's end, so it comes home then even before the content loads).
+- **Store** (`src/store/communityBoss.ts`): the server first, then the save; the page reads `boss_state` every
+  minute; the homecoming runs at start, when the tab comes back and every minute.
+- **Screens** (docs/15 §54): `/boss?id=…` (`src/screens/events/Boss.tsx`), Home's card (the boss's icon on the
+  picture, a tap opens the page), the start pop-up with **Go to the boss** (its page open counts as seen).
+- **Tests**: `tests/community-boss-sql.test.ts` (PGlite), `tests/engine/communityBoss.test.ts`,
+  `e2e/community-boss.spec.ts` (the server mocked; its picture in `docs/71-short-events/`), the admin's in
+  `e2e/admin-events.spec.ts`, the kitchen sink's `BossBits`.
+
 ## 5. Rewards that are Pokémon
 
 `CalendarReward` and the message's `Gift` gain **`talent?: boolean`**: with it, the Pokémon arrives with its family's
@@ -462,4 +490,16 @@ Nothing to run in Supabase.
    a weekly one, *Rotate each week*), the boost, the quests and the gauge (the default list is there to start from),
    *Add to the list*, then **Save & Publish**. It runs for everyone from its start.
 
-The Community Boss: written at its build.
+### Community Boss
+
+1. Run the migration in Supabase → SQL Editor:
+   https://github.com/Splifingald/pokedice/blob/claude/great-cannon-5792yi/supabase/migrations/0146_community_boss.sql
+   (it isn't in `supabase/seed.sql`: it holds server functions, as Friend Battles' do).
+2. The developer's gifts must be on (Admin → Config → Gifts: *On for everyone*), or the rewards wait unseen in the
+   messages.
+3. Netlify: nothing new to set. The scheduled function uses `VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`,
+   there already for the push sender; it runs on the published site only (on a Deploy Preview, use the admin's **Send
+   the rewards now** after the end).
+4. Admin → Events → Live events → **New live event** → Type **Community Boss**: its dates (2 to 4 days), the boss, its
+   gauges and rewards (check the estimate against the dates), a picture (an area picture: its stage), *Add to the
+   list*, then **Save & Publish**.

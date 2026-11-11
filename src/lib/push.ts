@@ -267,10 +267,14 @@ export const setPushTopic = (topic: PushTopic, on: boolean) =>
 const speciesName = (data: GameData, dex: number) => data.species[dex]?.name ?? `#${dex}`
 
 /** A live event's title: the admin's for this language (or English), else its type's name. */
-const liveTitle = (e: LiveEvent) =>
+const liveTitle = (e: LiveEvent, data: GameData) =>
   e.title[getLang()]?.trim() ||
   e.title.en?.trim() ||
-  (e.type === 'rush' ? t('ui.live.rush.nameOf', { type: typeName(rushType(e)) }) : t(`ui.live.${e.type}.name`))
+  (e.type === 'rush'
+    ? t('ui.live.rush.nameOf', { type: typeName(rushType(e)) })
+    : e.type === 'boss'
+      ? t('ui.live.boss.nameOf', { name: data.species[e.boss.dex]?.name ?? '?' })
+      : t(`ui.live.${e.type}.name`))
 
 /** A live event's line: what it does, in a sentence. */
 function liveLine(e: LiveEvent, data: GameData, save: SaveData): string {
@@ -278,6 +282,7 @@ function liveLine(e: LiveEvent, data: GameData, save: SaveData): string {
   if (e.type === 'cash') return t('ui.push.live.cash', { pct })
   if (e.type === 'underground') return t('ui.push.live.underground')
   if (e.type === 'hatch') return t('ui.push.live.hatch', { speed: e.hatch.speed, shiny: e.hatch.shiny })
+  if (e.type === 'boss') return t('ui.push.live.boss', { name: data.species[e.boss.dex]?.name ?? '?' })
   if (e.type === 'rush')
     return t('ui.push.live.rush', { type: typeName(rushType(e)), pct: Math.round((e.rush.boost - 1) * 100) })
   if (e.type === 'calendar') return t('ui.push.live.calendar', { n: e.calendar.days.length })
@@ -343,7 +348,7 @@ export function payloadOf(n: PushNotice, save: SaveData, data: GameData): PushPa
   const e = n.event
   return {
     ...base,
-    title: t('ui.push.live.title', { name: liveTitle(e) }),
+    title: t('ui.push.live.title', { name: liveTitle(e, data) }),
     body: liveLine(e, data, save),
     url:
       e.type === 'shop'
@@ -354,7 +359,9 @@ export function payloadOf(n: PushNotice, save: SaveData, data: GameData): PushPa
             ? '/calendar'
             : e.type === 'hatch'
               ? '/daycare'
-              : '/home',
+              : e.type === 'boss'
+                ? `/boss?id=${encodeURIComponent(e.id)}`
+                : '/home',
     ...(e.banner && { image: pictureArt(e.banner).bg?.src, art: pictureArt(e.banner) }),
   }
 }

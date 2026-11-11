@@ -80,6 +80,7 @@ import { FriendBattleBits } from './kitchen/FriendBattleBits'
 import { CalendarBits } from './kitchen/CalendarBits'
 import { HatchingDayBits } from './kitchen/HatchingDayBits'
 import { TypeRushBits } from './kitchen/TypeRushBits'
+import { BossBits } from './kitchen/BossBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { TalentBits } from './kitchen/TalentBits'
 import { OutfitBits } from './kitchen/OutfitBits'
@@ -886,6 +887,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Type Rush: its tag and art, Home's square, the reward gauge (empty, partway, a reward popping, full), quest cards (to do, ready, ticking, a later step, done, damage), the recap's ×1.2, INFO (docs/71 §3)">
         <TypeRushBits />
+      </Section>
+      <Section title="Community Boss: its tag, Home's square, the gauges (fresh, two broken, all broken), the arena (a full field, only yours) (docs/71 §4)">
+        <BossBits />
       </Section>
       <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friend Ball's catch tag, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/60)">
         <FriendshipBits />

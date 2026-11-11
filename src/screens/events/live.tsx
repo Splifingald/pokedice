@@ -47,6 +47,7 @@ import { HeadTag, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
 import { cx } from '@/theme/util'
 import { bannerUrl } from './shared'
 import { RushArt, RushTag, rushSub } from './rushBits'
+import { BossArt } from './bossBits'
 import { typeName } from '@/lib/format'
 
 const HOUR = 3_600_000
@@ -56,8 +57,10 @@ const DAY = 24 * HOUR
 export function liveName(e: LiveEvent): string {
   const own = e.title[getLang()]?.trim() || e.title.en?.trim()
   if (own) return own
-  // A Type Rush is named by its run's type: "Fire Rush" (docs/71 §3).
-  return e.type === 'rush' ? t('ui.live.rush.nameOf', { type: typeName(rushType(e)) }) : t(`ui.live.${e.type}.name`)
+  // A Type Rush is named by its run's type: "Fire Rush" (docs/71 §3); a Community Boss by its boss (§4).
+  if (e.type === 'rush') return t('ui.live.rush.nameOf', { type: typeName(rushType(e)) })
+  if (e.type === 'boss') return t('ui.live.boss.nameOf', { name: useGame.getState().data.species[e.boss.dex]?.name ?? '?' })
+  return t(`ui.live.${e.type}.name`)
 }
 
 /** Time left: "2d 5h" from a day on, else the usual countdown ("5h 12m", "12:30"). */
@@ -81,6 +84,7 @@ export function liveSub(e: LiveEvent, data: GameData): string {
   if (e.type === 'cash') return t('ui.live.cash.sub', { pct: pct(e.cash.multiplier) })
   if (e.type === 'hatch') return t('ui.live.hatch.sub', { speed: times(e.hatch.speed), shiny: times(e.hatch.shiny) })
   if (e.type === 'rush') return rushSub(null, e, t)
+  if (e.type === 'boss') return t('ui.live.boss.sub', { name: data.species[e.boss.dex]?.name ?? '?' })
   if (e.type === 'shop') {
     const n = e.shop.items.length
     return t(`ui.live.shop.sub.${n === 1 ? 'one' : 'other'}`, { count: n })
@@ -147,6 +151,13 @@ export function LiveTag({ e, className }: { e: LiveEvent; className?: string }) 
       </Chip>
     )
   if (e.type === 'rush') return <RushTag e={e} className={className} />
+  if (e.type === 'boss')
+    return (
+      <Chip tone="red" className={cx('tracking-[0.04em]', className)}>
+        <PixelIcon name="sword" size={11} />
+        {t('ui.live.boss.tag')}
+      </Chip>
+    )
   return (
     <Chip tone="green" className={className}>
       {t('ui.live.pct', { pct: pct(e.cash.multiplier) })} ₽
@@ -191,6 +202,8 @@ export function LiveFx({ e, data, big }: { e: LiveEvent; data: GameData; big?: b
   if (e.type === 'underground') return null
   // A Type Rush: its type's die, badge and boost over the picture (docs/71 §3.6).
   if (e.type === 'rush') return <RushArt e={e} big={big} />
+  // A Community Boss: its menu icon, big, standing on the picture (docs/71 §4.4).
+  if (e.type === 'boss') return <BossArt e={e} big={big} />
   // A gift calendar: three wrapped gifts bobbing (what's inside is each door's surprise).
   if (e.type === 'calendar')
     return (
@@ -254,6 +267,9 @@ export const openLivePopup = (id: string) => usePopupAsked.setState({ asked: id 
 /** A gift calendar's page, for that calendar (two could run at once). */
 export const calendarPath = (e: LiveEvent) => `/calendar?id=${encodeURIComponent(e.id)}`
 
+/** A Community Boss's page (docs/71 §4.4). */
+export const bossPath = (e: LiveEvent) => `/boss?id=${encodeURIComponent(e.id)}`
+
 /** A live card's label key: what a tap opens (the shop, the Underground, the calendar, else its pop-up). */
 export const liveLabel = (e: LiveEvent): string =>
   e.type === 'shop'
@@ -262,7 +278,9 @@ export const liveLabel = (e: LiveEvent): string =>
       ? 'ui.live.labelUnderground'
       : e.type === 'calendar'
         ? 'ui.live.labelCalendar'
-        : 'ui.live.label'
+        : e.type === 'boss'
+          ? 'ui.live.labelBoss'
+          : 'ui.live.label'
 
 /** Home's squares: one per live event running for this player, the earliest started first. */
 export function LiveSquares() {
@@ -358,6 +376,13 @@ function LiveRules({ e }: { e: LiveEvent }) {
   } else if (e.type === 'cash') {
     rows.push({ icon: icon('coin'), title: t('ui.live.rules.cash.title', { pct: pct(e.cash.multiplier) }), text: t('ui.live.rules.cash.text') })
     rows.push({ icon: icon('navShop'), title: t('ui.live.rules.sell.title'), text: t('ui.live.rules.sell.text') })
+  } else if (e.type === 'boss') {
+    rows.push({ icon: icon('ball'), title: t('ui.boss.rules.place.title'), text: t('ui.boss.rules.place.text', { n: 3 }) })
+    rows.push({
+      icon: <PixelIcon name="gift" size={24} />,
+      title: t('ui.boss.rules.gauges.title'),
+      text: t('ui.boss.rules.gauges.text', { n: e.boss.gauges.length }),
+    })
   } else if (e.type === 'hatch') {
     rows.push({
       icon: <EggSprite size={24} />,
@@ -430,7 +455,8 @@ export function LivePopup() {
   const live = (asked && lives.find((e) => e.id === asked)) || next
   // The Underground's page shows its rules itself, as a card at its top (docs/43 §7): never this pop-up over it.
   const path = useLocation().pathname
-  const onItsPage = live?.type === 'underground' && path.startsWith('/underground')
+  const onItsPage =
+    (live?.type === 'underground' && path.startsWith('/underground')) || (live?.type === 'boss' && path.startsWith('/boss'))
   const open = !!live && !!save && now != null && !onItsPage && ((idle && !!asked) || (turn && !!next))
   useOnScreen('live', open)
   if (!live || !save || now == null) return null
@@ -477,7 +503,9 @@ export function LivePopup() {
       ? { label: t('ui.live.goShop'), path: '/shop' }
       : live.type === 'hatch' && isDayCareOpen(save, data)
         ? { label: t('ui.live.goDayCare'), path: '/daycare' }
-        : null
+        : live.type === 'boss'
+          ? { label: t('ui.live.goBoss'), path: bossPath(live) }
+          : null
   return (
     <Modal key={live.id} open={open} onClose={close} title={liveName(live)} className="max-w-md">
       <div className="flex flex-col gap-3">

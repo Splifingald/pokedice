@@ -49,6 +49,7 @@ import { CalendarEditor } from './CalendarBox'
 import { UndergroundBox } from './UndergroundBox'
 import { HatchingDayEditor } from './HatchingDayBox'
 import { RushEditor } from './RushBox'
+import { BossEditor } from './BossBox'
 
 const TYPE_NAME: Record<LiveType, string> = {
   shiny: 'Shiny Parade',
@@ -58,6 +59,7 @@ const TYPE_NAME: Record<LiveType, string> = {
   calendar: 'Gift calendar',
   hatch: 'Hatching Day',
   rush: 'Type Rush',
+  boss: 'Community Boss',
 }
 const STATE_CLS = { live: 'bg-good text-white', scheduled: 'bg-[#2f4f8f] text-white', ended: 'bg-shadow text-muted' }
 const HOUR = 3_600_000
@@ -118,6 +120,8 @@ function summary(e: LiveEvent, data: GameData | null): string {
   if (e.type === 'shop') return `${e.shop.items.length} item${e.shop.items.length === 1 ? '' : 's'}`
   if (e.type === 'underground') return 'walls to dig, orbs, fossils and plates (its settings are shared)'
   if (e.type === 'hatch') return `Day Care Eggs ×${e.hatch.speed} faster, shiny odds ×${e.hatch.shiny}`
+  if (e.type === 'boss')
+    return `${data?.species[e.boss.dex]?.name ?? `#${e.boss.dex}`}, ${e.boss.gauges.length} gauges`
   if (e.type === 'rush')
     return `${e.rush.rotate.length ? `${e.rush.rotate.length} types in turn` : e.rush.type}, +${pct(e.rush.boost)} %, ${e.rush.quests.length} quests, ${e.rush.gauge.length} rewards`
   if (e.type === 'calendar') {
@@ -352,6 +356,7 @@ const TYPE_BAR: Record<LiveType, string> = {
   calendar: 'bg-[#c8372a] text-white',
   hatch: 'bg-[#f2a93b] text-ink',
   rush: 'bg-[#e0457b] text-white',
+  boss: 'bg-[#4a4e69] text-white',
 }
 const CAL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 // A gift calendar or small world whose switch is off runs for nobody: its bar is hatched.
@@ -586,6 +591,8 @@ function LiveEditor({
         : resizeCalendar([], Math.round((Date.parse(draft.end) - Date.parse(draft.start)) / (24 * HOUR)) || 7)
       next = { ...next, repeat: null, calendar: { days }, end: calendarEnd(next.start, days.length) }
     }
+    // A Community Boss runs once too (docs/71 §4.1): the server reads its start and end.
+    if (next.type === 'boss' && next.repeat) next = { ...next, repeat: null }
     const auto = !draft.banner || draft.banner === liveDefaultBanner(draft)
     set(!('banner' in p) && auto ? { ...next, banner: liveDefaultBanner(next) } : next)
   }
@@ -628,7 +635,7 @@ function LiveEditor({
           <Field label="Shown from (badges)" hint="Every region's counted.">
             <NumInput value={draft.minBadges} min={0} max={80} onChange={(v) => patch({ minBadges: Math.max(0, v ?? 0) })} />
           </Field>
-          {!cal && (
+          {!cal && draft.type !== 'boss' && (
             <Field label="When" hint={draft.repeat ? 'Comes back by itself; each run is a new event for players.' : 'Between two dates.'}>
               <select
                 className={inputCls}
@@ -712,6 +719,7 @@ function LiveEditor({
         {draft.type === 'underground' && <UndergroundBox />}
         {draft.type === 'hatch' && <HatchingDayEditor e={draft} set={(hatch) => patch({ hatch })} data={data} />}
         {draft.type === 'rush' && <RushEditor e={draft} set={(rush) => patch({ rush })} data={data} />}
+        {draft.type === 'boss' && <BossEditor e={draft} set={(boss) => patch({ boss })} data={data} />}
         {cal && <CalendarEditor e={draft} set={(days) => patch({ calendar: { days } })} data={data} />}
         {draft.type === 'shop' && <ShopEditor items={draft.shop.items} set={(items) => patch({ shop: { items } })} data={data} />}
         {draft.type === 'cash' && (

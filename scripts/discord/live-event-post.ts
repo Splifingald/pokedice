@@ -48,6 +48,7 @@ export const TYPE_NAME: Record<LiveEvent['type'], string> = {
   calendar: 'Gift Calendar',
   hatch: 'Hatching Day',
   rush: 'Type Rush',
+  boss: 'Community Boss',
 }
 
 export const TYPE_EMOJI: Record<LiveEvent['type'], string> = {
@@ -58,6 +59,7 @@ export const TYPE_EMOJI: Record<LiveEvent['type'], string> = {
   calendar: '🎁',
   hatch: '🥚',
   rush: '⚡',
+  boss: '👹',
 }
 
 /** Each type's colour on Discord, so the channel reads at a glance. */
@@ -69,6 +71,7 @@ const TYPE_COLOR: Record<LiveEvent['type'], number> = {
   calendar: COLORS.red,
   hatch: COLORS.green,
   rush: COLORS.red,
+  boss: COLORS.ink,
 }
 
 /** A type's name in the post's language: the game's own French name in French. */
@@ -141,8 +144,14 @@ const times = (n: number, lang: PostLang) => `${String(Math.round(n * 10) / 10).
 const rushTypeName = (e: LiveEvent, lang: PostLang) => frenchOr(lang, `ui.type.${rushType(e)}`, cap(rushType(e)))
 const rushPct = (e: LiveEvent, lang: PostLang) => `+${Math.round((e.rush.boost - 1) * 100)}${lang === 'fr' ? ' %' : '%'}`
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+/** A Community Boss's species name, and its gauges' rewards in words. */
+const bossName = (data: GameData, e: LiveEvent) => data.species[e.boss.dex]?.name ?? 'the boss'
+const bossRewards = (data: GameData, e: LiveEvent) => rewardNames(data, e.boss.gauges.map((g) => g.reward))
 function rushRewards(data: GameData, e: LiveEvent): string[] {
-  return e.rush.gauge.map(({ reward: r }) =>
+  return rewardNames(data, e.rush.gauge.map((g) => g.reward))
+}
+function rewardNames(data: GameData, rewards: LiveEvent['rush']['gauge'][number]['reward'][]): string[] {
+  return rewards.map((r) =>
     r.kind === 'gold'
       ? `₽${r.amount.toLocaleString('en')}`
       : r.kind === 'item'
@@ -155,6 +164,8 @@ function rushRewards(data: GameData, e: LiveEvent): string[] {
 export function liveLine(data: GameData, e: LiveEvent, lang: PostLang = 'en'): string {
   if (lang === 'fr') {
     if (e.type === 'cash') return `${cashBonus(e, lang)} sur chaque ₽ gagné.`
+    if (e.type === 'boss')
+      return `Tout le monde frappe ${bossName(data, e)} ensemble : brisez ses jauges pour des récompenses.`
     if (e.type === 'rush')
       return `Les attaques ${rushTypeName(e, lang)} frappent ${rushPct(e, lang)} plus fort, et des quêtes ${rushTypeName(e, lang)} remplissent une jauge de récompenses.`
     if (e.type === 'hatch')
@@ -171,6 +182,7 @@ export function liveLine(data: GameData, e: LiveEvent, lang: PostLang = 'en'): s
     return `Les Pokémon sauvages ont ${e.shiny.multiplier}× plus de chances d’être chromatiques, ${shinyPlace(data, e, 3, lang)}.`
   }
   if (e.type === 'cash') return `${cashBonus(e, lang)} on every ₽ you earn.`
+  if (e.type === 'boss') return `Everyone hits ${bossName(data, e)} together: break its gauges for rewards.`
   if (e.type === 'rush')
     return `${rushTypeName(e, lang)} attacks hit ${rushPct(e, lang)} harder, and ${rushTypeName(e, lang)} quests fill a reward gauge.`
   if (e.type === 'hatch')
@@ -257,6 +269,11 @@ export function liveDetails(data: GameData, e: LiveEvent, lang: PostLang = 'en')
     return [
       `✨ Wild Pokémon are **${e.shiny.multiplier}×** more likely to be shiny, ${shinyPlace(data, e, 12)}.`,
     ]
+  if (e.type === 'boss')
+    return [
+      `👹 ${bossName(data, e)} appears: place 3 of your Pokémon, they hit it all the time, even while you're away.`,
+      `🎁 ${e.boss.gauges.length} HP gauges, each a reward for everyone who joins in: ${someNames(bossRewards(data, e))}.`,
+    ]
   if (e.type === 'rush')
     return [
       `⚡ ${rushTypeName(e, 'en')} attacks hit **${rushPct(e, 'en')}** harder.`,
@@ -305,6 +322,11 @@ export function liveDetails(data: GameData, e: LiveEvent, lang: PostLang = 'en')
 function liveDetailsFr(data: GameData, e: LiveEvent): string[] {
   if (e.type === 'cash')
     return [`💰 **${cashBonus(e, 'fr')}** sur chaque ₽ gagné : Dresseurs, raids, la roue… (hors ventes).`]
+  if (e.type === 'boss')
+    return [
+      `👹 ${bossName(data, e)} apparaît : place 3 de tes Pokémon, ils le frappent sans arrêt, même quand tu es absent.`,
+      `🎁 ${e.boss.gauges.length} jauges de PV, chacune une récompense pour tous les participants : ${someNames(bossRewards(data, e), 3, 'fr')}.`,
+    ]
   if (e.type === 'rush')
     return [
       `⚡ Les attaques ${rushTypeName(e, 'fr')} frappent **${rushPct(e, 'fr')}** plus fort.`,

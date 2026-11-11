@@ -67,6 +67,7 @@ import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
 import { startWorldClock } from './worlds'
 import { armDayCareTimer, followHatchingDay, tickDayCare } from './daycare'
+import { bossHomecomingNow } from './communityBoss'
 import { comeBack, markAway, settleExtreme, startExtremeClocks } from './extreme'
 import { collectOfflineGold, markOfflineAway, startOfflineClock } from './general'
 import { startWelcomeBack } from './welcomeBack'
@@ -913,6 +914,8 @@ export function startBackgroundServices() {
     tickFossils()
     settleExtreme()
     followHatchingDay()
+    // The Pokémon placed on a Community Boss that has ended come home (docs/71 §4.2).
+    bossHomecomingNow()
   }, 60_000)
   // The Day Care's timer is set from the save as it was; whatever changes it later (a resident left, a friend's
   // Pokémon invited) sets it again here.
@@ -942,6 +945,7 @@ export function startBackgroundServices() {
       checkFreshness(true)
       tickFossils()
       tickDayCare()
+      bossHomecomingNow()
       void comeBack()
       void collectOfflineGold(true)
     }

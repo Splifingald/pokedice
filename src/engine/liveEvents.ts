@@ -21,6 +21,7 @@ import { addFossil } from './fossils'
 import { sellPrice } from './items'
 import { inWorldRegion, regionCases, regionOf, regionOfArea } from './regions'
 import { newRush, normaliseRush, rushProblems, rushType } from './typeRush'
+import { bossProblems, newBoss, normaliseBoss } from './communityBoss'
 import type {
   Area,
   GameData,
@@ -71,6 +72,9 @@ export function normaliseLiveEvent(raw: Partial<LiveEvent>): LiveEvent {
     calendar: { days: Array.isArray(raw.calendar?.days) ? raw.calendar.days : [] },
     hatch: { ...d.hatch, ...raw.hatch },
     rush: normaliseRush(raw.rush),
+    boss: normaliseBoss(raw.boss),
+    // A Community Boss runs once, between its start and its end (the server reads those dates).
+    ...(raw.type === 'boss' && { repeat: null }),
   } as LiveEvent
 }
 
@@ -365,8 +369,8 @@ const CHECK_YEARS = 2
  * Undergrounds: a player digs one at a time, with one team (the server keeps one running too).
  */
 export function liveOverlap(list: readonly LiveEvent[], e: LiveEvent, now: number): LiveEvent | null {
-  // One Underground at a time, and one Type Rush (docs/71 §3): each has one page and one boost.
-  if (e.type !== 'underground' && e.type !== 'rush') return null
+  // One Underground at a time, one Type Rush and one Community Boss (docs/71): each has one page.
+  if (e.type !== 'underground' && e.type !== 'rush' && e.type !== 'boss') return null
   const from = e.repeat ? now : Math.min(now, at(e.start))
   const to = Math.max(now, e.repeat ? now : at(e.end)) + CHECK_YEARS * 366 * DAY
   const mine = liveRuns(e, from, to)
@@ -396,7 +400,7 @@ export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: Gam
   const clash = liveOverlap(list, e, now)
   if (clash)
     out.push(
-      `It overlaps another ${e.type === 'rush' ? 'Type Rush' : 'Underground'} (${clash.start.slice(0, 16).replace('T', ' ')} → ${clash.end.slice(0, 16).replace('T', ' ')} UTC): one at a time.`,
+      `It overlaps another ${e.type === 'rush' ? 'Type Rush' : e.type === 'boss' ? 'Community Boss' : 'Underground'} (${clash.start.slice(0, 16).replace('T', ' ')} → ${clash.end.slice(0, 16).replace('T', ' ')} UTC): one at a time.`,
     )
   if (e.type === 'shiny') {
     if (!(e.shiny.multiplier >= 1)) out.push('The shiny multiplier is below 1.')
@@ -415,6 +419,7 @@ export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: Gam
   }
   if (e.type === 'calendar') out.push(...calendarProblems(e, data))
   if (e.type === 'rush') out.push(...rushProblems(e, data))
+  if (e.type === 'boss') out.push(...bossProblems(e, data))
   return out
 }
 
@@ -454,6 +459,8 @@ const TYPE_BANNER: Record<LiveType, keyof typeof LIVE_BANNERS> = {
   hatch: 'hatch',
   // A Type Rush's own is its type's gym stage (liveDefaultBanner).
   rush: 'celebration',
+  // A Community Boss's: the celebration's, until the admin picks an area picture (its menu icon stands on it).
+  boss: 'celebration',
 }
 
 /**
@@ -495,5 +502,6 @@ export function newLiveEvent(id: string, start: string, end: string): LiveEvent 
     calendar: { days: [] },
     hatch: { speed: 3, shiny: 4 },
     rush: newRush(),
+    boss: newBoss(),
   }
 }
