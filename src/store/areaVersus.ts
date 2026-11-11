@@ -5,7 +5,6 @@
 import { create } from 'zustand'
 import {
   areaVersusHere,
-  areaVersusOn,
   createRng,
   parseAreaFoe,
   randomSeed,
@@ -27,6 +26,8 @@ export interface FriendRequest {
   avatar: string
   rich: boolean
   areaId: string | null
+  /** Where it came from: 'online' (the players online's INVITE, docs/70), else a real-player battle. */
+  via: string | null
   at: number
 }
 
@@ -131,14 +132,18 @@ export function parseRequests(raw: unknown): FriendRequest[] {
         avatar: avatarOf(r.avatar).id,
         rich: r.rich === true,
         areaId: typeof r.area === 'string' ? r.area : null,
+        via: typeof r.via === 'string' ? r.via : null,
         at: Number.isFinite(at) ? at : 0,
       }
     })
 }
 
-/** The requests to answer: with the friend status (game load, back to the tab) and when the Friends page opens. */
+/**
+ * The requests to answer: with the friend status (game load, back to the tab) and when the Friends page opens. Whatever
+ * the real-player battles' switch: the players online's INVITE sends them too (docs/70).
+ */
 export async function loadFriendRequests(): Promise<void> {
-  if (!signedIn() || !isSupabaseConfigured || !areaVersusOn(useGame.getState().data)) {
+  if (!signedIn() || !isSupabaseConfigured) {
     if (useAreaVersus.getState().requests.length) useAreaVersus.setState({ requests: [] })
     return
   }

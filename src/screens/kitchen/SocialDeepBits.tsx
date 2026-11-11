@@ -14,22 +14,23 @@ import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { FootTile } from '@/components/PlayerMenu'
 import { OnlinePlayersBody, PlayersOnlineView } from '@/components/PlayersOnline'
+import type { OnlinePlayer } from '@/store/online'
 import { SocialColumns, SocialDock } from '@/components/SocialTabs'
 import { TrainerCard } from '@/components/TrainerCard'
-
-// VIEW's list (docs/70): most badges first, you among them.
-const ONLINE = [
-  { name: 'Blue', look: 'green', badges: 24, me: false },
-  { name: 'Sam', look: 'red', badges: 17, me: true },
-  { name: 'Misty', look: null, badges: 16, me: false },
-  { name: 'Brock', look: null, badges: 12, me: false },
-  { name: 'Trainer', look: 'johto/silver', badges: 1, me: false },
-]
 
 const TEAM = [
   { dex: 6, level: 52 },
   { dex: 25, level: 50 },
   { dex: 9, level: 48 },
+]
+
+// VIEW's list (docs/70): most badges first, you among them; INVITE (an account), Sent, a friend, a guest (none).
+const ONLINE: OnlinePlayer[] = [
+  { name: 'Blue', look: 'green', team: TEAM, me: false, friend: false, invite: 'yes', id: 'ks-1' },
+  { name: 'Sam', look: 'red', team: TEAM.slice(0, 2), me: true, friend: false, invite: null, id: null },
+  { name: 'Misty', look: null, team: [{ dex: 121, level: 40 }, { dex: 54, level: 38, shiny: true }], me: false, friend: true, invite: null, id: null },
+  { name: 'Brock', look: 'kanto/youngster', team: [{ dex: 95, level: 30 }], me: false, friend: false, invite: 'sent', id: 'ks-2' },
+  { name: 'Trainer', look: 'johto/silver', team: [], me: false, friend: false, invite: null, id: null },
 ]
 
 export function SocialDeepBits() {
@@ -199,7 +200,7 @@ export function SocialDeepBits() {
       </div>
 
       <h3 className="m-0 text-[20px] font-normal">
-        VIEW's pop-up, inside: loading, failed, nobody yet, the list (you marked), cut to the 30 closest
+        VIEW's pop-up, inside: loading, failed, nobody yet, the list (you, INVITE, Sent, a friend, a guest), cut to the 30 closest
       </h3>
       <div className="flex w-full flex-wrap items-start gap-3">
         <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">

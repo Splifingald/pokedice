@@ -7,10 +7,15 @@ The second ask, 2026-11-11: "Add a small eye icon and button next to the counter
 that lists the online players. Up to 30, if you need to chose take those that are the closest in terms of
 progression."
 
+The third ask, 2026-11-11: "Dont show the badges amount, show the player current team and if the player is not a
+friend already and if the player still has space in their friend list, show a invite button on the right to invite
+them as friends."
+
 **Status (2026-11-09): built** on `ccr-d1834cae-4wnqoz` (from `version/2_9_7`). The user's call the same day: **no
 switch, on for everyone** (an exception to docs/15 §20, as global messages, docs/69). Migration
 `0144_players_online.sql`. **The list (2026-11-11)**: built on the same branch, from `version/2_9_7`; migration
 `0146_players_online_list.sql` (0145 is Friend Battles' switch cooldown). It shares the count's no-switch call.
+**Teams and INVITE (2026-11-11)**: the same branch and the same migration, rewritten (safe over its first version).
 
 ## 1. What players see
 
@@ -22,14 +27,24 @@ switch, on for everyone** (an exception to docs/15 §20, as global messages, doc
   minutes.
 - Hidden until the server has answered (no "0", no placeholder): offline, or before the migration is run.
 - **VIEW** at the line's end (a white `sm` button, an eye drawn for it, `PixelIcon` `eye`): a pop-up, **Players
-  online**, lists them, each with their look, their name and their badges (a badge icon and the count), most badges
-  first; your own row is gold with the board's "you" tag. **Up to 30**: when more are online, the 30 **closest to you
+  online**, lists them as board rows (`BoardRow`, compact): their look, their name and their **current team** (the
+  main save's, up to 6), most badges first (the badges themselves aren't shown); your own row is gold with the board's
+  "you" tag, a friend's blue with the Friend tag. **Up to 30**: when more are online, the 30 **closest to you
   in badges** (every region's badges together, the main save's, as global messages count them, docs/69; then the most
   recently heard from), and a line over the list says so. Loading, a failure in words ("You're offline" when it is),
   and "Nobody to show yet" are its other states. It asks the server each time it opens.
+- **INVITE** at a row's right (a white `sm` button, the friends icon) when you're signed in and can ask them: an
+  account (a guest can't be a friend), not a friend already, no request of yours waiting, and room in both friend lists
+  (`maxFriends`). It sends a **friend request** (real-player battles' own, docs/54: they answer it at the top of their
+  Friends page, ACCEPT or NO, "Invited you from the players online"), or makes you friends at once when they had asked
+  you. The row then says **Sent** (a green check), as it does for a request sent before; friends at once, it turns blue.
+  A full list on either side, or a player gone in between, says so in a toast. The friends' rate limit counts each.
+- Friend requests now show on the Friends page **whatever the real-player battles' switch** (they came only from those
+  battles until now).
 - Each one's card is the game's word, sent with the 5-minute call: the name (12 characters, "Trainer" when empty, as
-  the leaderboard does), the look, the badges. No id, account or device leaves the server. A game from before the list
-  (an older build still open) is counted but not listed until it reloads.
+  the leaderboard does), the look, the team, the badges (only to pick the closest). An account's id leaves the server
+  only with an INVITE (what the request is sent to), as a real-player battle's foe's does; a guest's device never. A
+  game from before the list (an older build still open) is counted but not listed until it reloads.
 - **No switch, no rules and no INFO** (docs/15 §20): there is nothing to do or learn, the line says it all.
 
 ## 2. No switch
@@ -39,7 +54,7 @@ On for everyone switch; the migration removes its `game_config` row and function
 
 ## 3. What it costs
 
-One tiny call, `online_ping(device id, name, look, badges)` (`src/store/online.ts`):
+One tiny call, `online_ping(device id, name, look, badges, team)` (`src/store/online.ts`):
 
 - every **5 minutes while the tab is visible**, on coming back to the tab (at most once per 5 minutes), and on opening
   the menu when the last answer is over a minute old. A hidden tab makes none.
@@ -51,7 +66,8 @@ One tiny call, `online_ping(device id, name, look, badges)` (`src/store/online.t
 - The table is **UNLOGGED** (no write-ahead log for a number that's gone in minutes; a database restart empties it,
   which costs at most 6 minutes of a smaller count), and rows older than an hour are cleared on 1 call in 20.
 - The list is one more call, `online_players(device id)`, only when VIEW is pressed: at most 30 small rows, read from
-  the same few hundred.
+  the same few hundred (and, for a signed-in player, whether each is a friend, asked, or full). INVITE is one call per
+  press.
 
 ## 4. The database (`supabase/migrations/0144_players_online.sql`, `0146_players_online_list.sql`)
 
@@ -60,19 +76,24 @@ One tiny call, `online_ping(device id, name, look, badges)` (`src/store/online.t
 - `online_ping(p_device_id text) returns int`, for anon and authenticated: stamps the caller (`auth.uid()`, else
   `device:` and the device id; a device id over 80 characters counts as nobody) and returns the players stamped in the
   last 6 minutes.
-- 0146: `online_here` gets `name`, `look`, `badges` (null for an older build's row). `online_ping` takes the card
-  (`p_name`, `p_look`, `p_badges`, all optional: the one-argument function goes, so an older build's call lands on
-  this one); a name is trimmed to 12 characters ("Trainer" when empty), a look must look like an avatar id
-  (`[a-z0-9/_-]`, else none: the game draws Red), badges 0–999 (else no card). `online_players(p_device_id text)
-  returns jsonb`, for anon and authenticated: `[{name, look, badges, me}]`, up to 30 rows with a card heard from in
-  the last 6 minutes, the closest to the caller's badges first (a caller with no card is taken as 0), returned most
-  badges first.
+- 0146: `online_here` gets `name`, `look`, `badges`, `team` (null for an older build's row). `online_ping` takes the
+  card (`p_name`, `p_look`, `p_badges`, `p_team`, all optional: the older signatures go, so an older build's call lands
+  on this one); a name is trimmed to 12 characters ("Trainer" when empty), a look must look like an avatar id
+  (`[a-z0-9/_-]`, else none: the game draws Red), badges 0–999 (else no card), the team rebuilt from what checks out
+  (6 at most, `dex` and `level` whole numbers, `shiny` only when true, nothing else kept).
+- `online_players(p_device_id text) returns jsonb`, for anon and authenticated: `[{name, look, team, me, friend,
+  invite, id}]`, up to 30 rows with a card heard from in the last 6 minutes, the closest to the caller's badges first
+  (a caller with no card is taken as 0), returned most badges first. `invite`: 'yes' / 'sent' / null as above; `id`
+  only with it.
+- `online_invite(p_to uuid) returns text`, for authenticated: 'sent', 'added', 'already', 'pending', 'self', 'offline'
+  (not in the list now), 'full', 'friend_full'. Writes 0099's `friend_requests`, which gets `via` ('online').
+- `friend_requests()` (0099's) without the real-player battles' switch, and with `via`.
 
 ## 5. Setting it up
 
-1. Run the migrations in Supabase's SQL editor, in this order (each safe to run again; `supabase/seed.sql` carries
-   neither). Once 0146 has run, don't run 0144 again: it would bring back the one-argument `online_ping` beside the
-   new one.
+1. Run the migrations in Supabase's SQL editor, in this order (each safe to run again; 0146 also over its first
+   version; `supabase/seed.sql` carries neither; 0146 needs 0099's friend requests). Once 0146 has run, don't run 0144
+   again: it would bring back the one-argument `online_ping` beside the new one.
    - <https://github.com/Splifingald/pokedice/blob/version/2_9_7/supabase/migrations/0144_players_online.sql>
    - <https://github.com/Splifingald/pokedice/blob/ccr-d1834cae-4wnqoz/supabase/migrations/0146_players_online_list.sql>
 2. That's all: the line shows in every game from the next deploy (before 0144, it stays hidden; before 0146, VIEW says
@@ -80,10 +101,14 @@ One tiny call, `online_ping(device id, name, look, badges)` (`src/store/online.t
 
 ## 6. Tests
 
-- `tests/players-online-sql.test.ts` (PGlite, 0001/0144/0146): no switch (the first version's row and function gone);
-  each account or device counted once, for 6 minutes; a hand-made device id counts as nobody; each card as sent (the
-  name cut, an odd look dropped, "Trainer"), most badges first, the caller marked, no ids; an older build's ping
-  counted but not listed; odd badges are no card; over 30, the closest in badges; a caller with no card taken as 0;
-  safe to run twice.
+- `tests/players-online-sql.test.ts` (PGlite, 0001…0099/0144/0146): no switch (the first version's row and function
+  gone); each account or device counted once, for 6 minutes; a hand-made device id counts as nobody; each card as sent
+  (the name cut, an odd look dropped, "Trainer", the team; no badges out), most badges first, the caller marked; the
+  team rebuilt (6 at most, numbers only); an older build's ping counted but not listed; odd badges are no card; over
+  30, the closest in badges; a caller with no card taken as 0. The invite: accounts only, never yourself or a guest
+  (and nothing, no id, for a guest asking); a friend marked instead; a request the other's `friend_requests()` lists
+  (`via` 'online'), "sent", then "pending"; friends at once when they had asked; a full list on either side (no button,
+  and the server says so); only the players online, only signed in; safe to run twice.
 - `/kitchen-sink` (Social and Settings, deep pass): the line for one player and for many, with VIEW; the pop-up's
-  inside loading, failed, with nobody, with a few players, and cut to the 30 closest.
+  inside loading, failed, with nobody, with players (you, INVITE, Sent, a friend, a guest's row), and cut to the 30
+  closest. Real-player battles: the Friends page's requests include one from the players online.

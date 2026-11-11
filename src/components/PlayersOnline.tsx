@@ -1,12 +1,16 @@
 // Players online (docs/70): a line at the foot of the side menu, above SYNC ONLINE, for everyone (no switch), and VIEW
-// beside it: a pop-up listing them, up to 30, the closest to this player in badges when there are more. The count and
-// the list are the server's (store/online.ts); the line is hidden until it has a count.
+// beside it: a pop-up listing them, up to 30, the closest to this player in badges when there are more, each with
+// their team, and INVITE to ask one to be friends (a friend request, answered on their Friends page). The count, the
+// list and who can be asked are the server's (store/online.ts); the line is hidden until it has a count.
 import { useEffect, useState } from 'react'
 import { t as translate, tPlural } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { avatarOf } from '@/lib/avatars'
+import { loadFriendStatus } from '@/lib/friends'
 import { offlineOr } from '@/lib/online'
+import { pushToast, useGame } from '@/store/game'
 import {
+  inviteOnline,
   loadOnlinePlayers,
   ONLINE_LIST_MAX,
   ONLINE_MENU_MS,
@@ -14,10 +18,10 @@ import {
   useOnlineCount,
   type OnlinePlayer,
 } from '@/store/online'
+import { BoardRow } from './BoardRow'
 import { PixelIcon } from './icons'
 import { Modal } from './Modal'
 import { PixelButton } from './PixelButton'
-import { TrainerLook } from './TrainerLook'
 
 /** The line itself: a green dot (as a friend online, docs/65) and "12 players online"; VIEW at its end when given. */
 export function PlayersOnlineView({ count, onView }: { count: number; onView?: () => void }) {
@@ -38,38 +42,75 @@ export function PlayersOnlineView({ count, onView }: { count: number; onView?: (
   )
 }
 
-/** The pop-up's list: each player's look, name and badges, most badges first; this player marked, as on the board. */
-export function OnlinePlayersList({ players }: { players: OnlinePlayer[] }) {
+/** INVITE, or what became of it: "Sent" once asked (here or before), nothing for a friend or when it can't be. */
+function InviteButton({ p, onFriend }: { p: OnlinePlayer; onFriend: () => void }) {
   const { t } = useT()
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'gone'>(p.invite === 'sent' ? 'sent' : 'idle')
+  const maxFriends = useGame((s) => s.data.config.maxFriends ?? 100)
+  if (!p.id || state === 'gone') return null
+  if (state === 'sent')
+    return (
+      <span className="flex shrink-0 items-center gap-1 font-pixel-sm text-[16px] leading-none text-muted">
+        <PixelIcon name="check" size={14} />
+        {t('ui.online.sent')}
+      </span>
+    )
+  const send = (id: string) => {
+    setState('sending')
+    inviteOnline(id)
+      .then((status) => {
+        if (status === 'sent' || status === 'pending') {
+          setState('sent')
+          if (status === 'sent') pushToast(t('ui.areaVersus.requestSent', { name: p.name }), 'good')
+        } else if (status === 'added' || status === 'already') {
+          setState('gone')
+          onFriend()
+          if (status === 'added') {
+            pushToast(t('ui.friends.newFriend', { name: p.name }), 'good')
+            void loadFriendStatus(true)
+          }
+        } else {
+          setState('gone')
+          if (status === 'full') pushToast(t('ui.friends.full', { max: maxFriends }), 'bad')
+          else if (status === 'friend_full') pushToast(t('ui.friends.friendFull', { name: p.name }), 'bad')
+          else if (status === 'offline') pushToast(t('ui.online.gone', { name: p.name }), 'info')
+        }
+      })
+      .catch(() => {
+        setState('idle')
+        pushToast(offlineOr(t('ui.areaVersus.requestFailed')), 'bad')
+      })
+  }
+  return (
+    <PixelButton
+      size="sm"
+      disabled={state === 'sending'}
+      onClick={() => p.id && send(p.id)}
+      aria-label={t('ui.online.inviteLabel', { name: p.name })}
+      className="relative z-[2] shrink-0"
+    >
+      <PixelIcon name="friends" size={16} />
+      {t('ui.online.invite')}
+    </PixelButton>
+  )
+}
+
+/** One player: look, name and team as on the board; you gold, a friend blue; INVITE at the right when it can be. */
+function OnlinePlayerRow({ p }: { p: OnlinePlayer }) {
+  const [friend, setFriend] = useState(p.friend)
+  return (
+    <BoardRow look={avatarOf(p.look).src} name={p.name} team={p.team} isMe={p.me} isFriend={friend} compact>
+      {!friend && <InviteButton p={p} onFriend={() => setFriend(true)} />}
+    </BoardRow>
+  )
+}
+
+/** The pop-up's list, most badges first (the badges themselves aren't shown). */
+export function OnlinePlayersList({ players }: { players: OnlinePlayer[] }) {
   return (
     <ul className="m-0 grid list-none gap-1.5 p-0">
       {players.map((p, i) => (
-        <li
-          key={i}
-          aria-current={p.me || undefined}
-          className={
-            p.me
-              ? 'flex items-center gap-2 bg-gold-pale pb-1 pl-1.5 pr-2.5 pt-1 shadow-card-gold'
-              : 'flex items-center gap-2 bg-paper pb-1 pl-1.5 pr-2.5 pt-1 shadow-ring-line'
-          }
-        >
-          <TrainerLook src={avatarOf(p.look).src} w={36} h={40} />
-          <b className="flex min-w-0 flex-1 items-center gap-1 text-[20px] font-normal leading-none">
-            <span className="truncate">{p.name}</span>
-            {p.me && (
-              <span className="shrink-0 bg-gold px-[5px] pb-px font-pixel-sm text-[16px] leading-tight text-ink">
-                {t('ui.board.youTag')}
-              </span>
-            )}
-          </b>
-          <span
-            className="flex shrink-0 items-center gap-1 text-[20px] leading-none"
-            aria-label={tPlural('ui.online.badges', p.badges)}
-          >
-            <PixelIcon name="badge" size={14} />
-            <span aria-hidden>{p.badges}</span>
-          </span>
-        </li>
+        <OnlinePlayerRow key={`${i}-${p.name}`} p={p} />
       ))}
     </ul>
   )

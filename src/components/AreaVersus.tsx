@@ -654,7 +654,11 @@ function RequestRow({ r }: { r: FriendRequest }) {
           <TrainerName name={r.name} rich={r.rich} />
         </b>
         <small className="font-pixel-sm text-[16px] leading-tight text-muted">
-          {area ? t('ui.areaVersus.metIn', { area: area.name }) : t('ui.areaVersus.metSomewhere')}
+          {r.via === 'online'
+            ? t('ui.online.invitedYou')
+            : area
+              ? t('ui.areaVersus.metIn', { area: area.name })
+              : t('ui.areaVersus.metSomewhere')}
         </small>
       </span>
       <span className="flex gap-2">

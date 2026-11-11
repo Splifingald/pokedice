@@ -57,9 +57,11 @@ const FRIEND = foe('ks-friend', {
   ],
 })
 const REQUESTS: FriendRequest[] = [
-  { id: 'ks-r1', name: 'Lina', avatar: 'red', rich: false, areaId: null, at: Date.now() - DAY },
-  { id: 'ks-r2', name: 'Kenta07', avatar: 'green', rich: true, areaId: null, at: Date.now() - 2 * DAY },
-  { id: 'ks-r3', name: 'Theo', avatar: 'kanto/lass', rich: false, areaId: null, at: Date.now() - 3 * DAY },
+  { id: 'ks-r1', name: 'Lina', avatar: 'red', rich: false, areaId: null, via: null, at: Date.now() - DAY },
+  { id: 'ks-r2', name: 'Kenta07', avatar: 'green', rich: true, areaId: null, via: null, at: Date.now() - 2 * DAY },
+  { id: 'ks-r3', name: 'Theo', avatar: 'kanto/lass', rich: false, areaId: null, via: null, at: Date.now() - 3 * DAY },
+  // From the players online's INVITE (docs/70).
+  { id: 'ks-r4', name: 'Marnie', avatar: 'kanto/lass', rich: false, areaId: null, via: 'online', at: Date.now() - DAY },
 ]
 
 export function AreaVersusBits() {
