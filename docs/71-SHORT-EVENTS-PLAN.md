@@ -38,6 +38,7 @@ posts on Discord (docs/50).
 | Who gets the rewards | **Every participant** (placed at least one Pokémon), whatever their share. |
 | HP gauges | **The admin sets** how many and the HP of each (and each one's reward), helped by **an estimate** of how long each would take. |
 | The boss page | Beyond the boss, its gauges and the player's 3 Pokémon hitting: **my damage** (and share), **top players**, **a live counter** (trainers taking part, damage in the last hour), **the rewards** on their gauges (earned ones ticked). |
+| The boss view | **The big boss at the centre, about 20 Pokémon around it**, taking turns to step in and attack. Not every player's: **the player's own** next to them, then **their friends'** first, then others. |
 | Its banner | **A full background** (an area picture the admin picks), **the boss's small menu icon** on top, not the animated fight sprite. |
 
 ## 1. What the three share
@@ -251,7 +252,11 @@ The damage is the server's alone: the game can't write it.
   number it could inflate. Closes the slot's previous placement.
 - **`boss_take_back(event_id, slot)`**: closes the placement.
 - **`boss_state(event_id)`**: the community's damage, the gauges broken, trainers taking part, the last hour's
-  damage, the top 10 (trainer name, damage), and the caller's damage, share and slots. The totals come from **a
+  damage, the top 10 (trainer name, damage), the caller's damage, share and slots, and **the field** (§4.4): up to
+  20 placed Pokémon for the arena, the caller's first, then **their friends'** (`friendships`), most recently placed
+  first, then **others** drawn at random to fill it. Each one: its species, shininess, level, its trainer's name and
+  whether they're a friend (never an instance id). The others come from a sample of 40 kept on the cached row and
+  drawn again each minute, so the crowd changes as the page refreshes and no caller costs a scan. The totals come from **a
   cached row rebuilt at most once a minute** (as the Versus board's, docs/66 §2), so a thousand players opening the
   page cost one sum a minute. The damage is a closed formula over the slot rows: nothing is written per hit.
 - **`boss_settle(event_id)`** (service role, idempotent, a `boss_results` row per event): after the end, the gauges
@@ -268,18 +273,31 @@ The damage is the server's alone: the game can't write it.
 - **The start**: the live event's pop-up, once per run: the banner, "Place 3 Pokémon: they hit Steelix every few
   seconds, even while you're away.", **Go**.
 - **The page** (`/boss?id=…`), top to bottom:
-  1. **The boss**: its animated sprite on the area's background, standing still (it never attacks), **its HP gauges
-     stacked by colour** (the current one in front, "×4" left behind it, as a fighting game's), the HP of the current
-     one, the rewards on their gauges (a tile each; earned ones ticked).
-  2. **Your 3 Pokémon**: three slots; their sprites take turns, one every 3 seconds, a number popping on the boss
-     (`−100`, "super effective" in colour). An empty slot: **PLACE**. A placed one: its hit and affinity ("Lv.50 ×2 =
-     100 a hit"), **SWAP** and **TAKE BACK**.
-  3. **Your damage**: your total, your share of the community's.
-  4. **The community**: trainers taking part, damage in the last hour.
-  5. **Top players**: the top 10, your rank under it if you're not in it.
-  6. **INFO** at the foot.
-- **The live feel**: the page plays the hits from the slots (visual only) and moves the community's bar on from the
-  last hour's pace; every minute it reads `boss_state` again and the server's numbers win.
+  1. **The gauges**: the boss's HP gauges **stacked by colour** (the current one in front, "×4" left behind it, as a
+     fighting game's), the HP of the current one, the rewards on their gauges (a tile each; earned ones ticked).
+  2. **The arena**: the area's background, **the boss big at the centre** (its animated sprite, standing still: it
+     never attacks), and **about 20 Pokémon around it** in a ring (`BOSS_FIELD = 20`) from the server's field:
+     - **the player's 3 at the front**, nearest the viewer, a gold ring under each;
+     - **their friends' next to them**, each with the friend mark (as the Friends page's);
+     - **other trainers'** filling the rest of the ring.
+
+     They **take turns**: one at a time steps toward the boss, hits (a number pops on the boss, in colour when super
+     effective) and steps back, then the next. The player's own keep their real rhythm (one of the 3 every 3 seconds,
+     their numbers in gold, the real hit); the others are a show, one every ~0.6 s, with their real hit. A tap on any
+     Pokémon names it: "Lv.48 Lucario · MISTY". When the field refreshes (every minute), those who left fade out and
+     newcomers hop in; the player's and friends' stay in place.
+     *Requests stay few* (docs/15): the boss and the player's 3 are animated sprites; the others are **menu icons**
+     from the icon sheet (no request each), drawn 2× and bobbing.
+  3. **Your 3 slots**, under the arena: an empty one **PLACE**; a placed one its icon, its hit and affinity ("Lv.50 ×2
+     = 100 a hit"), **SWAP** and **TAKE BACK**.
+  4. **Your damage**: your total, your share of the community's.
+  5. **The community**: trainers taking part, damage in the last hour.
+  6. **Top players**: the top 10, your rank under it if you're not in it (friends marked).
+  7. **INFO** at the foot.
+- **Before placing**: the arena shows the crowd already there (friends first), the front row empty with three dashed
+  spots and **PLACE**: "Your Pokémon join here."
+- **The live feel**: the community's bar moves on from the last hour's pace between reads; every minute the page reads
+  `boss_state` again (the totals and the field), and the server's numbers win.
 - **The picker**: the Box (every region's), sorted by hit (level × affinity), each with its "×2" chip; a guest sees
   "Sign in to take part."
 - **The end**: the page says "The event is over: 4 gauges broken. Your rewards are in your messages." Placed Pokémon
@@ -334,7 +352,7 @@ exactly. Do not copy its layout or subject.")
   shiny roll ×4 only when cracked during it, nothing touched off); `typeRush.test.ts` (each fact counted only for
   the type and while live, chains showing one step and keeping the counter, the order by completion, validation
   paying points and rewards once, the end's settle, the rotation of a weekly run, the admin checks);
-  `communityBoss.test.ts` (the hit and affinity with ×¼ for immunity, a slot's damage over time and after a swap,
+  `communityBoss.test.ts` (the arena's order: own, friends, others, at most 20; the hit and affinity with ×¼ for immunity, a slot's damage over time and after a swap,
   the gauges broken from a total, the estimate); `damage.test.ts` (the boost on the player's side only, its recap
   line).
 - **SQL** (`tests/community-boss-sql.test.ts`, as the Friend Battles' one): the affinity from the type chart, the
@@ -363,6 +381,8 @@ next:
 - **Community Boss**: guests can't take part (the server needs an account to count and reward them); placed
   Pokémon earn no XP; a Community Boss runs once, never on a repeat; the end result is also posted in `#🎉-events`
   ("Steelix: 4 of 5 gauges broken by 212 trainers!").
+- **The arena**: other trainers' Pokémon are menu icons (only the boss and the player's 3 load an animated sprite);
+  the crowd is drawn again every minute; friends always come before strangers, however many friends have placed.
 - **Names**: Hatching Day, Type Rush (shown as "{Type} Rush": "Fire Rush"), Community Boss. French: *Jour d'éclosion*,
   *Ruée {type}* (« Ruée Feu »), *Boss communautaire*.
 
