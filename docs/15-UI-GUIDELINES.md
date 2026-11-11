@@ -1167,7 +1167,7 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
 - **Players online** (docs/70): **no switch, no rules and no INFO**, the user's call of 2026-11-09, as global messages:
   the side menu's "12 players online" above SYNC ONLINE, a green dot as a friend online's (§50), hidden until the
-  server has a count.
+  server has a count; VIEW (an eye, `sm`) at its end opens the list of up to 30, the closest to the player in badges.
 - **A rule explained where it happens** (the League's heal between its battles, docs/42): the switch, but no rules
   pop-up and no INFO: it adds nothing to do and no page, and the result card says so the moment it heals. The Versus
   league's global board (docs/44 §8) too: a tab of the league's board, whose line over its rows is its whole rule (no

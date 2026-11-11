@@ -3,7 +3,8 @@
 // (a side column), Versus rows with the one red FIGHT and the navy ones; ScoreMeter on its way and full; a view's two
 // columns (SocialColumns); the dock pinned at a phone's foot (SocialDock, shown on demand: it pins over this page); ADD
 // FRIENDS' pop-up and adding a friend in it; a friend's card's BATTLE foot (online, offline, no record yet); the compact
-// trainer card; the menu's foot tiles; the players online line above SYNC ONLINE (docs/70: one, many).
+// trainer card; the menu's foot tiles; the players online line above SYNC ONLINE and VIEW's list (docs/70: one, many;
+// loading, failed, nobody, the list, the list cut to the 30 closest).
 import { useState } from 'react'
 import { BoardRow, ScoreMeter } from '@/components/BoardRow'
 import { AddFriendForm } from '@/components/friends/AddFriendModal'
@@ -12,9 +13,18 @@ import { FriendBattleFoot } from '@/components/friends/FriendProfileSheet'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { FootTile } from '@/components/PlayerMenu'
-import { PlayersOnlineView } from '@/components/PlayersOnline'
+import { OnlinePlayersBody, PlayersOnlineView } from '@/components/PlayersOnline'
 import { SocialColumns, SocialDock } from '@/components/SocialTabs'
 import { TrainerCard } from '@/components/TrainerCard'
+
+// VIEW's list (docs/70): most badges first, you among them.
+const ONLINE = [
+  { name: 'Blue', look: 'green', badges: 24, me: false },
+  { name: 'Sam', look: 'red', badges: 17, me: true },
+  { name: 'Misty', look: null, badges: 16, me: false },
+  { name: 'Brock', look: null, badges: 12, me: false },
+  { name: 'Trainer', look: 'johto/silver', badges: 1, me: false },
+]
 
 const TEAM = [
   { dex: 6, level: 52 },
@@ -184,8 +194,29 @@ export function SocialDeepBits() {
         Players online, above SYNC ONLINE in the menu (one player, many; hidden until the server has a count)
       </h3>
       <div className="grid w-[360px] max-w-full gap-1.5 bg-panel p-3 shadow-ring">
-        <PlayersOnlineView count={1} />
-        <PlayersOnlineView count={128} />
+        <PlayersOnlineView count={1} onView={() => {}} />
+        <PlayersOnlineView count={128} onView={() => {}} />
+      </div>
+
+      <h3 className="m-0 text-[20px] font-normal">
+        VIEW's pop-up, inside: loading, failed, nobody yet, the list (you marked), cut to the 30 closest
+      </h3>
+      <div className="flex w-full flex-wrap items-start gap-3">
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'loading' }} count={3} />
+        </div>
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'error', message: "Couldn't load the list. Try again in a moment." }} count={3} />
+        </div>
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'ready', players: [] }} count={1} />
+        </div>
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'ready', players: ONLINE.slice(0, 3) }} count={3} />
+        </div>
+        <div className="w-[360px] max-w-full bg-parchment p-3 shadow-ring">
+          <OnlinePlayersBody state={{ status: 'ready', players: ONLINE }} count={128} />
+        </div>
       </div>
     </div>
   )

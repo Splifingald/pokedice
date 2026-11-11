@@ -751,6 +751,18 @@ export const ICONS = {
   ],
   ...PACK_ICONS,
   // Every check mark: a rounded green square, a thick white tick (the user's call, 2026-10-27), over the pack's tick.
+  // An eye: "view" (the players online's list, docs/70). The tab bar's tones: navy outline, white, a blue iris.
+  eye: [
+    '....kkkkkk....',
+    '..kkwwwwwwkk..',
+    '.kwwwkkkkwwwk.',
+    'kwwwkbcbbkwwwk',
+    'kwwwkbkkbkwwwk',
+    'kwwwkbkkbkwwwk',
+    '.kwwwkkkkwwwk.',
+    '..kkwwwwwwkk..',
+    '....kkkkkk....',
+  ],
   check: [
     '..GGGGGGGGGG..',
     '.GGGGGGGGGGGG.',
@@ -812,6 +824,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   weatherCloud: NAV_PAL,
   horde: NAV_PAL,
   battleTicket: BATTLE_TICKET_PAL,
+  eye: NAV_PAL,
 }
 
 export function PixelIcon({

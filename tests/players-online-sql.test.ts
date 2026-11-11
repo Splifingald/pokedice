@@ -1,6 +1,8 @@
-// Migration 0144 against a real Postgres (PGlite, in process): players online (docs/70). No switch (the first
+// Migrations 0144 and 0146 against a real Postgres (PGlite, in process): players online (docs/70). No switch (the first
 // version's row and function go); each player (the account, else the device) counts once, for 6 minutes; a hand-made
-// device id counts as nobody. Supabase's own pieces (the auth schema, the roles) are stood in for at the top.
+// device id counts as nobody. The list: each one's card (name, look, badges) as sent, up to 30, the closest in badges
+// to the caller, most badges first, the caller marked, no ids. Supabase's own pieces (the auth schema, the roles) are
+// stood in for at the top.
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
@@ -21,6 +23,25 @@ async function ping(user: string | null, device: string | null = 'dev-1'): Promi
     user === ADMIN ? 'gregoire.ftn@gmail.com' : '',
   ])
   return (await db.query<{ n: number | null }>(`select online_ping($1) as n`, [device])).rows[0]!.n
+}
+async function as(user: string | null) {
+  await db.query(`select set_config('request.jwt.claim.sub', $1, false)`, [user ?? ''])
+  await db.query(`select set_config('request.jwt.claim.email', $1, false)`, [''])
+}
+/** A ping from this build: the device id and the card. */
+async function card(user: string | null, device: string, name: string | null, badges: number | null, look = 'red') {
+  await as(user)
+  return (await db.query<{ n: number }>(`select online_ping($1, $2, $3, $4) as n`, [device, name, look, badges])).rows[0]!.n
+}
+interface Row {
+  name: string
+  look: string | null
+  badges: number
+  me: boolean
+}
+async function list(user: string | null, device = 'dev-1'): Promise<Row[]> {
+  await as(user)
+  return (await db.query<{ r: Row[] }>(`select online_players($1) as r`, [device])).rows[0]!.r
 }
 const rows = async () => (await db.query<{ n: number }>(`select count(*)::int as n from online_here`)).rows[0]!.n
 
@@ -45,6 +66,8 @@ beforeAll(async () => {
   await db.exec(sql('0144_players_online.sql'))
   // Safe to run again.
   await db.exec(sql('0144_players_online.sql'))
+  await db.exec(sql('0146_players_online_list.sql'))
+  await db.exec(sql('0146_players_online_list.sql'))
 })
 
 afterAll(async () => {
@@ -75,5 +98,44 @@ describe('players online', () => {
     expect(await ping(null, 'x'.repeat(200))).toBe(0)
     expect(await ping(null, '  ')).toBe(0)
     expect(await rows()).toBe(0)
+  })
+})
+
+describe('the list', () => {
+  it('each card as sent, most badges first, the caller marked, no ids', async () => {
+    await card(ASH, 'a', 'Ash', 8, 'kanto/youngster')
+    await card(null, 'g1', '  ', 3)
+    await card(MISTY, 'm', 'Misty the water queen', 5, 'not a look!')
+    const r = await list(null, 'g1')
+    expect(r).toEqual([
+      { name: 'Ash', look: 'kanto/youngster', badges: 8, me: false },
+      { name: 'Misty the wa', look: null, badges: 5, me: false },
+      { name: 'Trainer', look: 'red', badges: 3, me: true },
+    ])
+    expect(JSON.stringify(r)).not.toContain(ASH)
+  })
+
+  it('an older build’s ping is counted but not listed; odd badges are no card', async () => {
+    expect(await ping(ASH)).toBe(1)
+    await card(null, 'g1', 'Gold', 1000)
+    expect(await card(MISTY, 'm', 'Misty', 2)).toBe(3)
+    expect((await list(MISTY)).map((p) => p.name)).toEqual(['Misty'])
+  })
+
+  it('more than 30: the closest in badges to the caller', async () => {
+    for (let i = 0; i < 40; i++) await card(null, `g${i}`, `P${i}`, i)
+    const r = await list(null, 'g20')
+    expect(r).toHaveLength(30)
+    const badges = r.map((p) => p.badges)
+    expect(Math.max(...badges.map((b) => Math.abs(b - 20)))).toBeLessThanOrEqual(15)
+    expect(badges).toEqual([...badges].sort((a, b) => b - a))
+    expect(r.find((p) => p.me)?.badges).toBe(20)
+  })
+
+  it('a caller with no card yet is taken as 0 badges; only the last 6 minutes', async () => {
+    for (let i = 0; i < 35; i++) await card(null, `g${i}`, `P${i}`, i)
+    await db.exec(`update online_here set at = now() - interval '7 minutes' where who = 'device:g0'`)
+    const r = await list(null, 'stranger')
+    expect(r.map((p) => p.badges)).toEqual(Array.from({ length: 30 }, (_, i) => 30 - i))
   })
 })
