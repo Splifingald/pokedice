@@ -19,6 +19,7 @@ import {
   inviteRewardsOn,
   looksOn,
   outfitsOn,
+  siteMoveOn,
   POWER_KINDS,
   powerRulesOn,
   talentsOn,
@@ -48,6 +49,7 @@ import { IdleRulesModal } from './IdleMode'
 import { OutfitRulesModal } from './Outfit'
 import { PowerRulesModal } from './PowersRules'
 import { ShinyDexRulesModal } from './ShinyDexRules'
+import { MovedRulesModal } from './SiteMove'
 import { TalentRulesModal } from './Talent'
 import { TradesRulesModal } from './trades/TradeRules'
 import { LooksRulesModal } from './TrainerLooks'
@@ -236,6 +238,13 @@ function useFeatures(save: SaveData, data: GameData): Feature[] {
       icon: 'skull',
       on: extremeOn(data),
       rules: (p) => <ExtremeRulesModal {...p} />,
+    },
+    {
+      id: 'siteMove',
+      name: t('ui.move.title'),
+      icon: 'map',
+      on: siteMoveOn(data),
+      rules: (p) => <MovedRulesModal {...p} />,
     },
   ]
 }

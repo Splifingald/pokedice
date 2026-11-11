@@ -1147,7 +1147,7 @@ Two rules for every feature that adds something players can do (an event, a mode
   the page a pop-up leads to (the next one due takes the turn there), and the one on screen keeps its turn while it's
   due. The engine decides whose turn it is from the save and what it can't know (`PopupContext`: the page, signed in,
   the server's clock, what waits outside the save); `PopupQueue` (GameLayout) works it out once for the whole game, and
-  each pop-up opens only on its own turn (`useMyTurn`). The order: the away reports (Extreme's, the General upgrades'),
+  each pop-up opens only on its own turn (`useMyTurn`). The order: the save that came from the old address (docs/72), the away reports (Extreme's, the General upgrades'),
   the offline report, the developer's answers, a global message (Home only, docs/69), friends' raid gifts, a new region's offer, Extreme mode, an invite reward
   ready, the portal run, day and night, the battle powers, hidden talents (§38), outfits (§41), a small world's opening, its finish and its goodbye, a live
   event (but the Underground and the gift calendar: `queuedLives`), a taken trade's scene (Home only), and push
@@ -1164,6 +1164,10 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   rules' title), each opening its `RulesModal` (OK). Several rules no longer open by themselves (2026-11-02: the
   gifts', hidden talents', real-player battles'; no Home notice for the General upgrades or the invite rewards), so
   this is where a player finds them all. A new feature with a `RulesModal` gets a row there too.
+- **The new address** (docs/72): the switch (`siteMove`, Admin → Config → Switches), Off. It has no page, so its pop-up
+  is its rules (**Pokédice has moved**, OK), once on the new address as the save arrives, **first** in the one-time
+  pop-ups' queue (`moved`); How to play lists it while the switch is on. The old address's cover while it hands the save
+  over (`SiteMoveCover`) is a full-screen status, not a pop-up: nothing to tap, a second or two.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
 - **Players online** (docs/70): **no switch, no rules and no INFO**, the user's call of 2026-11-09, as global messages:

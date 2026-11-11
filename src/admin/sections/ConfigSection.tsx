@@ -1682,6 +1682,8 @@ const FEATURES: Feature[] = [
   own('Friendship & Friend Market', 'friendship', 'friendship'),
   own('Welcome back', 'welcomeBack', 'welcomeBack'),
   own('Push notifications', 'push', 'push'),
+  // The new address (docs/72): the old address sends players to pokedice.graf.quest, their save with them.
+  bare('Move to the new address', 'siteMove'),
 ]
 
 const isAccess = (v: unknown): v is EventAccess => (EVENT_ACCESS as readonly unknown[]).includes(v)

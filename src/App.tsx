@@ -40,6 +40,7 @@ import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
 import { startBackgroundServices } from '@/store/sync'
 import { useRunIntent } from '@/store/extremeRuns'
+import { SiteMoveCover } from '@/components/SiteMove'
 
 /** A run chosen on the main save's Extreme page, carried out once this page plays the Extreme save (docs/48). */
 function RunIntent() {
@@ -91,6 +92,8 @@ export function App() {
           {/* The tab's title per page, and the focus on its <h1> after a move (docs/15 §7). */}
           <PageMeta />
           <RunIntent />
+          {/* The new address (docs/72): over every page while the old address hands the save over. */}
+          <SiteMoveCover />
           <Routes>
             <Route path="/" element={<Title />} />
             <Route path="/new" element={<NewGame />} />
