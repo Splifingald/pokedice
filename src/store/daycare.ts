@@ -6,6 +6,7 @@ import {
   dayCareOf,
   friendMonLevel,
   guestKey,
+  hatchSpeed,
   inviteGuest,
   isDayCareOpen,
   matesOf,
@@ -20,8 +21,11 @@ import {
 import { joinList, t } from '@/i18n'
 import { loadFriendDayCares, useFriendCares, type FriendCareMonRow, type FriendDayCareRow } from '@/lib/friends'
 import { commitSave, pushToast, useGame } from './game'
+import { currentLive } from './live'
 
 let timer: ReturnType<typeof setTimeout> | undefined
+/** Hatching Day's speed when the timer was last set (docs/71 §2): one starting or ending re-runs the checks. */
+let armedSpeed = 1
 
 /** "Eevee", or "Ditto (Noor)" for a friend's. */
 export function parentName(p: EggParent): string {
@@ -33,7 +37,7 @@ export function parentName(p: EggParent): string {
 export function tickDayCare(now = Date.now()): boolean {
   const { save, data } = useGame.getState()
   if (!save) return false
-  const res = processDayCare(save, data, now, createRng(randomSeed()))
+  const res = processDayCare(save, data, now, createRng(randomSeed()), currentLive())
   if (res.save !== save) commitSave(res.save, { auto: true })
   const parents = res.laid ? dayCareOf(res.save).egg?.parents : undefined
   if (parents)
@@ -52,11 +56,21 @@ export function armDayCareTimer() {
   const { save, data } = useGame.getState()
   if (!save || !isDayCareOpen(save, data) || dayCareOf(save).egg) return
   const now = Date.now()
-  const at = nextCheckAt(save, data, now)
+  const live = currentLive()
+  armedSpeed = hatchSpeed(live)
+  const at = nextCheckAt(save, data, now, live)
   if (at == null) return
   // setTimeout keeps 32 bits: a far check is re-armed on the way (the visibility and minute checks run it too).
   const ms = Math.min(2 ** 31 - 1, Math.max(1000, at - now + 500))
   timer = setTimeout(() => tickDayCare(), ms)
+}
+
+/**
+ * Run once a minute: a Hatching Day that started or ended since the timer was set changes when the next check is due
+ * (the clocks run faster or slower), so the checks run again and the timer follows. Otherwise nothing.
+ */
+export function followHatchingDay(): void {
+  if (hatchSpeed(currentLive()) !== armedSpeed) tickDayCare()
 }
 
 // ---------------------------------------------------------------- friends' Pokémon

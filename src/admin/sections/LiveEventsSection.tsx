@@ -47,6 +47,7 @@ import { AccessSwitch, Box, Field, NumInput, PicturePicker, inputCls } from '../
 import { useConfigRow } from './ConfigSection'
 import { CalendarEditor } from './CalendarBox'
 import { UndergroundBox } from './UndergroundBox'
+import { HatchingDayEditor } from './HatchingDayBox'
 
 const TYPE_NAME: Record<LiveType, string> = {
   shiny: 'Shiny Parade',
@@ -54,6 +55,7 @@ const TYPE_NAME: Record<LiveType, string> = {
   cash: 'Cash Flow',
   underground: 'Underground',
   calendar: 'Gift calendar',
+  hatch: 'Hatching Day',
 }
 const STATE_CLS = { live: 'bg-good text-white', scheduled: 'bg-[#2f4f8f] text-white', ended: 'bg-shadow text-muted' }
 const HOUR = 3_600_000
@@ -113,6 +115,7 @@ function summary(e: LiveEvent, data: GameData | null): string {
   if (e.type === 'cash') return `+${pct(e.cash.multiplier)} % on every ₽ earned`
   if (e.type === 'shop') return `${e.shop.items.length} item${e.shop.items.length === 1 ? '' : 's'}`
   if (e.type === 'underground') return 'walls to dig, orbs, fossils and plates (its settings are shared)'
+  if (e.type === 'hatch') return `Day Care Eggs ×${e.hatch.speed} faster, shiny odds ×${e.hatch.shiny}`
   if (e.type === 'calendar') {
     const n = e.calendar.days.length
     return `a gift a day for ${n} day${n === 1 ? '' : 's'}`
@@ -343,9 +346,10 @@ const TYPE_BAR: Record<LiveType, string> = {
   cash: 'bg-[#2e8b47] text-white',
   underground: 'bg-[#7a5a3a] text-white',
   calendar: 'bg-[#c8372a] text-white',
+  hatch: 'bg-[#f2a93b] text-ink',
 }
 const CAL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-// A gift calendar or small world whose switch is off runs for nobody: its bar is hatched.
+// A gift calendar, Hatching Day or small world whose switch is off runs for nobody: its bar is hatched.
 const HATCH = 'repeating-linear-gradient(135deg, rgba(255,255,255,.35) 0 4px, transparent 4px 8px)'
 const longDay = (d: string) =>
   new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
@@ -397,6 +401,7 @@ function LiveCalendar({
   const runs = calEntries(list, worlds, first, Date.parse(`${shiftMonth(month, 1)}-01T00:00:00Z`)).length
   const label = new Date(first).toLocaleString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })
   const calendarOff = (data?.config.giftCalendar?.access ?? 'off') === 'off'
+  const hatchOff = (data?.config.hatchingDay?.access ?? 'off') === 'off'
   const raidsOff = (data?.config.events?.raid?.access ?? 'off') === 'off'
   // The day's raid, from the raid calendar (plan and days set by hand), when they're shown.
   const raidOf = (d: string) => (raids && data ? raidOfDay(data, d) : null)
@@ -491,7 +496,10 @@ function LiveCalendar({
               {w.bars.map((b) => {
                 const e = b.entry
                 const st = liveState(b, now)
-                const off = e.kind === 'world' ? worldsAccess === 'off' : e.run.type === 'calendar' && calendarOff
+                const off =
+                  e.kind === 'world'
+                    ? worldsAccess === 'off'
+                    : (e.run.type === 'calendar' && calendarOff) || (e.run.type === 'hatch' && hatchOff)
                 const name = e.kind === 'world' ? worldTitle(e.world, data) : titleOf(e.rule)
                 const kind = e.kind === 'world' ? 'Small world' : TYPE_NAME[e.run.type]
                 const repeat = e.kind === 'live' && e.rule.repeat ? `, ${repeatText(e.rule.repeat)}` : ''
@@ -698,6 +706,7 @@ function LiveEditor({
       <div className="border-t-2 border-line pt-2">
         {draft.type === 'shiny' && <ShinyEditor e={draft} set={(shiny) => patch({ shiny })} data={data} />}
         {draft.type === 'underground' && <UndergroundBox />}
+        {draft.type === 'hatch' && <HatchingDayEditor e={draft} set={(hatch) => patch({ hatch })} data={data} />}
         {cal && <CalendarEditor e={draft} set={(days) => patch({ calendar: { days } })} data={data} />}
         {draft.type === 'shop' && <ShopEditor items={draft.shop.items} set={(items) => patch({ shop: { items } })} data={data} />}
         {draft.type === 'cash' && (

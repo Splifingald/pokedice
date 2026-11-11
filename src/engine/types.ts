@@ -1147,7 +1147,7 @@ export interface EventsConfig {
 }
 
 /** Live events (docs/20): the kinds the admin can schedule. */
-export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar'] as const
+export const LIVE_TYPES = ['shiny', 'shop', 'cash', 'underground', 'calendar', 'hatch'] as const
 export type LiveType = (typeof LIVE_TYPES)[number]
 
 /** One item of a Special Shop: its event price, how many each player may buy (null = no limit), where it's sold. */
@@ -1218,6 +1218,11 @@ export interface LiveEvent {
    * the day after its last, the last day's catch-up.
    */
   calendar: { days: CalendarReward[] }
+  /**
+   * Hatching Day (docs/71 §2): the Day Care's Egg clocks run × `speed` (with Flame Body's too), and an Egg cracked
+   * while it runs is shiny at the Day Care's odds × `shiny`.
+   */
+  hatch: { speed: number; shiny: number }
 }
 
 export interface GameConfig {
@@ -1410,6 +1415,11 @@ export interface GameConfig {
    * player's save, on the server's clock, so no server function reads it. Migration 0100 inserts the same row.
    */
   giftCalendar: { access: EventAccess }
+  /**
+   * Hatching Day (docs/71 §2): live events of type `hatch` run only with this on. Everything happens in each player's
+   * save, on the server's clock, so no server function reads it. Migration 0146 inserts the same row.
+   */
+  hatchingDay: { access: EventAccess }
   /**
    * The champions' own cinematics (docs/56): a League Champion's entrance in its own place before its fight. Only how
    * it looks and sounds, so no server function reads it. Migration 0101 inserts the same row.

@@ -280,7 +280,7 @@ export type HatchOffer = { placed: Hatch } | { choices: Hatch[] }
  */
 function offerHatch(save: SaveData, rng: Rng): HatchOffer | null {
   const { data } = useGame.getState()
-  const cracked = crackEgg(save, data, rng)
+  const cracked = crackEgg(save, data, rng, currentLive())
   if (!cracked) return null
   const choices = hatchChoices(cracked, data, Date.now(), currentLive())
   if (choices.length > 1) {
@@ -321,7 +321,7 @@ export function rushDayCareEgg(): { hatch: HatchOffer } | { refused: RushRefusal
   const { save, data } = useGame.getState()
   if (!save) return { refused: 'pair' }
   const rng = createRng(randomSeed())
-  const rushed = rushEgg(save, data, Date.now(), rng)
+  const rushed = rushEgg(save, data, Date.now(), rng, currentLive())
   if ('refused' in rushed) return rushed
   // Paid with the Egg it bought: the hatching commits both, or the Box pick does, with the Egg cracked meanwhile.
   const hatch = offerHatch(rushed.save, rng)

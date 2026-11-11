@@ -45,6 +45,7 @@ export const TYPE_NAME: Record<LiveEvent['type'], string> = {
   cash: 'Cash Flow',
   underground: 'The Underground',
   calendar: 'Gift Calendar',
+  hatch: 'Hatching Day',
 }
 
 export const TYPE_EMOJI: Record<LiveEvent['type'], string> = {
@@ -53,6 +54,7 @@ export const TYPE_EMOJI: Record<LiveEvent['type'], string> = {
   cash: '💰',
   underground: '⛏️',
   calendar: '🎁',
+  hatch: '🥚',
 }
 
 /** Each type's colour on Discord, so the channel reads at a glance. */
@@ -62,6 +64,7 @@ const TYPE_COLOR: Record<LiveEvent['type'], number> = {
   cash: COLORS.green,
   underground: COLORS.ink,
   calendar: COLORS.red,
+  hatch: COLORS.green,
 }
 
 /** A type's name in the post's language: the game's own French name in French. */
@@ -119,10 +122,15 @@ function shinyPlace(data: GameData, e: LiveEvent, max: number, lang: PostLang = 
 const cashBonus = (e: LiveEvent, lang: PostLang) =>
   `+${Math.round((e.cash.multiplier - 1) * 100)}${lang === 'fr' ? ' %' : '%'}`
 
+/** Hatching Day's numbers (docs/71 §2): "3× faster", "4× more often shiny"; a decimal comma in French. */
+const times = (n: number, lang: PostLang) => `${String(Math.round(n * 10) / 10).replace('.', lang === 'fr' ? ',' : '.')}×`
+
 /** What it does, in one line, with its numbers. */
 export function liveLine(data: GameData, e: LiveEvent, lang: PostLang = 'en'): string {
   if (lang === 'fr') {
     if (e.type === 'cash') return `${cashBonus(e, lang)} sur chaque ₽ gagné.`
+    if (e.type === 'hatch')
+      return `Les Œufs de la Pension arrivent ${times(e.hatch.speed, lang)} plus vite et éclosent ${times(e.hatch.shiny, lang)} plus souvent chromatiques.`
     if (e.type === 'underground') return 'Creuse les Souterrains pour des orbes, des fossiles et des plaques.'
     if (e.type === 'calendar')
       return `Un cadeau par jour pendant ${e.calendar.days.length} jours : ouvre la porte du jour !`
@@ -135,6 +143,8 @@ export function liveLine(data: GameData, e: LiveEvent, lang: PostLang = 'en'): s
     return `Les Pokémon sauvages ont ${e.shiny.multiplier}× plus de chances d’être chromatiques, ${shinyPlace(data, e, 3, lang)}.`
   }
   if (e.type === 'cash') return `${cashBonus(e, lang)} on every ₽ you earn.`
+  if (e.type === 'hatch')
+    return `Day Care Eggs come ${times(e.hatch.speed, lang)} faster and hatch shiny ${times(e.hatch.shiny, lang)} more often.`
   if (e.type === 'underground') return 'Dig for orbs, fossils and plates in the Underground.'
   if (e.type === 'calendar') return `A gift a day for ${e.calendar.days.length} days: open today’s door!`
   if (e.type === 'shop') {
@@ -217,6 +227,11 @@ export function liveDetails(data: GameData, e: LiveEvent, lang: PostLang = 'en')
     return [
       `✨ Wild Pokémon are **${e.shiny.multiplier}×** more likely to be shiny, ${shinyPlace(data, e, 12)}.`,
     ]
+  if (e.type === 'hatch')
+    return [
+      `🥚 Day Care Eggs come **${times(e.hatch.speed, 'en')}** faster.`,
+      `✨ Eggs that hatch are **${times(e.hatch.shiny, 'en')}** more often shiny.`,
+    ]
   if (e.type === 'underground') {
     const cfg = ugCfg(data)
     const free = freeKitRules(cfg)
@@ -255,6 +270,11 @@ export function liveDetails(data: GameData, e: LiveEvent, lang: PostLang = 'en')
 function liveDetailsFr(data: GameData, e: LiveEvent): string[] {
   if (e.type === 'cash')
     return [`💰 **${cashBonus(e, 'fr')}** sur chaque ₽ gagné : Dresseurs, raids, la roue… (hors ventes).`]
+  if (e.type === 'hatch')
+    return [
+      `🥚 Les Œufs de la Pension arrivent **${times(e.hatch.speed, 'fr')}** plus vite.`,
+      `✨ Les Œufs qui éclosent sont **${times(e.hatch.shiny, 'fr')}** plus souvent chromatiques.`,
+    ]
   if (e.type === 'shiny')
     return [
       `✨ Les Pokémon sauvages ont **${e.shiny.multiplier}×** plus de chances d’être chromatiques, ${shinyPlace(data, e, 12, 'fr')}.`,

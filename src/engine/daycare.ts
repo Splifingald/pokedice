@@ -3,7 +3,7 @@
 // parents' lines, favouring species the player doesn't have yet, in the Box of a region the player picks. The
 // Egg-group checks that lay the Eggs are in breeding.ts.
 import { rollTalent, TALENT, talentOf } from './talents'
-import { earnedGold, type LiveSet } from './liveEvents'
+import { earnedGold, hatchShiny, type LiveSet } from './liveEvents'
 import { createInstance, gainXp, instanceMaxHp, xpToNext } from './progression'
 import { isDitto } from './breeding'
 import {
@@ -472,9 +472,10 @@ const TWINS: Record<number, number> = { 29: 32, 32: 29, 313: 314, 314: 313 }
 
 /**
  * What the Egg holds: one of the parents' lines (`eggLines`), or the live region's random pool when neither passes one
- * on; then the Day Care's shiny odds and the family's hidden talent at the wild odds (docs/51). Null without an Egg.
+ * on; then the Day Care's shiny odds (× Hatching Day's while one runs, docs/71 §2: the Egg cracks now, so it's rolled
+ * now) and the family's hidden talent at the wild odds (docs/51). Null without an Egg.
  */
-export function rollHatchling(save: SaveData, data: GameData, rng: Rng): Hatchling | null {
+export function rollHatchling(save: SaveData, data: GameData, rng: Rng, live: LiveSet = null): Hatchling | null {
   if (!dayCareOf(save).egg) return null
   const lines = eggLines(save, data)
   let dex = lines.length
@@ -483,7 +484,7 @@ export function rollHatchling(save: SaveData, data: GameData, rng: Rng): Hatchli
   if (dex == null) return null
   const twin = TWINS[dex]
   if (lines.length && twin != null && hatchable(save, data, twin) && rng.next() < 0.5) dex = twin
-  const shiny = rng.next() < Math.max(0, data.config.dayCare.shinyChance)
+  const shiny = rng.next() < Math.min(1, Math.max(0, data.config.dayCare.shinyChance) * hatchShiny(live))
   const talent = rollTalent(data, dex, rng)
   return { dex, ...(shiny && { shiny: true as const }), ...(talent && { talent: true as const }) }
 }
@@ -493,11 +494,11 @@ export function rollHatchling(save: SaveData, data: GameData, rng: Rng): Hatchli
  * closing the game then rolls nothing again. The same save when it already has. Null without an Egg, or in a small
  * world (its Egg waits outside).
  */
-export function crackEgg(save: SaveData, data: GameData, rng: Rng): SaveData | null {
+export function crackEgg(save: SaveData, data: GameData, rng: Rng, live: LiveSet = null): SaveData | null {
   const dc = dayCareOf(save)
   if (!dc.egg || inWorldRegion(save, data)) return null
   if (dc.egg.hatchling) return save
-  const hatchling = rollHatchling(save, data, rng)
+  const hatchling = rollHatchling(save, data, rng, live)
   return hatchling ? { ...save, dayCare: { ...dc, egg: { ...dc.egg, hatchling } } } : null
 }
 
@@ -566,7 +567,7 @@ export function hatchEgg(
   live: LiveSet = null,
   region?: RegionId,
 ): Hatch | null {
-  const cracked = crackEgg(save, data, rng)
+  const cracked = crackEgg(save, data, rng, live)
   if (!cracked) return null
   const dc = dayCareOf(cracked)
   const egg = dc.egg!

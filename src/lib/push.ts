@@ -273,6 +273,7 @@ function liveLine(e: LiveEvent, data: GameData, save: SaveData): string {
   const pct = Math.round((e.cash.multiplier - 1) * 100)
   if (e.type === 'cash') return t('ui.push.live.cash', { pct })
   if (e.type === 'underground') return t('ui.push.live.underground')
+  if (e.type === 'hatch') return t('ui.push.live.hatch', { speed: e.hatch.speed, shiny: e.hatch.shiny })
   if (e.type === 'calendar') return t('ui.push.live.calendar', { n: e.calendar.days.length })
   if (e.type === 'shop') {
     const names = liveShopRows(save, data, e).map((r) => r.item.name)
@@ -345,7 +346,9 @@ export function payloadOf(n: PushNotice, save: SaveData, data: GameData): PushPa
           ? '/underground'
           : e.type === 'calendar'
             ? '/calendar'
-            : '/home',
+            : e.type === 'hatch'
+              ? '/daycare'
+              : '/home',
     ...(e.banner && { image: pictureArt(e.banner).bg?.src, art: pictureArt(e.banner) }),
   }
 }

@@ -78,6 +78,7 @@ import { UndergroundBits } from './kitchen/UndergroundBits'
 import { FriendshipBits } from './kitchen/FriendshipBits'
 import { FriendBattleBits } from './kitchen/FriendBattleBits'
 import { CalendarBits } from './kitchen/CalendarBits'
+import { HatchingDayBits } from './kitchen/HatchingDayBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { TalentBits } from './kitchen/TalentBits'
 import { OutfitBits } from './kitchen/OutfitBits'
@@ -878,6 +879,9 @@ export function KitchenSink() {
       </Section>
       <Section title="The gift calendar: a door in every state (shut, today's, last chance, opened with each kind of gift, missed, busy), a calendar on its 10th day, Home's card (gold, later, done), the rules card and INFO, a door's opening (docs/55)">
         <CalendarBits />
+      </Section>
+      <Section title="Hatching Day: its tag, the Day Care chip (one, two added up), Home's square, the Day Care page's strip (days left, last hours) (docs/71 §2)">
+        <HatchingDayBits />
       </Section>
       <Section title="Friendship streaks and the Friend Market: coins, a streak badge (kept, waiting), the tiers' ladder, today's gauge, the Friend Ball's catch tag, the Friendship card (streaks waiting, none, loading, failed), a friend's streak (waiting, kept, top, lost, none), the shiny of the week (to buy, too poor, sold out), the items, the rules card and INFO, a purchase's opening (docs/60)">
         <FriendshipBits />

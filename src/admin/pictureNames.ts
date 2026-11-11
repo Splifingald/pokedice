@@ -26,6 +26,7 @@ export const PICTURE_GROUPS: readonly PictureGroup[] = [
       '/backgrounds/live-shop.png': 'Special Shop — awning, shelves of balls, potions, stones',
       '/backgrounds/live-cash.png': 'Cash Flow — coin fountain and treasure on the pier',
       '/backgrounds/live-underground.png': 'Underground — lantern-lit mine, gems and cart',
+      '/backgrounds/live-hatch.png': 'Hatching Day — the Day Care yard (until its own picture, docs/71 §6.1)',
       '/backgrounds/live-halloween.png': 'Halloween — pumpkin patch under the moon',
       '/backgrounds/live-winter.png': 'Winter — snowy town, decorated tree, gifts',
       '/backgrounds/live-newyear.png': 'New Year — fireworks over the harbour',

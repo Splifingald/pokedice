@@ -1,8 +1,8 @@
 # 71 — Short events: Hatching Day, Type Rush, Community Boss
 
-Status: **plan, awaiting the user's validation** (2026-11-11), on `claude/great-cannon-5792yi` (from `version/2_9_7`).
-Order of work, as asked: questions (done, §0) → this plan → the user's go → **built one by one**: Hatching Day, then
-Type Rush, then the Community Boss (§8).
+Status: **plan validated** by the user (2026-11-11), built one by one on `claude/great-cannon-5792yi` (from
+`version/2_9_7`): **Hatching Day built** (§2.4), behind its switch, **Off**; Type Rush and the Community Boss next
+(§8).
 
 The user's ask (2026-11-11): ideas for short events of 2 to 4 days; then three picks, refined with the built-in
 questions the same day. All three are **live events** (docs/20): three new types beside the Shiny Parade, the Special
@@ -96,8 +96,30 @@ posts on Discord (docs/50).
 
 ### 2.3 Admin
 
-Admin → Events → Live events → Type **Hatching Day**: *Egg speed* (× 1.5 to 10, default 3), *Shiny odds* (× 1 to 20,
+Admin → Events → Live events → Type **Hatching Day**: *Egg speed* (× 1 to 10, default 3), *Shiny odds* (× 1 to 20,
 default 4), with the line "A pair makes an Egg about every 4 h instead of 12 h" from `breedHours`.
+
+### 2.4 Built (2026-11-11)
+
+- **Engine**: `LIVE_TYPES` has `'hatch'`; `LiveEvent.hatch` `{ speed, shiny }`; `hatchSpeed` / `hatchShiny`
+  (`src/engine/liveEvents.ts`, two add up). `breeding.ts` divides each clock's interval by it (`stepMs`, after Flame
+  Body's), so `processDayCare`, `nextClock`, `nextCheckAt`, `nextCheckProgress`, `clockDueAt` and `rushEgg` take the
+  live set; `rollHatchling` / `crackEgg` multiply the Day Care's shiny odds (capped at 1). The next Egg's push notice
+  reads the events running when it's planned (`eggNotice`). The admin can't save one at ×1 and ×1.
+- **Store**: the callers pass `currentLive()`. The Day Care's timer is set for the next check; a Hatching Day starting
+  or ending while the game is open changes when that is, so the once-a-minute background check re-runs the Day Care
+  when the speed differs from the one the timer was set with (`followHatchingDay`).
+- **Screens** (docs/15 §52): the live pop-up (×3, two rows, **Go to the Day Care**), Home's square, the chip on the
+  Day Care card's yard, the strip on the Day Care page (it reopens the pop-up). The push notice opens `/daycare`.
+- **Admin**: the type, its switch and numbers (`src/admin/sections/HatchingDayBox.tsx`), its colour in the calendar,
+  its bar hatched while the switch is off; the picture in *Event pictures*.
+- **Discord**: 🥚, its line and details, in English and French (`scripts/discord/live-event-post.ts`).
+- **Different from the plan**: no row in How to play's *Game features*: like Cash Flow and the Shiny Parade, its
+  numbers are each event's own, so its pop-up is its rules, reopened from Home's square and the Day Care strip.
+- **The picture**: until the Gemini one (§6.1), `public/backgrounds/live-hatch.png` is a stand-in cropped from the Day
+  Care yard (`public/area-art/daycare.png`). Replace the file itself: every Hatching Day picks it by default.
+- **Tests**: `tests/engine/hatchingDay.test.ts`; `e2e/hatching-day.spec.ts` (its pictures in `docs/71-short-events/`);
+  the admin's in `e2e/admin-events.spec.ts`; the kitchen sink's `HatchingDayBits`.
 
 ## 3. Type Rush
 
@@ -388,5 +410,16 @@ next:
 
 ## 10. Setting it up
 
-Written at each build: the migrations to run (their GitHub links on the branch), the switches to set, and the
-picture to drop in.
+### Hatching Day
+
+1. Run the migration in Supabase → SQL Editor:
+   https://github.com/Splifingald/pokedice/blob/claude/great-cannon-5792yi/supabase/migrations/0146_hatching_day.sql
+   (`supabase/seed.sql` carries it too, inlined). It only adds the switch, Off.
+2. The picture: make it in Gemini with §6.1's prompt, then
+   `pnpm unpixel <the Gemini file> public/backgrounds/live-hatch.png --px <its width ÷ 400> --width 400` (it replaces
+   the stand-in).
+3. Admin → Events → Live events → **New live event** → Type **Hatching Day**: set the switch to *On for admin* to try
+   it, its dates (or a weekly repeat), the Egg speed and shiny odds, *Add to the list*, then **Save & Publish**.
+4. When it looks right: the switch to *On for everyone*, Save & Publish.
+
+Type Rush and the Community Boss: written at their builds.

@@ -193,6 +193,36 @@ test('A gift calendar: its switch, the days, each day’s gift, the Advent propo
   await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
 })
 
+test('Hatching Day: its switch, its two numbers with what they mean, nothing saved that changes nothing (docs/71 §2)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await admin(page)
+  await page.goto('/admin/events?tab=live')
+  await expect(page.getByRole('button', { name: 'New live event' })).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('button', { name: 'New live event' }).click()
+  await page.getByLabel(/^Type/).selectOption({ label: 'Hatching Day' })
+  const access = page.getByRole('radiogroup', { name: 'Hatching Days: who gets them' })
+  await expect(access.getByRole('radio', { name: 'Off' })).toHaveAttribute('aria-checked', 'true')
+  await access.getByRole('radio', { name: 'On for admin' }).click()
+  // ×3 and ×4 by default, each with what it means at today's Day Care settings (12 h; 1 in 100 → 1 in 25).
+  const speed = page.getByLabel(/^Egg speed/)
+  await expect(speed).toHaveValue('3')
+  await expect(page.getByText(/A pair leaves an Egg every 4 h instead of 12 h/)).toBeVisible()
+  await expect(page.getByLabel(/^Shiny odds/)).toHaveValue('4')
+  await expect(page.getByText(/is shiny 1 in 25 \(usually 1 in 100\)/)).toBeVisible()
+  // Both at ×1: it would change nothing, so it can't be added.
+  await speed.fill('1')
+  await page.getByLabel(/^Shiny odds/).fill('1')
+  await expect(page.getByRole('alert')).toContainText('Hatching Day changes nothing')
+  await expect(page.getByRole('button', { name: 'Add to the list' })).toBeDisabled()
+  await speed.fill('2')
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Add to the list' }).click()
+  await expect(page.getByText(/Hatching Day · Day Care Eggs ×2 faster, shiny odds ×1/)).toBeVisible()
+  await expect(page.getByText(/^Unsaved: game_config/)).toBeVisible()
+})
+
 test('Trick or Treat: its switch, the tiers’ exact rates, an area’s ghosts prefilled from its wild pool', async ({ page }) => {
   test.setTimeout(120_000)
   await page.setViewportSize({ width: 1440, height: 1000 })

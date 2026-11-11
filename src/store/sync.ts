@@ -66,7 +66,7 @@ import {
 import { t } from '@/i18n'
 import { rescueIfRegionDisabled } from './regions'
 import { startWorldClock } from './worlds'
-import { armDayCareTimer, tickDayCare } from './daycare'
+import { armDayCareTimer, followHatchingDay, tickDayCare } from './daycare'
 import { comeBack, markAway, settleExtreme, startExtremeClocks } from './extreme'
 import { collectOfflineGold, markOfflineAway, startOfflineClock } from './general'
 import { startWelcomeBack } from './welcomeBack'
@@ -912,6 +912,7 @@ export function startBackgroundServices() {
     if (document.visibilityState === 'visible') checkFreshness(false)
     tickFossils()
     settleExtreme()
+    followHatchingDay()
   }, 60_000)
   // The Day Care's timer is set from the save as it was; whatever changes it later (a resident left, a friend's
   // Pokémon invited) sets it again here.

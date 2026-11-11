@@ -70,6 +70,8 @@ import {
 } from '@/store/actions'
 import { inviteFriendMon, parentName, sendGuestBack, syncFriendDayCares, tickDayCare } from '@/store/daycare'
 import { pushToast, useGame } from '@/store/game'
+import { currentLive } from '@/store/live'
+import { HatchingDayStrip } from '@/screens/events/live'
 import { cx } from '@/theme/util'
 import {
   EggCardView,
@@ -216,7 +218,7 @@ function ChecksSection({ now }: { now: number }) {
   const ps = pairs(save, data)
   // A clock without a pair isn't running: it waits for one instead of counting down.
   const line = (clock: 'breed' | 'ditto', h: number) => {
-    const at = clockDueAt(save, data, clock, now)
+    const at = clockDueAt(save, data, clock, now, currentLive())
     return at == null ? t('ui.dayCare.clockIdle', { h }) : t('ui.dayCare.clockLine', { h, time: waitText(at - now) })
   }
   // Always open (the user's call, 2026-10-27: no toggle): the clocks and each pair's group, under their title.
@@ -798,7 +800,7 @@ function DayCareScreenMain() {
   const price = cfg.rushPrice
   const short = Math.max(0, price - save.gold)
   // Null while no pair is here: no clock runs, the bar says so instead of counting down.
-  const nextCheck = nextCheckAt(save, data, now)
+  const nextCheck = nextCheckAt(save, data, now, currentLive())
   const freeMine = Math.max(0, cfg.slots - dc.residents.length)
   const freeFriends = Math.max(0, cfg.friendSlots - dc.guests.length)
   // Why the friend slots wait, if they do: no online service, the sign-in still being checked, or a database without
@@ -825,6 +827,7 @@ function DayCareScreenMain() {
       </div>
 
       <div className="flex flex-col gap-3 lg:pixel-panel lg:sticky lg:top-[calc(var(--top-bar,56px)+1rem)] lg:max-h-[calc(100dvh-var(--top-bar,56px)-2rem)] lg:overflow-y-auto lg:bg-panel lg:p-3">
+        <HatchingDayStrip />
         {dc.egg ? (
           <EggCardView
             from={

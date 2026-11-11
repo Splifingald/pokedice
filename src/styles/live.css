@@ -142,6 +142,19 @@
   box-shadow: inset 0 0 0 3px #24304f;
 }
 
+/* Hatching Day (docs/71 §2): Eggs bobbing on the grass, three on Home's square, two in the pop-up beside its ×3. */
+.lv-eggs i {
+  bottom: 10%;
+  left: calc(12% + var(--i) * 30%);
+  filter: drop-shadow(0 2px 0 #24304f);
+  animation: ev-bob 2.2s steps(4) infinite;
+  animation-delay: calc(var(--i) * 0.3s);
+}
+.lv-eggs.big i {
+  bottom: 12%;
+  left: calc(7% + var(--i) * 70%);
+}
+
 /* The pop-up's big number: ×5, +50%. */
 .lv-big {
   position: absolute;
@@ -183,7 +196,8 @@
   .lv-gauge.hot i,
   .lv-spk i,
   .lv-coins i,
-  .lv-shelf i {
+  .lv-shelf i,
+  .lv-eggs i {
     animation: none;
   }
   .lv-coins i {

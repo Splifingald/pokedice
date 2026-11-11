@@ -10,6 +10,9 @@ import {
   calendarNextAt,
   calendarReady,
   cashMultiplier,
+  hatchShiny,
+  hatchSpeed,
+  isDayCareOpen,
   kitsHeld,
   liveCovers,
   liveLeft,
@@ -26,6 +29,7 @@ import {
 import { getLang, joinList, t } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { Chip } from '@/components/Chip'
+import { EggSprite } from '@/components/EggSprite'
 import { PixelIcon } from '@/components/icons'
 import { ItemSprite } from '@/components/ItemSprite'
 import { Modal } from '@/components/Modal'
@@ -58,6 +62,8 @@ export function liveTime(ms: number): string {
 }
 
 const pct = (m: number) => Math.round((m - 1) * 100)
+/** Hatching Day's "×3", "×2.5" (docs/71 §2). */
+const times = (n: number) => `×${Math.round(n * 10) / 10}`
 const regionName = (data: GameData, id: string | null) => data.regions.find((r) => r.id === id)?.name ?? id ?? ''
 const areaNames = (data: GameData, ids: string[]) => ids.map((id) => data.areas.find((a) => a.id === id)?.name).filter((n): n is string => !!n)
 
@@ -66,6 +72,7 @@ export function liveSub(e: LiveEvent, data: GameData): string {
   if (e.type === 'underground') return t('ui.live.underground.sub')
   if (e.type === 'calendar') return t('ui.live.calendar.sub', { n: e.calendar.days.length })
   if (e.type === 'cash') return t('ui.live.cash.sub', { pct: pct(e.cash.multiplier) })
+  if (e.type === 'hatch') return t('ui.live.hatch.sub', { speed: times(e.hatch.speed), shiny: times(e.hatch.shiny) })
   if (e.type === 'shop') {
     const n = e.shop.items.length
     return t(`ui.live.shop.sub.${n === 1 ? 'one' : 'other'}`, { count: n })
@@ -124,6 +131,13 @@ export function LiveTag({ e, className }: { e: LiveEvent; className?: string }) 
         {t('ui.live.calendar.tag')}
       </Chip>
     )
+  if (e.type === 'hatch')
+    return (
+      <Chip tone="green" className={className}>
+        <EggSprite size={10} />
+        {times(e.hatch.speed)}
+      </Chip>
+    )
   return (
     <Chip tone="green" className={className}>
       {t('ui.live.pct', { pct: pct(e.cash.multiplier) })} ₽
@@ -173,6 +187,17 @@ export function LiveFx({ e, data, big }: { e: LiveEvent; data: GameData; big?: b
         {[0, 1, 2].map((i) => (
           <i key={i} style={{ ['--i' as string]: i }}>
             <PixelIcon name="gift" size={big ? 48 : 26} />
+          </i>
+        ))}
+      </span>
+    )
+  // Hatching Day: Eggs bobbing on the grass; two in the pop-up, either side of its big ×3.
+  if (e.type === 'hatch')
+    return (
+      <span className={cx('lv-fx lv-eggs', big && 'big')} aria-hidden>
+        {Array.from({ length: big ? 2 : 3 }, (_, i) => (
+          <i key={i} style={{ ['--i' as string]: i }}>
+            <EggSprite size={big ? 44 : 22} />
           </i>
         ))}
       </span>
@@ -314,6 +339,17 @@ function LiveRules({ e }: { e: LiveEvent }) {
   } else if (e.type === 'cash') {
     rows.push({ icon: icon('coin'), title: t('ui.live.rules.cash.title', { pct: pct(e.cash.multiplier) }), text: t('ui.live.rules.cash.text') })
     rows.push({ icon: icon('navShop'), title: t('ui.live.rules.sell.title'), text: t('ui.live.rules.sell.text') })
+  } else if (e.type === 'hatch') {
+    rows.push({
+      icon: <EggSprite size={24} />,
+      title: t('ui.live.rules.hatch.title', { n: times(e.hatch.speed) }),
+      text: t('ui.live.rules.hatch.text', { n: times(e.hatch.speed) }),
+    })
+    rows.push({
+      icon: icon('sparkle'),
+      title: t('ui.live.rules.hatchShiny.title', { n: times(e.hatch.shiny) }),
+      text: t('ui.live.rules.hatchShiny.text'),
+    })
   } else if (save) {
     const shelf = liveShopRows(save, data, e)
     const never = shelf.filter((r) => r.usual == null)
@@ -401,7 +437,21 @@ export function LivePopup() {
       />
     )
   const left = liveLeft(live, now)
-  const big = live.type === 'shiny' ? `×${live.shiny.multiplier}` : live.type === 'cash' ? t('ui.live.pct', { pct: pct(cashMultiplier(live)) }) : null
+  const big =
+    live.type === 'shiny'
+      ? `×${live.shiny.multiplier}`
+      : live.type === 'cash'
+        ? t('ui.live.pct', { pct: pct(cashMultiplier(live)) })
+        : live.type === 'hatch'
+          ? times(live.hatch.speed)
+          : null
+  // Hatching Day leads to the Day Care, once it's open to this player (docs/71 §2).
+  const go =
+    live.type === 'shop'
+      ? { label: t('ui.live.goShop'), path: '/shop' }
+      : live.type === 'hatch' && isDayCareOpen(save, data)
+        ? { label: t('ui.live.goDayCare'), path: '/daycare' }
+        : null
   return (
     <Modal key={live.id} open={open} onClose={close} title={liveName(live)} className="max-w-md">
       <div className="flex flex-col gap-3">
@@ -419,17 +469,17 @@ export function LivePopup() {
           <LiveGauge share={left.share} hot={left.ms < 3 * HOUR} className="lv-gauge-light" />
         </div>
         <LiveRules e={live} />
-        {live.type === 'shop' ? (
+        {go ? (
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] gap-2.5 pt-1">
             <PixelButton onClick={close}>{t('ui.common.ok')}</PixelButton>
             <PixelButton
               variant="primary"
               onClick={() => {
                 close()
-                navigate('/shop')
+                navigate(go.path)
               }}
             >
-              {t('ui.live.goShop')}
+              {go.label}
             </PixelButton>
           </div>
         ) : (
@@ -477,5 +527,91 @@ export function CashChip({ className }: { className?: string }) {
     <span role="img" aria-label={label} title={label} className={cx('inline-flex shrink-0', className)}>
       <Chip tone="green">{t('ui.live.pct', { pct: p })}</Chip>
     </span>
+  )
+}
+
+/** Hatching Day's chip as drawn: "×3" with an Egg and "×4" with a sparkle (the kitchen sink shows it alone). */
+export function HatchingDayChipView({ speed, shiny, className }: { speed: number; shiny: number; className?: string }) {
+  const { t } = useT()
+  const label = t('ui.live.chip.hatch', { speed: times(speed), shiny: times(shiny) })
+  return (
+    <span role="img" aria-label={label} title={label} className={cx('inline-flex shrink-0', className)}>
+      <Chip tone="green">
+        <EggSprite size={10} />
+        {times(speed)}
+        <PixelIcon name="sparkle" size={11} />
+        {times(shiny)}
+      </Chip>
+    </span>
+  )
+}
+
+/**
+ * Hatching Day's chip (docs/71 §2), every one running added up, on the Day Care's Home card. Nothing while none runs.
+ */
+export function HatchingDayChip({ className }: { className?: string }) {
+  const { lives } = useLive(15_000)
+  if (!lives.some((e) => e.type === 'hatch')) return null
+  return <HatchingDayChipView speed={hatchSpeed(lives)} shiny={hatchShiny(lives)} className={className} />
+}
+
+/** Hatching Day's strip as drawn: its picture, what it does, the time left (red in its last 3 hours). */
+export function HatchingDayStripView({
+  e,
+  speed,
+  shiny,
+  ms,
+  onOpen,
+  className,
+}: {
+  e: LiveEvent
+  speed: number
+  shiny: number
+  ms: number
+  onOpen: () => void
+  className?: string
+}) {
+  const { t } = useT()
+  const what = t('ui.live.hatch.sub', { speed: times(speed), shiny: times(shiny) })
+  const time = t('ui.live.endsIn', { time: liveTime(ms) })
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={t('ui.live.label', { name: liveName(e), sub: what, time })}
+      data-testid="hatching-day-strip"
+      className={cx('pixel-panel relative isolate flex min-h-[44px] w-full items-center gap-2.5 overflow-hidden px-2.5 py-1.5 text-left', className)}
+    >
+      <LivePicture e={e} className="absolute inset-0 -z-10" />
+      <EggSprite size={22} className="shrink-0" />
+      <span className="grid min-w-0 flex-1 gap-0.5 leading-none">
+        <b className="lv-ink truncate text-[19px] font-normal">{liveName(e)}</b>
+        <small className="lv-ink truncate font-pixel-sm text-[16px]">{what}</small>
+      </span>
+      <span className={cx('lv-ink shrink-0 font-pixel-sm text-[16px]', ms < 3 * HOUR ? 'text-[#ffb3a8]' : 'text-gold-light')}>
+        {time}
+      </span>
+    </button>
+  )
+}
+
+/**
+ * Hatching Day on the Day Care page (docs/71 §2): a strip over the Egg's card, every one running added up, the time
+ * left the soonest to end. A tap opens its pop-up again. Nothing while none runs.
+ */
+export function HatchingDayStrip({ className }: { className?: string }) {
+  const { lives, now } = useLive(1000)
+  const hatch = lives.filter((e) => e.type === 'hatch')
+  if (!hatch.length || now == null) return null
+  const first = hatch.reduce((a, b) => (Date.parse(b.end) < Date.parse(a.end) ? b : a))
+  return (
+    <HatchingDayStripView
+      e={first}
+      speed={hatchSpeed(lives)}
+      shiny={hatchShiny(lives)}
+      ms={liveLeft(first, now).ms}
+      onOpen={() => openLivePopup(first.id)}
+      className={className}
+    />
   )
 }

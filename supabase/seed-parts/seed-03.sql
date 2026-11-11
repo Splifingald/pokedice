@@ -920,6 +920,16 @@ insert into game_config (key, value) values ('configVersion', '1'::jsonb) on con
 insert into game_config (key, value) values ('rivalMatch', '{"access": "off", "levels": "cap", "margin": 1, "stages": "byLevel"}'::jsonb) on conflict (key) do nothing;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
+-- ↓ supabase/migrations/0141_gym_cinema.sql, inlined so this file stands alone.
+-- The Gym Leaders' entrance (docs/68): one stadium film for every Gym Leader, lit in its gym type's colours, with the
+-- leader's own picture and name, instead of the trainer stepping onto the field.
+-- 1. game_config `gymCinema`: the switch, Off (left alone when there). It only changes how an entrance looks and
+--    sounds on the player's device (the engine has decided the fight first), so no server function acts for it and
+--    none reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('gymCinema', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
 -- ↓ supabase/migrations/0139_versus_board_cache.sql, inlined so this file stands alone.
 -- The Versus board, built at most once every 15 minutes (docs/66 §2). versus_board() took about 0.7 s a call and was
 -- ~80 % of the database's time: for each of the ~330 teams it read the player's whole save (25 kB compressed) to
@@ -1116,6 +1126,17 @@ $do$;
 -- Kits live in the player's save, so no server function reads it: the row only gains the key, kept equal to the game's
 -- defaults. An admin's own value is left alone. Safe to run again.
 update game_config set value = '{"refresh": "off"}'::jsonb || value where key = 'underground' and not value ? 'refresh';
+insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
+
+-- ↓ supabase/migrations/0146_hatching_day.sql, inlined so this file stands alone.
+-- Hatching Day (docs/71 §2): a live event of type `hatch`. While it runs, the Day Care's Egg clocks run faster and an
+-- Egg cracked meanwhile is more often shiny (its two numbers are on the event, in the `liveEvents` row the admin
+-- already writes).
+-- 1. game_config `hatchingDay`: its switch, Off (left alone when there). Everything happens in each player's own save,
+--    on the server's clock (event_time), like the gift calendar's doors, so no server function acts for it and none
+--    reads it.
+-- 2. configVersion + 1, so players fetch the new content. Safe to run again.
+insert into game_config (key, value) values ('hatchingDay', '{"access": "off"}'::jsonb) on conflict (key) do nothing;
 insert into game_config (key, value) values ('configVersion', '1'::jsonb) on conflict (key) do update set value = to_jsonb(coalesce((game_config.value #>> '{}')::int, 0) + 1);
 
 insert into type_chart (attacking, defending, multiplier) values

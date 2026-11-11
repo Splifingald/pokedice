@@ -4,7 +4,9 @@
 //  - a Special Shop: items at a special price, items the Mart never sells, some limited per player;
 //  - Cash Flow: every ₽ earned × n (selling excluded, so buying and selling back never pays);
 //  - the Underground (docs/34) and the gift calendar (docs/55, engine/calendar.ts), each with a page and a switch of
-//    its own.
+//    its own;
+//  - Hatching Day (docs/71 §2): the Day Care's Eggs come faster and hatch shiny more often (engine/breeding.ts and
+//    daycare.ts read it), with a switch of its own.
 // Two of a kind add up: two Cash Flows of +50 % pay +100 %, two Shiny Parades of ×5 make ×9 where both cover.
 // An event runs once (a start and an end) or comes back (§9): every year on a date, or on a weekday, every week or on
 // some weeks of the month. Each run of a recurring event is an event of its own for players (its own id, pop-up and
@@ -64,6 +66,7 @@ export function normaliseLiveEvent(raw: Partial<LiveEvent>): LiveEvent {
     // A calendar runs once, between its start and the day after its last (engine/calendar.ts cleans each day).
     ...(raw.type === 'calendar' && { repeat: null }),
     calendar: { days: Array.isArray(raw.calendar?.days) ? raw.calendar.days : [] },
+    hatch: { ...d.hatch, ...raw.hatch },
   } as LiveEvent
 }
 
@@ -162,7 +165,11 @@ export function liveState(e: Pick<LiveEvent, 'start' | 'end'> & Partial<LiveEven
 
 /** Its type is switched on: a gift calendar has a switch of its own beyond the live events' one (docs/55). */
 export const liveTypeOn = (data: GameData, e: Pick<LiveEvent, 'type'>): boolean =>
-  e.type !== 'calendar' || eventOpenTo(data.config.giftCalendar?.access, data)
+  e.type === 'calendar'
+    ? eventOpenTo(data.config.giftCalendar?.access, data)
+    : e.type === 'hatch'
+      ? eventOpenTo(data.config.hatchingDay?.access, data)
+      : true
 
 /**
  * The events (and recurring events' runs) running at that server time, the earliest started first; none while the
@@ -248,6 +255,18 @@ export function earnedGold(base: number, live: LiveSet): { amount: number; bonus
 /** The Fortune Wheel's prize as paid: its ₽ under Cash Flow (an item stays as it is). */
 export const cashReward = (r: WheelReward, live: LiveSet): WheelReward =>
   r.kind === 'gold' ? { kind: 'gold', amount: earnedGold(r.amount, live).amount } : r
+
+// ------------------------------------------------------------------ Hatching Day (docs/71 §2)
+
+/** Two Hatching Days add their bonuses, as Cash Flow's do: ×3 and ×3 make ×5. Never below 1. */
+const hatchSum = (live: LiveSet, pick: (h: LiveEvent['hatch']) => number): number =>
+  liveList(live).reduce((m, e) => (e.type === 'hatch' && e.hatch ? m + Math.max(0, (Number(pick(e.hatch)) || 1) - 1) : m), 1)
+
+/** × the Day Care's Egg clocks run while Hatching Day runs (1 without one). Flame Body's comes on top. */
+export const hatchSpeed = (live: LiveSet): number => hatchSum(live, (h) => h.speed)
+
+/** × the Day Care's shiny odds for an Egg cracked while Hatching Day runs (1 without one). */
+export const hatchShiny = (live: LiveSet): number => hatchSum(live, (h) => h.shiny)
 
 // ------------------------------------------------------------------ Shiny Parade
 
@@ -382,6 +401,11 @@ export function liveProblems(list: readonly LiveEvent[], e: LiveEvent, data: Gam
     if (e.shiny.scope === 'region' && !e.shiny.regionId) out.push('No region picked.')
   }
   if (e.type === 'cash' && !(e.cash.multiplier > 1)) out.push('Cash Flow’s multiplier must be above 1.')
+  if (e.type === 'hatch') {
+    if (!(e.hatch.speed >= 1)) out.push('Hatching Day’s Egg speed is below ×1.')
+    if (!(e.hatch.shiny >= 1)) out.push('Hatching Day’s shiny odds are below ×1.')
+    if (!(e.hatch.speed > 1) && !(e.hatch.shiny > 1)) out.push('Hatching Day changes nothing: raise the speed or the shiny odds.')
+  }
   if (e.type === 'shop') {
     if (!e.shop.items.length) out.push('The shop has no item.')
     for (const r of e.shop.items) if (!data.items[r.key]) out.push(`Unknown item: ${r.key}.`)
@@ -396,6 +420,7 @@ export const LIVE_BANNERS = {
   shop: '/backgrounds/live-shop.png',
   cash: '/backgrounds/live-cash.png',
   underground: '/backgrounds/live-underground.png',
+  hatch: '/backgrounds/live-hatch.png',
   halloween: '/backgrounds/live-halloween.png',
   winter: '/backgrounds/live-winter.png',
   newyear: '/backgrounds/live-newyear.png',
@@ -422,6 +447,7 @@ const TYPE_BANNER: Record<LiveType, keyof typeof LIVE_BANNERS> = {
   shop: 'shop',
   // A calendar outside the occasions is a celebration (Advent's dates make it the winter picture).
   calendar: 'celebration',
+  hatch: 'hatch',
 }
 
 /**
@@ -458,5 +484,6 @@ export function newLiveEvent(id: string, start: string, end: string): LiveEvent 
     shop: { items: [] },
     cash: { multiplier: 1.5 },
     calendar: { days: [] },
+    hatch: { speed: 3, shiny: 4 },
   }
 }

@@ -27,6 +27,8 @@ import { rememberedVersus, versusBoardCached, type VersusEntry } from '@/lib/ver
 import { leagueHomeCached, type LeagueHome } from '@/lib/versusLeague'
 import { useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
+import { currentLive } from '@/store/live'
+import { HatchingDayChip } from '@/screens/events/live'
 import { areaStatus } from './areas'
 import { AreaStrip } from '@/components/AreaStrip'
 import { artUrl, dayCarePicture } from '@/fx/areaArt'
@@ -143,7 +145,7 @@ function DayCareWidget() {
   const free = Math.max(0, cfg.slots - rows.length)
   const friends = dc.guests.length
   // No pair, no clock: the gauge stays away until two here can make an Egg.
-  const check = nextCheckProgress(save, data, now)
+  const check = nextCheckProgress(save, data, now, currentLive())
   const next = check ? t('ui.home.dcNextCheck', { time: waitText(check.at - now) }) : t('ui.home.dcNoPair')
   const words = [
     ...rows.map((x) =>
@@ -164,6 +166,9 @@ function DayCareWidget() {
       picture={
         <>
           <Yard />
+          {/* Hatching Day (docs/71 §2): the Eggs come faster while it runs, so the yard says so (on the picture, so the
+              name keeps its room beside the levels gained). */}
+          <HatchingDayChip className="absolute left-1 top-1 z-[1]" />
           {/* Your two in front of the fence. */}
           <span className="absolute inset-x-0 bottom-0 flex items-end justify-center gap-1" aria-hidden>
             {rows.map((x) => (

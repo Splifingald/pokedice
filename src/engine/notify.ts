@@ -6,7 +6,7 @@ import { pairs, nextClock, type CarePair } from './breeding'
 import { dayCareOf, isDayCareOpen } from './daycare'
 import { utcDay } from './eventTime'
 import { eventOpenTo, eventUnlocked } from './events'
-import { badgesHeld, liveStartsBetween } from './liveEvents'
+import { badgesHeld, liveStartsBetween, livesFor } from './liveEvents'
 import { monName } from './nickname'
 import { todayRaid } from './raid'
 import { raidOfDay } from './raidCalendar'
@@ -89,7 +89,8 @@ function likelyPair(ps: CarePair[]): CarePair | undefined {
  */
 export function eggNotice(save: SaveData, data: GameData, now: number, off: LocalOffset): PushNotice | null {
   if (!isDayCareOpen(save, data) || dayCareOf(save).egg) return null
-  const next = nextClock(save, data, now)
+  // A Hatching Day running now brings it sooner (docs/71 §2).
+  const next = nextClock(save, data, now, livesFor(save, data, now))
   if (!next || next.at <= now) return null
   const pair = likelyPair(pairs(save, data).filter((p) => p.slow === (next.clock === 'ditto')))
   if (!pair) return null

@@ -464,6 +464,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   legendCinema: { access: 'off' },
   // The gift calendar (docs/55): off until the admin switches it on. Migration 0100 inserts the same row.
   giftCalendar: { access: 'off' },
+  // Hatching Day (docs/71 §2): off until the admin switches it on. Migration 0146 inserts the same row.
+  hatchingDay: { access: 'off' },
   // The champions' own cinematics (docs/56): off until the admin switches it on. Migration 0101 inserts the same row.
   championCinema: { access: 'off' },
   // The Gym Leaders' entrance (docs/68): off until the admin switches it on. Migration 0141 inserts the same row.
