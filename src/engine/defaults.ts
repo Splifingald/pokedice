@@ -454,6 +454,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   // The League's heal between its battles (docs/42): off until the admin switches it on. Migration 0081 inserts the
   // same row.
   leagueHeal: { access: 'off' },
+  // The new address (docs/72): Off until the domain is set up. Migration 0148 inserts the same row.
+  siteMove: { access: 'off' },
   rivalLossHeal: { access: 'off' },
   // A rival's team matched to the player (docs/61 §5.5): Off; its choices' defaults in engine/rivalMatch.ts. Migration
   // 0137 inserts the same row.

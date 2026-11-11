@@ -1386,6 +1386,11 @@ export interface GameConfig {
   /** Gifts with the developer's messages (docs/15 §23): their switch. The server reads the same row. */
   gifts: GiftsConfig
   /**
+   * The new address (docs/72): the old one hands each player's save to pokedice.graf.quest and sends them there. The
+   * server reads the same row (migration 0148, site_move_open()).
+   */
+  siteMove: { access: EventAccess }
+  /**
    * Items with a switch of their own (docs/15 §20), by item key: the Link Cable and the Bait (docs/25). An item
    * switched off is nowhere: not sold, not found, not usable. Items without an entry are always on.
    */

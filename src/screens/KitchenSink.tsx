@@ -84,6 +84,7 @@ import { BossBits } from './kitchen/BossBits'
 import { DayNightBits } from './kitchen/DayNightBits'
 import { TalentBits } from './kitchen/TalentBits'
 import { OutfitBits } from './kitchen/OutfitBits'
+import { SiteMoveBits } from './kitchen/SiteMoveBits'
 import { AreaVersusBits } from './kitchen/AreaVersusBits'
 import { IdleBits } from './kitchen/IdleBits'
 import { SuggestionBits } from './kitchen/SuggestionBits'
@@ -905,6 +906,9 @@ export function KitchenSink() {
       </Section>
       <Section title="Outfits: the sheet's chip (a tap: the rules), the hat on a tile or a gift (each size), Santa Pikachu in each view (and Raichu, which has no outfit), the rules pop-up (docs/59)">
         <OutfitBits />
+      </Section>
+      <Section title="The new address: the old address's cover while it hands the save over, the new one's pop-up once it arrived (its rules) (docs/72)">
+        <SiteMoveBits />
       </Section>
       <Section title="Real-player battles: the intro, the tag, the card (a stranger, a rich friend), the rules, the result's part (won, lost; each friend request state), the Friends page's requests (docs/54)">
         <AreaVersusBits />

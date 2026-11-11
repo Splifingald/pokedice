@@ -42,6 +42,8 @@ import { SupportPopup, useDonationReady } from './SupportModal'
 import { RaidGiftPopup } from './RaidGiftPopup'
 import { BroadcastPopup, ReplyPopup, useRepliesWaiting } from './ReplyPopup'
 import { TradesService } from './trades/TradesService'
+import { MovedPopup } from './SiteMove'
+import { useSiteMove } from '@/lib/siteMove'
 
 /**
  * What the player is owed rather than told: the answer to what they just did (a world finished: its goodbye), a report
@@ -50,6 +52,7 @@ import { TradesService } from './trades/TradesService'
  */
 const FOLLOWS_AT_ONCE = new Set<OneTimePopup>([
   'worldBye',
+  'moved',
   'away',
   'offline',
   'replies',
@@ -76,6 +79,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
   const raidGifts = useRaidGifts((s) => s.gifts.length > 0)
   const inviteReward = useInviteRewardWaiting()
   const asking = usePush((s) => !!s.asking)
+  const moved = useSiteMove((s) => s.arrived)
   const showing = usePopupOnScreen((s) => s.id)
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
@@ -115,6 +119,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
         signedIn,
         online: isSupabaseConfigured,
         now,
+        moved,
         awayReport,
         offlineReport,
         replies,
@@ -137,6 +142,7 @@ export function PopupQueue({ children }: { children: ReactNode }) {
       path,
       signedIn,
       now,
+      moved,
       awayReport,
       offlineReport,
       replies,
@@ -174,6 +180,7 @@ export function OneTimePopups() {
   return (
     <>
       <DiceTutorial />
+      <MovedPopup />
       <AwayReportModal />
       <OfflineReportModal />
       <DayCareNotice />

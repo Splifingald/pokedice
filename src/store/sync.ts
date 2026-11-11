@@ -71,6 +71,7 @@ import { bossHomecomingNow } from './communityBoss'
 import { comeBack, markAway, settleExtreme, startExtremeClocks } from './extreme'
 import { collectOfflineGold, markOfflineAway, startOfflineClock } from './general'
 import { startWelcomeBack } from './welcomeBack'
+import { startSiteMove } from '@/lib/siteMove'
 
 let syncedUser: string | null = null
 /** Nothing is pushed until the first sync for the signed-in user is settled — no overwrite while we compare. */
@@ -900,6 +901,8 @@ export function startBackgroundServices() {
   startWelcomeBack()
   void initAuth()
   void checkContent()
+  // The new address (docs/72): on the old one, the player goes there with their save once the switch says so.
+  startSiteMove(safeToReload)
   // Catching up covers a request sent before the join; hidden by then, it joins when the player comes back (relisten).
   setTimeout(() => {
     if (document.visibilityState === 'visible') void listenForReload(true)

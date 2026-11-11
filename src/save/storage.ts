@@ -34,6 +34,26 @@ export function readSlot(): SaveMode {
 
 let slot: SaveMode = readSlot()
 
+/** Where each save's pieces are kept on the device: the save, its archived copy, its backups, its cloud mark. */
+export const slotKeys = (which: SaveMode) => KEYS[which]
+
+/**
+ * Once the old address has packed the device's game data to hand it to the new one (docs/72), this page writes no
+ * more: what it would write after the packing would be lost on the way.
+ */
+let frozen = false
+export function freezeWrites() {
+  if (timer) clearTimeout(timer)
+  timer = null
+  pending = undefined
+  frozen = true
+}
+
+/** The hand-over failed: the page plays on, and writes again. */
+export function thawWrites() {
+  frozen = false
+}
+
 /** The save this page plays. */
 export const activeSlot = (): SaveMode => slot
 
@@ -176,7 +196,7 @@ const keyOf = (save: SaveData | null, fallback: SaveMode): SaveMode =>
 
 export function writeSave(save: SaveData | null, which: SaveMode = keyOf(save, slot)) {
   const ls = storage()
-  if (!ls) return
+  if (!ls || frozen) return
   const key = KEYS[which].save
   try {
     // A full device gives up the backups and archived copies before the save itself (src/save/room.ts).
@@ -193,6 +213,7 @@ let timer: ReturnType<typeof setTimeout> | null = null
 
 /** Debounced write (500 ms). */
 export function scheduleWrite(save: SaveData | null, delay = 500) {
+  if (frozen) return
   pending = { save, which: keyOf(save, slot) }
   if (timer) clearTimeout(timer)
   timer = setTimeout(flushWrite, delay)
@@ -239,6 +260,7 @@ export function readSettings(): Settings {
 }
 
 export function writeSettings(s: Settings) {
+  if (frozen) return
   try {
     storage()?.setItem(SETTINGS_KEY, JSON.stringify(s))
   } catch {

@@ -77,6 +77,13 @@ export default defineConfig({
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 900,
+    // The game, and the page on the new address that takes a save in from the old one before the game starts (docs/72).
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        move: fileURLToPath(new URL('./move.html', import.meta.url)),
+      },
+    },
   },
   // Agents' git worktrees live under .claude/: watching their copies of the repo runs out of file watchers.
   server: { watch: { ignored: ['**/.claude/**'] } },

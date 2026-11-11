@@ -1,4 +1,5 @@
 // The one zustand store. Slices: content (GameData), save (persistent), run (transient), battle, ui.
+import { settleMovedSaves } from '@/save/move'
 import { create } from 'zustand'
 import { BUNDLE, withStatics } from '@/config/bundle'
 import {
@@ -406,6 +407,8 @@ function inSlot(save: SaveData): SaveData {
 
 function boot(): Pick<GameStore, 'data' | 'rawData' | 'save' | 'corruptSaveArchived' | 'settings' | 'run' | 'battle'> {
   const rawData = compileGameData(BUNDLE)
+  // The new address (docs/72): a save that came from the old one, while this address had its own, is settled first.
+  settleMovedSaves()
   const { save, corrupt } = readSave()
   // A save carries the language it was last played in; a fresh browser falls back to readSettings' detection.
   const stored = readSettings()

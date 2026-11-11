@@ -59,6 +59,8 @@ export interface PopupContext {
   now: number | null
   /** Prof. Oak's invite was closed already in this region, on this device (kept on the device): `homeNotices`. */
   shareSeen?: boolean
+  /** The save just came over from the old address (docs/72): the new address says so, once. */
+  moved?: boolean
   /** Extreme mode's "while you were away" report is waiting. */
   awayReport?: boolean
   /** The General upgrades' "while you were away" report is waiting. */
@@ -108,6 +110,8 @@ const QUEUE = {
    * them through, so nothing comes between its steps.
    */
   diceTutorial: { due: (s, d) => diceTutorialDue(s, d) },
+  /** The new address (docs/72): the save just came over from the old one. First of what the player came back to. */
+  moved: { due: (_s, _d, c) => !!c.moved },
   /** Extreme mode: what the team healed while the player was away. */
   away: { due: (_s, _d, c) => !!c.awayReport },
   /** The General upgrades: the gold earned while away. */
