@@ -349,12 +349,14 @@ test('a new region: its partner is picked in the lab, from three Poké Balls', a
   // Under the lab, who is in the balls (in ball order): each starter's sprite, name and type.
   const starters = lab.getByRole('list', { name: 'The three starters' })
   await expect(starters.getByRole('listitem')).toHaveText([/Chikorita/, /Cyndaquil/, /Totodile/])
-  // A ball opens; "not this one" puts it back, and another one is asked about.
+  // A ball opens; "not this one" puts it back, and another one is asked about, from its card this time (a card opens
+  // its ball).
   await lab.getByRole('button', { name: 'Poké Ball 1 of 3' }).click()
   await expect(lab.getByText('Do you want to pick Chikorita?')).toBeVisible()
   expect(await seriousAxe(page)).toEqual([])
   await lab.getByRole('button', { name: 'Not this one' }).click()
-  await lab.getByRole('button', { name: 'Poké Ball 2 of 3' }).click()
+  await starters.getByRole('button', { name: /Cyndaquil/ }).click()
+  await expect(lab.getByText('Do you want to pick Cyndaquil?')).toBeVisible()
   await lab.getByRole('button', { name: 'Pick Cyndaquil' }).click()
   // LET'S GO! waits for the tap (no button presses itself, 2026-10-27); Johto begins in its first area, its first
   // encounter under way (never Home).
