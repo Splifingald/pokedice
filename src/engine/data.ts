@@ -124,7 +124,13 @@ function withWorldMythicals(areas: Area[], config: GameConfig, species: Record<n
     const mine = mythicals.filter((m) => m.areaId === a.id)
     if (!mine.length) return a
     const others = (a.legendaryBoss ?? []).filter((b) => !mine.some((m) => m.dex === b.dex))
-    return { ...a, legendaryBoss: [...others, ...mine.map((m): BossDef => ({ dex: m.dex, level: Math.max(1, Math.round(m.level)), shiny: true }))] }
+    const boss = (m: (typeof mine)[number]): BossDef => ({
+      dex: m.dex,
+      level: Math.max(1, Math.round(m.level)),
+      shiny: true,
+      ...(m.talent != null && { talent: m.talent }),
+    })
+    return { ...a, legendaryBoss: [...others, ...mine.map(boss)] }
   })
 }
 

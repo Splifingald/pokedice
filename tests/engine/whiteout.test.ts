@@ -409,6 +409,24 @@ describe('the boss and the end', () => {
     const s = toBoss()
     expect(whiteoutEncounter(s, data, CS.id)).toEqual({ kind: 'boss', dex: 460, level: 50, shiny: true })
     expect(whiteoutNoCatch(s, data, CS.id)).toBe(false)
+    // Its hidden talent (docs/51 §1b): the admin's call for the boss, while talents are on.
+    const talents = (talent: boolean | null) =>
+      makeDataWith(
+        {
+          areas: h.areas.map((a) =>
+            a.id === CS.id ? { ...a, legendaryBoss: a.legendaryBoss!.map((b) => ({ ...b, talent })) } : a,
+          ),
+          regions: [h.region],
+        },
+        {
+          smallWorlds: { access: 'all', list: [world] },
+          whiteout: { access: 'all' },
+          hiddenTalents: { access: 'all', wildChance: 0, evolveChance: 0, families: {} },
+        },
+      )
+    expect(whiteoutEncounter(s, talents(true), CS.id)).toMatchObject({ dex: 460, talent: true })
+    expect(whiteoutEncounter(s, talents(false), CS.id)).toMatchObject({ dex: 460, talent: false })
+    expect(whiteoutEncounter(s, talents(null), CS.id, createRng(1))).not.toHaveProperty('talent')
     expect(whiteoutBagShut(s, data)).toBe(true)
   })
 

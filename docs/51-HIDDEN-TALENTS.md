@@ -29,6 +29,27 @@ wild rarely carries it; catching one unlocks the talent for the whole family. Th
 | Small worlds, Extreme | **On** in both; Extreme mode keeps its own (its own save) |
 | Switch and rules | Off / On for admin / On for everyone; its rules from a tap on the Pokémon sheet's talent box only (no INFO button: the user's call, 2026-10-30; no rules pop-up either, 2026-11-01) |
 
+## 1b. A boss's talent, the admin's call
+
+The user's ask of 2026-11-12: in Snowglobe Valley, or any small world, the admin chooses whether a boss carries its
+hidden talent. **Admin → Areas → a boss → Hidden talent**: *the game's rule* (unset: a legendary or mythical always, a
+starter line never, any other at the wild odds), *always has it*, or *never has it* (`BossDef.talent`). A small world's
+mythical has the same choice in **Admin → Events → Small worlds → The shiny mythical** (`SmallWorld.mythical.talent`,
+copied onto its boss by `withWorldMythicals`). Any area's boss can use it, a small world's or not.
+
+- It holds wherever the boss is met: its challenge, its deck card, its return after a missed throw, Moonlit Glade's
+  last-round Stantler (`tracksEncounter`) and Crown Shrine's Abomasnow (`whiteoutEncounter`), a boss out of a present.
+  `bossTalent` puts the call on the encounter and `dealTalents` leaves it there; unset, `dealTalents` draws as before.
+  (Until now the glade's and the shrine's bosses never drew one: unset, they follow the game's rule like any boss.)
+- A progression raid (`raid: true`, Spear Pillar's Dialga and Palkia, the Hall of Origin's Arceus) fights without a
+  talent, as every raid Pokémon does; the call decides the one it brings once caught instead (`addRaidMon`'s
+  `talent`, from `applyProgressRaidCatch`).
+- It decides the fight and the catch: caught with its talent, it unlocks the family as any catch. Two of the game's
+  rules still stand afterwards: a legendary or mythical **always** carries its own once owned (`ownedCarries`), and a
+  family the player has already unlocked gives it to the Pokémon caught.
+- Only while Hidden talents are on; a Titan is never caught and keeps none. No switch of its own: unset, every boss
+  plays as before. No migration: the boss lives in the area's `legendary_boss` JSON, the mythical in `smallWorlds`.
+
 ## 2. The talents (`TALENT` in `src/engine/talents.ts` holds the numbers)
 
 41 talents (the user's set of 2026-10-30). Every bonus to damage, Speed or HP is a percentage, never a flat number, so
