@@ -298,6 +298,11 @@ export interface BossDef {
    */
   present?: boolean
   /**
+   * Its hidden talent (docs/51 §1b), the admin's call for this boss: true it always carries it, false never; unset, the
+   * game's rule (a legendary always, a starter line never, any other at the wild odds). Only while talents are on.
+   */
+  talent?: boolean | null
+  /**
    * A Titan (docs/62 §7): fought in two phases, the second bigger and stronger after a Herba Mystica, never caught.
    * Only while the Titans' switch is on for the player; otherwise the area has no boss.
    */
@@ -2102,8 +2107,11 @@ export interface SmallWorld {
   boosters: WorldBooster[]
   /** What its Mart sells, and nothing else. */
   shop: WorldShopItem[]
-  /** The shiny mythical: the boss of `areaId` (an area of the world), at `level`. */
-  mythical: { dex: number; level: number; areaId: string }
+  /**
+   * The shiny mythical: the boss of `areaId` (an area of the world), at `level`. `talent`: its hidden talent in the
+   * fight, as a boss's (`BossDef.talent`); unset, it carries it (a mythical always does).
+   */
+  mythical: { dex: number; level: number; areaId: string; talent?: boolean | null }
   /** Areas that open at a date-time (ISO, UTC) as well as when the one before is cleared. */
   opens: Record<string, string>
   /** Home shows it greyed, with a countdown, this many hours before its start (docs/21 §9). 0 = no preview. */
@@ -2840,6 +2848,8 @@ export interface WorldHomer {
   tradedBy?: string
   /** Bought at the Friend Market (docs/60): it waits in its species' region until one there reaches its level. */
   market?: true
+  /** A live event's reward (docs/71 §5: a Type Rush's gauge, a Community Boss's gauge): it waits the same way. */
+  reward?: true
 }
 
 /** A shiny mythical won in a small world, waiting for its home region to be started. */

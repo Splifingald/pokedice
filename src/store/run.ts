@@ -703,7 +703,7 @@ function rollWhiteout(save: SaveData, areaId: string) {
     setRun({ phase: 'wipe', trainer: null, events: [], whiteoutLost: lost })
     return
   }
-  const encounter = whiteoutEncounter(save, data, areaId)
+  const encounter = whiteoutEncounter(save, data, areaId, runRng)
   if (!encounter) return setRun({ phase: 'idle', encounter: null })
   setRun({ phase: 'preview', encounter, firstInArea: false })
 }

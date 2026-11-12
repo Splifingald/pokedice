@@ -126,6 +126,9 @@ beforeAll(async () => {
   await db.exec(sql('0147_community_boss.sql'))
   // Safe to run again.
   await db.exec(sql('0147_community_boss.sql'))
+  // The reward Pokémon go home (0148), safe to run again too.
+  await db.exec(sql('0148_event_rewards_home.sql'))
+  await db.exec(sql('0148_event_rewards_home.sql'))
   await db.exec(`
     insert into auth.users (id) values ${Object.values(U)
       .map((u) => `('${u}')`)
@@ -263,13 +266,15 @@ describe('the end', () => {
       ])
     )[0]!.r
     expect(r).toMatchObject({ broken: 2, sent: 2, total: 3100 })
-    const msgs = await as<{ user_id: string; gifts: { kind: string; talent?: boolean }[] }>(
+    const msgs = await as<{ user_id: string; gifts: { kind: string; talent?: boolean; region?: string }[] }>(
       U.admin,
       `select user_id, gifts from feedback order by user_id`,
     )
     expect(msgs.map((m) => m.user_id)).toEqual([U.ash, U.misty])
     expect(msgs[0]!.gifts.map((g) => g.kind)).toEqual(['item', 'pokemon', 'pokemon'])
     expect(msgs[0]!.gifts[1]!.talent).toBe(true)
+    // Its Pokémon go home (0148): to their own region, locked until reached; its items to the region being played.
+    expect(msgs[0]!.gifts.map((g) => g.region)).toEqual(['current', 'home', 'home'])
     // Again: nothing more is sent.
     const again = (await as<{ r: { again: boolean } }>(U.admin, `select boss_settle($1) r`, [EVENT]))[0]!.r
     expect(again.again).toBe(true)

@@ -18,6 +18,7 @@ export function HomerLockView({
   from = null,
   tradedBy = null,
   market = false,
+  reward = false,
 }: {
   name: string
   level: number
@@ -30,6 +31,8 @@ export function HomerLockView({
   tradedBy?: string | null
   /** Bought at the Friend Market (docs/60). */
   market?: boolean
+  /** A live event's reward (docs/71 §5). */
+  reward?: boolean
 }) {
   const { t } = useT()
   return (
@@ -48,6 +51,8 @@ export function HomerLockView({
         </p>
       ) : market ? (
         <p className="font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.sheet.lockMarket')}</p>
+      ) : reward ? (
+        <p className="font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.sheet.lockReward')}</p>
       ) : (
         tradedBy && (
           <p className="font-pixel-sm text-[16px] leading-tight text-muted">
@@ -77,6 +82,7 @@ export function HomerLock({ homer }: { homer: WorldHomer }) {
       from={homer.from ? regionName(homer.from) : null}
       tradedBy={homer.tradedBy || null}
       market={!!homer.market}
+      reward={!!homer.reward}
     />
   )
 }

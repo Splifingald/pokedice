@@ -8,7 +8,7 @@ import { eventOpenTo } from './events'
 import { GIFT_CURRENT, GIFT_GOLD_MAX, GIFT_QTY_MAX, placeGifts, type GiftLanded } from './gifts'
 import { livesFor } from './liveEvents'
 import { cleanOutfit } from './outfits'
-import type { CalendarReward, GameData, Gift, LiveEvent, SaveData } from './types'
+import type { CalendarReward, GameData, Gift, GiftRegion, LiveEvent, SaveData } from './types'
 
 const DAY = 24 * 3_600_000
 
@@ -139,8 +139,11 @@ export function calendarNextAt(e: LiveEvent, now: number): number | null {
   return next <= calendarRewards(e).length ? calendarOpensAt(e, next) : null
 }
 
-/** A day's reward as gifts for the region being played: a Pokémon `qty` times, each one of its own. */
-export function calendarGifts(r: CalendarReward): Gift[] {
+/**
+ * A reward as gifts: items and ₽ for the region being played, a Pokémon `qty` times, each one of its own, for `mons`
+ * (the region being played, the gift calendar's; its own region, locked until reached, the short events': GIFT_HOME).
+ */
+export function calendarGifts(r: CalendarReward, mons: GiftRegion = GIFT_CURRENT): Gift[] {
   if (r.kind === 'item') return [{ kind: 'item', key: r.key, qty: r.qty, region: GIFT_CURRENT }]
   if (r.kind === 'gold') return [{ kind: 'gold', amount: r.amount, region: GIFT_CURRENT }]
   const mon: Gift = {
@@ -150,7 +153,7 @@ export function calendarGifts(r: CalendarReward): Gift[] {
     ...(r.shiny && { shiny: true }),
     ...(r.outfit && { outfit: r.outfit }),
     ...(r.talent && { talent: true }),
-    region: GIFT_CURRENT,
+    region: mons,
   }
   return Array.from({ length: r.qty }, () => mon)
 }

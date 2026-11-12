@@ -236,6 +236,27 @@ function BossCard({ b, data, onChange, onRemove }: { b: BossDef; data: GameData;
         </label>
         <label
           className="flex flex-wrap items-center gap-2 text-lg"
+          title="Its hidden talent in the fight and once caught (docs/51 §1b), while Hidden talents are on. The game's rule: a legendary or mythical always, a starter line never, any other at the wild odds. A raid fights without one: this decides the one it brings once caught. A legendary or mythical caught still gets its own afterwards: they always carry it."
+        >
+          Hidden talent
+          <select
+            className={cx(inputCls, 'w-auto')}
+            value={b.talent == null ? '' : b.talent ? 'always' : 'never'}
+            onChange={(e) => {
+              const v = e.target.value
+              if (v) return onChange({ ...b, talent: v === 'always' })
+              const { talent: _drop, ...rest } = b
+              onChange(rest)
+            }}
+          >
+            <option value="">the game's rule</option>
+            <option value="always">always has it</option>
+            <option value="never">never has it</option>
+          </select>
+          <span className="text-sm text-muted">while Hidden talents are on (Config → Switches)</span>
+        </label>
+        <label
+          className="flex flex-wrap items-center gap-2 text-lg"
           title="A progression raid (docs/24): fought as a raid on its own page once the area is completed, instead of a boss fight in the area. Off while Raid Battles are off."
         >
           <input

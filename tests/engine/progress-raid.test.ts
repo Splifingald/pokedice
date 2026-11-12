@@ -202,6 +202,29 @@ describe('the catch', () => {
     expect(progressRaidState(r.save, data, gyarados)).toBe('done')
     expect(progressRaidState(r.save, data, lugia)).toBe('locked')
   })
+
+  it("its hidden talent: the boss's own call where the admin set one (docs/51 §1b), else the game's rule", () => {
+    const gyarados = progressRaidOf(data, progressRaidKey(LAKE.id, 130))!
+    const s = playing(withProgress(fresh(), LAKE, { cleared: true }), 'johto')
+    const talents = { access: 'all' as const, wildChance: 0, evolveChance: 0, families: {} }
+    const d = { ...data, config: { ...data.config, hiddenTalents: talents } }
+    const caught = (talent?: boolean) => {
+      const r = applyProgressRaidCatch(s, d, { ...gyarados, boss: { ...gyarados.boss, talent } }, 5, newId)
+      return !!r.save.box.find((p) => p.id === r.instId)?.talent
+    }
+    expect(caught()).toBe(false)
+    expect(caught(true)).toBe(true)
+    expect(caught(false)).toBe(false)
+    // Talents off: no call holds.
+    const r = applyProgressRaidCatch(
+      s,
+      data,
+      { ...gyarados, boss: { ...gyarados.boss, talent: true } },
+      5,
+      newId,
+    )
+    expect(r.save.box.find((p) => p.id === r.instId)?.talent).toBeFalsy()
+  })
 })
 
 describe('the NPC trainers on offer', () => {

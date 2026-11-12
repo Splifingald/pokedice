@@ -83,6 +83,10 @@ The script holds every pool and trainer; the artifact shows them with their spri
 
 Spear Pillar's pool holds the race's types by fork (§4.4), all met elsewhere. The Hall of Origin's pool too.
 
+Whether each prize carries its hidden talent is the admin's call, boss by boss (Admin → Areas → the boss → Hidden
+talent: the game's rule, always, never; docs/51 §1b), while Hidden talents are on.
+
+
 ### 2.4 The Mart
 
 Poké Ball ₽20 · Great Ball ₽50 · Ultra Ball ₽100 · **Master Ball ₽999, 1 per player** · Potion ₽15 · Super Potion ₽35 ·

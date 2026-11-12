@@ -159,18 +159,42 @@ describe('Type Rush: validating', () => {
     expect(validateRush(v.save, data, FIRE, T0, newId)).toBeNull()
   })
 
-  it('a Pokémon reward comes with its talent when the gauge says so', () => {
-    const d = makeData({ hiddenTalents: { access: 'all', wildChance: 0, evolveChance: 0, families: {} } })
-    const one = rush({
+  /** A Type Rush whose only reward, at 10 points, is this Pokémon. */
+  const monRush = (dex: number, level: number) =>
+    rush({
       rush: {
         ...FIRE.rush,
-        gauge: [{ at: 10, reward: { kind: 'pokemon', dex: 4, level: 30, talent: true, qty: 1 } }],
+        gauge: [{ at: 10, reward: { kind: 'pokemon', dex, level, talent: true, qty: 1 } }],
       },
     })
-    const s = countRush(save0(), [one], facts('ko', 10), T0)
-    const v = validateRush(s, d, one, T0, newId)!
-    const mon = [...v.save.box].reverse().find((p) => p.dex === 4)
-    expect(mon?.talent).toBe(true)
+
+  it('a reward Pokémon goes to its own region, locked until one there reaches its level (docs/71 §5)', () => {
+    const d = makeData({ hiddenTalents: { access: 'all', wildChance: 0, evolveChance: 0, families: {} } })
+    // A Lv.30 Charmander for a Kanto player whose best is Lv.5: it waits in Kanto, with its talent.
+    const one = monRush(4, 30)
+    const v = validateRush(countRush(save0(), [one], facts('ko', 10), T0), d, one, T0, newId)!
+    expect(v.save.box.some((p) => p.level === 30)).toBe(false)
+    expect(v.save.events?.worldHome?.map((h) => [h.region, h.inst.dex, h.inst.talent, h.reward])).toEqual([
+      ['kanto', 4, true, true],
+    ])
+    expect(v.rewards[0]!.landed[0]).toMatchObject({ region: 'kanto', locked: true })
+  })
+
+  it('with one of the player’s Pokémon there at its level, it arrives at once', () => {
+    const base = save0()
+    const strong = { ...base, box: base.box.map((p) => ({ ...p, level: 40 })) }
+    const one = monRush(25, 30)
+    const v = validateRush(countRush(strong, [one], facts('ko', 10), T0), data, one, T0, newId)!
+    expect(v.save.box.some((p) => p.dex === 25 && p.level === 30)).toBe(true)
+    expect(v.save.events?.worldHome ?? []).toEqual([])
+    expect(v.rewards[0]!.landed[0]!.locked).toBeUndefined()
+  })
+
+  it('from a region not started yet (Lucario, Sinnoh), it waits there', () => {
+    const one = monRush(448, 5)
+    const v = validateRush(countRush(save0(), [one], facts('ko', 10), T0), data, one, T0, newId)!
+    expect(v.save.events?.worldHome?.map((h) => h.region)).toEqual(['sinnoh'])
+    expect(v.rewards[0]!.landed[0]).toMatchObject({ region: 'sinnoh', locked: true })
   })
 })
 

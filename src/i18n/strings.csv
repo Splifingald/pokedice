@@ -1783,6 +1783,7 @@ ui.sheet.lockFrom,Home from {world},Revenu de {world},De vuelta de {world},Heimg
 ui.sheet.lockSentFrom,Sent from {region},Envoyé depuis {region},Enviado desde {region},Geschickt aus {region},Mandato da {region},Enviado de {region},Enviado de {region},{region}から送られてきた,{region}에서 보내왔어,从{region}送来
 ui.sheet.lockTradedBy,Traded by {name},Échangé par {name},Intercambiado por {name},Getauscht von {name},Scambiato da {name},Trocado por {name},Trocado por {name},{name}から交換で来た,{name}에게서 교환으로 왔어,由{name}交换而来
 ui.sheet.lockMarket,From the Friend Market,Du Marché de l’amitié,Del Mercado de la amistad,Vom Freundesmarkt,Dal Mercato dell’amicizia,Do Mercado da Amizade,Do Mercado da Amizade,フレンドマーケットから,프렌드 마켓에서,来自友谊市集
+ui.sheet.lockReward,A live event's reward,Une récompense d’événement,Una recompensa de evento,Eine Event-Belohnung,Un premio di un evento,Um prémio de evento,Um prêmio de evento,イベントのごほうび,이벤트 보상,活动奖励
 ui.sheet.letGo,Let it go,Le relâcher,Liberarlo,Freilassen,Liberarlo,Libertá-lo,Soltar,逃がす,놓아주기,放生
 ui.sheet.letGone,{name} was let go.,{name} a été relâché.,{name} fue liberado.,{name} wurde freigelassen.,{name} è stato liberato.,{name} foi libertado.,{name} foi solto.,{name}を逃がした。,{name}을(를) 놓아줬어.,已放生{name}。
 ui.nickname.title,Nickname,Surnom,Mote,Spitzname,Soprannome,Alcunha,Apelido,ニックネーム,닉네임,昵称

@@ -7,11 +7,13 @@ import {
   comboBonus,
   emptyStatus,
   catchTarget,
+  challengeEncounter,
   computeDamage,
   createBattle,
   createRng,
   dayCareXp,
   dealTalents,
+  emptyProgress,
   familyOf,
   familyTalent,
   familyUnlocked,
@@ -28,6 +30,7 @@ import {
   uniformLevels,
   type Battler,
   type BattleState,
+  type BossDef,
   type Encounter,
   type GameData,
   type HiddenTalentsConfig,
@@ -114,6 +117,33 @@ describe('who carries a talent', () => {
     }
     const dealt = dealTalents(gym, never, createRng(1))
     expect(dealt.kind === 'gym' && dealt.team.map((m) => !!m.talent)).toEqual([false, true])
+  })
+})
+
+describe("a boss's talent, the admin's call (docs/51 §1b)", () => {
+  const SEAFOAM = on.areas.find((a) => a.name === 'Seafoam Islands')!
+  const withBoss = (boss: BossDef) => ({ ...SEAFOAM, legendaryBoss: [boss] })
+  const ready = { ...emptyProgress(), roundsDone: SEAFOAM.roundsToClear ?? 0 }
+  const challenge = (boss: BossDef, d: GameData) =>
+    challengeEncounter(withBoss(boss), ready, d, 50, null, createRng(1))
+
+  it("follows the game's rule while unset: a legendary always, any other at the odds", () => {
+    expect(challenge({ dex: 144, level: 50 }, never)).toMatchObject({ kind: 'boss', dex: 144, talent: true })
+    expect(challenge({ dex: 19, level: 50 }, never)).not.toHaveProperty('talent')
+    expect(challenge({ dex: 19, level: 50 }, sure)).toMatchObject({ talent: true })
+  })
+
+  it('always or never, whatever the odds or a legendary', () => {
+    expect(challenge({ dex: 144, level: 50, talent: false }, never)).toMatchObject({ talent: false })
+    expect(challenge({ dex: 19, level: 50, talent: false }, sure)).toMatchObject({ talent: false })
+    expect(challenge({ dex: 19, level: 50, talent: true }, never)).toMatchObject({ talent: true })
+    // Dealt again (the deck's wrapper), the call stands.
+    const set = challenge({ dex: 19, level: 50, talent: false }, sure)!
+    expect(dealTalents(set, sure, createRng(1))).toBe(set)
+  })
+
+  it('changes nothing while the switch is off', () => {
+    expect(challenge({ dex: 19, level: 50, talent: true }, off)).not.toHaveProperty('talent')
   })
 })
 

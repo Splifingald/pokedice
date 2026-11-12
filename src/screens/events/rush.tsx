@@ -19,6 +19,7 @@ import {
   type SaveData,
 } from '@/engine'
 import { CalendarRewardIcon, useRewardText } from '@/components/Calendar'
+import { useWhere } from '@/components/Gifts'
 import { PixelIcon, type IconName } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { PixelButton } from '@/components/PixelButton'
@@ -262,6 +263,7 @@ export function RushModal({
   const save = useGame((s) => s.save)
   const { now } = useLive(1000)
   const text = useRewardText()
+  const where = useWhere()
   const [info, setInfo] = useState(false)
   const { v, phase, skip } = useValidation(e, open)
   const close = () => {
@@ -317,14 +319,21 @@ export function RushModal({
               aria-live="polite"
               data-testid="rush-arrived"
             >
-              {arrived.map((r) => (
-                <li key={r.index} className="flex items-center gap-2">
-                  <CalendarRewardIcon reward={r.row.reward} size={20} />
-                  <span className="text-[17px] leading-none">
-                    {t('ui.rush.received', { reward: text(r.row.reward) })}
-                  </span>
-                </li>
-              ))}
+              {arrived.map((r) => {
+                // A Pokémon goes to its own region, locked until one there reaches its level (docs/71 §5): say so.
+                const locked = r.landed.find((l) => l.locked)
+                return (
+                  <li key={r.index} className="flex items-center gap-2">
+                    <CalendarRewardIcon reward={r.row.reward} size={20} />
+                    <span className="grid gap-0.5 leading-tight">
+                      <span className="text-[17px] leading-none">
+                        {t('ui.rush.received', { reward: text(r.row.reward) })}
+                      </span>
+                      {locked && <small className="font-pixel-sm text-[15px] text-muted">{where(locked)}</small>}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
           )}
           <ul className="m-0 grid list-none gap-1.5 p-0" aria-label={t('ui.rush.questsLabel')}>
