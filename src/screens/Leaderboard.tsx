@@ -159,7 +159,7 @@ function Board() {
   const friendRows = board.filter((r) => r.friendId).length
   const open = (r: LeaderboardRow) =>
     r.friendId ? () => setCard({ id: r.friendId!, name: r.name }) : undefined
-  const meRef = useSnapToMe(`${tab}:${board.findIndex((r) => r.isMe)}:${found}:${filtering}`)
+  const meRef = useSnapToMe(found)
   const mine = board.find((r) => r.isMe)
   const mineHall = hall.find((r) => r.isMe)
   const me = mine ?? mineHall
