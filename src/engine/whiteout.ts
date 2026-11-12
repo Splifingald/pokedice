@@ -8,7 +8,8 @@
 // area (the Mart, the menus and Home stay open). Every number is the area's (`Area.mode`, Admin → Areas), the switch
 // the admin's (`whiteout`).
 import type { Encounter } from './encounters'
-import { fightBosses } from './encounters'
+import { bossTalent, dealTalents, fightBosses, NO_DRAW } from './encounters'
+import type { Rng } from './rng'
 import { nightmareLock } from './nightmare'
 import { instanceMaxHp } from './progression'
 import type {
@@ -201,17 +202,29 @@ export function whiteoutFoe(
 }
 
 /**
- * The next encounter: the wave's foe (always the same one there, never shiny) or, after the last bonfire, the boss.
- * Null outside the whiteout or at a bonfire.
+ * The next encounter: the wave's foe (always the same one there, never shiny) or, after the last bonfire, the boss
+ * (its hidden talent drawn from `rng`; without one, only a sure one). Null outside the whiteout or at a bonfire.
  */
-export function whiteoutEncounter(save: SaveData, data: GameData, areaId: string): Encounter | null {
+export function whiteoutEncounter(
+  save: SaveData,
+  data: GameData,
+  areaId: string,
+  rng: Rng = NO_DRAW,
+): Encounter | null {
   const next = whiteoutNext(save, data, areaId)
   if (next === 'boss') {
     const area = areaOf(data, areaId)
     const boss = area && whiteoutBoss(area, data)
-    return boss && data.species[boss.dex]
-      ? { kind: 'boss', dex: boss.dex, level: boss.level, ...(boss.shiny && { shiny: true }) }
-      : null
+    if (!boss || !data.species[boss.dex]) return null
+    // Its hidden talent (docs/51 §1b): the admin's call for this boss, else the game's rule, as any boss's.
+    const enc: Encounter = {
+      kind: 'boss',
+      dex: boss.dex,
+      level: boss.level,
+      ...(boss.shiny && { shiny: true }),
+      ...bossTalent(boss, data),
+    }
+    return dealTalents(enc, data, rng)
   }
   if (next !== 'foe') return null
   const foe = whiteoutFoe(save, data, areaId)

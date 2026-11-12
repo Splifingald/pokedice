@@ -379,6 +379,17 @@ describe('its shiny mythical', () => {
     expect(met).not.toHaveProperty('shiny')
   })
 
+  it("takes the admin's call on its hidden talent in the fight (docs/51 §1b)", () => {
+    const d = worldData({ mythical: { dex: 151, level: 60, areaId: LAIR.id, talent: false } })
+    const area = d.areas.find((a) => a.id === LAIR.id)!
+    expect(area.legendaryBoss).toEqual([{ dex: 151, level: 60, shiny: true, talent: false }])
+    const done = { ...emptyProgress(), roundsDone: 1 }
+    const talents = { access: 'all' as const, wildChance: 0.05, evolveChance: 0.3, families: {} }
+    const on = (x: GameData) => ({ ...x, config: { ...x.config, hiddenTalents: talents } })
+    expect(challengeEncounter(area, done, on(d), 30, null, createRng(1))).toMatchObject({ dex: 151, talent: false })
+    expect(challengeEncounter(lair(), done, on(data), 30, null, createRng(1))).toMatchObject({ dex: 151, talent: true })
+  })
+
   it('leaves the world at once for its home region’s Box, and stops coming back', () => {
     const s = inside()
     const res = catchWorldMythical(s, data, LAIR.id, { dex: 151, level: 60 }, NOW, newId)!

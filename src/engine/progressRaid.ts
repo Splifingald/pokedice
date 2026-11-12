@@ -182,6 +182,7 @@ export function applyProgressRaidCatch(
     now,
     newId,
     'progress',
+    raid.boss.talent,
   )
   return { save: res.save, region: res.region, instId: res.instId, live: res.live }
 }

@@ -1,7 +1,7 @@
 // Raid Battles, the day's raid and what a catch does (docs/18 §3, the shared calendar of 2026-10-11): every UTC day has
 // one raid, the same for every player (engine/raidCalendar.ts). Anyone with raids open can fight it; a caught raid
 // Pokémon joins its home region's Box once its area there is completed, and waits locked until then.
-import { rollTalentFor } from './talents'
+import { rollTalentFor, talentsOn } from './talents'
 import { areaProgressAnywhere } from './events'
 import { createInstance, instanceStats } from './progression'
 import { raidOfDay, raidRegion, raidRules, type RaidKindOf } from './raidCalendar'
@@ -146,12 +146,14 @@ export function addRaidMon(
   now: number,
   newId: () => string,
   kind: RaidKindOf = 'daily',
+  talent?: boolean | null,
 ) {
   // At the level it was fought at (its own, Admin → Raids, or the default: the day's raid's or a progression raid's).
   const inst = createInstance(lock.dex, raidRules(data, lock.dex, kind, lock.areaId).level, data, newId(), now)
   if (lock.shiny) inst.shiny = true
-  // A legendary's raid always brings its hidden talent (docs/51); another raid's, at the wild odds.
-  if (rollTalentFor(data, inst.dex, inst.id)) inst.talent = true
+  // A legendary's raid always brings its hidden talent (docs/51); another raid's, at the wild odds; a progression
+  // raid's boss may have the admin's call instead (`talent`, docs/51 §1b).
+  if (talentsOn(data) && talent != null ? talent : rollTalentFor(data, inst.dex, inst.id)) inst.talent = true
   const home = raidRegion(data, lock.areaId)
   const res = addToRegion(save, data, home, inst) ?? addToRegion(save, data, regionOf(save), inst)!
   return { save: res.save, region: res.live ? regionOf(save) : home, instId: inst.id, live: res.live }

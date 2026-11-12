@@ -639,6 +639,24 @@ function MythicalPanel({ draft, patch, data }: { draft: SmallWorld; patch: (p: P
             ))}
           </select>
         </Field>
+        <Field
+          label="Its hidden talent"
+          hint="In the fight, while Hidden talents are on (docs/51 §1b). A mythical always carries it once caught."
+        >
+          <select
+            className={inputCls}
+            value={m.talent == null ? '' : m.talent ? 'always' : 'never'}
+            onChange={(e) => {
+              const v = e.target.value
+              const { talent: _drop, ...rest } = m
+              patch({ mythical: v ? { ...rest, talent: v === 'always' } : rest })
+            }}
+          >
+            <option value="">the game's rule (has it)</option>
+            <option value="always">always has it</option>
+            <option value="never">never has it</option>
+          </select>
+        </Field>
       </div>
     </div>
   )

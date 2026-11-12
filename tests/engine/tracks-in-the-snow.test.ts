@@ -321,6 +321,23 @@ describe('Tracks in the Snow: the search', () => {
       level: 30,
       shiny: true,
     })
+    // Its hidden talent (docs/51 §1b): the admin's call for the boss while talents are on, else the game's rule.
+    const talents = (talent: boolean | null, wildChance = 0) => {
+      const d = makeDataWith(
+        { areas: h.areas, regions: [h.region] },
+        {
+          smallWorlds: { access: 'all', list: [world] },
+          tracks: { access: 'all' },
+          hiddenTalents: { access: 'all', wildChance, evolveChance: 0, families: {} },
+        },
+      )
+      const area = { ...GLADE, legendaryBoss: GLADE.legendaryBoss!.map((b) => ({ ...b, talent })) }
+      return tracksEncounter({ ...ctxOf(s), area, data: d }, 'stantler', true, createRng(1))!.encounter
+    }
+    expect(talents(true)).toMatchObject({ kind: 'boss', talent: true })
+    expect(talents(false, 1)).toMatchObject({ kind: 'boss', talent: false })
+    expect(talents(null)).not.toHaveProperty('talent')
+    expect(talents(null, 1)).toMatchObject({ talent: true })
     // Its K.O. doesn't win the glade: the catch decides.
     const down = tracksQuarryDown(s, data, GLADE.id)!
     expect(down.last).toBe(true)

@@ -610,7 +610,10 @@ export function dealTalents(enc: Encounter, data: GameData, rng: Rng): Encounter
     case 'wild':
     case 'trick':
     case 'safari':
+      return rollTalent(data, enc.dex, rng) ? { ...enc, talent: true } : enc
     case 'boss':
+      // The admin's call for this boss (`BossDef.talent`, set by `bossTalent`) stands: no draw.
+      if (enc.talent != null) return enc
       return rollTalent(data, enc.dex, rng) ? { ...enc, talent: true } : enc
     case 'trainer':
     case 'gym': {
@@ -629,6 +632,14 @@ export function dealTalents(enc: Encounter, data: GameData, rng: Rng): Encounter
       return enc
   }
 }
+
+/**
+ * A boss's hidden talent where the admin set it for this boss (`BossDef.talent`, docs/51 §1b): spread into its
+ * encounter, which `dealTalents` then leaves as it is. Nothing while talents are off or the boss follows the game's
+ * rule (`dealTalents` draws then).
+ */
+export const bossTalent = (boss: BossDef, data: GameData): { talent?: boolean } =>
+  talentsOn(data) && boss.talent != null ? { talent: boss.talent } : {}
 
 function dealEncounter(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const { data } = ctx
@@ -675,12 +686,18 @@ export function challengeEncounter(
   // A Titan (docs/62 §7) is never shiny: it is fought, not caught.
   if (boss?.titan) return { kind: 'boss', dex: boss.dex, level: boss.level, titan: true }
   return boss
-    ? talents({ kind: 'boss', dex: boss.dex, level: boss.level, ...(legendShiny(boss, area, data, rng, shinyOdds) && { shiny: true }) })
+    ? talents({
+        kind: 'boss',
+        dex: boss.dex,
+        level: boss.level,
+        ...(legendShiny(boss, area, data, rng, shinyOdds) && { shiny: true }),
+        ...bossTalent(boss, data),
+      })
     : null
 }
 
 /** An rng that never lands a chance: only what is sure happens. */
-const NO_DRAW: Rng = { ...createRng(1), next: () => 1 }
+export const NO_DRAW: Rng = { ...createRng(1), next: () => 1 }
 
 /** The next encounter alone, for callers that don't keep decks (each call deals from fresh ones). */
 export function rollEncounter(ctx: EncounterContext, rng: Rng): Encounter {
@@ -707,7 +724,9 @@ function disguisedWild(d: LootDisguise, itemKey: string, ctx: EncounterContext, 
 
 function returningLegend(ctx: EncounterContext, rng: Rng): Encounter | null {
   const b = fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data)
-  return b ? { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : null
+  if (!b) return null
+  const shiny = legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance)
+  return { kind: 'boss', dex: b.dex, level: b.level, returning: true, ...(shiny && { shiny: true }), ...bossTalent(b, ctx.data) }
 }
 
 const cardEncounter = (
@@ -893,7 +912,9 @@ function forcedEncounter(ctx: EncounterContext, kind: ForceKind, rng: Rng): Enco
     case 'boss': {
       const b = fightBosses(ctx.area, ctx.data).find((x) => !ctx.progress.bossesDefeated.includes(x.dex))
       if (b?.titan) return { kind: 'boss', dex: b.dex, level: b.level, titan: true }
-      return b ? { kind: 'boss', dex: b.dex, level: b.level, ...(legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance) && { shiny: true }) } : returningLegend(ctx, rng)
+      if (!b) return returningLegend(ctx, rng)
+      const shiny = legendShiny(b, ctx.area, ctx.data, rng, ctx.shinyChance)
+      return { kind: 'boss', dex: b.dex, level: b.level, ...(shiny && { shiny: true }), ...bossTalent(b, ctx.data) }
     }
     default:
       return null

@@ -6,7 +6,7 @@
 // Stantler; the last on the area's boss, the shiny Stantler, which bolts to another bush (a fresh glade) when the
 // throw misses. Caught, the glade closes for good. A cleared round is kept through a wipe or a trip Home. Every
 // number is the area's (`Area.mode`, Admin → Areas), the switch the admin's (`tracks`); every draw is the engine's rng.
-import { rollWild, type Encounter, type EncounterContext } from './encounters'
+import { bossTalent, dealTalents, rollWild, type Encounter, type EncounterContext } from './encounters'
 import { drawLoot } from './items'
 import { instanceMaxHp } from './progression'
 import type { Rng } from './rng'
@@ -327,11 +327,17 @@ export function tracksEncounter(
   }
   if (bush !== 'stantler' || quarry == null || !ctx.data.species[quarry]) return null
   const boss = tracksBoss(area)
-  if (last && boss)
-    return {
-      encounter: { kind: 'boss', dex: boss.dex, level: boss.level, ...(boss.shiny && { shiny: true }) },
-      lootDeck: null,
+  if (last && boss) {
+    // Its hidden talent (docs/51 §1b): the admin's call for this boss, else the game's rule, as any boss's.
+    const encounter: Encounter = {
+      kind: 'boss',
+      dex: boss.dex,
+      level: boss.level,
+      ...(boss.shiny && { shiny: true }),
+      ...bossTalent(boss, ctx.data),
     }
+    return { encounter: dealTalents(encounter, ctx.data, rng), lootDeck: null }
+  }
   const entry = area.wildPool.find((w) => w.dex === quarry)
   const lo = entry?.minLevel ?? area.minLevel
   const hi = Math.max(lo, entry?.maxLevel ?? area.maxLevel)
