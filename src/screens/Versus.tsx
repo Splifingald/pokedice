@@ -44,7 +44,6 @@ import { speciesTypes } from '@/components/TypeMatchups'
 import { TypeSelect } from '@/components/TypeSelect'
 import { avatarOf } from '@/lib/avatars'
 import { useSlotOrder } from '@/lib/useDragSwap'
-import { useSnapToMe } from '@/lib/useSnapToMe'
 import { getLang, searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
 import { useFriends } from '@/lib/friends'
@@ -737,7 +736,6 @@ function Board({ rows, compact }: { rows: VersusEntry[]; compact?: boolean }) {
   const filtering = friends.size > 0 && onlyFriends
   const shown = filtering ? friendsOnly(ranked).map((row) => ({ row })) : boardWindow(ranked)
   const friendRows = ranked.filter((r) => r.friendId).length
-  const meRef = useSnapToMe(`${tab}:${ranked.findIndex((r) => r.isMe)}:${filtering}`)
   return (
     <>
       <Seg
@@ -778,8 +776,6 @@ function Board({ rows, compact }: { rows: VersusEntry[]; compact?: boolean }) {
           return (
             <BoardRow
               key={r.userId}
-              // Beside the opponents (PC) the board opens on its top: snapping to your row would scroll the page too.
-              rowRef={r.isMe && !compact ? meRef : undefined}
               rank={r.rank}
               look={avatarOf(r.avatar).src}
               name={r.name}
