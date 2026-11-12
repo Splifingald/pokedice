@@ -8,7 +8,7 @@
 import type { BattleState } from './battle'
 import { calendarGifts, normaliseCalendarReward } from './calendar'
 import type { UpgradeLevels } from './damage'
-import { placeGifts, type GiftLanded } from './gifts'
+import { GIFT_HOME, placeGifts, type GiftLanded } from './gifts'
 import { liveById, liveList, type LiveSet } from './liveEvents'
 import type { RaidLogEntry } from './raidBattle'
 import {
@@ -372,7 +372,8 @@ export function validateRush(
   const rewards: RushValidation['rewards'] = []
   while (given < e.rush.gauge.length && e.rush.gauge[given]!.at <= after) {
     const row = e.rush.gauge[given]!
-    const placed = placeGifts(next, data, calendarGifts(row.reward), now, newId)
+    // A Pokémon goes to its own region, locked until one there reaches its level (docs/71 §5).
+    const placed = placeGifts(next, data, calendarGifts(row.reward, GIFT_HOME), now, newId)
     next = placed.save
     rewards.push({ index: given, row, landed: placed.landed })
     given++

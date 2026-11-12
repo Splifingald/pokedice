@@ -478,6 +478,7 @@ export const saveSchema = z.object({
             from: z.string().min(1).max(80).optional(),
             tradedBy: z.string().max(40).optional(),
             market: z.literal(true).optional(),
+            reward: z.literal(true).optional(),
           }),
         )
         .max(2000)

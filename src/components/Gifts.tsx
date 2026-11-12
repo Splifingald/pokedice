@@ -185,7 +185,7 @@ export function GiftOpened({ gifts }: { gifts: unknown }) {
  * Where each one went, in words: the Bag, the ₽ or the Box (with its region once there are several), the team, or the
  * Heart Scales (one wallet for every region).
  */
-function useWhere() {
+export function useWhere() {
   const { t } = useT()
   const data = useGame((s) => s.data)
   const many = useGame((s) => !!s.save && unlockedRegions(s.save, s.data).length > 1)

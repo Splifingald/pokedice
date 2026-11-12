@@ -401,6 +401,17 @@ hidden talent (as a legendary does); without it, the gifts' usual roll at the wi
 (`src/engine/gifts.ts`) sets it; the reward picker gets a **Hidden talent** box (shown while hidden talents are on).
 Shared by the Type Rush gauge, the Community Boss and the gift calendar.
 
+**Where a reward Pokémon goes** (the user's call, 2026-11-11, after the build: "like the small worlds, like the
+Friend Market"): a Type Rush's or a Community Boss's reward Pokémon goes to **its own species' region** (a Lucario
+to Sinnoh), on that region's waiting list (`events.worldHome`, engine/homecoming.ts, `reward: true`), **locked until
+one of the player's Pokémon there reaches its level**, or until that region is started. With one there at its level
+already, it arrives at once, by the Box's usual rule (it joins, or replaces a weaker plain copy, or merges into a
+stronger one; a shiny is always its own). The gift's region says so: `home` (`GIFT_HOME`, src/engine/gifts.ts).
+Items and ₽ still go to the region being played. Where it waits shows in the Type Rush pop-up's "Received" line and in
+the gift opening ("It waits in your Sinnoh Box, locked until one of your Pokémon there reaches Lv.30."), and on its
+sheet's lock ("A live event's reward"). The gift calendar keeps its rule (the region being played). The Community
+Boss's server writes `home` on its Pokémon gifts from migration 0148.
+
 ## 6. Banners
 
 - **Hatching Day**: a new picture, `public/backgrounds/live-hatch.png` (400 × 223, as the other live pictures),
@@ -494,7 +505,9 @@ Nothing to run in Supabase.
 
 1. Run the migration in Supabase → SQL Editor:
    https://github.com/Splifingald/pokedice/blob/version/2_9_7/supabase/migrations/0147_community_boss.sql
-   (it isn't in `supabase/seed.sql`: it holds server functions, as Friend Battles' do).
+   then https://github.com/Splifingald/pokedice/blob/version/2_9_7/supabase/migrations/0148_event_rewards_home.sql
+   (the reward Pokémon go to their own region, §5). Neither is in `supabase/seed.sql`: they hold server functions, as
+   Friend Battles' do.
 2. The developer's gifts must be on (Admin → Config → Gifts: *On for everyone*), or the rewards wait unseen in the
    messages.
 3. Netlify: nothing new to set. The scheduled function uses `VITE_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`,

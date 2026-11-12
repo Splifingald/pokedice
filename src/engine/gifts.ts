@@ -8,6 +8,7 @@ import { eventOpenTo } from './events'
 import { isExtreme } from './extreme'
 import { createInstance } from './progression'
 import { addToRegion } from './raid'
+import { releaseWorldHome, speciesHome, worldHomers } from './homecoming'
 import { inWorldRegion, isWorldRegion, KANTO, regionOf, unlockedRegions } from './regions'
 import type { GameData, Gift, GiftRegion, GiftsSave, RegionId, SaveData } from './types'
 
@@ -15,6 +16,12 @@ import type { GameData, Gift, GiftRegion, GiftsSave, RegionId, SaveData } from '
 export const GIFT_LATEST: GiftRegion = 'latest'
 /** The region being played when the gift is opened (the weekly league's ₽, docs/44). */
 export const GIFT_CURRENT: GiftRegion = 'current'
+/**
+ * A Pokémon's own region, where it waits locked until one of the player's Pokémon there reaches its level, as a small
+ * world's Pokémon going home and the Friend Market's do (docs/71 §5: the live events' rewards). Items and ₽ with it go
+ * to the region being played. An older game reads it as an unknown region: the player's latest.
+ */
+export const GIFT_HOME: GiftRegion = 'home'
 /** At most this many gifts on one message, this many of one item, this many ₽ at once (the server checks the same: 0048). */
 export const GIFT_MAX = 20
 export const GIFT_QTY_MAX = 999
@@ -169,6 +176,13 @@ export function placeGifts(
       continue
     }
     if (!data.species[gift.dex]) continue
+    // A live event's reward (docs/71 §5): it goes to its own region's waiting list, as the Friend Market's do.
+    if (gift.region === GIFT_HOME) {
+      const res = sendGiftHome(next, data, gift, now, newId)
+      next = res.save
+      landed.push(res.landed)
+      continue
+    }
     const inst = createInstance(gift.dex, gift.level, data, newId(), now)
     if (gift.shiny) inst.shiny = true
     // Its outfit (docs/59), only while outfits are on: off, the same gift brings the plain Pokémon.
@@ -190,6 +204,41 @@ export function placeGifts(
     })
   }
   return { save: next, landed }
+}
+
+/**
+ * A reward Pokémon goes home (docs/71 §5): its species' region, on the waiting list (engine/homecoming.ts), locked
+ * until one of the player's Pokémon there reaches its level, or until that region is started; with one there at its
+ * level already, it arrives at once, by the Box's usual rule. The same as a Friend Market Pokémon (docs/60).
+ */
+function sendGiftHome(
+  save: SaveData,
+  data: GameData,
+  gift: Extract<Gift, { kind: 'pokemon' }>,
+  now: number,
+  newId: () => string,
+): { save: SaveData; landed: GiftLanded } {
+  const inst = createInstance(gift.dex, gift.level, data, newId(), now)
+  if (gift.shiny) inst.shiny = true
+  if (gift.outfit && outfitsOn(data) && hasOutfit(gift.outfit, inst.dex)) inst.outfit = gift.outfit
+  if (gift.talent || rollTalentFor(data, inst.dex, inst.id)) inst.talent = true
+  const region = speciesHome(data, gift.dex)
+  const dexThere = region === regionOf(save) ? save.pokedex : (save.parked?.[region]?.pokedex ?? [])
+  const waiting: SaveData = {
+    ...save,
+    events: { ...save.events, worldHome: [...worldHomers(save), { inst, region, reward: true }] },
+  }
+  const released = releaseWorldHome(waiting, data)
+  const arrived = released.arrived.find((a) => a.inst.id === inst.id)
+  return {
+    save: released.save,
+    landed: {
+      gift: { ...gift, level: inst.level },
+      region: arrived?.region ?? region,
+      moved: false,
+      ...(arrived ? { isNew: !dexThere.includes(gift.dex) } : { locked: true }),
+    },
+  }
 }
 
 /**

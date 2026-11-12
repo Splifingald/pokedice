@@ -2840,6 +2840,8 @@ export interface WorldHomer {
   tradedBy?: string
   /** Bought at the Friend Market (docs/60): it waits in its species' region until one there reaches its level. */
   market?: true
+  /** A live event's reward (docs/71 §5: a Type Rush's gauge, a Community Boss's gauge): it waits the same way. */
+  reward?: true
 }
 
 /** A shiny mythical won in a small world, waiting for its home region to be started. */
