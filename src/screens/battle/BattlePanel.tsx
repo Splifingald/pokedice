@@ -263,7 +263,7 @@ export function DiceTray({
 }
 
 /** What can come between a turn's start and its throw: its dice stay in hand through them (docs/38 P1c). */
-const BEFORE_THROW = new Set<string>(['status_tick', 'status', 'item', 'heal', 'cleansed', 'transform'])
+const BEFORE_THROW = new Set<string>(['status_tick', 'sudden_death_tick', 'status', 'item', 'heal', 'cleansed', 'transform'])
 
 /** The turn the log has reached whose dice haven't been thrown yet, if any: read from the log, never decided here. */
 export function turnInHand(log: readonly LogEntry[], cursor: number) {
