@@ -1171,7 +1171,9 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   server has a count; VIEW (an eye, `sm`) at its end opens the list of up to 30, the closest to the player in badges,
   as compact board rows (look, name, team) with INVITE (a friend request) at the right of those the player can ask.
 - **A rule explained where it happens** (the League's heal between its battles, docs/42): the switch, but no rules
-  pop-up and no INFO: it adds nothing to do and no page, and the result card says so the moment it heals. The Versus
+  pop-up and no INFO: it adds nothing to do and no page, and the result card says so the moment it heals. **Sudden
+  death** (docs/72) is one too, but with **no switch** either (the user's call, 2026-11-14): on for everyone from the
+  start, said in the battle's line as it begins. The Versus
   league's global board (docs/44 §8) too: a tab of the league's board, whose line over its rows is its whole rule (no
   rewards, for the glory).
 - **A set order** (Route 1's opening, docs/46): the switch, but no rules pop-up and no INFO: it only sets the order of
