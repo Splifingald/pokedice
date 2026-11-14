@@ -1454,11 +1454,6 @@ export interface GameConfig {
    */
   rivalLossHeal: { access: EventAccess }
   /**
-   * Sudden death (docs/72): after `turns` turns in a row that hurt nobody (10), every Pokémon loses `share` of its max
-   * HP (0.25) as each of its turns starts. Migration 0149 inserts the same row, Off.
-   */
-  suddenDeath: { access: EventAccess; turns?: number; share?: number }
-  /**
    * A rival's team matched to the player (docs/61 §5.5): the switch, how the levels follow and how the species follow.
    * Migration 0137 inserts the same row; a missing field keeps the game's default (engine/rivalMatch.ts).
    */

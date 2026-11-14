@@ -455,9 +455,6 @@ export const DEFAULT_CONFIG: GameConfig = {
   // same row.
   leagueHeal: { access: 'off' },
   rivalLossHeal: { access: 'off' },
-  // Sudden death after turns that hurt nobody (docs/72): off until the admin switches it on; its numbers in
-  // engine/battle.ts (SUDDEN_DEATH_DEFAULTS). Migration 0149 inserts the same row.
-  suddenDeath: { access: 'off' },
   // A rival's team matched to the player (docs/61 §5.5): Off; its choices' defaults in engine/rivalMatch.ts. Migration
   // 0137 inserts the same row.
   rivalMatch: { access: 'off' },

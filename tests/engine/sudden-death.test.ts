@@ -1,24 +1,10 @@
 // Sudden death (docs/72): after 10 turns in a row that hurt nobody, every Pokémon loses 25 % of its max HP as each of
-// its turns starts, so a stalled fight ends with a winner rather than at the turn cap.
+// its turns starts, so a stalled fight ends with a winner rather than at the turn cap. On for everyone, no switch.
 import { describe, expect, it } from 'vitest'
-import {
-  createBattle,
-  createRng,
-  reduce,
-  suddenDeathOn,
-  uniformLevels,
-  type BattleState,
-  type EventAccess,
-  type GameData,
-  type LogEntry,
-} from '@/engine'
+import { createBattle, createRng, reduce, uniformLevels, type BattleState, type GameData, type LogEntry } from '@/engine'
 import { data } from '../fixtures'
 
-const withSwitch = (access: EventAccess, viewer?: GameData['viewer']): GameData => ({
-  ...data,
-  config: { ...data.config, suddenDeath: { access }, maxBattleTurns: 60 },
-  ...(viewer && { viewer }),
-})
+const d: GameData = { ...data, config: { ...data.config, maxBattleTurns: 60 } }
 
 /**
  * A stall: your Gastly Lv.4 (a Ghost die and a base one) can't hurt the foe's Rattata nor can it hurt Gastly, but
@@ -63,17 +49,11 @@ function playOut(d: GameData, start = stall(d)) {
 }
 
 describe('sudden death', () => {
-  it('the stall really hurts nobody and ends at the turn cap with the switch off', () => {
-    const { s, log } = playOut(withSwitch('off'))
-    expect(log.some((e) => (e.kind === 'damage' && e.amount > 0) || e.kind === 'sudden_death')).toBe(false)
-    expect(log.at(-1)).toEqual({ kind: 'end', result: 'fled', reason: 'stalemate' })
-    expect(s.turn).toBe(60)
-  })
-
   it('starts after 10 turns that hurt nobody, then takes a quarter of max HP as each turn starts', () => {
-    const d = withSwitch('all')
     const { s, log } = playOut(d)
     const at = log.findIndex((e) => e.kind === 'sudden_death')
+    // The stall really hurt nobody before it.
+    expect(log.slice(0, at).some((e) => e.kind === 'damage' && e.amount > 0)).toBe(false)
     expect(log[at]).toEqual({ kind: 'sudden_death', turns: 10, pct: 25 })
     // Said once, before the 11th turn.
     expect(log.filter((e) => e.kind === 'sudden_death')).toHaveLength(1)
@@ -85,47 +65,23 @@ describe('sudden death', () => {
       expect(t.amount).toBe(Math.min(t.hpAfter + t.amount, Math.ceil(b.maxHp / 4)))
     }
     // Every turn from the 11th on starts with one.
-    const turnsAfter = log.slice(at).filter((e) => e.kind === 'turn').length
-    expect(ticks).toHaveLength(turnsAfter)
-    // Someone falls: no stalemate.
+    expect(ticks).toHaveLength(log.slice(at).filter((e) => e.kind === 'turn').length)
+    // Someone falls, long before the turn cap: no stalemate.
     expect(['won', 'lost']).toContain(s.phase)
     expect(s.turn).toBeLessThan(30)
   })
 
-  it('is On for admin for the admin alone', () => {
-    expect(suddenDeathOn(withSwitch('admin'))).toBe(false)
-    expect(suddenDeathOn(withSwitch('admin', { admin: false }))).toBe(false)
-    expect(suddenDeathOn(withSwitch('admin', { admin: true }))).toBe(true)
-    expect(suddenDeathOn(withSwitch('all'))).toBe(true)
-    expect(suddenDeathOn(withSwitch('off', { admin: true }))).toBe(false)
-    expect(playOut(withSwitch('admin', { admin: true })).log.some((e) => e.kind === 'sudden_death')).toBe(true)
-  })
-
   it('a turn that hurt someone starts the count again', () => {
-    const d = withSwitch('all')
     const start = stall(d)
+    const hp = (enemy: number) => ({ g: start.state.player[0]!.hp, s: start.state.player[1]!.hp, enemy })
+    const turn = (s: BattleState) => reduce(reduce(s, { t: 'ROLL' }, d, createRng(3)).state, { t: 'ATTACK' }, d, createRng(3))
     // Nine calm turns behind, but the foe lost 1 HP since the last turn began.
-    const s: BattleState = {
-      ...start.state,
-      calm: { turns: 9, hp: { g: start.state.player[0]!.hp, s: start.state.player[1]!.hp, enemy: start.state.enemy.hp + 1 } },
-    }
-    const r = reduce(s, { t: 'ROLL' }, d, createRng(3))
-    const after = reduce(r.state, { t: 'ATTACK' }, d, createRng(3))
-    expect(after.log.some((e) => e.kind === 'sudden_death')).toBe(false)
-    expect(after.state.calm?.turns).toBe(0)
+    const hurt = turn({ ...start.state, calm: { turns: 9, hp: hp(start.state.enemy.hp + 1) } })
+    expect(hurt.log.some((e) => e.kind === 'sudden_death')).toBe(false)
+    expect(hurt.state.calm?.turns).toBe(0)
     // Nine calm turns with nothing lost: the next turn starts it.
-    const calm: BattleState = {
-      ...start.state,
-      calm: { turns: 9, hp: { g: start.state.player[0]!.hp, s: start.state.player[1]!.hp, enemy: start.state.enemy.hp } },
-    }
-    const next = reduce(reduce(calm, { t: 'ROLL' }, d, createRng(3)).state, { t: 'ATTACK' }, d, createRng(3))
-    expect(next.log.some((e) => e.kind === 'sudden_death')).toBe(true)
-    expect(next.state.suddenDeath).toBe(true)
-  })
-
-  it('takes its numbers from the row', () => {
-    const d = { ...data, config: { ...data.config, suddenDeath: { access: 'all' as const, turns: 4, share: 0.5 } } }
-    const { log } = playOut(d)
-    expect(log.find((e) => e.kind === 'sudden_death')).toEqual({ kind: 'sudden_death', turns: 4, pct: 50 })
+    const calm = turn({ ...start.state, calm: { turns: 9, hp: hp(start.state.enemy.hp) } })
+    expect(calm.log.some((e) => e.kind === 'sudden_death')).toBe(true)
+    expect(calm.state.suddenDeath).toBe(true)
   })
 })
