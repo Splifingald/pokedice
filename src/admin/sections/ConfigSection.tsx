@@ -1641,6 +1641,7 @@ const FEATURES: Feature[] = [
   own('Idle mode', 'idleMode'),
   own('Trainer looks', 'looks'),
   bare('League heal', 'leagueHeal'),
+  bare('Sudden death (no damage for 10 turns)', 'suddenDeath'),
   own('Legendary intros', 'legendCinema', 'intros'),
   own('Champion intros', 'championCinema', 'intros'),
   own('Gym Leader intros', 'gymCinema', 'intros'),

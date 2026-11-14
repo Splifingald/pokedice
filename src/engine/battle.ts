@@ -39,6 +39,7 @@ import {
 } from './status'
 import type { CurableStatus, DieType, GameData, PokeType, PowerKind, RaidTypeScale, Species, StatusKind, Weather } from './types'
 import { weatherTypeBoost, weatherWear } from './weather'
+import { eventOpenTo } from './events'
 
 export type Side = 'player' | 'enemy'
 export type BattleKind = 'wild' | 'trainer' | 'boss'
@@ -229,6 +230,13 @@ export interface BattleState {
   foeDiceMax?: number
   /** The weather the fight is under (docs/62 §2): its × is on both sides' levels; a sandstorm or snow wears. */
   weather?: Weather
+  /**
+   * Sudden death's watch (docs/72): the turns in a row that hurt nobody, and every Pokémon's HP as the last one began
+   * (a drop since then is damage, whatever dealt it).
+   */
+  calm?: { turns: number; hp: Record<string, number> }
+  /** Sudden death is on (docs/72): every Pokémon loses a share of its max HP as each of its turns starts, to the end. */
+  suddenDeath?: true
 }
 
 /** A double battle's field (docs/33). */
@@ -383,6 +391,10 @@ export type LogEntry =
   | { kind: 'focus'; own: string; foe: string; aim?: true }
   /** A double battle: the trainer's next Pokémon takes the place of one K.O.'d. */
   | { kind: 'foe_out'; uid: string }
+  /** Nobody was hurt for `turns` turns in a row: sudden death starts (docs/72), each turn costing `pct` % of max HP. */
+  | { kind: 'sudden_death'; turns: number; pct: number }
+  /** Sudden death wears a Pokémon down as its turn starts (docs/72). */
+  | { kind: 'sudden_death_tick'; target: Side; targetUid: string; amount: number; hpAfter: number }
   /** The weather wears a Pokémon down at its turn (docs/62 §2): a sandstorm or snow. */
   | { kind: 'weather_tick'; target: Side; targetUid: string; weather: Weather; amount: number; hpAfter: number }
   /** An island trial's Totem calls an ally (docs/62 §6), the one coming out next. */
@@ -1162,7 +1174,7 @@ export function canHurt(atk: Battler, def: Battler, data: GameData, scale?: Raid
 function deadlocked(s: BattleState, data: GameData): boolean {
   const me = activeBattler(s)
   const foe = s.enemy
-  if (me.hp <= 0 || foe.hp <= 0) return false
+  if (me.hp <= 0 || foe.hp <= 0 || s.suddenDeath) return false
   const pending = (b: Battler) =>
     !!b.status.burn || !!b.status.poison || confusionLevel(b.status) > 0 || weatherWear(s.weather, b.types, b.maxHp) > 0
   if (pending(me) || pending(foe) || canHurt(foe, me, data)) return false
@@ -1192,6 +1204,7 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
   if (s.double) return beginDoubleTurn(s, data, log, rng)
   const rules = data.config.status
   for (let guard = 0; guard < 50; guard++) {
+    watchCalm(s, data, log)
     // A raid keeps its own count of turns.
     if (!s.single && (s.turn >= data.config.maxBattleTurns || deadlocked(s, data))) {
       // No rewards, no wipe; HP damage is kept like a RUN.
@@ -1210,7 +1223,8 @@ function beginTurn(s: BattleState, side: Side, data: GameData, log: LogEntry[], 
 
     const ticks = statusTicks(b, side, rules, log)
     const worn = weatherTick(s, b, side, log)
-    if (ticks || worn) checkHpForms(s, data, log)
+    const sudden = suddenDeathTick(s, b, side, data, log)
+    if (ticks || worn || sudden) checkHpForms(s, data, log)
     if (b.hp <= 0 && s.single) return endStep(s)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
@@ -1443,7 +1457,7 @@ function doubleDeadlocked(s: BattleState, data: GameData): boolean {
   const d = s.double!
   const own = ownOnField(s).filter((b) => b.hp > 0)
   const foes = foesOnField(s).filter((b) => b.hp > 0)
-  if (!own.length || !foes.length) return false
+  if (!own.length || !foes.length || s.suddenDeath) return false
   const pending = (b: Battler) => !!b.status.burn || !!b.status.poison || confusionLevel(b.status) > 0
   if ([...own, ...foes].some(pending)) return false
   if (foes.some((f) => own.some((o) => canHurt(f, o, data)))) return false
@@ -1471,6 +1485,7 @@ function nextActor(s: BattleState): { side: Side; index: number } | null {
 function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: Rng) {
   const rules = data.config.status
   for (let guard = 0; guard < 50; guard++) {
+    watchCalm(s, data, log)
     // Four Pokémon take turns: the cap counts every one of them, so it is twice a single battle's.
     const next = s.turn >= data.config.maxBattleTurns * 2 || doubleDeadlocked(s, data) ? null : nextActor(s)
     if (!next) {
@@ -1497,7 +1512,8 @@ function beginDoubleTurn(s: BattleState, data: GameData, log: LogEntry[], rng?: 
 
     const ticks = statusTicks(b, side, rules, log)
     const worn = weatherTick(s, b, side, log)
-    if (ticks || worn) checkHpForms(s, data, log)
+    const sudden = suddenDeathTick(s, b, side, data, log)
+    if (ticks || worn || sudden) checkHpForms(s, data, log)
     if (b.hp <= 0) {
       // A K.O. here ends the turn.
       if (doubleKnockouts(s, log)) return
@@ -1749,6 +1765,56 @@ function weatherTick(s: BattleState, b: Battler, side: Side, log: LogEntry[]): b
   }
   b.hp -= amount
   log.push({ kind: 'weather_tick', target: side, targetUid: b.uid, weather: s.weather, amount, hpAfter: b.hp })
+  return true
+}
+
+// ---------------------------------------------------------------- Sudden death (docs/72)
+//
+// A fight where nobody gets hurt could go on to the turn cap and end in a stalemate. Once `turns` turns in a row have
+// hurt nobody, every Pokémon loses `share` of its max HP as each of its turns starts, to the end of the fight, so
+// someone falls. A raid's steps and a Friend Battle's (duel steps) keep their own rules.
+
+export const SUDDEN_DEATH_DEFAULTS = { turns: 10, share: 0.25 }
+
+/** Sudden death's switch (docs/72): Off / On for admin / On for everyone. */
+export const suddenDeathOn = (data: GameData): boolean => eventOpenTo(data.config.suddenDeath?.access, data)
+
+/** Its numbers: the row's own, else the game's. */
+export function suddenDeathRules(data: GameData): { turns: number; share: number } {
+  const row = data.config.suddenDeath
+  return { turns: row?.turns ?? SUDDEN_DEATH_DEFAULTS.turns, share: row?.share ?? SUDDEN_DEATH_DEFAULTS.share }
+}
+
+/**
+ * As a turn begins: did the last one hurt anybody? Any HP lost since the last turn's start counts (an attack, a
+ * recoil, a burn, the weather), a heal doesn't. The `turns`-th calm turn in a row starts sudden death, said once.
+ */
+function watchCalm(s: BattleState, data: GameData, log: LogEntry[]) {
+  if (s.single || s.suddenDeath || !suddenDeathOn(data)) return
+  const all = [...s.player, ...(s.double?.foes ?? [s.enemy])]
+  const before = s.calm?.hp
+  // The first turn has no turn before it to judge.
+  const hurt = !before || all.some((b) => b.hp < (before[b.uid] ?? b.hp))
+  const turns = hurt ? 0 : s.calm!.turns + 1
+  const rules = suddenDeathRules(data)
+  if (turns >= rules.turns) {
+    delete s.calm
+    s.suddenDeath = true
+    log.push({ kind: 'sudden_death', turns, pct: Math.round(rules.share * 100) })
+    return
+  }
+  s.calm = { turns, hp: Object.fromEntries(all.map((b) => [b.uid, b.hp])) }
+}
+
+/**
+ * Sudden death's toll on the Pokémon whose turn starts: a share of its max HP, rounded up so that many turns K.O. it.
+ * Magic Guard doesn't stop it, or a fight it stalls would never end.
+ */
+function suddenDeathTick(s: BattleState, b: Battler, side: Side, data: GameData, log: LogEntry[]): boolean {
+  if (!s.suddenDeath || s.single || b.hp <= 0) return false
+  const amount = Math.min(b.hp, Math.max(1, Math.ceil(b.maxHp * suddenDeathRules(data).share - 1e-9)))
+  b.hp -= amount
+  log.push({ kind: 'sudden_death_tick', target: side, targetUid: b.uid, amount, hpAfter: b.hp })
   return true
 }
 
