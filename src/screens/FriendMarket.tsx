@@ -1,6 +1,6 @@
 // The Friend Market (docs/60; docs/15 §42), reached from the Friends page's Friendship card: Heart Scales earned by
 // friendship streaks buy the week's shelf — the shiny of the week, then Friend Balls, Rare Candies and Talent Candies,
-// each with its weekly limit. The rules the first time (a card at the top), INFO at the foot. The server prices,
+// each with its weekly limit. Heart Scales last the week too: the server empties the wallet each Monday. The rules the first time (a card at the top), INFO at the foot. The server prices,
 // limits and pays; a purchase opens like a gift (GiftMoment) into the region being played.
 import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
@@ -46,6 +46,11 @@ export function FriendMarketScreen() {
     const id = setInterval(() => setNow(Date.now()), 30_000)
     return () => clearInterval(id)
   }, [])
+  // The week turned with the page open: the server's new week has a new shelf, fresh limits and an empty wallet.
+  const turned = !!status?.week && now >= marketWeekEnds(status.week)
+  useEffect(() => {
+    if (turned) void loadFriendship(true)
+  }, [turned])
 
   if (!save) return null
   const waits = friendshipWaits(save, data)

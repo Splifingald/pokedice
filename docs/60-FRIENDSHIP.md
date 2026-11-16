@@ -21,8 +21,8 @@ questions, take decisions."*
 | What a day pays | By the streak's day: **days 1–3: 3, 4–7: 4, 8–14: 5, 15–30: 6, 31+: 7**, to each of the two. A player's Heart Scales are capped at **50 a UTC day** across all their friends (the day that would go over pays what's left, then 0) |
 | The levels | The five brackets are named (the ask said "4 levels" and listed five; the five are kept as listed): **Friends, Good friends, Great friends, Ultra friends, Best friends** |
 | When Heart Scales arrive | At once, on the server, the moment the interaction is recorded. A toast says "Friendship streak! +4 Heart Scales" the next time the game asks (game load, return to the tab, the Friends and market pages) |
-| Where Heart Scales live | **On the server, per account** (`friendship_wallets`), not in the save: the server pays and the server charges, so a hand-edited save can't make Heart Scales. They are the main game's: Extreme mode has no market |
-| The market | **`/market`**, from the Friends page's Friendship card. A **weekly** shelf, turning over every **Monday 00:00 UTC**: the **shiny of the week** (one, ₽-free: 150 Heart Scales, Lv.15), **Friend Ball** 5 each (20 a week), **Rare Candy** 15 (10 a week), **Talent Candy** 60 (2 a week). Limits reset with the week; Heart Scales don't |
+| Where Heart Scales live | **On the server, per account** (`friendship_wallets`), not in the save: the server pays and the server charges, so a hand-edited save can't make Heart Scales. They are the main game's: Extreme mode has no market. They **last a week**: the wallet goes back to 0 every Monday 00:00 UTC (§1d) |
+| The market | **`/market`**, from the Friends page's Friendship card. A **weekly** shelf, turning over every **Monday 00:00 UTC**: the **shiny of the week** (one, ₽-free: 150 Heart Scales, Lv.15), **Friend Ball** 5 each (20 a week), **Rare Candy** 15 (10 a week), **Talent Candy** 60 (2 a week). Limits reset with the week, and so do Heart Scales (§1d) |
 | The shiny of the week | Turns through **Pokémon that evolve by friendship**, one a week in order: Togepi, Eevee, Pichu, Cleffa, Igglybuff, Riolu, Happiny, Munchlax, Buneary, Azurill, Chingling, Woobat (12 weeks, then again). The admin can change the list, its price and level |
 | The Friend Ball | A new item (`friend-ball`), drawn as the games' green Friend Ball, sold only at the Friend Market (`inShop` false). **+3 on the catch die**, as an Ultra Ball, **and more chances to find the Pokémon's hidden talent on its catch** by the player's best streak (the user's call, 2026-11-01): **×1** on days 0–3, **×2** on 4–7, **×3** on 8–14, **×4** on 15–30, **×5** from 31 (§1b) |
 | Buying | The server prices, limits and charges (`friend_market_buy`), then hands back the purchase as gifts; the game puts them away and plays the gifts' own opening ("From the Friend Market!"). ×1 / ×5 / ×10 within what's left. Items go to the Bag of the region being played (`placeGifts`) |
@@ -74,6 +74,24 @@ of them is paid by the server.
 https://github.com/Splifingald/pokedice/blob/claude/practical-euler-vx5wdk/supabase/migrations/0121_heart_scale_gifts.sql
 It isn't inlined in `supabase/seed.sql` (safe to run again). The Gifts switch (Admin → Messages) must be on for the
 player, as for any gift.
+
+
+## 1d. Heart Scales last a week
+
+The user's call (2026-11-16): Heart Scales reset week by week, as the market's limits do. Every **Monday 00:00 UTC** a
+player's wallet goes back to **0**, whatever they earned by streaks or were given by a message; what they bought stays
+bought, battle tickets included. Wallets there when migration **0149** runs keep their Heart Scales until the next
+Monday.
+
+- **The server** (0149): `friendship_wallets.week`, the Monday the balance belongs to. Anything that pays or charges goes
+  through `friendship_wallet_lock`, which empties a wallet from an earlier week before it moves: a streak day
+  (`friendship_pay`), a purchase (`friend_market_buy`), a message's Heart Scales (`feedback_claim_gifts`).
+  `friendship_status` reads 0 for an earlier week's wallet before anything has emptied it. The total ever earned and the
+  day's count for the cap don't change.
+- **The game**: nothing to work out, the balance is the server's. The market reloads its status when the week turns
+  with the page open. The market's line under the shelf and the rules (INFO) say it: "They last the week: what's left
+  goes back to 0 each Monday." (`ui.market.earnMore`, `ui.rules.fship.market.text`).
+- **Tests**: `tests/heart-scales-weekly-sql.test.ts`.
 
 ## 2. What players see
 
@@ -136,10 +154,15 @@ player, as for any gift.
 4. Heart Scales as a message gift (§1c): run, after 0107,
    https://github.com/Splifingald/pokedice/blob/claude/practical-euler-vx5wdk/supabase/migrations/0121_heart_scale_gifts.sql
    (not inlined in `supabase/seed.sql`; safe to run again).
+5. Heart Scales last a week (§1d): run, after 0107, 0121 and 0132,
+   https://github.com/Splifingald/pokedice/blob/main/supabase/migrations/0149_heart_scales_weekly.sql
+   (not inlined in `supabase/seed.sql`; safe to run again). Until it runs, Heart Scales still carry over.
 
 ## 5. Balance
 
 At the cap (50 a day), a week is 350 Heart Scales; the whole shelf costs 150 + 100 + 150 + 120 = 520, so even a player with
-many best friends chooses. One best friend kept every day (7 a day, 49 a week) buys the shiny of the week about every
-three weeks, or a Rare Candy every two days. A new streak with two friends (3 + 3 a day) makes 42 a week: a Talent
-Candy in a week and a half.
+many best friends chooses. Heart Scales last a week (§1d), so a week's Heart Scales buy that week's shelf, nothing saved
+up: one best friend kept every day (7 a day, 49 a week) buys three Rare Candies or nine Friend Balls a week, never the
+shiny (150) nor a Talent Candy (60); a new streak with two friends (3 + 3 a day, 42 a week) two Rare Candies. The shiny
+takes more than three best friends kept every day all week (3 × 49 = 147 is 3 short). Before §1d, Heart Scales
+carried over and the 49-a-week player bought the shiny about every three weeks.
