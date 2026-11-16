@@ -178,6 +178,9 @@ function buildRows(log: readonly LogEntry[], player: readonly Battler[], foes: r
           icon: STATUS_ICON[e.status],
         })
         return
+      case 'sudden_death_tick':
+        rows.push({ key, ...who(e.targetUid), text: t('ui.hist.suddenDeath'), icon: 'warning', amount: e.amount })
+        return
       case 'weather_tick':
         rows.push({
           key,

@@ -522,6 +522,28 @@ export function describe(e: LogEntry, st: BattleState, ctx: AnimatorContext): St
           tray: null,
         }),
       }
+    case 'sudden_death':
+      return {
+        delay: 1700,
+        sound: 'error',
+        apply: (f) => ({
+          ...f,
+          message: t('ui.log.suddenDeath', { n: e.turns, pct: e.pct }),
+          shake: { id: nextId(), power: 2 },
+          tray: null,
+        }),
+      }
+    case 'sudden_death_tick':
+      return {
+        delay: 850,
+        sound: 'hit',
+        apply: (f) => ({
+          ...f,
+          message: t('ui.log.suddenDeathTick', { name: nameOf(e.targetUid) }),
+          hp: { ...f.hp, [e.targetUid]: e.hpAfter },
+          pop: { id: nextId(), target: e.target, amount: e.amount, tone: 'normal' },
+        }),
+      }
     case 'weather_tick':
       return {
         delay: 850,
