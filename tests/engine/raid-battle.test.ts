@@ -342,6 +342,31 @@ describe('your turn', () => {
     expect(r.log[next]).toEqual({ kind: 'raid_front', ally: 's0-1', actor: 'boss' })
   })
 
+  it('a burn that K.O.s yours as its turn begins: your next Pokémon plays that turn (Ash, 2026-11-18)', () => {
+    const { state } = mine([
+      { uid: 's0-0', dex: 145, level: 50, hp: 999 },
+      { uid: 's0-1', dex: 143, level: 50, hp: 999 },
+    ])
+    const duel = state.duel!
+    // One HP left and burned; the raid Pokémon frozen through this round, so the burn is what K.O.s it, next turn.
+    const mon = duel.player[duel.activeIndex]!
+    mon.hp = 1
+    mon.status = { ...mon.status, burn: { stacks: 3, turns: 3 } }
+    duel.enemy.status = { ...duel.enemy.status, frozen: 3 }
+    const rng = createRng(4)
+    let r = duel.phase === 'player_roll' ? raidDispatch(state, { t: 'ROLL' }, data, rng) : { state, log: [] }
+    r = raidDispatch(r.state, { t: 'ATTACK' }, data, rng)
+    const tick = r.log.findIndex((e) => e.kind === 'status_tick' && e.targetUid === 's0-0')
+    expect(tick).toBeGreaterThan(0)
+    const after = r.log.slice(tick)
+    expect(after.find((e) => e.kind === 'raid_next')).toMatchObject({ side: 0, uid: 's0-1' })
+    // No strike on the one sent in before it plays: its turn is the very next thing.
+    expect(fronts(after)[0]).toEqual({ kind: 'raid_front', ally: 's0-1', actor: 'ally' })
+    expect(r.state.round).toBe(2)
+    expect(r.state.phase).toBe('player')
+    expect(r.state.duel?.player[r.state.duel.activeIndex]?.uid).toBe('s0-1')
+  })
+
   it('offers no Mega Evolution or Gigantamax, and ignores one asked for', () => {
     // Charizard at Lv.50 has both Megas and a Gigantamax form.
     const { state } = mine([{ uid: 's0-0', dex: 6, level: 50, hp: 999 }])

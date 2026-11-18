@@ -571,6 +571,13 @@ function sideTurn(s: RaidState, sideIdx: number, data: GameData, rng: Rng, log: 
   const step: LogEntry[] = []
   startDuelStep(duel, 'player', data, step, rng)
   log.push(...step)
+  // Its burn or poison (or the weather) K.O.'d it as its turn began: the side's next Pokémon takes the turn, rather
+  // than coming in only to take the raid Pokémon's strike (Ash's report, 2026-11-18). Bounded by the team's size.
+  if (duel.phase === 'done' && !live(duel.player[duel.activeIndex]!)) {
+    settle(s, sideIdx, duel, bossHp, step, log, data, 'side')
+    if (s.phase === 'running' && !side.out) sideTurn(s, sideIdx, data, rng, log)
+    return
+  }
   if (side.kind === 'me' && !s.auto && duel.phase !== 'done') {
     s.duel = duel
     s.phase = 'player'

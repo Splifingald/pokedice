@@ -423,6 +423,9 @@ The day's raid is no longer picked per player: **one raid a UTC day, the same fo
   Pokémon strikes back right after each one**, at the side that just played — or, when that side has just gone out, at
   the next one still in (`bossTarget`). So it hits them one by one, and the ally in front stays there for the strike
   back. The speed button speeds up the ally sides' turns only.
+- **A K.O. as its turn begins** (burn, poison or the weather ticking at the start of the side's turn, as in any battle):
+  the side's next Pokémon comes in and **plays that turn**, then takes the strike back — it never comes in only to be
+  struck (Ash's report on Discord, 2026-11-18; `sideTurn`).
 - **Its own type matchups** (raids only, all admin: Events → Raids → Raid numbers), carried by the raid's upgrade
   levels (`UpgradeLevels.typeScale`, read by `computeDamage`, the AI and `canHurt`, so the readout and the banners
   agree):
