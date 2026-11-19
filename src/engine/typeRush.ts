@@ -189,6 +189,12 @@ export function rushBoost(live: LiveSet): { type: PokeType; multiplier: number }
   return { type: rushType(e), multiplier: e.rush.boost }
 }
 
+/** The running Type Rush's type (null without one): a wild one of it is always worth a catch (catchTarget). */
+export function rushTypeOf(live: LiveSet): PokeType | null {
+  const e = rushesOf(live)[0]
+  return e ? rushType(e) : null
+}
+
 /** The player's side's levels with the running Type Rush's boost (unchanged without one). */
 export function withRush(levels: UpgradeLevels, live: LiveSet): UpgradeLevels {
   const r = rushBoost(live)

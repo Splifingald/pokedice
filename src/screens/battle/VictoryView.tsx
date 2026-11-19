@@ -425,6 +425,20 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
           if (e.isNew)
             extras.push({ key: `${k}-dex`, feel: 'dex.registered', node: <DexRegisteredCard dex={e.dex} /> })
           return
+        case 'let_go':
+          // Caught for a Type Rush only (docs/71 §3.3): said, since nothing joins the Box. One let go for its talent
+          // has its talent card already.
+          if (e.rush)
+            extras.push({
+              key: k,
+              sound: 'catch',
+              node: (
+                <div className="text-center text-xl text-muted">
+                  {t('ui.victory.letGo', { name: data.species[e.dex]?.name ?? t('ui.common.unknown') })}
+                </div>
+              ),
+            })
+          return
         case 'fled':
           extras.push({
             key: k,

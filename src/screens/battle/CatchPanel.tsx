@@ -238,6 +238,9 @@ export function CatchPanel({
           {t('ui.talent.catchBonus', { talent: talentName('falseSwipe'), n: swipe })}
         </p>
       )}
+      {c.target.mode === 'rush' && (
+        <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-muted">{t('ui.catch.rushOnly')}</p>
+      )}
       {c.target.mode === 'replace' && (
         <p className="m-0 text-center font-pixel-sm text-[16px] leading-tight text-muted">
           {t('ui.catch.replaces', {

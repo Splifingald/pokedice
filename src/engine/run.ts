@@ -457,6 +457,8 @@ export type RunEvent =
   /** `replacedLevel`: a stronger copy replaced the one you had at that level. */
   /** `isNew`: the species wasn't in the Pokédex before this catch. */
   | { kind: 'caught'; uid: string; dex: number; level: number; joinedTeam: boolean; replacedLevel?: number; isNew?: boolean }
+  /** Caught and let go, the Box untouched: a weaker copy taken for its talent, or (`rush`) for a Type Rush (docs/71). */
+  | { kind: 'let_go'; dex: number; level: number; rush?: boolean }
   | { kind: 'fled'; dex: number }
   | { kind: 'boss_defeated'; dex: number }
   | { kind: 'gym_defeated'; trainerId: string; name: string; badge: string | null; role: TrainerRole }

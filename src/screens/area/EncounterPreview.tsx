@@ -27,6 +27,7 @@ import { ShinyParadeChip } from '@/screens/events/live'
 import { TrickCard } from '@/components/TrickOrTreat'
 import { GiftCardPreview } from '@/components/GiftCard'
 import { mutateSave, useGame } from '@/store/game'
+import { rushTypeNow } from '@/store/typeRush'
 import { canSkipCurrent, declineChallenge, engage, skipEncounter } from '@/store/run'
 import { cx } from '@/theme/util'
 import { TalentGem, talentName } from '@/components/Talent'
@@ -187,12 +188,13 @@ function CatchHint({
   const save = useGame((s) => s.save)
   const data = useGame((s) => s.data)
   if (!save) return null
-  const target = catchTarget(save, dex, level, kind, data, shiny, save.currentAreaId, !!talent)
+  const target = catchTarget(save, dex, level, kind, data, shiny, save.currentAreaId, !!talent, rushTypeNow())
   return (
     <div className="flex flex-wrap items-center gap-x-1 text-lg leading-tight">
       <StatChip stat="catch" value={catchValueOf(data, dex)} size={18} />
       {target?.mode === 'replace' && t('ui.enc.replaces', { level: target.level })}
       {target?.mode === 'new' && shiny && save.pokedex.includes(dex) && t('ui.enc.shinyExtra')}
+      {target?.mode === 'rush' && t('ui.enc.rushOnly')}
       {!target && t('ui.enc.noCatch')}
     </div>
   )

@@ -5,6 +5,7 @@ import {
   countRush,
   rushesOf,
   rushToSettle,
+  rushTypeOf,
   typesOf,
   validateRush,
   type GameData,
@@ -22,6 +23,9 @@ import { serverNow } from './serverTime'
 
 /** A Type Rush is running for this player now (facts are only worth working out then). */
 export const rushRunning = (): boolean => rushesOf(currentLive()).length > 0
+
+/** The running Type Rush's type, for `catchTarget` (null without one). */
+export const rushTypeNow = (): PokeType | null => rushTypeOf(currentLive())
 
 /** The save with these facts counted by the running Type Rush (the same save without one, or when none counted). */
 export function withRushFacts(save: SaveData, facts: readonly RushFact[]): SaveData {
@@ -54,10 +58,13 @@ export function flushRush(): void {
   reportRush(facts)
 }
 
-/** The catches and evolutions among a result's events, as facts (an evolution counts for the type before or after). */
+/**
+ * The catches (one let go included) and evolutions among a result's events, as facts (an evolution counts for the type
+ * before or after).
+ */
 export function eventFacts(events: readonly RunEvent[], data: GameData): RushFact[] {
   return events.flatMap((e): RushFact[] => {
-    if (e.kind === 'caught') return [{ kind: 'catch', types: typesOf(data, e.dex) }]
+    if (e.kind === 'caught' || e.kind === 'let_go') return [{ kind: 'catch', types: typesOf(data, e.dex) }]
     if (e.kind === 'evolve')
       return [{ kind: 'evolve', types: [...typesOf(data, e.fromDex), ...typesOf(data, e.toDex)] }]
     return []

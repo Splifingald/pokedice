@@ -170,7 +170,10 @@ A Pokémon **is of the type** when either of its types is. Counted only **while 
 clock), in the fights where the boost counts (§0), plus the Day Care:
 
 - **catch**: a Pokémon of the type caught (a wild one, a trainer fight's catch, a raid's, the Safari's). Not a gift,
-  a hatch or a trade.
+  a hatch or a trade. **Duplicates count** (players' ask, 2026-11-19): while the Rush runs, a wild Pokémon of its type
+  you already own at the same level or higher can still be caught (`catchTarget`'s `rush` mode). It counts, then is
+  let go (a `let_go` event, the Box untouched), so nobody has to evolve theirs to catch one again. A weaker copy caught
+  for its hidden talent (docs/51) counts the same way.
 - **ko**: a foe K.O.'d by a hit of one of the player's Pokémon of the type.
 - **evolve**: a Pokémon evolves, the type being the one before *or* after (Eevee → Vaporeon counts for Water and
   Normal).

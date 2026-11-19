@@ -7,7 +7,7 @@ import { createInstance, instanceMaxHp } from './progression'
 import type { Rng } from './rng'
 import { getInstance, progressOf, unlockedHiddenAreas, type RunEvent } from './run'
 import { familyTalent, familyUnlocked, talentsOn, unlockFamily } from './talents'
-import type { GameData, ItemDef, PokemonInstance, SaveData } from './types'
+import type { GameData, ItemDef, PokeType, PokemonInstance, SaveData } from './types'
 import {
   addUnownLetters,
   isUnownLetter,
@@ -25,8 +25,14 @@ export const CATCH_DIE = 6
 /**
  * `learn` (docs/51): a weaker copy carrying its family's hidden talent, still locked here. Caught, its talent passes to
  * the family and the Pokémon is let go: `uid` is the copy the player keeps.
+ * `rush` (docs/71 §3.3): a wild copy no stronger than yours, of the running Type Rush's type. Caught, it counts for the
+ * event's quests and is let go, the Box untouched: `uid` is the copy the player keeps.
  */
-export type CatchTarget = { mode: 'new' } | { mode: 'replace'; uid: string; level: number } | { mode: 'learn'; uid: string }
+export type CatchTarget =
+  | { mode: 'new' }
+  | { mode: 'replace'; uid: string; level: number }
+  | { mode: 'learn'; uid: string }
+  | { mode: 'rush'; uid: string }
 
 /**
  * Can this K.O.'d Pokémon be caught? A species not in the Pokédex yet, or — wild ones only — a stronger copy of one you
@@ -48,14 +54,22 @@ export function catchTarget(
   areaId: string = save.currentAreaId,
   /** It carries its family's hidden talent (docs/51). */
   talent = false,
+  /** The running Type Rush's type (`rushTypeOf`): a wild one of it is always worth a catch, for the event (docs/71). */
+  rush: PokeType | null = null,
 ): CatchTarget | null {
   const target = ordinaryTarget(save, dex, level, kind, data, shiny, areaId)
-  if (target || !talent || !talentsOn(data) || familyUnlocked(save, data, dex)) return target
-  // A talent still locked here is worth a catch whatever its level: it passes to the family, the Pokémon is let go.
+  if (target) return target
   const own =
     save.box.filter((p) => p.dex === dex && !p.shiny && !p.outfit).sort((a, b) => b.level - a.level)[0] ??
     save.box.find((p) => p.dex === dex)
-  return own ? { mode: 'learn', uid: own.id } : null
+  if (!own) return null
+  // A talent still locked here is worth a catch whatever its level: it passes to the family, the Pokémon is let go.
+  if (talent && talentsOn(data) && !familyUnlocked(save, data, dex)) return { mode: 'learn', uid: own.id }
+  // A copy no stronger than yours still counts for a Type Rush of its type (players asked: no evolving the one you
+  // own just to catch it again). It is let go, so the Box never fills with duplicates.
+  const s = data.species[dex]
+  if (rush && kind === 'wild' && s && (s.type1 === rush || s.type2 === rush)) return { mode: 'rush', uid: own.id }
+  return null
 }
 
 function ordinaryTarget(
@@ -221,12 +235,14 @@ export function applyCatch(
   let caughtId: string
   let needsTeamChoice = false
   const talent = !!caught.talent && talentsOn(data)
-  // A weaker copy caught for its talent (docs/51): the family learns it, the Pokémon is let go.
-  if (target.mode === 'learn') {
+  // A weaker copy caught for its talent (docs/51) or for a Type Rush (docs/71): the family learns its talent if it
+  // carries one, the Pokémon is let go. Still a catch, so a Type Rush counts it (`let_go`).
+  if (target.mode === 'learn' || target.mode === 'rush') {
     const kept = getInstance(save, target.uid)
     if (!kept) return { save, events, caughtId: target.uid, needsTeamChoice: false }
-    const learnt = talent ? unlockFamily(save, data, caught.dex) : save
+    const learnt = talent && !familyUnlocked(save, data, caught.dex) ? unlockFamily(save, data, caught.dex) : save
     if (learnt !== save) events.push({ kind: 'talent', uid: kept.id, dex: kept.dex, talent: familyTalent(data, caught.dex), how: 'passed' })
+    events.push({ kind: 'let_go', dex: caught.dex, level: caught.level, ...(target.mode === 'rush' && { rush: true }) })
     return { save: learnt, events, caughtId: kept.id, needsTeamChoice: false }
   }
   const old = target.mode === 'replace' ? getInstance(save, target.uid) : undefined

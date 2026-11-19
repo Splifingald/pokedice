@@ -3,6 +3,8 @@
 // end, the boost on the player's attacks of its type, a fight's facts, and the admin's checks.
 import { describe, expect, it } from 'vitest'
 import {
+  applyCatch,
+  catchTarget,
   computeDamage,
   countRush,
   defaultRushGauge,
@@ -18,6 +20,7 @@ import {
   rushToSettle,
   rushTotalPoints,
   rushType,
+  rushTypeOf,
   uniformLevels,
   validateRush,
   withRush,
@@ -283,5 +286,37 @@ describe('Type Rush: the admin’s checks', () => {
     const far = rush({ rush: { ...FIRE.rush, gauge: [{ at: 999, reward: { kind: 'gold', amount: 1 } }] } })
     expect(liveProblems([far], far, data, T0).join(' ')).toMatch(/needs 999 points; the quests pay 330/)
     expect(liveProblems([FIRE], FIRE, data, T0)).toEqual([])
+  })
+})
+
+describe('Type Rush: a copy you own no stronger still counts as a catch (Ash’s ask)', () => {
+  const NORMAL = rush({ rush: { ...FIRE.rush, type: 'normal' } })
+  // A Pidgey (Normal/Flying) owned at Lv.9: a Lv.5 one is no catch, unless a Rush of its type runs.
+  const owned = () => applyCatch(save0(), { dex: 16, level: 9 }, { mode: 'new' }, data, 1, newId)
+
+  it('is on offer while a Rush of its type runs, wild only, and only then', () => {
+    const { save, caughtId } = owned()
+    expect(rushTypeOf([NORMAL])).toBe('normal')
+    expect(rushTypeOf([])).toBeNull()
+    expect(catchTarget(save, 16, 5, 'wild', data)).toBeNull()
+    expect(catchTarget(save, 16, 5, 'wild', data, false, undefined, false, 'normal')).toEqual({
+      mode: 'rush',
+      uid: caughtId,
+    })
+    expect(catchTarget(save, 16, 5, 'wild', data, false, undefined, false, 'fire')).toBeNull()
+    expect(catchTarget(save, 16, 5, 'boss', data, false, undefined, false, 'normal')).toBeNull()
+    // A stronger one still replaces yours, as without a Rush.
+    expect(catchTarget(save, 16, 20, 'wild', data, false, undefined, false, 'normal')?.mode).toBe('replace')
+  })
+
+  it('caught, it is let go (the Box untouched) and counts for the catch quest', () => {
+    const { save, caughtId } = owned()
+    const res = applyCatch(save, { dex: 16, level: 5 }, { mode: 'rush', uid: caughtId }, data, 2, newId)
+    expect(res.save.box).toEqual(save.box)
+    expect(res.save.team).toEqual(save.team)
+    expect(res.needsTeamChoice).toBe(false)
+    expect(res.events).toEqual([{ kind: 'let_go', dex: 16, level: 5, rush: true }])
+    const counted = countRush(res.save, [NORMAL], [{ kind: 'catch', types: ['normal', 'flying'] }], T0)
+    expect(rushProgressOf(counted, NORMAL).counts.catch).toBe(1)
   })
 })

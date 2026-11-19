@@ -242,7 +242,7 @@ import { areaFoeFor, noteMeet } from './areaVersus'
 import { localHour } from './dayTime'
 import { resumedRngs, trackRngs } from './resume'
 import { currentLive } from './live'
-import { eventFacts, flushRush, holdRush, rushRunning, withRushFacts } from './typeRush'
+import { eventFacts, flushRush, holdRush, rushRunning, rushTypeNow, withRushFacts } from './typeRush'
 import { useRebattleMedal } from './rebattle'
 import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
@@ -1565,7 +1565,7 @@ function settleBattle(stalemate: boolean) {
       whiteoutNoCatch(save, data, run.areaId)
     const talent = !!s.enemy.talent
     const target =
-      kind && !noCatch ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny, run.areaId, talent) : null
+      kind && !noCatch ? catchTarget(res.save, foeDex, s.enemy.level, kind, data, s.enemy.shiny, run.areaId, talent, rushTypeNow()) : null
     // The whiteout's boss beaten with nothing to throw at (it can't be caught again): the blizzard ends here.
     if (kind === 'boss' && !target && inWhiteout(res.save, data, run.areaId))
       commitSave(winWhiteout(useGame.getState().save!, data, run.areaId))
@@ -1702,7 +1702,7 @@ function settleDouble(save: SaveData, result: 'won' | 'lost' | 'fled' | 'ongoing
   const thrownAt = horde ? hordeThrowAt(kos) : null
   const catches: CatchState[] = catchKind
     ? (thrownAt ? [thrownAt] : kos).flatMap((ko) => {
-        const target = catchTarget(next, ko.dex, ko.level, catchKind, data, ko.shiny, run.areaId!, !!ko.talent)
+        const target = catchTarget(next, ko.dex, ko.level, catchKind, data, ko.shiny, run.areaId!, !!ko.talent, rushTypeNow())
         const bonus = Math.max(0, ...ko.fighters.map((uid) => catchTalentBonus(data, getInstance(next, uid))))
         return target
           ? [{ uid: ko.uid, dex: ko.dex, level: ko.level, shiny: ko.shiny, kind: catchKind, target, result: null, ...(ko.talent && { talent: true }), ...(bonus && { bonus }) }]
@@ -1844,7 +1844,7 @@ function afterCatch(events: RunEvent[], caughtId: string | null) {
   // copy taken as new would be let go at once (one copy per species), its "Add to team?" asking about nobody.
   const queue = (run.catchQueue ?? []).flatMap((c) => {
     if (!save) return [c]
-    const target = catchTarget(save, c.dex, c.level, c.kind, data, c.shiny, run.areaId ?? save.currentAreaId, !!c.talent)
+    const target = catchTarget(save, c.dex, c.level, c.kind, data, c.shiny, run.areaId ?? save.currentAreaId, !!c.talent, rushTypeNow())
     return target ? [{ ...c, target }] : []
   })
   const [next, ...rest] = queue

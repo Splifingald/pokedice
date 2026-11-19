@@ -120,6 +120,7 @@ import { RunRoundGauge } from '@/screens/area/RoundGauge'
 import { speciesTypes } from '@/components/TypeMatchups'
 import { useAreaDayTime } from '@/store/dayTime'
 import { useDetails, useTypeHints } from '@/store/hooks'
+import { rushTypeNow } from '@/store/typeRush'
 import { cx } from '@/theme/util'
 import { BattleHistoryList, DamageRecap } from './BattleHistory'
 import { EncounterSwipe } from './EncounterSwipe'
@@ -439,7 +440,7 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
     !versus &&
     (st.kind === 'wild' || st.kind === 'boss') &&
     !!save &&
-    !!catchTarget(save, b.baseDex ?? b.dex, b.level, st.kind, data, b.shiny)
+    !!catchTarget(save, b.baseDex ?? b.dex, b.level, st.kind, data, b.shiny, undefined, undefined, rushTypeNow())
   // A region flavour's fight (docs/62): a horde's one throw, a Totem's and a Titan's none.
   const flavour =
     enc?.kind === 'wild' && enc.horde?.length ? 'horde' : enc?.kind === 'gym' && enc.trial ? 'trial' : enc?.kind === 'boss' && enc.titan ? 'titan' : null

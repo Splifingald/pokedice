@@ -178,6 +178,7 @@ export function useRushRules(e: LiveEvent): RuleRow[] {
       text: t('ui.rush.rules.boost.text', { type }),
     },
     { icon: 'star', title: t('ui.rush.rules.quests.title'), text: t('ui.rush.rules.quests.text', { type }) },
+    { icon: 'ball', title: t('ui.rush.rules.dupes.title'), text: t('ui.rush.rules.dupes.text', { type }) },
     { icon: 'gift', title: t('ui.rush.rules.gauge.title'), text: t('ui.rush.rules.gauge.text') },
     { icon: 'calendar', title: t('ui.rush.rules.end.title'), text: t('ui.rush.rules.end.text') },
   ]
