@@ -30,9 +30,19 @@ export function useRewardText() {
 export function CalendarRewardIcon({ reward, size = 32 }: { reward: CalendarReward; size?: number }) {
   const { t } = useT()
   const qty = reward.kind === 'pokemon' ? reward.qty : reward.kind === 'item' ? reward.qty : 1
+  const mark = Math.max(12, Math.round(size * 0.5))
   return (
     <span className="cal-what flex flex-col items-center gap-0.5" aria-hidden>
-      <GiftIcon g={calendarGifts(reward)[0]!} size={size} />
+      {/* A shiny's sparkle and a hidden talent's gem on the sprite: the prize says what makes it special at a glance. */}
+      <span className="relative inline-block">
+        <GiftIcon g={calendarGifts(reward)[0]!} size={size} />
+        {reward.kind === 'pokemon' && reward.shiny && (
+          <PixelIcon name="sparkle" size={mark} className="absolute -left-1.5 -top-1.5" />
+        )}
+        {reward.kind === 'pokemon' && reward.talent && (
+          <PixelIcon name="talent" size={mark} className="absolute -bottom-1.5 -right-1.5" />
+        )}
+      </span>
       <span className="font-pixel-sm text-[15px] leading-none">
         {reward.kind === 'gold'
           ? `₽${reward.amount.toLocaleString('en')}`

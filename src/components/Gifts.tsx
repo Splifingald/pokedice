@@ -123,6 +123,7 @@ export function useGiftText() {
               data.species[g.dex]?.name ?? t('ui.common.aPokemon'),
               t('ui.common.level.short', { n: g.level }),
               ...(g.shiny ? [t('ui.dayCare.shinyTag')] : []),
+              ...(g.talent ? [t('ui.talent.section')] : []),
               // Its outfit (docs/59), while outfits are on: off, the gift brings the plain Pokémon.
               ...(outfitOf(data, g) ? [outfitName(g.outfit!)] : []),
             ].join(' ')
@@ -153,6 +154,7 @@ function GiftName({ g }: { g: Gift }) {
               : t('ui.common.level.short', { n: g.level })}
       </span>
       {g.kind === 'pokemon' && g.shiny && <Chip tone="gold">{t('ui.dayCare.shinyTag')}</Chip>}
+      {g.kind === 'pokemon' && g.talent && <Chip tone="blue">{t('ui.talent.section')}</Chip>}
       {g.kind === 'pokemon' && outfitOf(data, g) && <Chip tone="red">{outfitName(g.outfit!)}</Chip>}
     </>
   )
