@@ -179,6 +179,25 @@ export const ICONS = {
     '.kRRRyoRRRk.',
     '.kkkkkkkkkk.',
   ],
+  /**
+   * A small gift (13 × 13, as the pack's heart and person): a Gift card's segment on the round gauge (docs/64 §4.0),
+   * where the 12 × 12 one's highlights blur.
+   */
+  giftSmall: [
+    '..kkk...kkk..',
+    '.kyYyk.kyYyk.',
+    '.kyyykkkyyyk.',
+    '..kkkkykkkk..',
+    'kkkkkkykkkkkk',
+    'kwrrrryrrrrrk',
+    'krrrrryrrrrRk',
+    'kkkkkkykkkkkk',
+    '.krrrryrrrRk.',
+    '.krrrryrrrRk.',
+    '.krrrryrrrRk.',
+    '.kRRRRyRRRRk.',
+    '.kkkkkkkkkkk.',
+  ],
   /** A Heart Scale (docs/60): the Friend Market's currency, the games' own item sprite (Gen IV, 18 × 15). */
   heartScale: [
     '....kkkk..........',
@@ -799,6 +818,7 @@ const OWN_PALETTE: Partial<Record<IconName, Record<string, string>>> = {
   navFriends: NAV_PAL,
   trade: TRADE_PAL,
   gift: GIFT_PAL,
+  giftSmall: GIFT_PAL,
   heartScale: HEART_SCALE_PAL,
   bag: BAG_PAL,
   pumpkin: PUMPKIN_PAL,

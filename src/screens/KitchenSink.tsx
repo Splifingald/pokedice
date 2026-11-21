@@ -145,17 +145,30 @@ function RoundGaugeStates() {
     deck: ['center', ...Array<DeckCard>(n - 4).fill('wild')],
   }
   const done: AreaProgress = { ...emptyProgress(), drawn: Array.from({ length: n }, (_, i) => (i % 3 ? 'wild' : 'trainer')) }
+  // A Gift card met and one still to come (docs/64 §4.0), beside a Center and a real player's card.
+  const gifts: AreaProgress = {
+    ...emptyProgress(),
+    drawn: ['wild', 'gift'],
+    deck: ['versus', ...Array<DeckCard>(Math.max(0, n - 6)).fill('wild'), 'gift', 'center'],
+  }
   return (
     <div className="flex w-full max-w-md flex-col gap-3">
       <RoundGauge area={area} progress={mid} />
       <RoundGauge area={area} progress={emptyProgress()} />
       <RoundGauge area={area} progress={done} />
+      <RoundGauge area={area} progress={gifts} />
       {/* A fight's strip (the card being played white) and Home's banner (the rest grey, a Center ahead). */}
       <div className="relative h-[14px] bg-panel">
         <RoundGauge area={area} progress={ahead} strip className="absolute inset-x-0 top-0" />
       </div>
       <div className="pixel-btn px-3 py-2">
         <RoundGauge area={area} progress={ahead} banner />
+      </div>
+      <div className="relative h-[14px] bg-panel">
+        <RoundGauge area={area} progress={gifts} strip className="absolute inset-x-0 top-0" />
+      </div>
+      <div className="pixel-btn px-3 py-2">
+        <RoundGauge area={area} progress={gifts} banner />
       </div>
       <div className="flex flex-col gap-1.5 border-t-[3px] border-edge bg-parchment px-3 py-2">
         <RoundGauge area={area} progress={mid} compact />
@@ -531,7 +544,7 @@ export function KitchenSink() {
         </div>
       </Section>
 
-      <Section title="RoundGauge — a round under way, its start, just done; compact over an action bar">
+      <Section title="RoundGauge — a round under way, its start, just done, with gifts; compact over an action bar">
         <RoundGaugeStates />
       </Section>
 

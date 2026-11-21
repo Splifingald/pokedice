@@ -318,7 +318,8 @@ stays live, and so do the toasts (`data-stay-live`). The rotate cover holds ever
   `banner`): a segment per card of the round, gold once met (green once the area is cleared), **where you are marked**
   (the user's call, 2026-10-27: on the strip the card being played is white; on the page's gauge the next has a white
   edge), the rest grey; a **heart on each Pokémon Center's segment**, met or still to come, and the next one said to
-  screen readers ("Pokémon Center in 2"). The strip lies over the stage's top: the plates and the matchups pop-up start
+  screen readers ("Pokémon Center in 2"); a person on a real player's (docs/54) and **a small gift on a Gift card's**
+  (`giftSmall`, 13 × 13 as the heart; docs/64 §4.0), met or still to come. The strip lies over the stage's top: the plates and the matchups pop-up start
   under it (`--strip` on the stage), never hidden by it.
 - **One stage-and-panel shape everywhere**: an area's steps outside a fight (`src/screens/area/StagePanel`: no tab bar on
   `/area`, the bar pinned over the home indicator; the scene on top on every screen, the bar sticky at the column's foot

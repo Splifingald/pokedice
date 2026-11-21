@@ -190,6 +190,8 @@ export function RoundGauge({
   const isCenter = (i: number) => order[i] === 'center'
   // A real player's card (docs/54): a person on its segment, as a heart on a Center's, so the round's end is known.
   const isPlayer = (i: number) => order[i] === 'versus'
+  // A Gift card (docs/64 §4.0): a small present on its segment, so the player knows a gift is coming and when.
+  const isGift = (i: number) => order[i] === 'gift'
   // Where the player is (the user, 2026-10-27): the cards met fill in (green once the area is cleared, the free play's
   // rounds), the one being played is white on a fight's strip, the next one has a white edge on the page's gauge, and
   // the rest stay grey.
@@ -211,6 +213,7 @@ export function RoundGauge({
             >
               {isCenter(i) && <PixelIcon name="heart" size={12} />}
               {isPlayer(i) && <PixelIcon name="user" size={12} />}
+              {isGift(i) && <PixelIcon name="giftSmall" size={12} />}
               {i === metCount - 1 && <FreshPip areaId={area.id} met={metCount} />}
             </li>
           ))}
@@ -233,6 +236,7 @@ export function RoundGauge({
             >
               {isCenter(i) && <PixelIcon name="heart" size={12} />}
               {isPlayer(i) && <PixelIcon name="user" size={12} />}
+              {isGift(i) && <PixelIcon name="giftSmall" size={12} />}
             </li>
           ))}
         </ol>
@@ -247,7 +251,7 @@ export function RoundGauge({
       role="img"
       aria-label={label + centersLabel}
     >
-      {/* The rework: a plain gauge, a segment per card and no icons; the round beside it. */}
+      {/* The rework: a plain gauge, a segment per card, icons only on Centers, real players and gifts; the round beside it. */}
       <ol className="flex h-[20px] min-w-0 flex-1 gap-[3px] bg-night p-[3px]" aria-hidden>
         {Array.from({ length: total }, (_, i) => (
           <li
@@ -260,6 +264,7 @@ export function RoundGauge({
           >
             {isCenter(i) && <PixelIcon name="heart" size={12} />}
             {isPlayer(i) && <PixelIcon name="user" size={12} />}
+            {isGift(i) && <PixelIcon name="giftSmall" size={12} />}
           </li>
         ))}
       </ol>
