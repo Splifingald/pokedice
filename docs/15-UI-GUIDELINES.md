@@ -2352,8 +2352,10 @@ moon's side (`drawPose`). Its scenes follow §8 (short: half the time; off: thei
   game's 2 px edge, **44 px at least**; a 4 × 4 fits a 360 px phone (about 78 px a bush). A closed bush lifts 2 px on
   hover and focus (a gold focus ring); an opened one is parted (`openBushSprite`), disabled, sinks into the trampled
   snow and shows what it held (a ball: a wild Pokémon; a sparkle: a find; the cabin; Stantler's own sprite, shiny in
-  the last round; nothing) and, in its top right corner, **the hoofprints** (two prints a stride apart, rotated to one
-  of 8 directions). Every bush's name says its row, column, what it held and where the prints point ("Snowy bush, row
+  the last round; nothing) and, in its top right corner, **the trail** (the user's report, 2026-11-21: the old two prints in a corner didn't say where they went): an arrow of
+  tracks on a night-blue chip ringed in ice blue, a solid arrowhead in front, a bright hoofprint, a fading one behind,
+  sitting **on the edge or corner it leaves by** (up: top middle; up and right: top right…), 38 % of the bush; drawn
+  straight and diagonal and only turned by quarter turns, so all 8 directions stay crisp. Every bush's name says its row, column, what it held and where the prints point ("Snowy bush, row
   2, column 2, Nothing, Hoofprints point up and right"): **direction is never the picture alone**. The bush just opened
   rustles (four stepped frames, `.ts-rustle`; none when calm or off) and its moment holds 0.7 s (0.35 s short, none
   off) before what it held comes: a fight on the battle screen, the find's step, the cabin as a Pokémon Center.

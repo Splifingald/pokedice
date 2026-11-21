@@ -55,12 +55,15 @@ function PixelMap({
   size,
   className,
   color,
+  palette,
 }: {
   rows: readonly string[]
   size: number
   className?: string
   /** Every pixel in this one colour (a light print on the night's blue). */
   color?: string
+  /** Colours of its own over the glade's palette. */
+  palette?: Record<string, string>
 }) {
   const w = rows[0]!.length
   const h = rows.length
@@ -76,7 +79,7 @@ function PixelMap({
       {rows.flatMap((row, y) =>
         [...row].map((ch, x) =>
           ch === '.' ? null : (
-            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={color ?? PAL[ch]} />
+            <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={color ?? palette?.[ch] ?? PAL[ch]} />
           ),
         ),
       )}
@@ -112,26 +115,100 @@ const CABIN = [
 
 const SNOWFLAKE = ['..w..', 'w.w.w', '.www.', 'w.w.w', '..w..']
 
-const ANGLE: Record<TracksPrint, number> = { n: 0, ne: 45, e: 90, se: 135, s: 180, sw: 225, w: 270, nw: 315 }
+/**
+ * The trail an opened bush shows (the user's report, 2026-11-21: "we can't understand where the footprints go"): an
+ * arrow made of tracks, a solid arrowhead in front, a bright hoofprint, then a fading one behind. Drawn twice, straight
+ * (pointing up) and diagonal (pointing up-right), and only ever turned by quarter turns, so all 8 directions stay crisp
+ * pixel art; 'w' the fresh snow-white, 's' the older print behind.
+ */
+const TRAIL_STRAIGHT = [
+  '......w......',
+  '.....www.....',
+  '....wwwww....',
+  '...wwwwwww...',
+  '..wwwwwwwww..',
+  '.............',
+  '....ww.ww....',
+  '....ww.ww....',
+  '....ww.ww....',
+  '.............',
+  '....ss.ss....',
+  '....ss.ss....',
+  '.............',
+]
+const TRAIL_DIAGONAL = [
+  '......wwwwwww',
+  '.......wwwwww',
+  '........wwwww',
+  '.........wwww',
+  '....ww....www',
+  '....ww.....ww',
+  '......ww....w',
+  '......ww.....',
+  '.ss..........',
+  '.ss..........',
+  '...ss........',
+  '...ss........',
+  '.............',
+]
+const TRAIL_PAL: Record<string, string> = { w: '#ffffff', s: '#7fa6d6' }
 
-/** The hoofprints pointing `dir`, as they show on an opened bush. */
+/** Which drawing and how many quarter turns for each direction. */
+const TURN: Record<TracksPrint, { diag: boolean; quarter: number }> = {
+  n: { diag: false, quarter: 0 },
+  e: { diag: false, quarter: 1 },
+  s: { diag: false, quarter: 2 },
+  w: { diag: false, quarter: 3 },
+  ne: { diag: true, quarter: 0 },
+  se: { diag: true, quarter: 1 },
+  sw: { diag: true, quarter: 2 },
+  nw: { diag: true, quarter: 3 },
+}
+
+/** Where on the bush the trail sits: on the edge or corner it leaves by, so its place points the way too. */
+const EDGE: Record<TracksPrint, string> = {
+  n: 'top-[3%] left-1/2 -translate-x-1/2',
+  ne: 'top-[3%] right-[3%]',
+  e: 'right-[3%] top-1/2 -translate-y-1/2',
+  se: 'bottom-[3%] right-[3%]',
+  s: 'bottom-[3%] left-1/2 -translate-x-1/2',
+  sw: 'bottom-[3%] left-[3%]',
+  w: 'left-[3%] top-1/2 -translate-y-1/2',
+  nw: 'top-[3%] left-[3%]',
+}
+
+/** The trail pointing `dir` on a night-blue chip that stands out on the snow (`edge`: placed on the bush's edge). */
 export function Hoofprints({
   dir,
   size = 22,
+  edge = false,
   className,
 }: {
   dir: TracksPrint
   size?: number
+  /** Inside a bush (positioned): on the edge it points to. */
+  edge?: boolean
   className?: string
 }) {
+  const { diag, quarter } = TURN[dir]
   return (
     <span
-      className={cx('inline-block leading-none', className)}
-      style={{ transform: `rotate(${ANGLE[dir]}deg)` }}
+      className={cx(
+        'inline-grid place-items-center rounded-full bg-[#1b2f52] leading-none shadow-[0_0_0_2px_#c8f4ff]',
+        edge && cx('absolute', EDGE[dir]),
+        className,
+      )}
+      style={{ width: size, height: size }}
       data-print={dir}
       aria-hidden
     >
-      <PixelMap rows={HOOF} size={size} color="#e8f0ff" />
+      <span className="block leading-none" style={{ transform: `rotate(${quarter * 90}deg)` }}>
+        <PixelMap
+          rows={diag ? TRAIL_DIAGONAL : TRAIL_STRAIGHT}
+          size={Math.round(size * 0.8)}
+          palette={TRAIL_PAL}
+        />
+      </span>
     </span>
   )
 }
@@ -635,11 +712,7 @@ export function TracksGlade({
                 </span>
               )}
               {open && shown.print && (
-                <Hoofprints
-                  dir={shown.print}
-                  size={Math.max(14, Math.round(cell * 0.3))}
-                  className="absolute right-[6%] top-[6%] z-[2]"
-                />
+                <Hoofprints dir={shown.print} size={Math.max(22, Math.round(cell * 0.38))} edge className="z-[2]" />
               )}
             </button>
           )

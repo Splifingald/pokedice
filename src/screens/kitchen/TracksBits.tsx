@@ -143,7 +143,7 @@ export function TracksBits() {
         <BushArt open px={3} />
         {DIRS.map((d) => (
           <span key={d} className="grid justify-items-center gap-1 bg-[#14224a] p-1">
-            <Hoofprints dir={d} size={24} />
+            <Hoofprints dir={d} size={32} />
             <span className="font-pixel-sm text-[14px] text-[#f4f8ff]">{d}</span>
           </span>
         ))}
