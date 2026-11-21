@@ -45,13 +45,13 @@ const ORDER0 = 9200
 const id = (...parts: (string | number)[]) => stableUuid(['snowglobe-valley', ...parts].join(':'))
 
 /**
- * The three partners (the user's reviews of 2026-11-01): fan favourites with a plain three-stage line evolving by level
- * at about the same levels (no trade, no stone), none strong against Ice, and none a game's own starter: Mareep (the
- * woolly sheep, 15/30), Lillipup (Stoutland, the snow-rescue dog, 16/32), Pikipek (Toucannon, 14/28): each clears the
- * chain and the league on the campaign simulator (Bounsweet, Grass, struggled on the first trail; Abra's Kadabra
- * evolves by trade here). Alolan Sandshrew and Vulpix, the first picks, stay in the wild.
+ * The three partners (the user's call of 2026-11-21, back to the brief's Ice starters): Alolan Sandshrew, Sneasel and
+ * Alolan Vulpix, Lv.5. Each is Ice and evolves once by an item the world's Mart sells (Ice Stone → Alolan Sandslash and
+ * Alolan Ninetales, Razor Claw → Weavile), each also found once on the road. All three are wild on Snowy Trail and
+ * Pinewood Forest, so a player can catch the two they didn't pick from the start. Mareep, Lillipup and Pikipek, the
+ * reviews' partners of 2026-11-01, stay in the wild.
  */
-export const STARTERS = [179, 506, 731]
+export const STARTERS = [10101, 215, 10103]
 
 /**
  * The world's areas, in order: its chain, its league, then its secret areas. Each main area's item card becomes a Gift
@@ -76,6 +76,10 @@ export const AREAS: AreaSpec[] = [
       [220, 6, 4, 6],
       [506, 5, 4, 6],
       [613, 3, 4, 6],
+      // The three partners (STARTERS), rare, so the two not picked can be caught from the first area.
+      [10101, 4, 4, 6],
+      [215, 4, 4, 6],
+      [10103, 4, 4, 6],
     ],
     trainers: [
       {
@@ -121,6 +125,8 @@ export const AREAS: AreaSpec[] = [
       [397, 5, 9, 11],
       [613, 4, 8, 10],
       [10103, 8, 7, 9],
+      [215, 8, 7, 9],
+      [10101, 6, 7, 9],
       [234, 8, 7, 9],
       [731, 4, 7, 9],
     ],

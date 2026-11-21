@@ -57,32 +57,24 @@ describe('Snowglobe Valley', () => {
     expect(w.starters).toEqual(STARTERS)
   })
 
-  it('offers three starters with a plain three-stage line, evolving at about the same levels, none strong against Ice', () => {
-    // The user's reviews (2026-11-01): fan favourites, none a game's own starter.
-    expect(STARTERS.map((d) => data.species[d]!.name)).toEqual(['Mareep', 'Lillipup', 'Pikipek'])
-    const ICE_BEATERS = ['fire', 'fighting', 'rock', 'steel']
-    // Only the evolutions this world allows (a regional one, such as a Hisuian form, happens in its region alone).
-    const evos = (dex: number) => evolutionsIn(data.species[dex]!.evolutions ?? [], REGION_ID)
-    const levels = STARTERS.map((d) => {
-      const line = [d]
-      for (let e = evos(d); e.length; e = evos(line.at(-1)!)) {
-        expect(e, data.species[line.at(-1)!]!.name).toHaveLength(1)
-        // By level only: Kadabra, for one, evolves by trade here.
-        expect(e[0]!.level, data.species[line.at(-1)!]!.name).toBeTruthy()
-        expect(isTradeEvolution(data, line.at(-1)!, e[0]!.toDex)).toBe(false)
-        line.push(e[0]!.toDex)
-      }
-      expect(line, data.species[d]!.name).toHaveLength(3)
-      for (const x of line)
-        expect(
-          typesOf(x).filter((t) => ICE_BEATERS.includes(t!)),
-          data.species[x]!.name,
-        ).toEqual([])
-      return line.slice(0, 2).map((x) => evos(x)[0]!.level!)
-    })
-    for (const i of [0, 1]) {
-      const at = levels.map((l) => l[i]!)
-      expect(Math.max(...at) - Math.min(...at), `stage ${i + 2}`).toBeLessThanOrEqual(4)
+  it('offers the three Ice starters, each evolving once by an item the Mart sells, all three wild in the first areas', () => {
+    // The user's call (2026-11-21): Alolan Sandshrew, Sneasel, Alolan Vulpix.
+    expect(STARTERS.map((d) => data.species[d]!.name)).toEqual(['Alolan Sandshrew', 'Sneasel', 'Alolan Vulpix'])
+    const sold = new Set(h.world.shop!.map((x) => x.key))
+    const found = new Set(h.areas.flatMap((a) => a.lootPool.filter((l) => l.unique).map((l) => l.itemKey)))
+    const first = AREAS.slice(0, 2).map((a) => h.areas.find((x) => x.name === a.name)!)
+    for (const d of STARTERS) {
+      const name = data.species[d]!.name
+      expect(typesOf(d), name).toContain('ice')
+      // Only the evolutions this world allows (a regional one happens in its region alone).
+      const evos = evolutionsIn(data.species[d]!.evolutions ?? [], REGION_ID)
+      expect(evos, name).toHaveLength(1)
+      const item = evos[0]!.item!
+      expect(sold.has(item) && found.has(item), `${name}: ${item}`).toBe(true)
+      expect(isTradeEvolution(data, d, evos[0]!.toDex)).toBe(false)
+      expect(evolutionsIn(data.species[evos[0]!.toDex]!.evolutions ?? [], REGION_ID), name).toEqual([])
+      // The two not picked can be caught from the start: on Snowy Trail and Pinewood Forest both.
+      for (const a of first) expect(a.wildPool.some((w) => w.dex === d && w.weight > 0), `${a.name}: ${name}`).toBe(true)
     }
   })
 

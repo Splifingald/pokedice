@@ -44,12 +44,21 @@ export function areaStatus(save: SaveData, data: GameData, area: Area): AreaStat
   return 'next'
 }
 
-/** Why an area is locked, in words: "Clear Route 3", "Catch 60 Pokémon · 41/60". */
+/**
+ * Why an area is locked, in words: "Clear Route 3", "Catch 60 Pokémon · 41/60", "Opens Sat 18 Oct, 18:00", or both
+ * a condition and a date when both are still to come ("Clear Frost League · Opens Fri 25 Dec, 13:00").
+ */
 export function lockReason(save: SaveData, data: GameData, area: Area): string {
-  // Its turn has come but not its date: "Opens Sat 18 Oct, 18:00".
+  // A small world's area may also wait for its date (docs/21), on the server's clock.
   const opens = areaOpensAt(data, area.id)
-  if (opens != null && isAreaUnlocked(save, area.id, data) && !areaOpenAt(data, area.id, serverNow()))
-    return t('ui.world.opens', { date: dayTime(opens) })
+  const date =
+    opens != null && !areaOpenAt(data, area.id, serverNow()) ? t('ui.world.opens', { date: dayTime(opens) }) : ''
+  return [conditionReason(save, data, area), date].filter(Boolean).join(' · ')
+}
+
+/** The condition still to meet, in words ('' when none is left). */
+function conditionReason(save: SaveData, data: GameData, area: Area): string {
+  if (isAreaUnlocked(save, area.id, data)) return ''
   if (!area.hidden) {
     const chain = linearAreas(data, regionOfArea(area))
     const prev = chain[chain.findIndex((a) => a.id === area.id) - 1]

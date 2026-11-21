@@ -5,16 +5,17 @@ import { areaVersusHere, foeGoldMultiplier, foeLevels, matchFoe, type AreaFoe } 
 import { battleOutcome, createBattle, type BattleKind } from './battle'
 import { uniformLevels, type UpgradeLevels } from './damage'
 import { linearAreas } from './data'
-import { getRegion, newRegionBlock, regionOf, regionOfArea, startRegion } from './regions'
+import { evolutionGate, getRegion, newRegionBlock, regionOf, regionOfArea, startRegion } from './regions'
 import { maxComboLevel, maxDieLevel, nextComboCost, nextDieCost } from './economy'
 import { challengeEncounter, enemyUpgradeLevelFor, isPlayerFoe, nextEncounter, type EncounterRoll } from './encounters'
 import { applyCatch, catchChance, catchTarget, catchValueOf, rollCatch } from './catching'
 import { ballBonus, isBallFor } from './items'
 import { starterFainted, trainerPrize } from './opening'
-import { createInstance, instanceStats } from './progression'
+import { createInstance, instanceStats, stoneEvolution } from './progression'
 import { playerSideOf } from './rival'
-import { createRng } from './rng'
+import { createRng, type Rng } from './rng'
 import {
+  applyFieldItem,
   applyHp,
   applyVictory,
   applyWipe,
@@ -35,7 +36,8 @@ import {
   teamOf,
 } from './run'
 import { autoStep } from './sim'
-import { buyWorldItem, currentWorld, withWorldBoost, worldShopRows } from './worlds'
+import { buyWorldItem, currentWorld, enterWorld, withWorldBoost, worldShopRows } from './worlds'
+import { worldOfRegion } from './worldList'
 import { COMBO_KEYS, POKE_TYPES, type Area, type ComboKey, type GameData, type ItemDef, type PokeType, type RegionId, type SaveData } from './types'
 
 export interface CampaignOptions {
@@ -150,7 +152,11 @@ function startingSave(data: GameData, opts: CampaignOptions, newId: () => string
   let save: SaveData = { ...fresh, settings: { ...fresh.settings, multiExp: opts.multiExp } }
   // A run in a later region starts as a player arriving there would: that region's starter, and nothing else.
   if (region && regionOf(save) !== region.id) {
-    save = startRegion(save, region, newRegionBlock(region, starter, data, 0, newId, createInstance))
+    // A small world's run enters it as a player does, so its Mart sells (docs/21); any other region starts as usual.
+    const world = worldOfRegion(data, region.id)
+    save =
+      (world && enterWorld(save, data, world, starter, 0, newId)) ||
+      startRegion(save, region, newRegionBlock(region, starter, data, 0, newId, createInstance))
     save = { ...save, settings: { ...save.settings, multiExp: opts.multiExp } }
   }
   if (members.length) {
@@ -205,9 +211,40 @@ function stockWorldBag(save: SaveData, data: GameData): SaveData {
   return s
 }
 
+/**
+ * The evolution items its Mart sells, used as a player would: one found or bought goes on the first of the team it
+ * evolves (Snowglobe Valley's starters evolve only so: Ice Stone, Razor Claw). `saving`: one is wanted and the purse
+ * can't pay it yet, so the rest waits.
+ */
+function evolveByItem(save: SaveData, data: GameData, rng: Rng): { save: SaveData; saving: boolean } {
+  let s = save
+  let saving = false
+  const gate = evolutionGate(s, data)
+  const stones = worldShopRows(s, data).filter((r) => r.item.effect.kind === 'stone' && r.limit == null)
+  for (const p of teamOf(s)) {
+    const row = stones.find((r) => stoneEvolution(p, r.item.key, data, gate) != null)
+    if (!row) continue
+    if ((s.inventory[row.item.key] ?? 0) <= 0) {
+      if (s.gold < row.price) {
+        saving = true
+        continue
+      }
+      s = buyWorldItem(s, data, row.item.key, 1, 0) ?? s
+    }
+    s = applyFieldItem(s, row.item.key, p.id, data, rng)?.save ?? s
+  }
+  return { save: s, saving }
+}
+
 /** Cheapest useful upgrade first (dice the team carries, the common combos), until the cheapest one is unaffordable. */
-function spend(save: SaveData, data: GameData): SaveData {
-  let s = currentWorld(save, data) ? stockWorldBag(save, data) : save
+function spend(save: SaveData, data: GameData, rng: Rng): SaveData {
+  let s = save
+  if (currentWorld(s, data)) {
+    // An evolution item first: a player whose partner evolves only so saves up for it before anything else.
+    const evo = evolveByItem(s, data, rng)
+    if (evo.saving) return evo.save
+    s = stockWorldBag(evo.save, data)
+  }
   for (let guard = 0; guard < 50; guard++) {
     const types = new Set<PokeType>()
     for (const p of teamOf(s)) for (const t of instanceStats(p, data).dice) if (t !== 'base') types.add(t)
@@ -447,7 +484,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
       if (won) r.versus.wins++
       else r.versus.losses++
       save = centerHeal(save, data)
-      if (opts.spend) save = spend(save, data)
+      if (opts.spend) save = spend(save, data, rng)
     } else if (enc.kind === 'trainer' || enc.kind === 'gym') {
       for (let k = 0; k < enc.team.length; k++) {
         const gym = enc.kind === 'gym' ? { trainerId: enc.trainerId, last: k === enc.team.length - 1 } : undefined
@@ -456,7 +493,7 @@ export function* runCampaign(data: GameData, opts: CampaignOptions): Generator<n
         // A mutual K.O. — the last Pokémon faints as it wins — ends the gauntlet: there is nobody left to send out.
         if (teamOf(save).every((p) => p.currentHp <= 0)) break
       }
-      if (opts.spend) save = spend(save, data)
+      if (opts.spend) save = spend(save, data, rng)
     } else fight(area, r, enc.kind === 'boss' ? 'boss' : 'wild', { dex: enc.dex, level: enc.level }, enemyUpgradeLevelFor(enc, area, data))
     // The encounter is over: the last card of a deck completes the round (a wipe dropped the deck, so it won't).
     save = finishRound(save, area.id, data).save

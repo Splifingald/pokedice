@@ -1324,6 +1324,9 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   "Spiritomb caught". Open, new or done, a tap travels there. The line keeps to the name so a phone shows it whole;
   "(Shiny)" is in the label for screen readers.
 - **An area waiting for its date** is locked like any other, with "Opens {date}" (the local date and time, `dayTime`).
+  On a secret area's row the date has a clock: on the gold line when no condition is left to meet, else on a line of
+  its own under the condition, so a row gated twice says both ("Clear Frost League", then "Opens Fri 25 Dec, 13:00");
+  the toast and the Areas sheet say both too, the condition first (`lockReason`).
 - **The Poké Mart inside is the World Mart** (`WorldShop`): the world's picture and time left over the admin's list,
   each row with its limit ("8 of 10 left", Sold out), under the usual Buy / Sell tabs: Sell is the world's bag,
   bought back for the world's ₽ (its prices are never below the buy-back, so that can't pay).

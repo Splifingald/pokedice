@@ -70,7 +70,7 @@ const MIN = 60_000
 
 /** Inside Snowglobe Valley, standing on Spear Pillar with three Lv.65 Pokémon, hurt. */
 function atPillar(d: GameData = data): SaveData {
-  const s = enterWorld(newSave(4, d, 0, newId), d, world, 179, NOW, newId)!
+  const s = enterWorld(newSave(4, d, 0, newId), d, world, 10103, NOW, newId)!
   const team = [181, 508, 733].map((dex) => {
     const p = createInstance(dex, 65, d, newId(), NOW)
     return { ...p, currentHp: Math.floor(instanceMaxHp(p, d) / 2) }

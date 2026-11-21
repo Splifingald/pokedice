@@ -163,6 +163,10 @@ export function WorldBits() {
         <SecretRowView area={haunted} state="locked" boss={{ dex: 93, level: 30, shiny: true }} raid={false} cond={{ kind: 'pokedex', label: 'Catch 20 Pokémon', current: 12, target: 20 }} onClick={noop} />
         <SecretRowView area={cave} state="locked" boss={{ dex: 442, level: 50, shiny: true }} raid={false} cond={{ kind: 'maxLevel', label: 'Raise a Pokémon to Lv.60', current: 41, target: 60 }} onClick={noop} />
         <SecretRowView area={island} state="locked" boss={{ dex: 491, level: 60, shiny: true, raid: true }} raid cond={{ kind: 'cleared', label: 'Clear Shadow Elite', current: 0, target: 1 }} onClick={noop} />
+        {/* Waiting for its date (docs/21): the date alone, then a condition and the date (gated twice). */}
+        <SecretRowView area={cave} state="locked" boss={{ dex: 225, level: 40, shiny: true }} raid={false} cond={null} opens="Opens Thu 24 Dec, 13:00" onClick={noop} />
+        <SecretRowView area={island} state="locked" boss={{ dex: 483, level: 70, shiny: true, raid: true }} raid cond={{ kind: 'cleared', label: 'Clear Frost League', current: 0, target: 1 }} opens="Opens Fri 25 Dec, 13:00" onClick={noop} />
+        <SecretRowView area={haunted} state="locked" boss={{ dex: 493, level: 90, shiny: true, raid: true }} raid cond={{ kind: 'pokedex', label: 'Catch 90 Pokémon', current: 41, target: 90 }} opens="Opens Fri 1 Jan, 13:00" onClick={noop} />
         <SecretRowView area={haunted} state="new" boss={{ dex: 93, level: 30, shiny: true }} raid={false} cond={null} onClick={noop} />
         <SecretRowView area={island} state="open" boss={{ dex: 491, level: 60, shiny: true, raid: true }} raid cond={null} onClick={noop} />
         <SecretRowView area={cave} state="done" boss={{ dex: 442, level: 50, shiny: true }} raid={false} cond={null} onClick={noop} />

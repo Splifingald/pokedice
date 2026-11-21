@@ -19,7 +19,7 @@ area plays as a plain secret area (a short deck, then its boss or raid).
 |---|---|
 | Sat 19 Dec → Sun 3 Jan 2027, 15 days | **Sat 19 Dec 12:00 UTC → Sun 3 Jan 12:00 UTC** (13:00 in Paris), Haunted Hollow's hour: exactly 15 × 24 h. Counted inclusively the dates are 16 days; the review asks. |
 | Inspired by Haunted Hollow, Ice instead of Ghost | Its rules (3 badges to enter, the world's ₽ and tracks, Home's secret rows, its Pokémon going home at the end) unchanged; **Ice ×1.2** both sides; **XP ×1.5** |
-| 3 Ice starters with Alolan Sandshrew and Alolan Vulpix | Changed by the reviews: **Mareep, Lillipup, Pikipek**, Lv.5 (§6). Alolan Sandshrew and Vulpix stay in the wild |
+| 3 Ice starters with Alolan Sandshrew and Alolan Vulpix | **Alolan Sandshrew, Sneasel, Alolan Vulpix**, Lv.5 (the user's call, 2026-11-21, §6; the reviews' Mareep, Lillipup and Pikipek stay in the wild). Each evolves once by an item the Mart sells and the road gives once (Ice Stone, Razor Claw); all three are wild on Snowy Trail and Pinewood Forest |
 | About 125 Pokémon | **125** (`regionSpecies`), all but the three legends catchable before Spear Pillar and the Hall of Origin open |
 | About 10 areas + the Frost League | **10 areas + the Frost League** (four Elite Four and Champion Nicholas, no badges) |
 | 5 secret areas | Moonlit Glade, Evergreen Hill, Crown Shrine, Spear Pillar, Hall of Origin (§2.3) |
@@ -57,8 +57,8 @@ shares with Haunted Hollow (its output unchanged, byte for byte). Names in the t
 
 | # | Area | Picture | Lv. | Deck (wild · trainers) | Foes' upgrades | Its Ice | Found once |
 |---|---|---|---|---|---|---|---|
-| 1 | Snowy Trail | snow | 3–7 | 7 · 1 | 1 | Snom, Swinub, Cubchoo | — |
-| 2 | Pinewood Forest | forest | 7–12 | 6 · 2 | 1 | Snover, Cubchoo, Alolan Vulpix | — |
+| 1 | Snowy Trail | snow | 3–7 | 7 · 1 | 1 | Snom, Swinub, Cubchoo, Alolan Sandshrew, Sneasel, Alolan Vulpix (the starters, rare) | — |
+| 2 | Pinewood Forest | forest | 7–12 | 6 · 2 | 1 | Snover, Cubchoo, Alolan Vulpix, Sneasel, Alolan Sandshrew | — |
 | 3 | Frozen Pond | lake | 11–16 | 6 · 2 | 2 | Seel, Shellder, Snorunt, Spheal | Water Stone |
 | 4 | Holly Village | snowtown | 15–21 | 5 · 3 | 2 | Vanillite | Ice Stone |
 | 5 | Toy Workshop | a761 | 20–26 | 5 · 3 | 2 | Galarian Darumaka | — |
@@ -97,21 +97,28 @@ Hyper Potion ₽80 · Revive ₽300 · Ice Stone, Water Stone, Dawn Stone, Razor
 
 `pnpm snowglobe-balance [encounters] [seeds]` (`scripts/snowglobe-balance.ts`): the headless campaign through the
 world's chain, each starter, XP ×1.5, Ice ×1.2 and the world's own tracks. 3 starters × 5 seeds, 400 encounters, with
-the starters of the third review (Mareep, Lillipup, Pikipek):
+the starters of 2026-11-21 (Alolan Sandshrew, Sneasel, Alolan Vulpix):
 
 | Area | Lv. | Arriving Lv. | Wipes a run | Cleared |
 |---|---|---:|---:|---:|
-| Snowy Trail | 3–7 | 5.0 | 2.7 | 15/15 |
-| Pinewood Forest | 7–12 | 9.4 | 2.9 | 15/15 |
-| Frozen Pond | 11–16 | 16.1 | 0.1 | 15/15 |
-| Holly Village | 15–21 | 20.4 | 0.7 | 15/15 |
-| Toy Workshop | 20–26 | 26.1 | 2.9 | 15/15 |
-| Icicle Cave | 25–32 | 35.5 | 1.7 | 15/15 |
-| Frostbite Harbour | 31–38 | 42.7 | 2.0 | 15/15 |
-| Ember Springs | 37–44 | 50.8 | 1.9 | 15/15 |
-| Blizzard Pass | 42–50 | 58.6 | 3.5 | 15/15 |
-| Aurora Summit | 48–56 | 68.5 | 7.8 | 15/15 |
-| Frost League | 52–60 | 83.3 | 4.8 | 15/15 |
+| Snowy Trail | 3–7 | 5.0 | 0.4 | 15/15 |
+| Pinewood Forest | 7–12 | 8.6 | 2.9 | 15/15 |
+| Frozen Pond | 11–16 | 16.6 | 1.8 | 15/15 |
+| Holly Village | 15–21 | 22.7 | 1.5 | 15/15 |
+| Toy Workshop | 20–26 | 29.6 | 2.9 | 15/15 |
+| Icicle Cave | 25–32 | 37.5 | 0.9 | 15/15 |
+| Frostbite Harbour | 31–38 | 43.0 | 4.0 | 15/15 |
+| Ember Springs | 37–44 | 54.3 | 5.1 | 15/15 |
+| Blizzard Pass | 42–50 | 65.0 | 0.7 | 15/15 |
+| Aurora Summit | 48–56 | 69.7 | 8.1 | 15/15 |
+| Frost League | 52–60 | 85.4 | 5.3 | 15/15 |
+
+Every run evolves its partner (Alolan Sandslash, Weavile, Alolan Ninetales) and clears the league. For that the
+simulator now enters a small world as a player does (`enterWorld`: before, it never held the world, so its Mart sold it
+nothing) and saves up for an evolution item its Mart sells, then uses it, before balls and upgrades
+(`src/engine/campaign.ts`). Unevolved all the way, 2 runs of 15 missed the league. The Water and Fire areas
+(Frostbite Harbour, Ember Springs) are the Ice team's hardest, on purpose; Pinewood Forest's wipes are the ₽200 saved
+for the stone instead of upgrades.
 
 How it got here: the first pass (the Alolan starters) measured three walls, softened (Toy Workshop's foes' upgrades
 3 → 2, Ember Springs' 5 → 4, Aurora Summit 3 wild · 5 trainers at 5 → 4 · 4 at 4). The review's starters are weaker
@@ -440,8 +447,15 @@ its switch comes with 0127 (step 7).
    its look and numbers, then the **Stairway of Plates** switch **On for admin** to try it, **On for everyone** to open
    it (Distortion World's switch is left as it is). Publish.
 
+8. **The starters of 2026-11-21** (§1, §6): run in the Supabase SQL editor, after 0122,
+   [`supabase/migrations/0150_snowglobe_starters.sql`](https://github.com/Splifingald/pokedice/blob/ccr-d16664f2-7ggbid/supabase/migrations/0150_snowglobe_starters.sql)
+   (safe to run again). It sets the region's starters and the world's in `smallWorlds` to Alolan Sandshrew, Sneasel and
+   Alolan Vulpix, adds the five wild rows that put all three on Snowy Trail and Pinewood Forest (where those areas
+   exist), and bumps `configVersion`; nothing else of the world changes. `supabase/seed.sql` does not carry it (content,
+   as 0122). Re-running 0122 after it would bring back the old starters: run 0150 again then.
+
 Later changes, once 0122 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
-regenerating 0122.
+regenerating 0122 (`tests/snowglobe-valley-sql.test.ts` checks that 0122 and its patches land what the script writes).
 
 ## 6. The first review (2026-11-01)
 
@@ -469,3 +483,9 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 | Starters: no game starters | Mareep, Lillipup, Pikipek (§3 for the measures) |
 | Hall of Origin: like Giratina's, every type, raid Lv.90, the 4 Plate bars | §4.5 |
 
+### The fourth review (2026-11-21)
+
+| Note | What changed |
+|---|---|
+| Starters: Alolan Sandshrew, Sneasel, Alolan Vulpix, also catchable in the first areas | Built (§1, §3): all three wild on Snowy Trail (rare) and Pinewood Forest; 0150 |
+| Secret areas' banners: show the date conditions well | A locked row says its date ("Opens Thu 24 Dec, 13:00", with a clock): alone when no condition is left (Evergreen Hill showed nothing), on a line under the condition when both are still to come (Spear Pillar, the Hall of Origin); the toast and the Areas sheet say both (docs/15 §22) |

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
   areaOpenAt,
+  areaOpensAt,
   conditionStatus,
   currentWorld,
   getRegion,
@@ -813,6 +814,7 @@ export function SecretRowView({
   boss,
   raid,
   cond,
+  opens = null,
   onClick,
 }: {
   area: Area
@@ -821,6 +823,8 @@ export function SecretRowView({
   raid: boolean
   /** The condition still to meet, while locked. */
   cond: { kind: UnlockCondition['kind']; label: string; current: number; target: number } | null
+  /** "Opens Thu 24 Dec, 13:00", while locked and its date (docs/21) is still to come. */
+  opens?: string | null
   onClick: () => void
 }) {
   const { t } = useT()
@@ -842,6 +846,15 @@ export function SecretRowView({
       : state === 'done'
         ? t('ui.world.secret.done', { name: shown })
         : t(raid ? 'ui.world.secret.raid' : 'ui.world.secret.boss', { name: shown, level: boss.level })
+  // Its date, while it hasn't come: on the condition's line when there's none left to meet, else on a line of its own
+  // under it, so a row gated twice (Spear Pillar: the league, then 25 Dec) says both.
+  const dated = locked ? opens : null
+  const dateLine = dated && (
+    <span className="lv-ink flex min-w-0 items-center gap-1 font-pixel-sm text-[16px] leading-none text-gold-light">
+      <PixelIcon name="clock" size={14} className="shrink-0" />
+      <span className="truncate">{dated}</span>
+    </span>
+  )
   const tag = locked ? (
     <PixelIcon name="lock" size={14} />
   ) : state === 'new' ? (
@@ -857,7 +870,11 @@ export function SecretRowView({
       onClick={onClick}
       aria-label={t('ui.world.secret.label', {
         area: area.name,
-        state: locked && cond ? `${cond.label}, ${bottom}` : boss?.shiny ? `${bottom} (${t('ui.mon.shiny')})` : bottom,
+        state: locked
+          ? [cond && `${cond.label}, ${bottom}`, dated].filter(Boolean).join(', ')
+          : boss?.shiny
+            ? `${bottom} (${t('ui.mon.shiny')})`
+            : bottom,
       })}
       className="pixel-panel lv-square w-square relative isolate col-span-2 flex min-h-[132px] min-w-0 flex-col gap-[5px] overflow-hidden px-2.5 pb-2.5 pt-2 text-left"
     >
@@ -874,10 +891,20 @@ export function SecretRowView({
           <SpriteImg dex={boss.dex} shiny={boss.shiny && !locked} silhouette={locked} size={64} className={locked ? 'w-sil' : 'w-got'} />
         </span>
       )}
-      <span className="mt-auto grid w-full max-w-[calc(100%-76px)] grid-rows-[22px_6px_15px] gap-[5px]">
+      <span
+        className={cx(
+          'mt-auto grid w-full max-w-[calc(100%-76px)] gap-[5px]',
+          dated && bottom ? 'grid-rows-[22px_6px_15px_15px]' : 'grid-rows-[22px_6px_15px]',
+        )}
+      >
         <span className="lv-ink truncate text-[22px] leading-none">{area.name}</span>
         <span>{locked && cond && cond.target > 1 && <Meter value={cond.current} max={cond.target} />}</span>
-        <span className="lv-ink truncate font-pixel-sm text-[16px] leading-none text-gold-light">{bottom}</span>
+        {dated && !bottom ? (
+          dateLine
+        ) : (
+          <span className="lv-ink truncate font-pixel-sm text-[16px] leading-none text-gold-light">{bottom}</span>
+        )}
+        {dated && bottom && dateLine}
       </span>
     </button>
   )
@@ -914,7 +941,10 @@ export function WorldWidgets() {
     const state: SecretRowState = status === 'locked' ? 'locked' : x.caught ? 'done' : status === 'new' ? 'new' : 'open'
     const unmet = (x.area.unlockConditions ?? []).map((c) => conditionStatus(c, save, data)).find((c) => !c.met)
     const cond = unmet ? { kind: unmet.cond.kind, label: conditionLabel(unmet.cond, data), current: unmet.current, target: unmet.target } : null
-    return { ...x, state, cond }
+    // Its date (docs/21), on the server's clock, said until it has come.
+    const at = areaOpensAt(data, x.area.id)
+    const opens = at != null && !areaOpenAt(data, x.area.id, now) ? t('ui.world.opens', { date: dayTime(at) }) : null
+    return { ...x, state, cond, opens }
   })
   const rows = secrets.map((x) => (
     <SecretRowView
@@ -924,6 +954,7 @@ export function WorldWidgets() {
       boss={x.boss}
       raid={x.raid}
       cond={x.state === 'locked' ? x.cond : null}
+      opens={x.opens}
       onClick={() => (x.state === 'locked' ? pushToast(lockReason(save, data, x.area), 'info') : travelTo(x.area))}
     />
   ))

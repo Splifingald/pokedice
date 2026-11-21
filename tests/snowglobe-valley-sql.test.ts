@@ -1,16 +1,22 @@
-// Snowglobe Valley's migration against a real Postgres (PGlite, in process): 0122 lands the content (docs/64) as its
-// script builds it, the world joins `smallWorlds` beside Haunted Hollow with the admin's switch kept, and running it
-// again changes nothing but the content version.
+// Snowglobe Valley's migrations against a real Postgres (PGlite, in process): 0122 and its patch 0150 (the starters,
+// 2026-11-21) land the content (docs/64) as its script builds it today, the world joins `smallWorlds` beside Haunted
+// Hollow with the admin's switch kept, and running them again changes nothing but the content version. 0122 has run on
+// live, so it stays as it was; later changes come as patches (docs/64 §5).
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { BUNDLE } from '@/config/bundle'
-import { REGION_ID, WORLD_ID, snowglobe, snowglobeSql } from '../scripts/content-snowglobe-valley'
+import { REGION_ID, WORLD_ID, snowglobe } from '../scripts/content-snowglobe-valley'
 
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const FILE = '0122_snowglobe_valley.sql'
+const PATCHES = ['0150_snowglobe_starters.sql']
+const runAll = async () => {
+  await db.exec(sql(FILE))
+  for (const f of PATCHES) await db.exec(sql(f))
+}
 const h = snowglobe()
 let db: PGlite
 
@@ -37,12 +43,8 @@ const cfg = async (key: string) =>
   (await db.query<{ v: unknown }>(`select value v from game_config where key = $1`, [key])).rows[0]!.v
 
 describe('0122: Snowglobe Valley', () => {
-  it('is what the content script writes today', () => {
-    expect(sql(FILE)).toBe(snowglobeSql())
-  })
-
   it('writes its region, areas, pools and trainers', async () => {
-    await db.exec(sql(FILE))
+    await runAll()
     expect(
       await count(`select count(*)::int n from regions where id = '${REGION_ID}' and enabled = false`),
     ).toBe(1)
@@ -68,17 +70,56 @@ describe('0122: Snowglobe Valley', () => {
     expect(worlds.access).toBe('everyone')
     expect(worlds.list.map((w) => w.id)).toEqual(['haunted-hollow-2026', WORLD_ID])
     expect(worlds.list[1]).toEqual(JSON.parse(JSON.stringify(h.world)))
-    expect(await cfg('configVersion')).toBe(121)
+    // 0122, then 0150.
+    expect(await cfg('configVersion')).toBe(122)
+  })
+
+  it('has the script’s starters and wild pools once 0150 has run', async () => {
+    const region = await db.query<{ s: unknown }>(`select starters s from regions where id = '${REGION_ID}'`)
+    expect(region.rows[0]!.s).toEqual(h.region.starters)
+    const pools = await db.query<{
+      id: string
+      area_id: string
+      dex: number
+      weight: number
+      min_level: number
+      max_level: number
+    }>(`select id, area_id, dex, weight, min_level, max_level from area_wild_pool order by id`)
+    expect(pools.rows).toEqual(
+      h.areas
+        .flatMap((a) =>
+          a.wildPool.map((w) => ({
+            id: w.id,
+            area_id: a.id,
+            dex: w.dex,
+            weight: w.weight,
+            min_level: w.minLevel,
+            max_level: w.maxLevel,
+          })),
+        )
+        .sort((x, y) => (x.id < y.id ? -1 : 1)),
+    )
+  })
+
+  it('0150 leaves a database without Snowglobe Valley as it is', async () => {
+    const empty = new PGlite()
+    await empty.exec(`create table regions (id text primary key, starters jsonb);
+      create table areas (id uuid primary key);
+      create table area_wild_pool (id uuid primary key, area_id uuid, dex int, weight int, min_level int, max_level int);
+      create table game_config (key text primary key, value jsonb);`)
+    await empty.exec(sql(PATCHES[0]!))
+    expect((await empty.query('select * from area_wild_pool')).rows).toEqual([])
+    expect((await empty.query('select * from regions')).rows).toEqual([])
   })
 
   it('runs again without duplicating anything', async () => {
-    await db.exec(sql(FILE))
+    await runAll()
     const worlds = (await cfg('smallWorlds')) as { list: { id: string }[] }
     expect(worlds.list.map((w) => w.id)).toEqual(['haunted-hollow-2026', WORLD_ID])
     expect(await count('select count(*)::int n from areas')).toBe(h.areas.length)
     expect(await count('select count(*)::int n from area_wild_pool')).toBe(
       h.areas.reduce((n, a) => n + a.wildPool.length, 0),
     )
-    expect(await cfg('configVersion')).toBe(122)
+    expect(await cfg('configVersion')).toBe(124)
   })
 })
