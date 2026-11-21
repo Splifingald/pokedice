@@ -32,6 +32,7 @@ import { tradeRulesDue, tradesToWatch } from './trade'
 import { diceTutorialDue } from './tutorial'
 import { ugRulesDue } from './underground'
 import { unownDexRulesDue } from './unownDex'
+import { rotomDexRulesDue } from './rotomRoom'
 import { versusRulesDue, versusUnlocked } from './versus'
 import { friendBattlesRulesDue } from './friendBattle'
 import { inWorld, worldByeDue, worldFinishPopupDue, worldFor, worldPopupDue } from './worlds'
@@ -233,6 +234,8 @@ const NOTICES = {
   shinyDex: (s: SaveData, d: GameData) => shinyDexRulesDue(s, d),
   /** The Unown Pokédex, once an area where Unown live is opened. → the Pokédex's Unown view */
   unownDex: (s: SaveData, d: GameData) => unownDexRulesDue(s, d),
+  /** The Rotom Pokédex and its room (docs/73), once Sinnoh's League is cleared. → the Pokédex's Rotom view */
+  rotomDex: (s: SaveData, d: GameData) => rotomDexRulesDue(s, d),
   /** The raid overhaul's rules (docs/40), once a raid is open with it on. → /events/raid */
   raidRules: (s: SaveData, d: GameData) => raidOverhaulRulesDue(s, d),
   /** The Underground, while its live event runs. → /underground */

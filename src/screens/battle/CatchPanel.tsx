@@ -18,6 +18,7 @@ import {
   isTalentBall,
   sureThrow,
   roadblockOf,
+  isRotomForm,
 } from '@/engine'
 import { useFriendBallBoost } from '@/lib/itemText'
 import { Die } from '@/components/Die'
@@ -40,7 +41,8 @@ const BAIT_COLOR = '#e8506a'
 /** The boss being caught is a roadblock (docs/61 §2): "The wild Snorlax", not "The legendary". */
 const roadblockHere = (dex: number): boolean => {
   const { data, run } = useGame.getState()
-  return !!roadblockOf(data.areas.find((a) => a.id === run.areaId), dex)
+  // A Rotom form (docs/73) is no legendary either.
+  return !!roadblockOf(data.areas.find((a) => a.id === run.areaId), dex) || isRotomForm(dex)
 }
 
 /** What the message box says during the catch. */

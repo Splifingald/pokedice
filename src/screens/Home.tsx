@@ -7,6 +7,7 @@ import { useT } from '@/i18n/react'
 import { RegionBar } from '@/components/RegionBar'
 import { SheetModal, type SheetView } from '@/components/SheetModal'
 import { UnownStrip, useUnownStrip } from '@/components/UnownDex'
+import { RotomStrip, useRotomStrip } from '@/components/RotomDex'
 import { useGame } from '@/store/game'
 import { closeVictoryLeftOpen, enterArea } from '@/store/run'
 import { takeResumeLanding } from '@/store/resume'
@@ -77,7 +78,10 @@ function HomeView({ area }: { area: Area }) {
   // region switcher. Where Unown live (docs/41) the Unown Pokédex's banner sits there the same way. Wide screens take
   // its room off the scene, so the scene stays in view.
   const inside = useInWorld().inside
-  const unown = useUnownStrip()
+  // So does the Rotom Pokédex's in the Rotom Room (docs/73).
+  const unownStrip = useUnownStrip()
+  const rotomStrip = useRotomStrip()
+  const unown = unownStrip || rotomStrip
   const strip = inside || unown ? 72 : 0
 
   // Opened on an encounter left under way (store/resume.ts; the installed app starts on Home): straight back into it.
@@ -151,6 +155,7 @@ function HomeView({ area }: { area: Area }) {
         {!inside && unown && (
           <div className="-mx-3 -mt-4 md:m-0">
             <UnownStrip />
+            <RotomStrip />
           </div>
         )}
         <div

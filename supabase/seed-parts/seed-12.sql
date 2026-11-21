@@ -1184,7 +1184,13 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('dcc370fd-62b2-53f9-aa28-49aa3134c009', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'poke-ball', 4, false, 2, 3, null),
   ('cb20f0b9-da4b-594a-a678-450d03ed770b', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'great-ball', 3, false, 1, 2, null),
   ('c11f996f-f818-5b78-a861-35f6faab7693', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'ultra-ball', 1, false, 1, 1, null),
-  ('73301700-6705-5c69-a182-7aa6e9a72dc1', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'money', 3, false, 100, 300, null)
+  ('73301700-6705-5c69-a182-7aa6e9a72dc1', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'money', 3, false, 100, 300, null),
+  ('1a2904dd-10c9-5a44-9d54-498fd09f50df', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'hyper-potion', 20, false, 1, 2, null),
+  ('f2782a0d-a41f-52c5-aae3-85d924dfd4ee', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ultra-ball', 20, false, 1, 2, null),
+  ('980101ea-9ac4-5f41-871d-63b481352a4f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'max-ether', 12, false, 1, 1, null),
+  ('732742d4-8896-569e-b940-2637f6a25149', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'rare-candy', 8, false, 1, 1, null),
+  ('060f11f4-6a02-5e98-bf51-f58227fee985', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'money', 20, false, 200, 400, null),
+  ('80fd03f5-87b7-5654-b18d-90dd26f4ace8', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ether', 8, false, 1, 2, null)
 on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty, disguise = excluded.disguise;
 
 insert into combo_upgrades (combo_key, level, bonus, cost) values

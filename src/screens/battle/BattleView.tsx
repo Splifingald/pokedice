@@ -56,6 +56,7 @@ import {
   autoCureItem,
   AUTO_CURE_MS,
   gymTypeOf,
+  isRotomForm,
 } from '@/engine'
 import { playCry } from '@/audio/cries'
 import { AutoCureOffer, StunCureActions } from '@/components/AutoCure'
@@ -466,7 +467,11 @@ export function BattleView({ battle, versus }: { battle: BattleSlice; versus?: V
       kind: st.kind,
       trainerName,
       // A roadblock boss (docs/61 §2) is spoken of as the wild Pokémon it is, not a legendary.
-      roadblock: st.kind === 'boss' && !!roadblockOf(data.areas.find((a) => a.id === run.areaId), st.enemy.baseDex ?? st.enemy.dex),
+      // A Rotom form (docs/73) is no legendary either: said as a wild Pokémon, as a roadblock is.
+      roadblock:
+        st.kind === 'boss' &&
+        (!!roadblockOf(data.areas.find((a) => a.id === run.areaId), st.enemy.baseDex ?? st.enemy.dex) ||
+          isRotomForm(st.enemy.baseDex ?? st.enemy.dex)),
       rival: enc?.kind === 'trainer' && !!enc.moment,
       rivalMatched: enc?.kind === 'trainer' && !!enc.moment && !!enc.matched,
       // A trainer's next Pokémon: the line says who was sent out (and yours, if another went), not the opening again.

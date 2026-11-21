@@ -9,6 +9,10 @@ import {
   firstComeback,
   hasAbleTeam,
   isAreaClosed,
+  isRotomForm,
+  rotomRoomClosed,
+  rotomRoomDone,
+  rotomRoomReopensAt,
   isAreaSealed,
   latestOpenArea,
   heldIn,
@@ -42,7 +46,7 @@ import { RestingPanel } from '@/components/Extreme'
 import { PixelIcon } from '@/components/icons'
 import { PixelButton } from '@/components/PixelButton'
 import { skinKey } from '@/components/portalSkin'
-import { countdown, trainerTitle } from '@/lib/format'
+import { countdown, dayTime, trainerTitle } from '@/lib/format'
 import { pushToast, useGame } from '@/store/game'
 import { useNow } from '@/store/hooks'
 import { serverNow } from '@/store/serverTime'
@@ -100,6 +104,9 @@ export function useContinue(area: Area) {
   const gym = special ? null : dueGym(area, progress, data, side)
   const boss = gym || special ? null : dueBoss(area, progress, teamAverageLevel(save), data)
   const closed = isAreaClosed(save, area.id, data) || isAreaSealed(save, data, area.id)
+  // The Rotom Room (docs/73) closes for the week once its form is caught: CONTINUE says when it's back.
+  const rotomClosed = closed && rotomRoomClosed(save, data, area.id)
+  const rotomBack = rotomClosed ? rotomRoomReopensAt(save) : null
   const busy = (run.areaId === area.id && run.phase !== 'idle') || battle
   const raid = gym || boss || busy ? null : openRaidIn(save, data, area)
   const raidName = raid ? (data.species[raid.dex]?.name ?? '') : ''
@@ -187,11 +194,19 @@ export function useContinue(area: Area) {
       : gym
       ? t('ui.home.gymReady', { name: trainerTitle(gym) })
       : boss
-        ? t(boss.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
+        ? isRotomForm(boss.dex)
+          ? t('ui.rotom.bossSub', { name: data.species[boss.dex]?.name ?? '' })
+          : t(boss.roadblock ? 'ui.home.roadblockReady' : 'ui.home.legendReady')
         : raid
           ? t('ui.raid.progress.continueSub', { level: raidRules(data, raid.dex, 'progress', raid.areaId).level })
         : closed
-          ? t('ui.home.closed')
+          ? rotomClosed
+            ? rotomBack != null
+              ? t('ui.rotom.closedSub', { date: dayTime(rotomBack) })
+              : rotomRoomDone(save)
+                ? t('ui.rotom.doneSub')
+                : t('ui.rotom.waiting')
+            : t('ui.home.closed')
           : safariDue
             ? safariPrice > 0
               ? t('ui.safari.price', { price: safariPrice })

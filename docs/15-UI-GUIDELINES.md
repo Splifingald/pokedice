@@ -2750,3 +2750,28 @@ pop-up seen. All on `/kitchen-sink` (`BossBits`).
 - **The end**: "It's over: 4 gauges broken. Your rewards are in your messages." The rewards arrive as a developer's
   message with gifts (§23); the placed Pokémon come home with a toast.
 
+
+## 55. The Rotom Room and the Rotom Pokédex
+
+A Sinnoh secret area, open once Sinnoh's League is cleared, where Rotom's five appliance forms are caught, one a week
+(docs/73), behind its switch (§20, Off: no room, no page, no banner, no notice). The region's Pokédex keeps its one
+Rotom, as it keeps one Unown (§37). The pieces are in `src/components/RotomDex.tsx`, every state on `/kitchen-sink`
+(`RotomDexBits`).
+
+- **Pokédex / Shiny / Rotom**: the Pokédex's `Seg` (`DexViewSwitch`) gains Rotom once the room is open; `?view=rotom`.
+- **The page**: the count and the gauge ("2/5 forms"), then **this week's card** (`RotomWeekCard`: the form's sprite,
+  a silhouette until caught, "THIS WEEK", its name, its two type badges), one line under it (where it is and among
+  which Pokémon, then the prize; caught: when the room comes back with another form; all five: the complete card),
+  then the five tiles in the games' order (`DexTile`): each form's icon and name once caught, a silhouette until then,
+  the week's one with its **Nearby** tag. A tile opens the form's entry. INFO at the foot (4 rows); opening the view
+  sets `rotomDexSeen`, which ends Home's notice.
+- **Home's banner** (`RotomStripView`), above the scene as the Unown's, only while the player stands in the room: the
+  lab under `lv-pic`, the week's form in colour (a silhouette is lost on the dark picture), "Rotom Pokédex", **one cell
+  per form** (`RotomFormBar`, gold once caught, the week's one ringed; its label says "2/5 forms"), "This week: Wash
+  Rotom · 2/5 forms" in gold-light, and **See**. Caught this week: "Caught · back Mon 30 Nov, 01:00" (the player's own
+  time). Complete: the gold COMPLETE chip.
+- **CONTINUE**: with the boss due, "Wash Rotom is waiting" (a Rotom form is never "a legendary": the battle and the
+  catch say "the wild Wash Rotom", as a roadblock's); caught this week, shut, "Rotom caught: back {date} with another
+  form"; all five, "Every Rotom form caught: the room is closed".
+- **The result card**: after a form is caught, its line (`RotomFormCard`): its sprite, "Fan Rotom: on your Rotom
+  Pokédex!" over the count; the last one gold, with the shiny Rotom's sprite and level.

@@ -18,6 +18,7 @@ import {
   unownDexOf,
   unownDexOpen,
 } from './unownDex'
+import { addRotomForms, isRotomForm, payRotomDex, ROTOM_DEX, ROTOM_FORMS, rotomDexOf, rotomDexOpen } from './rotomRoom'
 import { worldOfArea } from './worldList'
 
 export const CATCH_DIE = 6
@@ -291,6 +292,22 @@ export function applyCatch(
         found: unownDexOf(next).length,
         total: UNOWN_LETTERS.length,
         ...(prize.paid > 0 && { reward: prize.paid }),
+      })
+  }
+  // One of Rotom's forms (docs/73): on the Rotom Pokédex, and Rotom on the Pokédex, which keeps its one entry. The
+  // fifth brings the shiny Rotom.
+  if (isRotomForm(caught.dex)) {
+    next = addRotomForms(next, [caught.dex])
+    if (!next.pokedex.includes(ROTOM_DEX)) next = { ...next, pokedex: [...next.pokedex, ROTOM_DEX] }
+    const prize = payRotomDex(next, data, now, newId)
+    next = prize.save
+    if (rotomDexOpen(next, data))
+      events.push({
+        kind: 'rotom_form',
+        dex: caught.dex,
+        found: rotomDexOf(next).length,
+        total: ROTOM_FORMS.length,
+        ...(prize.prize && { prizeLevel: prize.prize.level }),
       })
   }
   // Its hidden talent (docs/51): the whole family carries it from now on, here.

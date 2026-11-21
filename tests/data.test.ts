@@ -12,7 +12,7 @@ import { BUNDLE } from '@/config/bundle'
 import { DEFAULT_CONFIG } from '@/engine'
 import { bundleToRows, TABLES } from '@/config/mapping'
 import { validateRow } from '@/admin/schemas'
-import { compileGameData, deckAbilities, deckCounts, effectiveStats } from '@/engine'
+import { compileGameData, deckAbilities, deckCounts, effectiveStats, isRotomForm } from '@/engine'
 import type { Area, DiceEntry, Species, Trainer } from '@/engine/types'
 import { composeDice, diceCountFromBst, hpAtLevel, stableUuid } from '../scripts/seed'
 import { KANTO_RIVAL, MIN_BENCH, ROSTERS } from '../scripts/rebattle-teams'
@@ -163,7 +163,9 @@ describe('areas & trainers', () => {
     for (const l of ALL_LEGENDARIES) expect(bosses.has(l) || roamers.has(l) || evolved.has(l), `#${l}`).toBe(true)
     for (const m of mythicals) expect(bosses.has(m) || evolved.has(m), `#${m} is its lair's boss`).toBe(true)
     // A roadblock (docs/61 §2: Snorlax across the road) or a Titan (docs/62 §7) is a boss fight in its area, never a raid.
-    for (const b of bossList) expect(!!b.raid, `#${b.dex}`).toBe(!b.roadblock && !b.titan && !mythicals.has(b.dex))
+    // So are Rotom's forms (docs/73): the Rotom Room's weekly boss, caught there.
+    for (const b of bossList)
+      expect(!!b.raid, `#${b.dex}`).toBe(!b.roadblock && !b.titan && !mythicals.has(b.dex) && !isRotomForm(b.dex))
   })
 
   it('keeps the starters rare in the wild (weight 3 in the catch-all, 1 elsewhere), never in trainer teams', () => {

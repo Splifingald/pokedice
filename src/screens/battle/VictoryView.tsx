@@ -21,6 +21,7 @@ import {
   type Milestone,
   type RunEvent,
   roadblockOf,
+  isRotomForm,
 } from '@/engine'
 import { sfx } from '@/audio/sfx'
 import { feelSound, type FeelSound } from '@/audio/feel'
@@ -35,6 +36,7 @@ import { useXpFill, XpBar } from '@/components/MonCard'
 import { PixelButton } from '@/components/PixelButton'
 import { DuelResult } from '@/components/AreaVersus'
 import { UnownLetterCard } from '@/components/UnownDex'
+import { RotomFormCard } from '@/components/RotomDex'
 import { MiniSprite, SpriteImg } from '@/components/SpriteImg'
 import { ItemSprite } from '@/components/ItemSprite'
 import { TypeBadge } from '@/components/TypeBadge'
@@ -454,7 +456,9 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             key: k,
             node: (
               <div className="text-center text-xl text-gold">
-                {t('ui.victory.bossDefeated', { name: data.species[e.dex]?.name ?? t('ui.common.unknown') })}
+                {t(isRotomForm(e.dex) ? 'ui.rotom.defeated' : 'ui.victory.bossDefeated', {
+                  name: data.species[e.dex]?.name ?? t('ui.common.unknown'),
+                })}
               </div>
             ),
           })
@@ -501,6 +505,14 @@ function useRecap(events: RunEvent[]): { mons: MonRecap[]; extras: Extra[]; evol
             node: (
               <UnownLetterCard letter={e.letter} isNew={e.isNew} found={e.found} total={e.total} reward={e.reward} />
             ),
+          })
+          return
+        case 'rotom_form':
+          // One of Rotom's forms for the Rotom Pokédex (docs/73), and the shiny Rotom when it was the last one.
+          extras.push({
+            key: k,
+            ...(!!e.prizeLevel && { sound: 'catch' as const }),
+            node: <RotomFormCard dex={e.dex} found={e.found} total={e.total} prizeLevel={e.prizeLevel} />,
           })
           return
         case 'world_mythical':

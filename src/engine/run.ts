@@ -48,6 +48,7 @@ import {
   whiteoutWon,
 } from './whiteout'
 import { canStartTracks, inTracks, tracksStateOf, tracksWipe, tracksWon } from './tracks'
+import { rotomRoomClosed } from './rotomRoom'
 import { familyTalent, TALENT, talentCandyFits, talentOf, talentOnEvolve, unlockFamily } from './talents'
 import { areaOpenAt } from './worldList'
 import {
@@ -364,6 +365,8 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
   if (whiteoutWon(save, data, areaId)) return true
   // Tracks in the Snow (docs/64 §4.1): the shiny Stantler caught and its outro played, the glade closes for good.
   if (tracksWon(save, data, areaId) && tracksStateOf(save, areaId).wonSeen) return true
+  // The Rotom Room (docs/73): this week's form owned, closed until next Monday; all five, for good.
+  if (rotomRoomClosed(save, data, areaId)) return true
   const c = deckCounts(area.encounterWeights, deckAbilities(area))
   if (c.wild + c.trainer + c.casino > 0) return false
   const bosses = fightBosses(area, data)
@@ -488,6 +491,11 @@ export type RunEvent =
    * the prize when it was the last one.
    */
   | { kind: 'unown_letter'; letter: string; isNew: boolean; found: number; total: number; reward?: number }
+  /**
+   * One of Rotom's forms caught with the Rotom Pokédex open (docs/73): the form, the page's count, and the shiny Rotom
+   * when it was the last one (`prizeLevel`).
+   */
+  | { kind: 'rotom_form'; dex: number; found: number; total: number; prizeLevel?: number }
   /** Regenerator (docs/51): it healed after the battle it won. */
   | { kind: 'regenerator'; uid: string; amount: number }
   /** Pay Day, Amulet Coin (docs/51): the ₽ it added to this K.O.'s (in the `gold` event's amount). */

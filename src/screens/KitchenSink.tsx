@@ -89,6 +89,7 @@ import { IdleBits } from './kitchen/IdleBits'
 import { SuggestionBits } from './kitchen/SuggestionBits'
 import { ShinyDexBits } from './kitchen/ShinyDexBits'
 import { UnownDexBits } from './kitchen/UnownDexBits'
+import { RotomDexBits } from './kitchen/RotomDexBits'
 import { TutorialBits } from './kitchen/TutorialBits'
 import { LeagueBits } from './kitchen/LeagueBits'
 import { DiceThrowBits } from './kitchen/DiceThrowBits'
@@ -718,6 +719,9 @@ export function KitchenSink() {
 
       <Section title="Unown Pokédex: the switch with its Unown page, Home's banner (none, under way, complete), the 28 letters, complete, the result card's line, rules and INFO (docs/41)">
         <UnownDexBits />
+      </Section>
+      <Section title="Rotom Room and Rotom Pokédex: the switch with its Rotom page, the week's card, the form bar, Home's banner (this week, caught and back Monday, complete), the five tiles, complete, the result card's line, the forms' sprites, INFO (docs/73)">
+        <RotomDexBits />
       </Section>
 
       <Section title="Dice tutorial: the pixel hand (up, down, still), Prof. Oak's bubble (a step, SHOW ME, the way back), a step framed high and low (docs/46 §5)">

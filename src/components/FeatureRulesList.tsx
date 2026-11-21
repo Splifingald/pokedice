@@ -25,6 +25,7 @@ import {
   tradesOn,
   trickOn,
   unownDexOn,
+  rotomRoomOn,
   versusLeagueFor,
   type GameData,
   type PowerKind,
@@ -53,6 +54,7 @@ import { TradesRulesModal } from './trades/TradeRules'
 import { LooksRulesModal } from './TrainerLooks'
 import { TrickRulesModal } from './TrickOrTreat'
 import { UnownDexRulesModal } from './UnownDex'
+import { RotomDexRulesModal } from './RotomDex'
 import { WeatherRulesModal } from './Weather'
 
 type Close = { open: boolean; onClose: () => void }
@@ -131,6 +133,13 @@ function useFeatures(save: SaveData, data: GameData): Feature[] {
       icon: 'navDex',
       on: unownDexOn(data),
       rules: (p) => <UnownDexRulesModal {...p} />,
+    },
+    {
+      id: 'rotomDex',
+      name: t('ui.rotom.title'),
+      icon: 'navDex',
+      on: rotomRoomOn(data),
+      rules: (p) => <RotomDexRulesModal {...p} />,
     },
     ...EVENT_IDS.map((id): Feature => ({
       id: `event-${id}`,

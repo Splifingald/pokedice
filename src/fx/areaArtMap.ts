@@ -128,6 +128,7 @@ export const AREA_ART: Readonly<Record<string, string>> = {
   '87abcf50-112f-54af-bfe1-5ff516c00b58': 'volcano', // 119 The Fight Area & Routes 225–226 (Sinnoh)
   '43ad7294-47a6-5c1c-b068-5743d4eb5562': 'frontier', // 120 The Battle Frontier (Sinnoh)
   '69b5c894-3545-5b3a-91b0-b3aeadadc5a9': 'a121', // 121 The Old Chateau (Sinnoh)
+  '875e7168-7d1b-58ac-bdd9-67c0ce365c95': 'lair-lab', // 959 The Rotom Room (Sinnoh, docs/73)
   '2c96595d-9064-52e8-be08-f39fe15acac3': 'a122', // 122 The Lakes of Sinnoh (Sinnoh)
   '9e01bf6d-a07a-5d1c-85c2-6f93074b9dbb': 'a123', // 123 Turnback Cave (Sinnoh)
   'c7c4f1ed-d879-5651-aaed-13063bfa32c0': 'lair-volcano', // 124 Stark Mountain (Sinnoh)

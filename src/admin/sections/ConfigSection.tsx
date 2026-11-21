@@ -709,6 +709,33 @@ function UnownDexBox() {
 }
 
 /**
+ * The Rotom Room (docs/73): Sinnoh's secret area of Rotom's appliance forms, one a week for each player, and the Rotom
+ * Pokédex's prize. The room's content (its pool, levels, bosses) is Admin → Areas → The Rotom Room.
+ */
+function RotomRoomBox() {
+  const [raw, setRaw] = useConfigRow('rotomRoom')
+  const cfg = { ...DEFAULT_CONFIG.rotomRoom, ...(raw ?? {}) }
+  return (
+    <Box
+      title="Rotom Room"
+      icon="book"
+      hint="A Sinnoh secret area, open once Sinnoh's League is cleared. Each Monday (00:00 UTC) every player gets one Rotom form they don't own yet; the room deals its Electric Pokémon and those of that form's type (rows of other types wait for their week), then the form as its boss. Caught, the room closes until next Monday; all five owned, for good. The Pokédex gets a Rotom page (the region's Pokédex keeps its one Rotom), and the fifth form brings a shiny Rotom at the level below, once. Off, the room is nowhere."
+    >
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Field label="Shiny Rotom's level" hint="for all five forms, once">
+          <NumInput
+            min={1}
+            max={100}
+            value={cfg.prizeLevel}
+            onChange={(v) => setRaw({ ...cfg, prizeLevel: Math.max(1, Math.min(100, Math.round(v ?? 60))) })}
+          />
+        </Field>
+      </div>
+    </Box>
+  )
+}
+
+/**
  * Friendship streaks and the Friend Market (docs/60): what each tier of a streak pays a day, the day's cap, the
  * market's weekly shelf and the shiny of the week. The server prices and pays from this same row (friendship_cfg()).
  */
@@ -1575,6 +1602,7 @@ const TABS = [
   { id: 'push', label: 'Push', icon: 'bell' },
   { id: 'gameCorner', label: 'Game Corner', icon: 'coin' },
   { id: 'unown', label: 'Unown Pokédex', icon: 'book' },
+  { id: 'rotom', label: 'Rotom Room', icon: 'book' },
   { id: 'talents', label: 'Hidden talents', icon: 'talent' },
   { id: 'intros', label: 'Intros', icon: 'sparkle' },
   { id: 'support', label: 'Support & Discord', icon: 'heart' },
@@ -1659,6 +1687,7 @@ const FEATURES: Feature[] = [
   own('Alola island trials', 'trials', 'flavours'),
   own('Paldea Titans', 'titans', 'flavours'),
   own('Unown Pokédex', 'unownDex', 'unown'),
+  own('Rotom Room', 'rotomRoom', 'rotom'),
   own('Hidden talents', 'hiddenTalents', 'talents'),
   bare('Outfits', 'outfits'),
   own('Extreme mode', 'extreme', 'extreme'),
@@ -1907,6 +1936,7 @@ export function ConfigSection() {
       {tab === 'push' && <PushBox />}
       {tab === 'gameCorner' && <SlotMachineBox />}
       {tab === 'unown' && <UnownDexBox />}
+      {tab === 'rotom' && <RotomRoomBox />}
       {tab === 'talents' && <HiddenTalentsBox />}
       {tab === 'intros' && <LegendIntrosBox />}
       {tab === 'intros' && <ChampionIntrosBox />}

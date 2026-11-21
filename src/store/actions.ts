@@ -13,6 +13,7 @@ import {
   markGeneralRulesSeen as markGeneralRulesSeenIn,
   markShinyDexSeen as markShinyDexSeenIn,
   markUnownDexSeen as markUnownDexSeenIn,
+  markRotomDexSeen as markRotomDexSeenIn,
   startDiceTutorial,
   finishItemLesson,
   finishDiceTutorial,
@@ -225,6 +226,11 @@ export function markShinyDexSeen(): void {
 /** The Unown Pokédex's rules have been shown (its pop-up, or its page). */
 export function markUnownDexSeen(): void {
   mutateSave((s) => (s.unownDexSeen ? null : markUnownDexSeenIn(s)))
+}
+
+/** The Rotom Pokédex's page has been opened (docs/73): Home's notice ends. */
+export function markRotomDexSeen(): void {
+  mutateSave((s) => (s.rotomDexSeen ? null : markRotomDexSeenIn(s)))
 }
 
 /** The dice tutorial has shown (docs/46 §5): it comes back until it's finished. */
