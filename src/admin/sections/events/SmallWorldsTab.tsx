@@ -472,7 +472,16 @@ function RegionPanel({ draft, set, data }: { draft: SmallWorld; set: (w: SmallWo
   // Regions that can be a world's: never a real one of the journey (Kanto, Johto…), unless it's already this world's.
   const real = new Set(realRegions(data).map((r) => r.id))
   const choices = data.regions.filter((r) => r.id === draft.regionId || isWorldRegion(data, r.id) || !real.has(r.id) || !r.enabled)
-  const areas = draft.regionId ? regionAreas(data, draft.regionId) : []
+  // The chain, then its secret areas: each can wait for a date too (Snowglobe Valley's Evergreen Hill, Spear Pillar,
+  // the Hall of Origin, docs/64 §2.3), on top of its own conditions.
+  const areas = draft.regionId
+    ? [
+        ...regionAreas(data, draft.regionId),
+        ...data.areas
+          .filter((a) => a.hidden && (a.regionId ?? 'kanto') === draft.regionId)
+          .sort((a, b) => a.orderIndex - b.orderIndex),
+      ]
+    : []
   const allAreas = [...data.areas].sort((a, b) => (a.regionId ?? '').localeCompare(b.regionId ?? '') || a.orderIndex - b.orderIndex)
   const setOpens = (areaId: string, iso: string | null) => {
     const opens = { ...draft.opens }
@@ -531,7 +540,7 @@ function RegionPanel({ draft, set, data }: { draft: SmallWorld; set: (w: SmallWo
                   <tr className="text-left text-muted">
                     <th className="px-1 font-normal">Area (in order)</th>
                     <th className="px-1 font-normal">Levels</th>
-                    <th className="px-1 font-normal">Opens (UTC), as well as after the one before</th>
+                    <th className="px-1 font-normal">Opens (UTC), as well as after the one before (a secret area: its conditions)</th>
                     <th />
                   </tr>
                 </thead>
@@ -540,6 +549,7 @@ function RegionPanel({ draft, set, data }: { draft: SmallWorld; set: (w: SmallWo
                     <tr key={a.id} className="border-t-2 border-line">
                       <td className="px-1 py-1">
                         {i + 1}. {a.name}
+                        {a.hidden && <span className="ml-1 bg-line px-1 text-base">secret</span>}
                         {a.id === draft.mythical.areaId && <span className="ml-1 bg-gold px-1 text-base">the mythical</span>}
                       </td>
                       <td className="px-1 py-1 text-base">
