@@ -59,7 +59,8 @@ import { burstRing, tri } from './cinema/kit'
 /** Where the present stands on the 240 × 160 stage: its middle, and the ground under it. */
 export const PRESENT_AT = { x: 120, y: 124 }
 
-export type PresentLook = 'red' | 'silver'
+/** red: the Gift card's; silver: Delibird's (docs/64 §4.2); blue: a small world's starting gift (§4.7). */
+export type PresentLook = 'red' | 'silver' | 'blue'
 
 /** One thing that comes out of an opened present: an item picture's key (`item|<url>`), or Pokédollars. */
 export interface PresentContent {
@@ -126,6 +127,16 @@ const PAL: Record<PresentLook, Look> = {
     inner: '#262c40',
     shine: ['#ffffff', '#fff6d8'],
     scraps: ['#bcc8d9', '#8794ad', '#e3eaf4', GOLD, GOLD_D],
+  },
+  // The starting gift (docs/64 §4.7): winter-blue paper, the same gold bow, the red one's light.
+  blue: {
+    top: ['#c4e2ff', '#93c6ff', '#5597ec', '#2f66c4'],
+    front: ['#5ea4f4', '#3078dd', '#2055ad', '#163a74'],
+    dots: ['#ffffff', '#d8ecff', '#8dbaf2', '#4f80c8'],
+    back: '#eef6ff',
+    inner: '#0f1d3d',
+    shine: ['#ffffff', '#d2e8ff'],
+    scraps: ['#3078dd', '#5ea4f4', '#2055ad', GOLD, '#3078dd'],
   },
 }
 const CONFETTI = ['#e2364a', '#ffbe2e', '#3f7be0', '#2fb36b', '#ff5f97', '#8a5cf0']

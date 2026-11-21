@@ -36,6 +36,7 @@ import { versusRulesDue, versusUnlocked } from './versus'
 import { friendBattlesRulesDue } from './friendBattle'
 import { inWorld, worldByeDue, worldFinishPopupDue, worldFor, worldPopupDue } from './worlds'
 import type { GameData, LiveEvent, SaveData } from './types'
+import { welcomeGiftDue } from './welcomeGift'
 
 /** Prof. Oak's invite comes once per region, at its 2nd badge. */
 export const SHARE_PROMPT_BADGES = 2
@@ -108,6 +109,8 @@ const QUEUE = {
    * them through, so nothing comes between its steps.
    */
   diceTutorial: { due: (s, d) => diceTutorialDue(s, d) },
+  /** A small world's starting gift (docs/64 §4.7): right after the partner pick, inside the world. */
+  welcomeGift: { due: (s, d) => !!welcomeGiftDue(s, d) },
   /** Extreme mode: what the team healed while the player was away. */
   away: { due: (_s, _d, c) => !!c.awayReport },
   /** The General upgrades: the gold earned while away. */

@@ -411,6 +411,23 @@ silhouette, then fresh snow (Moonlit Glade); Delibird dropping presents, then th
 blizzard rolling in, then lifting (Crown Shrine); a clock face and a rift, then the legend's roar (Spear Pillar); a
 stairway of light, then the Judgment (Hall of Origin). Once its boss is caught a secret area closes for good.
 
+### 4.7 The starting gift (the user's call, 2026-11-21) — built
+
+- Right after the partner pick, **a small blue present** holding the world's starting bag: Snowglobe Valley's
+  **2 Potions, 5 Poké Balls, ₽10 and 2 Ice Heals** (`WELCOME_GIFT`). While its switch is on, a fresh start's bag and ₽
+  begin empty and the present fills them once opened; off, the new-game bag (5 Poké Balls, 2 Potions) as before.
+- Any small world can have one: `SmallWorld.welcomeGift` (₽ and items), Admin → Events → Small worlds → the world →
+  Starting gift. Empty: the new-game bag.
+- **Its own switch** (Admin → Config → features: Starting gift (small worlds)), Off by default; for a signed-in player
+  the server confirms it (`welcome_gift_open()`, 0152) before the pick gives a present.
+- The pop-up (docs/15 §45b) comes in the one-time pop-ups' queue at once (`welcomeGift`, owed like a world's goodbye):
+  the present, OPEN, then what came out and OK. Closing it opens it too. It waits inside the world only; a player who
+  leaves first finds it on the way back. Opened once (`WorldSave.welcome`: due → opened), even if the switch went off
+  meanwhile (the bag started empty for it).
+- Files: `src/engine/welcomeGift.ts` (`enterWorld`'s `welcome`), `src/store/welcomeGift.ts`,
+  `src/components/WelcomeGift.tsx`, the blue look in `src/fx/timelines/present.ts`, `ui.welcomeGift.*` in the ten
+  languages, `tests/engine/welcome-gift.test.ts`, `tests/welcome-gift-sql.test.ts`, `/kitchen-sink` (WelcomeGiftBits).
+
 ## 5. Setting it up (after the review)
 
 The Stairway of Plates (§4.5): 0122 carries the Hall of Origin's mode (its look, its numbers and its raid's Plates);
@@ -469,6 +486,13 @@ its switch comes with 0127 (step 7).
    (30–32); Clown Jingle's Sudowoodo becomes a Bonsly and Ace Trainer Crystal's Piloswine a Swinub. It bumps
    `configVersion`. Content only: no deploy needed, and `supabase/seed.sql` does not carry it.
 
+10. **The starting gift** (§4.7), once the client is deployed: run
+   [`supabase/migrations/0152_welcome_gift.sql`](https://github.com/Splifingald/pokedice/blob/ccr-d16664f2-7ggbid/supabase/migrations/0152_welcome_gift.sql)
+   (safe to run again): the switch `welcomeGift` (Off, an admin's own kept), `welcome_gift_open()`, Snowglobe Valley's
+   gift in its `smallWorlds` entry, and `configVersion`. `supabase/seed.sql` carries it too (inlined). Then Admin →
+   Config → Starting gift (small worlds): **On for admin** to try it (a fresh start in the world: reset your progress
+   there first), **On for everyone** before the event opens.
+
 Later changes, once 0122 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
 regenerating 0122 (`tests/snowglobe-valley-sql.test.ts` checks that 0122 and its patches land what the script writes).
 
@@ -504,5 +528,6 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 |---|---|
 | Starters: Alolan Sandshrew, Sneasel, Alolan Vulpix, also catchable in the first areas | Built (§1, §3): all three wild on Snowy Trail (rare) and Pinewood Forest; 0150 |
 | Their evolution items: found in the Lv.20–25 areas (2 Ice Stones and the Razor Claw), none before, not sold, three times the quantities (shiny hunters), easy to get | Built (§2.1, §2.2): 3 Ice Stones + 3 Razor Claws in Toy Workshop (20–26), 3 Ice Stones in Icicle Cave (25–32), all on the first round (two item cards, only those finds); out of the Mart and of Holly Village; a gift now takes one item card's place, not all of them (§4.0); 0150 |
+| A small blue gift right after the partner pick: 2 Potions, 5 Poké Balls, ₽10, 2 Ice Heals | Built (§4.7): its own switch, Off; 0152 |
 | A wild Staravia at Lv.11 in Pinewood Forest | Five Pokémon met below the level they're reached at, moved to areas of their level (§2.1, §5 step 9); a test checks it for wild Pokémon and trainers; 0151 |
 | Secret areas' banners: show the date conditions well | A locked row says its date ("Opens Thu 24 Dec, 13:00", with a clock): alone when no condition is left (Evergreen Hill showed nothing), on a line under the condition when both are still to come (Spear Pillar, the Hall of Origin); the toast and the Areas sheet say both (docs/15 §22) |

@@ -23,6 +23,7 @@ import {
   type PokeType,
   type SmallWorld,
   type WorldBooster,
+  type WelcomeGift,
   type WorldShopItem,
 } from '@/engine'
 import type { Row } from '@/config/mapping'
@@ -428,6 +429,7 @@ function WorldEditor({
       <div className="grid gap-3 border-t-2 border-line pt-2 lg:grid-cols-2">
         <BoostersEditor boosters={draft.boosters} set={(boosters) => patch({ boosters })} />
         <WorldShopEditor items={draft.shop} set={(shop) => patch({ shop })} data={data} />
+        <WelcomeGiftEditor gift={draft.welcomeGift} set={(welcomeGift) => patch({ welcomeGift })} data={data} />
       </div>
       {problems.length > 0 && (
         <ul className="list-disc pl-5 text-lg text-danger" role="alert">
@@ -681,6 +683,78 @@ function BoostersEditor({ boosters, set }: { boosters: WorldBooster[]; set: (b: 
       <div>
         <PixelButton size="sm" onClick={() => set([...boosters, { type: free, multiplier: 1.5 }])}>
           Add a booster
+        </PixelButton>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The starting gift (docs/64 §4.7): a blue present right after the partner pick, holding ₽ and items, in place of the
+ * new-game bag while its switch is on (Config → features: Starting gift). Empty: the new-game bag, as before.
+ */
+function WelcomeGiftEditor({
+  gift,
+  set,
+  data,
+}: {
+  gift: WelcomeGift | undefined
+  set: (gift: WelcomeGift | undefined) => void
+  data: GameData
+}) {
+  const all = Object.values(data.items).sort((a, b) => a.name.localeCompare(b.name))
+  const g: WelcomeGift = { gold: gift?.gold ?? 0, items: { ...gift?.items } }
+  const rows = Object.entries(g.items)
+  // Nothing in it: no gift at all, so the world keeps the new-game bag.
+  const put = (next: WelcomeGift) => set(next.gold > 0 || Object.keys(next.items).length ? next : undefined)
+  const withRows = (list: [string, number][]) => put({ ...g, items: Object.fromEntries(list) })
+  return (
+    <div className="grid content-start gap-2 lg:col-span-2">
+      <h4 className="m-0 text-xl">Starting gift</h4>
+      <p className="m-0 text-base text-muted">
+        A blue present right after the partner pick, in place of the new-game bag, while its switch is on (Config →
+        Starting gift). Empty: the new-game bag.
+      </p>
+      <Field label="₽">
+        <NumInput value={g.gold} min={0} onChange={(v) => put({ ...g, gold: Math.max(0, v ?? 0) })} />
+      </Field>
+      {rows.map(([key, qty], i) => {
+        const it = data.items[key]
+        return (
+          <div key={i} className="flex flex-wrap items-center gap-2">
+            <ItemSprite item={it} size={24} />
+            <select
+              className={inputCls}
+              aria-label="Item"
+              value={key}
+              onChange={(e) => withRows(rows.map((r, j) => (j === i ? [e.target.value, r[1]] : r)))}
+            >
+              {!it && <option value={key}>{key}</option>}
+              {all.map((x) => (
+                <option key={x.key} value={x.key}>
+                  {x.name}
+                </option>
+              ))}
+            </select>
+            <span className="w-24">
+              <NumInput
+                value={qty}
+                min={1}
+                onChange={(v) => withRows(rows.map((r, j) => (j === i ? [r[0], Math.max(1, v ?? 1)] : r)))}
+              />
+            </span>
+            <PixelButton size="sm" onClick={() => withRows(rows.filter((_, j) => j !== i))} aria-label={`Remove ${it?.name ?? key}`}>
+              ✕
+            </PixelButton>
+          </div>
+        )
+      })}
+      <div>
+        <PixelButton
+          size="sm"
+          onClick={() => withRows([...rows, [all.find((x) => !(x.key in g.items))?.key ?? 'potion', 1]])}
+        >
+          Add an item
         </PixelButton>
       </div>
     </div>

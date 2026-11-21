@@ -24,6 +24,7 @@ import { LivePopup } from '@/screens/events/live'
 import { RushEndPopup } from '@/screens/events/rush'
 import { WorldByePopup, WorldFinishPopup, WorldPopup } from '@/screens/events/world'
 import { WorldPick } from '@/screens/events/worldPick'
+import { WelcomeGiftPopup } from './WelcomeGift'
 import { PortalUnlockPopup } from '@/screens/area/PortalRun'
 import { DayCareNotice } from './DayCareTutorial'
 import { DayNightRulesPopup } from './DayNight'
@@ -50,6 +51,8 @@ import { TradesService } from './trades/TradesService'
  */
 const FOLLOWS_AT_ONCE = new Set<OneTimePopup>([
   'worldBye',
+  // The starting gift right after the partner pick (docs/64 §4.7): the bag it fills is empty until then.
+  'welcomeGift',
   'away',
   'offline',
   'replies',
@@ -190,6 +193,7 @@ export function OneTimePopups() {
       <OutfitRulesPopup />
       <WorldPopup />
       <WorldPick />
+      <WelcomeGiftPopup />
       <WorldFinishPopup />
       <WorldByePopup />
       <LivePopup />

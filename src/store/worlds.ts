@@ -54,9 +54,10 @@ export function useWorld(ms = 1000): { world: SmallWorld | null; now: number | n
 
 /**
  * Into the world that's open: the first time a fresh start on the partner picked (`starter`), afterwards back where the
- * player left it. Refused mid-fight. The region being left is parked as it is.
+ * player left it. Refused mid-fight. The region being left is parked as it is. `welcome`: the server allows the
+ * starting gift (store/welcomeGift.ts, docs/64 §4.7), so a fresh start gets its present.
  */
-export function enterSmallWorld(starter: number | null = null): boolean {
+export function enterSmallWorld(starter: number | null = null, welcome = false): boolean {
   const { save, data, battle } = useGame.getState()
   if (!save) return false
   if (battle) {
@@ -69,7 +70,7 @@ export function enterSmallWorld(starter: number | null = null): boolean {
     return false
   }
   const first = heldWorld(save)?.id !== world.id
-  const next = enterWorld(save, data, world, starter, Date.now(), newId)
+  const next = enterWorld(save, data, world, starter, Date.now(), newId, { welcome })
   if (!next || next === save) return false
   useGame.setState({ run: initialRun() })
   commitSave(next)

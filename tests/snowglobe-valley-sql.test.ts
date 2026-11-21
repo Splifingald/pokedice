@@ -12,7 +12,7 @@ import { REGION_ID, WORLD_ID, snowglobe } from '../scripts/content-snowglobe-val
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const FILE = '0122_snowglobe_valley.sql'
-const PATCHES = ['0150_snowglobe_starters.sql', '0151_snowglobe_levels.sql']
+const PATCHES = ['0150_snowglobe_starters.sql', '0151_snowglobe_levels.sql', '0152_welcome_gift.sql']
 const runAll = async () => {
   await db.exec(sql(FILE))
   for (const f of PATCHES) await db.exec(sql(f))
@@ -70,8 +70,8 @@ describe('0122: Snowglobe Valley', () => {
     expect(worlds.access).toBe('everyone')
     expect(worlds.list.map((w) => w.id)).toEqual(['haunted-hollow-2026', WORLD_ID])
     expect(worlds.list[1]).toEqual(JSON.parse(JSON.stringify(h.world)))
-    // 0122, then 0150 and 0151.
-    expect(await cfg('configVersion')).toBe(123)
+    // 0122, then 0150, 0151 and 0152.
+    expect(await cfg('configVersion')).toBe(124)
   })
 
   it('has the script’s starters and wild pools once 0150 has run', async () => {
@@ -143,7 +143,8 @@ describe('0122: Snowglobe Valley', () => {
       create table area_wild_pool (id uuid primary key, area_id uuid, dex int, weight int, min_level int, max_level int);
       create table game_config (key text primary key, value jsonb);`)
     await empty.exec('create table trainers (id uuid primary key, team jsonb);')
-    for (const f of PATCHES) await empty.exec(sql(f))
+    // The content patches (0152 is a feature's: its function needs the game's schema).
+    for (const f of PATCHES.slice(0, 2)) await empty.exec(sql(f))
     expect((await empty.query('select * from area_wild_pool')).rows).toEqual([])
     expect((await empty.query('select * from area_loot_pool')).rows).toEqual([])
     expect((await empty.query('select * from regions')).rows).toEqual([])
@@ -157,6 +158,6 @@ describe('0122: Snowglobe Valley', () => {
     expect(await count('select count(*)::int n from area_wild_pool')).toBe(
       h.areas.reduce((n, a) => n + a.wildPool.length, 0),
     )
-    expect(await cfg('configVersion')).toBe(126)
+    expect(await cfg('configVersion')).toBe(128)
   })
 })

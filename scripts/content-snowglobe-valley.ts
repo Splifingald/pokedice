@@ -60,6 +60,12 @@ export const STARTERS = [10101, 215, 10103]
  * card's place). 3 Ice Stones and 3 Razor Claws in Toy Workshop (Lv.20–26), 3 more Ice Stones in Icicle Cave
  * (Lv.25–32). Galarian Darumaka, Crabrawler and Cetoddle share the Ice Stones.
  */
+/**
+ * The starting gift (docs/64 §4.7, the user's call of 2026-11-21): a small blue present right after the partner pick,
+ * while its switch is on, in place of the new-game bag: 2 Potions, 5 Poké Balls, ₽10 and 2 Ice Heals.
+ */
+export const WELCOME_GIFT = { gold: 10, items: { potion: 2, 'poke-ball': 5, 'ice-heal': 2 } }
+
 export const EVOLUTION_FINDS = { 'ice-stone': 6, 'razor-claw': 3 } as const
 
 /**
@@ -1141,6 +1147,7 @@ export function snowglobe(): WorldContent {
     xpMultiplier: 1.5,
     boosters: [{ type: 'ice', multiplier: 1.2 }],
     shop: SHOP,
+    welcomeGift: WELCOME_GIFT,
     // No mythical: its prizes are its shiny bosses and raids (docs/26 §2.5).
     mythical: { dex: 0, level: 60, areaId: '' },
     opens: {

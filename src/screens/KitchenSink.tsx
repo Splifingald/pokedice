@@ -72,6 +72,7 @@ import { BroadcastBits } from './kitchen/BroadcastBits'
 import { SupportBits } from './kitchen/SupportBits'
 import { TrickBits } from './kitchen/TrickBits'
 import { GiftCardBits } from './kitchen/GiftCardBits'
+import { WelcomeGiftBits } from './kitchen/WelcomeGiftBits'
 import { SideQuestBits } from './kitchen/SideQuestBits'
 import { FlavourBits } from './kitchen/FlavourBits'
 import { UndergroundBits } from './kitchen/UndergroundBits'
@@ -888,6 +889,9 @@ export function KitchenSink() {
       </Section>
       <Section title="The Gift card (docs/64 §4.0, §4.2): the present at every level in both looks, the level gauge, rewards, the plate and Delibird's chip, the screen in each state (lands, grows, with Delibird, at the top, breaks, broken, opening, opened), Delibird's present (idle, growing, bursting, shiny Delibird out), the result cards, the preview card, rules">
         <GiftCardBits />
+      </Section>
+      <Section title="A small world's starting gift (docs/64 §4.7): the blue present at each size, its pop-up waiting (OPEN) and opened (what came out, OK)">
+        <WelcomeGiftBits />
       </Section>
       <Section title="The Underground: the cave, the crack gauge, a wall in each state (fresh, half dug with a strike flashing, cleared, collapsing), the pickaxe die and faces, orbs and plates, the haul, the plates and orb bag, the team seats, the rules">
         <UndergroundBits />

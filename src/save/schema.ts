@@ -458,6 +458,7 @@ export const saveSchema = z.object({
           home: z.record(z.number().int().min(0)).optional(),
           finished: z.boolean().optional(),
           finishSeen: z.boolean().optional(),
+          welcome: z.enum(['due', 'opened']).optional(),
         })
         .optional(),
       worldSeen: z.array(z.string().max(80)).max(20).optional(),

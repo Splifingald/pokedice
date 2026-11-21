@@ -1423,6 +1423,8 @@ export interface GameConfig {
   giftCard: GiftCardConfig
   /** Pokémon posing as items (docs/61 §3): its switch. The server reads the same row (0111: side_quest_open). */
   disguises: { access: EventAccess }
+  /** A small world's starting gift (docs/64 §4.7): its switch. The server reads it too (0152: welcome_gift_open). */
+  welcomeGift: { access: EventAccess }
   /** The Safari (docs/61 §4): its switch, its gauge's numbers, tiers and a round's price. The server reads the switch. */
   safari: SafariConfig
   /** Rivals' set meetings (docs/61 §5.2): the switch (the server reads it) and the meetings, the game's own. */
@@ -2116,6 +2118,17 @@ export interface SmallWorld {
   opens: Record<string, string>
   /** Home shows it greyed, with a countdown, this many hours before its start (docs/21 §9). 0 = no preview. */
   previewHours: number
+  /**
+   * The starting gift (docs/64 §4.7): what a blue present holds for a fresh start, right after the partner pick, while
+   * its switch (`welcomeGift`) is on: the bag and ₽ start empty and the present fills them. None: the new-game bag.
+   */
+  welcomeGift?: WelcomeGift
+}
+
+/** A small world's starting gift: ₽ and items (key → how many). */
+export interface WelcomeGift {
+  gold: number
+  items: Record<string, number>
 }
 
 /**
@@ -2832,6 +2845,8 @@ export interface WorldSave {
   finished?: boolean
   /** The pop-up offering to finish it has been shown. */
   finishSeen?: boolean
+  /** The starting gift (docs/64 §4.7): waiting to be opened, or opened. Unset: none was given. */
+  welcome?: 'due' | 'opened'
 }
 
 /** A closed small world's Pokémon, waiting in its home region until that region's best reaches its level. */

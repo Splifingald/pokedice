@@ -1647,6 +1647,8 @@ const FEATURES: Feature[] = [
   bare('Route 1 opening & tutorial', 'openingRounds'),
   // The side quests (docs/61).
   bare('Pokémon posing as items', 'disguises'),
+  // A small world's starting gift (docs/64 §4.7): its contents are each world's (Events → Small worlds).
+  bare('Starting gift (small worlds)', 'welcomeGift'),
   own('Safari Zones', 'safari'),
   bare('Rivals on the road', 'rivals'),
   bare('Rival lost: healed, area goes on', 'rivalLossHeal'),

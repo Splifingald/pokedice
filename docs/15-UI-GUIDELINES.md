@@ -2298,6 +2298,18 @@ state on `/kitchen-sink` (`GiftCardBits`), every take on `/kitchen-sink/fx`.
   balls from worst to best, a boss's taps). Areas → Encounter deck has the Gift card's copies ("in place of the item
   cards, only while its switch is on"), and a boss's "Out of a present" box.
 
+## 45b. A small world's starting gift
+
+docs/64 §4.7: right after the partner pick, a pop-up (`WelcomeGiftPopup`, `src/components/WelcomeGift.tsx`) on its
+turn in the one-time pop-ups' queue, at once (no minute's rest: the bag it fills is empty until then).
+- **Waiting**: "A gift to start with!", "{world} welcomes you with a little present. Open it to fill your bag.", the
+  **blue present** (`PresentImg look="blue"`, the Gift card's art in winter-blue paper with its gold bow) bobbing in
+  two-pixel steps (still when motion is off or calm), its label for screen readers, and **OPEN** (primary).
+- **Opened**: "Your starting bag", what came out as the Gift card's result list (`RewardList`: ₽ first, then each
+  item's picture and "Potion ×2"), "It's all in your bag." and **OK**. The present's pop sound (`gift.pop`).
+- ✕ or a tap outside before opening opens it (nothing to refuse); after, it closes. Every state on `/kitchen-sink`
+  (WelcomeGiftBits).
+
 ## 46. Tracks in the Snow (Moonlit Glade)
 
 docs/64 §4.1: an area's special mode (`Area.mode`, kind `tracks`), hide and seek with Stantler in three rounds, built

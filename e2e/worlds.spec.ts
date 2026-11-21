@@ -109,6 +109,8 @@ function bundle(world: SmallWorld = WORLD): BundleRaw {
       // Finishing it early too (§11): only a save with everything done there is offered it.
       smallWorlds: { access: 'all', previewAccess: 'all', finishAccess: 'all', list: [world] },
       events: { ...events, wheel: { ...events.wheel, access: 'all' } },
+      // The starting gift (docs/64 §4.7): on, so a world that has one gives it (WORLD has none).
+      welcomeGift: { access: 'all' },
     },
   }
 }
@@ -221,6 +223,40 @@ test('the world opens: its pop-up, the partner pick, Home inside, its Mart and U
   expect(s.parked?.[REGION.id]?.box[0]?.dex).toBe(92)
   await page.goto('/home')
   await expect(page.getByRole('button', { name: /^Mirage Island, small world: Areas 0\/3, with Gastly\. Ends in 6d \d+h\. Enter$/ })).toBeVisible()
+})
+
+test('the starting gift: right after the pick, a blue present fills the empty bag once opened', async ({ page }) => {
+  const gifted: SmallWorld = { ...WORLD, welcomeGift: { gold: 10, items: { potion: 2, 'poke-ball': 5, 'ice-heal': 2 } } }
+  await boot(page, kanto(), NOW, FAST, gifted)
+  await page.goto('/home')
+  const pop = page.getByRole('dialog', { name: 'Mirage Island' })
+  await expect(pop).toBeVisible({ timeout: 15_000 })
+  await pop.getByRole('button', { name: 'Enter' }).click()
+  const lab = page.getByRole('dialog', { name: 'Pick your partner in Mirage Island' })
+  await lab.getByRole('button', { name: 'Poké Ball 2 of 3' }).click()
+  await lab.getByRole('button', { name: 'Pick Gastly' }).click()
+  await lab.getByRole('button', { name: /let's go/i }).click()
+
+  // At once, inside: the present waits, the bag and ₽ empty until it's opened.
+  const gift = page.getByRole('dialog', { name: 'A gift to start with!' })
+  await expect(gift).toBeVisible({ timeout: 10_000 })
+  await expect(gift.getByRole('img', { name: 'A small blue present' })).toBeVisible()
+  await expect.poll(async () => (await stored(page)).region).toBe(REGION.id)
+  let s = await stored(page)
+  expect([s.inventory, s.gold, s.events?.world?.welcome]).toEqual([{}, 0, 'due'])
+
+  await gift.getByRole('button', { name: 'OPEN', exact: true }).click()
+  const got = page.getByRole('dialog', { name: 'Your starting bag' })
+  for (const line of ['₽10', 'Potion ×2', 'Poké Ball ×5', 'Ice Heal ×2']) await expect(got.getByText(line)).toBeVisible()
+  await expect.poll(async () => (await stored(page)).events?.world?.welcome).toBe('opened')
+  s = await stored(page)
+  expect([s.inventory, s.gold]).toEqual([{ potion: 2, 'poke-ball': 5, 'ice-heal': 2 }, 10])
+  await got.getByRole('button', { name: 'OK', exact: true }).click()
+  await expect(got).toHaveCount(0)
+  // Once: a reload brings no present back.
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Back to Kanto' })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('dialog', { name: 'A gift to start with!' })).toHaveCount(0)
 })
 
 test('before it starts: its preview in the world’s slot, a tap says when, then its square at the start without a reload', async ({ page }) => {

@@ -6,6 +6,7 @@ import { getRegion, worldFor } from '@/engine'
 import { PartnerMoment } from '@/components/PartnerMoment'
 import { useGame } from '@/store/game'
 import { useServerNow } from '@/store/serverTime'
+import { welcomeGiftAllowed } from '@/store/welcomeGift'
 import { enterSmallWorld, worldName } from '@/store/worlds'
 import { useWorldPick } from './world'
 
@@ -21,6 +22,10 @@ export function WorldPick() {
   useEffect(() => {
     if (open && !world && now != null) useWorldPick.setState({ open: false })
   }, [open, world, now])
+  // Ask the server about the starting gift (docs/64 §4.7) while the lab is open, so the pick doesn't wait for it.
+  useEffect(() => {
+    if (open) void welcomeGiftAllowed()
+  }, [open])
   if (!open || !world) return null
   const region = getRegion(data, world.regionId)
   return (
@@ -33,7 +38,10 @@ export function WorldPick() {
       onLeave={() => useWorldPick.setState({ open: false })}
       onPick={(dex) => {
         useWorldPick.setState({ open: false })
-        if (enterSmallWorld(dex)) navigate('/home')
+        // The starting gift's present comes with the fresh start once the server allows it (cached by then).
+        void welcomeGiftAllowed().then((welcome) => {
+          if (enterSmallWorld(dex, welcome)) navigate('/home')
+        })
       }}
     />
   )

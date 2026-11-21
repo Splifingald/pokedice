@@ -580,6 +580,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   // winning: at the first idea's +10 they caught 98 % of common ghosts, and the Treats were never worth giving.
   // Pokémon posing as items (docs/61 §3): a find that springs out as Voltorb. Off until the admin opens it.
   disguises: { access: 'off' },
+  // A small world's starting gift (docs/64 §4.7): Off until the admin says so.
+  welcomeGift: { access: 'off' },
   // Set moments (docs/61 §5): the rivals' meetings and the gifts are the game's own (momentsContent.ts, written by
   // scripts/patch-side-quests.ts); the database holds their switches, Off. A gift Egg hatches in 6 hours.
   rivals: { access: 'off', meetings: RIVAL_MEETINGS },

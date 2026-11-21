@@ -36,6 +36,7 @@ import {
 import { noteBossCaught, progressOf, type RunEvent } from './run'
 import type { Area, BossDef, GameData, ItemDef, RegionId, SaveData, SmallWorld, WorldCatch, WorldSave } from './types'
 import { smallWorlds, worldById, worldOfArea, worldOfRegion } from './worldList'
+import { welcomeGiftGiven } from './welcomeGift'
 
 export {
   areaOpenAt,
@@ -147,6 +148,8 @@ export function enterWorld(
   starter: number | null,
   now: number,
   newId: () => string,
+  /** The server allows the starting gift for this player (store/welcomeGift.ts): docs/64 §4.7. */
+  opts: { welcome?: boolean } = {},
 ): SaveData | null {
   if (isExtreme(save) || worldFinished(save, world.id)) return null
   const region = getRegion(data, world.regionId)
@@ -163,14 +166,17 @@ export function enterWorld(
   const base = held ? closeWorld(save, data) : save
   if (heldWorld(base)) return null
   const from = regionOf(base)
-  const block = newRegionBlock(region, starter, data, now, newId, createInstance)
+  // The starting gift (docs/64 §4.7): the bag and purse start empty, a present waits to fill them.
+  const given = welcomeGiftGiven(data, world, !!opts.welcome)
+  const fresh = newRegionBlock(region, starter, data, now, newId, createInstance)
+  const block = given ? { ...fresh, inventory: {}, gold: 0 } : fresh
   const next = startRegion(base, region, block)
   const seen = next.events?.worldSeen ?? []
   return {
     ...next,
     events: {
       ...next.events,
-      world: { id: world.id, regionId: world.regionId, from, partner: starter },
+      world: { id: world.id, regionId: world.regionId, from, partner: starter, ...(given && { welcome: 'due' as const }) },
       worldSeen: seen.includes(world.id) ? seen : [...seen, world.id].slice(-20),
     },
   }
