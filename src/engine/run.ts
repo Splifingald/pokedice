@@ -4,7 +4,11 @@ import { getSpecies, linearAreas } from './data'
 import { KANTO, evolutionGate, inWorldRegion, pokedexEverywhere, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
-import { bossCaught, deckAbilities, deckCounts, dueGym, fightBosses, roundsComplete } from './encounters'
+import { bossCaught, bossUntilCaught, deckAbilities, deckCounts, dueGym, fightBosses, roundsComplete } from './encounters'
+import { nightmareModeOf } from './nightmareMode'
+import { timeRaceModeOf } from './timeRaceMode'
+import { tracksModeOf } from './tracksMode'
+import { whiteoutModeOf } from './whiteoutMode'
 import { eventOpenTo } from './events'
 import { centersOn, healItemsOn, isExtreme, wipeHeals } from './extreme'
 import { boonCenters, pendingBoons } from './extremeCenters'
@@ -358,6 +362,10 @@ export function areaStarted(save: SaveData, areaId: string): boolean {
  * legendary's lair — closes once nothing is left to do there: every gym battle won, every legendary beaten and caught.
  * It can't be entered anymore. Areas with a deck, and ones with nothing special to begin with, never close.
  */
+/** The area plays a special mode right now (its switch on): a portal run, the nightmare, a race, the whiteout, the glade. */
+const specialModeOn = (area: Area, data: GameData): boolean =>
+  !!(portalModeOf(area, data) || nightmareModeOf(area, data) || timeRaceModeOf(area, data) || whiteoutModeOf(area, data) || tracksModeOf(area, data))
+
 export function isAreaClosed(save: SaveData, areaId: string, data: GameData): boolean {
   const area = data.areas.find((a) => a.id === areaId)
   if (!area) return false
@@ -367,6 +375,13 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
   if (tracksWon(save, data, areaId) && tracksStateOf(save, areaId).wonSeen) return true
   // The Rotom Room (docs/73): this week's form owned, closed until next Monday; all five, for good.
   if (rotomRoomClosed(save, data, areaId)) return true
+  // A small world's secret area played plainly (docs/64 §2.1): its boss caught, it closes for good. Its special mode,
+  // while on, closes it its own way (above), or seals it (the portal run, the nightmare, the race).
+  if (bossUntilCaught(area, data) && !specialModeOn(area, data)) {
+    const p = progressOf(save, areaId)
+    const bosses = fightBosses(area, data)
+    if (bosses.length && bosses.every((b) => bossCaught(area, p, save.pokedex, b.dex, data))) return true
+  }
   const c = deckCounts(area.encounterWeights, deckAbilities(area))
   if (c.wild + c.trainer + c.casino > 0) return false
   const bosses = fightBosses(area, data)

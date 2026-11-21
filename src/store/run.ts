@@ -1145,9 +1145,10 @@ export function challenge(): void | Promise<void> {
       )
     : null
   // A boss that comes out of a present (docs/64 §4.2: Evergreen Hill's Delibird), while the Gift card is on: its
-  // present first, the fight once it bursts. A returning one (it fled the catch) is a plain card of the deck.
+  // present first, the fight once it bursts. A returning one (beaten, not caught) is the fight again, straight away.
   const def = found?.kind === 'boss' ? area?.legendaryBoss?.find((b) => b.dex === found.dex) : null
-  if (found?.kind === 'boss' && bossInPresent(data, def)) return void beginBossPresent(found)
+  const again = !!area && found?.kind === 'boss' && progressOf(save, area.id).bossesDefeated.includes(found.dex)
+  if (found?.kind === 'boss' && bossInPresent(data, def) && !again) return void beginBossPresent(found)
   // Tate & Liza fight 2 v 2 where double battles are on (docs/33).
   const ctx = found && run.areaId ? encounterContext(save, run.areaId, null) : null
   const encounter = found && ctx ? asDouble(found, ctx, save, runRng) : found

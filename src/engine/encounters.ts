@@ -230,12 +230,25 @@ export const fightBosses = (area: Area, data: GameData): BossDef[] =>
 export const raidBosses = (area: Area, data: GameData): BossDef[] => (area.legendaryBoss ?? []).filter((b) => isRaidBoss(data, b))
 
 /**
+ * A small world's secret area (docs/64 §2.1, the user's call of 2026-11-21: Evergreen Hill's shiny Delibird): its boss,
+ * once beaten and not caught, is the challenge again, every time, until it's caught; caught, the area closes
+ * (`isAreaClosed`). Its special mode, while on, has its own way (callers leave those out).
+ */
+export const bossUntilCaught = (area: Area, data: GameData): boolean => !!area.hidden && !!worldOfArea(data, area)
+
+/**
  * The legendary that can be challenged next, if any. Round bosses are due once every round is done; Victory Road style bosses
- * at their team-average threshold, strictly in order. A defeated boss is never re-offered this way. Raids aren't bosses.
+ * at their team-average threshold, strictly in order. A defeated boss is never re-offered this way (it comes back as a
+ * card of the deck), but in a small world's secret area, where it is the challenge again until caught. Raids aren't
+ * bosses.
  */
 export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number, data: GameData): BossDef | null {
   for (const b of fightBosses(area, data)) {
-    if (progress.bossesDefeated.includes(b.dex)) continue
+    if (progress.bossesDefeated.includes(b.dex)) {
+      // A small world's catch is the area's own (bossCaught reads its progress, not the Pokédex).
+      if (bossUntilCaught(area, data) && !bossCaught(area, progress, [], b.dex, data)) return b
+      continue
+    }
     if (b.teamAvgThreshold != null) return teamAvgLevel >= b.teamAvgThreshold ? b : null
     return roundsComplete(area, progress) ? b : null
   }
@@ -756,8 +769,12 @@ const cardEncounter = (
 /** A real player's card (docs/54): the team waiting for the area, else nothing (the card is set aside). */
 const playerEncounter = (ctx: EncounterContext): Encounter | null => (ctx.versusFoe ? foeEncounter(ctx.versusFoe, ctx.data) : null)
 
-/** The extra card a fled legendary adds to every deck dealt until it's caught. */
-const legendCards = (ctx: EncounterContext): DeckCard[] => (fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data) ? ['legend'] : [])
+/**
+ * The extra card a fled legendary adds to every deck dealt until it's caught; none in a small world's secret area, where
+ * it is the challenge itself (bossUntilCaught).
+ */
+const legendCards = (ctx: EncounterContext): DeckCard[] =>
+  !bossUntilCaught(ctx.area, ctx.data) && fledLegendary(ctx.area, ctx.progress, ctx.pokedex, ctx.data) ? ['legend'] : []
 
 /** A new round's deck: the set opening's round when one is due here (docs/46), else a freshly shuffled one. */
 function dealRound(ctx: EncounterContext, rng: Rng, noCenterFirst: boolean): { deck: DeckCard[]; opening: number | null } {
