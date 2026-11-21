@@ -12,7 +12,7 @@
  * those are built they play as plain secret areas, which is how this content runs today. Moonlit Glade's (Tracks in
  * the Snow, §4.1) is built: its area carries the mode, which plays only while its switch is on.
  *
- * Its own rules (docs/64 §3): every area holds an Ice type; every item evolution uses an item its Mart sells; no
+ * Its own rules (docs/64 §3): every area holds an Ice type; every item evolution uses an item its Mart sells or, for the starters, its road gives; no
  * legendary or mythical but the prizes, no fossil, no starter of another region; a level-evolving species is wild only
  * below its evolution level, its evolution only above it.
  */
@@ -46,12 +46,21 @@ const id = (...parts: (string | number)[]) => stableUuid(['snowglobe-valley', ..
 
 /**
  * The three partners (the user's call of 2026-11-21, back to the brief's Ice starters): Alolan Sandshrew, Sneasel and
- * Alolan Vulpix, Lv.5. Each is Ice and evolves once by an item the world's Mart sells (Ice Stone → Alolan Sandslash and
- * Alolan Ninetales, Razor Claw → Weavile), each also found once on the road. All three are wild on Snowy Trail and
+ * Alolan Vulpix, Lv.5. Each is Ice and evolves once by an item found on the road (Ice Stone → Alolan Sandslash and
+ * Alolan Ninetales, Razor Claw → Weavile; EVOLUTION_FINDS). All three are wild on Snowy Trail and
  * Pinewood Forest, so a player can catch the two they didn't pick from the start. Mareep, Lillipup and Pikipek, the
  * reviews' partners of 2026-11-01, stay in the wild.
  */
 export const STARTERS = [10101, 215, 10103]
+
+/**
+ * The starters' evolution items (the user's call, 2026-11-21): never sold, never found before Lv.20, found three at a
+ * time (for players raising several, shinies among them), and easy: each area's loot is only its once-only finds,
+ * dealt by two item cards a round, so the first round gives them all (one a round while the Gift card takes the other
+ * card's place). 3 Ice Stones and 3 Razor Claws in Toy Workshop (Lv.20–26), 3 more Ice Stones in Icicle Cave
+ * (Lv.25–32). Galarian Darumaka, Crabrawler and Cetoddle share the Ice Stones.
+ */
+export const EVOLUTION_FINDS = { 'ice-stone': 6, 'razor-claw': 3 } as const
 
 /**
  * The world's areas, in order: its chain, its league, then its secret areas. Each main area's item card becomes a Gift
@@ -279,12 +288,7 @@ export const AREAS: AreaSpec[] = [
         ],
       },
     ],
-    loot: [
-      ...balls([2, 3], [1, 2]),
-      ['super-potion', 3, 1, 2],
-      ['money', 2, 80, 140],
-      ['ice-stone', 1, 1, 1, true],
-    ],
+    loot: [...balls([2, 3], [1, 2]), ['super-potion', 3, 1, 2], ['money', 2, 80, 140]],
   },
   {
     key: 'toy-workshop',
@@ -294,7 +298,8 @@ export const AREAS: AreaSpec[] = [
     min: 20,
     max: 26,
     rounds: 1,
-    deck: { wild: 5, trainer: 3, gift: 1 },
+    // Two item cards (one wild fewer) for its two finds, both on the first round (EVOLUTION_FINDS).
+    deck: { wild: 4, trainer: 3, item: 2, gift: 1 },
     // 2, not 3: Steel and Steel/Fairy wall an Ice team (the campaign simulator's wipes, docs/64 §5).
     upgrade: 2,
     wild: [
@@ -342,7 +347,11 @@ export const AREAS: AreaSpec[] = [
         ],
       },
     ],
-    loot: [...balls([2, 3], [1, 2]), ['super-potion', 3, 1, 2], ['money', 2, 100, 180]],
+    // Only the evolution finds: its two item cards deal both on the first round (EVOLUTION_FINDS).
+    loot: [
+      ['ice-stone', 1, 3, 3, true],
+      ['razor-claw', 1, 3, 3, true],
+    ],
   },
   {
     key: 'icicle-cave',
@@ -352,7 +361,8 @@ export const AREAS: AreaSpec[] = [
     min: 25,
     max: 32,
     rounds: 1,
-    deck: { wild: 5, trainer: 3, gift: 1 },
+    // Two item cards for its two finds, as Toy Workshop: its Ice Stones come on the first round.
+    deck: { wild: 4, trainer: 3, item: 2, gift: 1 },
     upgrade: 3,
     wild: [
       [42, 15, 25, 29],
@@ -401,11 +411,9 @@ export const AREAS: AreaSpec[] = [
       },
     ],
     loot: [
-      ...balls([2, 3], [1, 2]),
-      ['super-potion', 3, 1, 2],
-      ['money', 2, 120, 200],
+      // Only its two once-only finds: its two item cards deal both on the first round (EVOLUTION_FINDS).
+      ['ice-stone', 1, 3, 3, true],
       ['dawn-stone', 1, 1, 1, true],
-      ['razor-claw', 1, 1, 1, true],
     ],
   },
   {
@@ -1094,13 +1102,10 @@ const SHOP: SmallWorld['shop'] = [
   { key: 'super-potion', price: 35, limit: null },
   { key: 'hyper-potion', price: 80, limit: null },
   { key: 'revive', price: 300, limit: null },
-  // Every item evolution of the world (its rule): Alolan Sandshrew and Vulpix, Galarian Darumaka, Crabrawler and
-  // Cetoddle (Ice Stone), Shellder (Water Stone), Snorunt's Froslass (Dawn Stone), Sneasel (Razor Claw), Ursaring
-  // (Peat Block).
-  { key: 'ice-stone', price: 200, limit: null },
+  // Every item evolution of the world (its rule) but the starters': Shellder (Water Stone), Snorunt's Froslass (Dawn
+  // Stone), Ursaring (Peat Block). The Ice Stone and the Razor Claw are found only (EVOLUTION_FINDS).
   { key: 'water-stone', price: 200, limit: null },
   { key: 'dawn-stone', price: 200, limit: null },
-  { key: 'razor-claw', price: 200, limit: null },
   { key: 'peat-block', price: 200, limit: null },
 ]
 

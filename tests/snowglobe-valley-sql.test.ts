@@ -101,14 +101,43 @@ describe('0122: Snowglobe Valley', () => {
     )
   })
 
+  it('has the script’s loot once 0150 has run: the evolution items found only, from Toy Workshop on', async () => {
+    const loot = await db.query<{
+      id: string
+      area_id: string
+      item_key: string
+      weight: number
+      unique_find: boolean
+      min_qty: number
+      max_qty: number
+    }>(`select id, area_id, item_key, weight, unique_find, min_qty, max_qty from area_loot_pool order by id`)
+    expect(loot.rows).toEqual(
+      h.areas
+        .flatMap((a) =>
+          a.lootPool.map((l) => ({
+            id: l.id,
+            area_id: a.id,
+            item_key: l.itemKey,
+            weight: l.weight,
+            unique_find: l.unique,
+            min_qty: l.minQty,
+            max_qty: l.maxQty,
+          })),
+        )
+        .sort((x, y) => (x.id < y.id ? -1 : 1)),
+    )
+  })
+
   it('0150 leaves a database without Snowglobe Valley as it is', async () => {
     const empty = new PGlite()
     await empty.exec(`create table regions (id text primary key, starters jsonb);
-      create table areas (id uuid primary key);
+      create table areas (id uuid primary key, encounter_weights jsonb);
+      create table area_loot_pool (id uuid primary key, area_id uuid, item_key text, weight int, unique_find boolean, min_qty int, max_qty int);
       create table area_wild_pool (id uuid primary key, area_id uuid, dex int, weight int, min_level int, max_level int);
       create table game_config (key text primary key, value jsonb);`)
     await empty.exec(sql(PATCHES[0]!))
     expect((await empty.query('select * from area_wild_pool')).rows).toEqual([])
+    expect((await empty.query('select * from area_loot_pool')).rows).toEqual([])
     expect((await empty.query('select * from regions')).rows).toEqual([])
   })
 

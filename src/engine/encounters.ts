@@ -467,7 +467,9 @@ export type DeckCounts = Record<(typeof DECK_KINDS)[number], number>
  * Cards of each kind in one encounter deck. An area's encounter weight *is* its number of copies (v1.6): wild 8,
  * Center 1, item 1 → a 10-card deck. Kinds the area can't produce (no wild pool / no trainers / no loot / the Game Corner
  * or Trick or Treat switched off, or no ghosts; the Gift card switched off) get none; an area with nothing at all gets a
- * single Center. Gift cards, when dealt, take the item cards' place (docs/64 §4.0: "the item card becomes a Gift").
+ * single Center. Gift cards, when dealt, each take one item card's place (docs/64 §4.0: "the item card becomes a
+ * Gift"): an area dealt more item cards than gifts keeps the rest, so its finds go on (Snowglobe Valley's evolution
+ * items, docs/64 §2.2).
  */
 export function deckCounts(
   weights: Partial<Record<EncounterKind, number>>,
@@ -478,7 +480,7 @@ export function deckCounts(
   const copies = (k: (typeof DECK_KINDS)[number]) =>
     (k === 'wild' && !can.wild) ||
     (k === 'trainer' && !can.trainer) ||
-    (k === 'item' && (!can.item || gifts > 0)) ||
+    (k === 'item' && !can.item) ||
     (k === 'casino' && !can.casino) ||
     (k === 'trick' && !can.trick) ||
     (k === 'versus' && !can.versus) ||
@@ -486,6 +488,7 @@ export function deckCounts(
       ? 0
       : count(k)
   const c = Object.fromEntries(DECK_KINDS.map((k) => [k, copies(k)])) as DeckCounts
+  c.item = Math.max(0, c.item - gifts)
   // A real player's card alone is no deck: it only comes on top of the area's own cards.
   return DECK_KINDS.some((k) => k !== 'versus' && c[k] > 0)
     ? c
@@ -863,13 +866,13 @@ function drawFromDeck(ctx: EncounterContext, rng: Rng): EncounterRoll {
 function rollWeighted(ctx: EncounterContext, rng: Rng): EncounterRoll {
   const w = ctx.area.encounterWeights
   const can = deckAbilities(ctx.area, ctx.data)
-  // Gift cards take the item cards' place while they're dealt (docs/64 §4.0).
+  // Gift cards each take one item card's place while they're dealt (docs/64 §4.0).
   const gifts = can.gift ? (w.gift ?? 0) : 0
   const kinds: { kind: 'wild' | 'trainer' | 'center' | 'item' | 'casino' | 'trick' | 'gift'; weight: number }[] = [
     { kind: 'wild', weight: can.wild ? w.wild : 0 },
     { kind: 'trainer', weight: can.trainer ? w.trainer : 0 },
     { kind: 'center', weight: ctx.noCenters ? 0 : w.center },
-    { kind: 'item', weight: can.item && !(gifts > 0) ? (w.item ?? 0) : 0 },
+    { kind: 'item', weight: can.item ? Math.max(0, (w.item ?? 0) - gifts) : 0 },
     { kind: 'casino', weight: can.casino ? (w.casino ?? 0) : 0 },
     { kind: 'trick', weight: can.trick ? (w.trick ?? 0) : 0 },
     { kind: 'gift', weight: gifts },

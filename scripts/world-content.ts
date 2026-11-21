@@ -100,7 +100,8 @@ export function buildAreas(
     const gyms = (a.gyms ?? []).map((t) => trainerOf(id, a.key, t))
     trainers.push(...pool, ...gyms)
     const deck = { wild: 0, trainer: 0, center: 0, item: 0, casino: 0, ...a.deck }
-    if (a.wild.length || a.trainers.length) Object.assign(deck, { item: 1, center: 1 })
+    // One item card unless the spec asks for more (Snowglobe Valley's evolution finds); one Center.
+    if (a.wild.length || a.trainers.length) Object.assign(deck, { item: a.deck.item ?? 1, center: 1 })
     Object.assign(deck, deckExtra?.(a.key) ?? {})
     return {
       id: id('area', a.key),

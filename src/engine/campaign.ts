@@ -212,26 +212,32 @@ function stockWorldBag(save: SaveData, data: GameData): SaveData {
 }
 
 /**
- * The evolution items its Mart sells, used as a player would: one found or bought goes on the first of the team it
- * evolves (Snowglobe Valley's starters evolve only so: Ice Stone, Razor Claw). `saving`: one is wanted and the purse
- * can't pay it yet, so the rest waits.
+ * Evolution items, used as a player would: one in the bag (a find) or sold by the world's Mart goes on the first of the
+ * team it evolves (Snowglobe Valley's starters evolve only so, by an Ice Stone or a Razor Claw found on the road).
+ * `saving`: one the Mart sells is wanted and the purse can't pay it yet, so the rest waits.
  */
 function evolveByItem(save: SaveData, data: GameData, rng: Rng): { save: SaveData; saving: boolean } {
   let s = save
   let saving = false
   const gate = evolutionGate(s, data)
-  const stones = worldShopRows(s, data).filter((r) => r.item.effect.kind === 'stone' && r.limit == null)
+  const sold = new Map(
+    worldShopRows(s, data)
+      .filter((r) => r.item.effect.kind === 'stone' && r.limit == null)
+      .map((r) => [r.item.key, r.price]),
+  )
+  const owned = () => Object.keys(s.inventory).filter((k) => (s.inventory[k] ?? 0) > 0 && data.items[k]?.effect.kind === 'stone')
   for (const p of teamOf(s)) {
-    const row = stones.find((r) => stoneEvolution(p, r.item.key, data, gate) != null)
-    if (!row) continue
-    if ((s.inventory[row.item.key] ?? 0) <= 0) {
-      if (s.gold < row.price) {
+    const key = [...owned(), ...sold.keys()].find((k) => stoneEvolution(p, k, data, gate) != null)
+    if (!key) continue
+    if ((s.inventory[key] ?? 0) <= 0) {
+      const price = sold.get(key)!
+      if (s.gold < price) {
         saving = true
         continue
       }
-      s = buyWorldItem(s, data, row.item.key, 1, 0) ?? s
+      s = buyWorldItem(s, data, key, 1, 0) ?? s
     }
-    s = applyFieldItem(s, row.item.key, p.id, data, rng)?.save ?? s
+    s = applyFieldItem(s, key, p.id, data, rng)?.save ?? s
   }
   return { save: s, saving }
 }

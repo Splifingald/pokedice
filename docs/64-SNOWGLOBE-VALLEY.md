@@ -19,7 +19,7 @@ area plays as a plain secret area (a short deck, then its boss or raid).
 |---|---|
 | Sat 19 Dec → Sun 3 Jan 2027, 15 days | **Sat 19 Dec 12:00 UTC → Sun 3 Jan 12:00 UTC** (13:00 in Paris), Haunted Hollow's hour: exactly 15 × 24 h. Counted inclusively the dates are 16 days; the review asks. |
 | Inspired by Haunted Hollow, Ice instead of Ghost | Its rules (3 badges to enter, the world's ₽ and tracks, Home's secret rows, its Pokémon going home at the end) unchanged; **Ice ×1.2** both sides; **XP ×1.5** |
-| 3 Ice starters with Alolan Sandshrew and Alolan Vulpix | **Alolan Sandshrew, Sneasel, Alolan Vulpix**, Lv.5 (the user's call, 2026-11-21, §6; the reviews' Mareep, Lillipup and Pikipek stay in the wild). Each evolves once by an item the Mart sells and the road gives once (Ice Stone, Razor Claw); all three are wild on Snowy Trail and Pinewood Forest |
+| 3 Ice starters with Alolan Sandshrew and Alolan Vulpix | **Alolan Sandshrew, Sneasel, Alolan Vulpix**, Lv.5 (the user's call, 2026-11-21, §6; the reviews' Mareep, Lillipup and Pikipek stay in the wild). Each evolves once by an item found on the road, never sold (§2.2); all three are wild on Snowy Trail and Pinewood Forest |
 | About 125 Pokémon | **125** (`regionSpecies`), all but the three legends catchable before Spear Pillar and the Hall of Origin open |
 | About 10 areas + the Frost League | **10 areas + the Frost League** (four Elite Four and Champion Nicholas, no badges) |
 | 5 secret areas | Moonlit Glade, Evergreen Hill, Crown Shrine, Spear Pillar, Hall of Origin (§2.3) |
@@ -43,7 +43,10 @@ shares with Haunted Hollow (its output unchanged, byte for byte). Names in the t
 ### 2.1 Its rules
 
 - Every area holds an Ice type (wild or on a trainer).
-- Every item evolution uses an item the Mart sells: Ice Stone, Water Stone, Dawn Stone, Razor Claw, Peat Block.
+- Every item evolution uses an item the Mart sells (Water Stone, Dawn Stone, Peat Block), but the starters': their
+  Ice Stone and Razor Claw are found only (the user's call, 2026-11-21), never before Lv.20, three at a time: 3 Ice
+  Stones and 3 Razor Claws in Toy Workshop, 3 Ice Stones in Icicle Cave (`EVOLUTION_FINDS`). Galarian Darumaka,
+  Crabrawler and Cetoddle share those Ice Stones.
 - No legendary or mythical but the prizes; no fossil; no starter of another region.
 - A level-evolving species is wild only below its evolution level, its evolution only above it.
 - Every Pokémon of Moonlit Glade, Evergreen Hill and Crown Shrine is also found on the road: a secret area closes once
@@ -51,7 +54,9 @@ shares with Haunted Hollow (its output unchanged, byte for byte). Names in the t
 - No Houndour line (the user: it led Haunted Hollow's picks).
 - No Ghost type a player must get past (a league or a Crown Shrine wave): a team of Normal types can't touch one, and
   the simulator's all-Normal Lillipup runs stalled on Elite Four Holly's Froslass until it became a Walrein.
-- Every deck: 10 cards in a main area, 6 in a secret one, each with 1 item and 1 Pokémon Center.
+- Every deck: 10 cards in a main area, 6 in a secret one, each with 1 item and 1 Pokémon Center; Toy Workshop and
+  Icicle Cave deal 2 item cards (4 wild) over a loot deck of their once-only finds alone, so the first round gives them
+  all (one a round while the Gift card is on: a gift takes one item card's place, §4.0).
 
 ### 2.2 The road
 
@@ -60,9 +65,9 @@ shares with Haunted Hollow (its output unchanged, byte for byte). Names in the t
 | 1 | Snowy Trail | snow | 3–7 | 7 · 1 | 1 | Snom, Swinub, Cubchoo, Alolan Sandshrew, Sneasel, Alolan Vulpix (the starters, rare) | — |
 | 2 | Pinewood Forest | forest | 7–12 | 6 · 2 | 1 | Snover, Cubchoo, Alolan Vulpix, Sneasel, Alolan Sandshrew | — |
 | 3 | Frozen Pond | lake | 11–16 | 6 · 2 | 2 | Seel, Shellder, Snorunt, Spheal | Water Stone |
-| 4 | Holly Village | snowtown | 15–21 | 5 · 3 | 2 | Vanillite | Ice Stone |
-| 5 | Toy Workshop | a761 | 20–26 | 5 · 3 | 2 | Galarian Darumaka | — |
-| 6 | Icicle Cave | icecave | 25–32 | 5 · 3 | 3 | Bergmite, Sneasel, Cryogonal, Swinub, Snorunt, Alolan Sandshrew (rare), Frigibax (very rare) | Dawn Stone, Razor Claw |
+| 4 | Holly Village | snowtown | 15–21 | 5 · 3 | 2 | Vanillite | — |
+| 5 | Toy Workshop | a761 | 20–26 | 4 · 3 | 2 | Galarian Darumaka | Ice Stone ×3, Razor Claw ×3 (its only finds) |
+| 6 | Icicle Cave | icecave | 25–32 | 4 · 3 | 3 | Bergmite, Sneasel, Cryogonal, Swinub, Snorunt, Alolan Sandshrew (rare), Frigibax (very rare) | Ice Stone ×3, Dawn Stone (its only finds) |
 | 7 | Frostbite Harbour | harbour | 31–38 | 4 · 4 | 4 | Cetoddle, Eiscue, Sealeo, Dewgong, Lapras (rare) | — |
 | 8 | Ember Springs | volcano | 37–44 | 4 · 4 | 4 | Sealeo (bathing) | Peat Block |
 | 9 | Blizzard Pass | mountain | 42–50 | 4 · 4 | 4 | Glalie, Beartic, Vanillish, Crabominable, Mamoswine, Froslass | — |
@@ -90,7 +95,7 @@ talent: the game's rule, always, never; docs/51 §1b), while Hidden talents are 
 ### 2.4 The Mart
 
 Poké Ball ₽20 · Great Ball ₽50 · Ultra Ball ₽100 · **Master Ball ₽999, 1 per player** · Potion ₽15 · Super Potion ₽35 ·
-Hyper Potion ₽80 · Revive ₽300 · Ice Stone, Water Stone, Dawn Stone, Razor Claw, Peat Block ₽200 each. No Link Cable
+Hyper Potion ₽80 · Revive ₽300 · Water Stone, Dawn Stone, Peat Block ₽200 each (no Ice Stone nor Razor Claw: found only). No Link Cable
 (no trade evolution here).
 
 ## 3. Balance
@@ -102,23 +107,22 @@ the starters of 2026-11-21 (Alolan Sandshrew, Sneasel, Alolan Vulpix):
 | Area | Lv. | Arriving Lv. | Wipes a run | Cleared |
 |---|---|---:|---:|---:|
 | Snowy Trail | 3–7 | 5.0 | 0.4 | 15/15 |
-| Pinewood Forest | 7–12 | 8.6 | 2.9 | 15/15 |
-| Frozen Pond | 11–16 | 16.6 | 1.8 | 15/15 |
-| Holly Village | 15–21 | 22.7 | 1.5 | 15/15 |
-| Toy Workshop | 20–26 | 29.6 | 2.9 | 15/15 |
-| Icicle Cave | 25–32 | 37.5 | 0.9 | 15/15 |
-| Frostbite Harbour | 31–38 | 43.0 | 4.0 | 15/15 |
-| Ember Springs | 37–44 | 54.3 | 5.1 | 15/15 |
-| Blizzard Pass | 42–50 | 65.0 | 0.7 | 15/15 |
-| Aurora Summit | 48–56 | 69.7 | 8.1 | 15/15 |
-| Frost League | 52–60 | 85.4 | 5.3 | 15/15 |
+| Pinewood Forest | 7–12 | 8.6 | 2.1 | 15/15 |
+| Frozen Pond | 11–16 | 16.0 | 1.4 | 15/15 |
+| Holly Village | 15–21 | 21.8 | 0.9 | 15/15 |
+| Toy Workshop | 20–26 | 27.9 | 2.5 | 15/15 |
+| Icicle Cave | 25–32 | 35.7 | 0.9 | 15/15 |
+| Frostbite Harbour | 31–38 | 41.6 | 4.8 | 15/15 |
+| Ember Springs | 37–44 | 54.2 | 5.0 | 15/15 |
+| Blizzard Pass | 42–50 | 65.2 | 0.9 | 15/15 |
+| Aurora Summit | 48–56 | 70.8 | 5.0 | 15/15 |
+| Frost League | 52–60 | 81.8 | 7.9 | 15/15 |
 
-Every run evolves its partner (Alolan Sandslash, Weavile, Alolan Ninetales) and clears the league. For that the
-simulator now enters a small world as a player does (`enterWorld`: before, it never held the world, so its Mart sold it
-nothing) and saves up for an evolution item its Mart sells, then uses it, before balls and upgrades
-(`src/engine/campaign.ts`). Unevolved all the way, 2 runs of 15 missed the league. The Water and Fire areas
-(Frostbite Harbour, Ember Springs) are the Ice team's hardest, on purpose; Pinewood Forest's wipes are the ₽200 saved
-for the stone instead of upgrades.
+Every run evolves its partner (Alolan Sandslash, Weavile, Alolan Ninetales) with the stones found in Toy Workshop and
+Icicle Cave, and clears the league. For that the simulator now enters a small world as a player does (`enterWorld`:
+before, it never held the world, so its Mart sold it nothing) and uses an evolution item from its bag, or saves up for
+one its Mart sells, before balls and upgrades (`src/engine/campaign.ts`). Unevolved all the way, 2 runs of 15 missed
+the league. The Water and Fire areas (Frostbite Harbour, Ember Springs) are the Ice team's hardest, on purpose.
 
 How it got here: the first pass (the Alolan starters) measured three walls, softened (Toy Workshop's foes' upgrades
 3 → 2, Ember Springs' 5 → 4, Aurora Summit 3 wild · 5 trainers at 5 → 4 · 4 at 4). The review's starters are weaker
@@ -156,8 +160,9 @@ secret area. Every number below is the admin's.
   stays.
 
 **How a deck says it deals gifts**, for any area: its encounter weight **`gift`** (Admin → Areas → Encounter deck:
-Gift card). While the switch is on for the player and the area has wild Pokémon, its `gift` copies are dealt **in place
-of its item cards** (`deckCounts`: item 0); off, the item cards as before, and a gift left in a deck dealt while on is
+Gift card). While the switch is on for the player and the area has wild Pokémon, each of its `gift` copies is dealt **in
+place of one of its item cards** (`deckCounts`: item − gift, at least 0; the user's call of 2026-11-21, so Toy
+Workshop and Icicle Cave keep an item card for their evolution finds); off, the item cards as before, and a gift left in a deck dealt while on is
 set aside like any card the area can't produce. Each main area of this world has `gift: 1`, so its deck stays 10 cards
 either way.
 
@@ -450,8 +455,10 @@ its switch comes with 0127 (step 7).
 8. **The starters of 2026-11-21** (§1, §6): run in the Supabase SQL editor, after 0122,
    [`supabase/migrations/0150_snowglobe_starters.sql`](https://github.com/Splifingald/pokedice/blob/ccr-d16664f2-7ggbid/supabase/migrations/0150_snowglobe_starters.sql)
    (safe to run again). It sets the region's starters and the world's in `smallWorlds` to Alolan Sandshrew, Sneasel and
-   Alolan Vulpix, adds the five wild rows that put all three on Snowy Trail and Pinewood Forest (where those areas
-   exist), and bumps `configVersion`; nothing else of the world changes. `supabase/seed.sql` does not carry it (content,
+   Alolan Vulpix, adds the five wild rows that put all three on Snowy Trail and Pinewood Forest, takes the Ice Stone
+   and the Razor Claw out of the world's Mart and out of Holly Village and Icicle Cave's old finds, gives Toy Workshop
+   and Icicle Cave their two item cards and their new loot (only the evolution finds), each where its area exists, and
+   bumps `configVersion`; nothing else of the world changes. `supabase/seed.sql` does not carry it (content,
    as 0122). Re-running 0122 after it would bring back the old starters: run 0150 again then.
 
 Later changes, once 0122 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
@@ -488,4 +495,5 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 | Note | What changed |
 |---|---|
 | Starters: Alolan Sandshrew, Sneasel, Alolan Vulpix, also catchable in the first areas | Built (§1, §3): all three wild on Snowy Trail (rare) and Pinewood Forest; 0150 |
+| Their evolution items: found in the Lv.20–25 areas (2 Ice Stones and the Razor Claw), none before, not sold, three times the quantities (shiny hunters), easy to get | Built (§2.1, §2.2): 3 Ice Stones + 3 Razor Claws in Toy Workshop (20–26), 3 Ice Stones in Icicle Cave (25–32), all on the first round (two item cards, only those finds); out of the Mart and of Holly Village; a gift now takes one item card's place, not all of them (§4.0); 0150 |
 | Secret areas' banners: show the date conditions well | A locked row says its date ("Opens Thu 24 Dec, 13:00", with a clock): alone when no condition is left (Evergreen Hill showed nothing), on a line under the condition when both are still to come (Spear Pillar, the Hall of Origin); the toast and the Areas sheet say both (docs/15 §22) |

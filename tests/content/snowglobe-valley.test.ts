@@ -7,6 +7,7 @@ import {
   compileGameData,
   deckAbilities,
   deckCounts,
+  lootCopies,
   evolutionsIn,
   isTradeEvolution,
   isLegendary,
@@ -24,6 +25,7 @@ import { BUNDLE } from '@/config/bundle'
 import {
   AREAS,
   DATES,
+  EVOLUTION_FINDS,
   REGION_ID,
   STARTERS,
   WORLD_ID,
@@ -57,11 +59,9 @@ describe('Snowglobe Valley', () => {
     expect(w.starters).toEqual(STARTERS)
   })
 
-  it('offers the three Ice starters, each evolving once by an item the Mart sells, all three wild in the first areas', () => {
+  it('offers the three Ice starters, each evolving once by an item found on the road, all three wild in the first areas', () => {
     // The user's call (2026-11-21): Alolan Sandshrew, Sneasel, Alolan Vulpix.
     expect(STARTERS.map((d) => data.species[d]!.name)).toEqual(['Alolan Sandshrew', 'Sneasel', 'Alolan Vulpix'])
-    const sold = new Set(h.world.shop!.map((x) => x.key))
-    const found = new Set(h.areas.flatMap((a) => a.lootPool.filter((l) => l.unique).map((l) => l.itemKey)))
     const first = AREAS.slice(0, 2).map((a) => h.areas.find((x) => x.name === a.name)!)
     for (const d of STARTERS) {
       const name = data.species[d]!.name
@@ -69,12 +69,34 @@ describe('Snowglobe Valley', () => {
       // Only the evolutions this world allows (a regional one happens in its region alone).
       const evos = evolutionsIn(data.species[d]!.evolutions ?? [], REGION_ID)
       expect(evos, name).toHaveLength(1)
-      const item = evos[0]!.item!
-      expect(sold.has(item) && found.has(item), `${name}: ${item}`).toBe(true)
+      expect(Object.keys(EVOLUTION_FINDS), name).toContain(evos[0]!.item)
       expect(isTradeEvolution(data, d, evos[0]!.toDex)).toBe(false)
       expect(evolutionsIn(data.species[evos[0]!.toDex]!.evolutions ?? [], REGION_ID), name).toEqual([])
       // The two not picked can be caught from the start: on Snowy Trail and Pinewood Forest both.
       for (const a of first) expect(a.wildPool.some((w) => w.dex === d && w.weight > 0), `${a.name}: ${name}`).toBe(true)
+    }
+  })
+
+  it('never sells the starters’ evolution items, and gives them three at a time from Lv.20, easy to find', () => {
+    // The user's call (2026-11-21): 2 Ice Stones and a Razor Claw, tripled for players raising several (shinies).
+    expect(EVOLUTION_FINDS).toEqual({ 'ice-stone': 6, 'razor-claw': 3 })
+    const sold = new Set(h.world.shop.map((r) => r.key))
+    for (const [key, total] of Object.entries(EVOLUTION_FINDS)) {
+      expect(sold.has(key), key).toBe(false)
+      const finds = h.areas.flatMap((a) => a.lootPool.filter((l) => l.itemKey === key).map((l) => ({ a, l })))
+      expect(finds.reduce((n, f) => n + f.l.maxQty, 0), key).toBe(total)
+      for (const { a, l } of finds) {
+        // Found once per area, three at a time, in the Lv.20–25 stretch (Toy Workshop 20–26, Icicle Cave 25–32).
+        expect([a.name, l.unique, l.minQty, l.maxQty]).toEqual([a.name, true, 3, 3])
+        expect(a.minLevel, a.name).toBeGreaterThanOrEqual(20)
+        expect(a.minLevel, a.name).toBeLessThanOrEqual(25)
+        // Easy: the loot deck is only once-only finds, no more cards than the round's two item cards, so the first
+        // round gives them all (one a round while a gift takes the other card's place).
+        const copies = a.lootPool.reduce((n, e) => n + lootCopies(e), 0)
+        expect(a.lootPool.every((e) => e.unique), a.name).toBe(true)
+        expect(copies, a.name).toBeLessThanOrEqual(a.encounterWeights.item)
+        expect(a.encounterWeights.item, a.name).toBe(2)
+      }
     }
   })
 
@@ -215,8 +237,8 @@ describe('Snowglobe Valley', () => {
       ).toBe(true)
   })
 
-  it('sells every item its Pokémon evolve with', () => {
-    const sold = new Set(h.world.shop.map((r) => r.key))
+  it('sells every item its Pokémon evolve with, but the starters’ (found on the road)', () => {
+    const sold = new Set([...h.world.shop.map((r) => r.key), ...Object.keys(EVOLUTION_FINDS)])
     for (const dex of regionSpecies(data, REGION_ID))
       for (const e of data.species[dex]!.evolutions ?? [])
         if (e.item && regionSpecies(data, REGION_ID).has(e.toDex))
@@ -238,7 +260,7 @@ describe('Snowglobe Valley', () => {
     for (const d of PRIZES) expect(isLegendary(data, d), `#${d}`).toBe(d >= 483)
   })
 
-  it('deals 10 cards in every main area and 6 in a secret one, each with one item and one Center', () => {
+  it('deals 10 cards in every main area and 6 in a secret one, each with one item (two where the evolution items are) and one Center', () => {
     for (const a of h.areas) {
       const w = a.encounterWeights
       const total = w.wild + w.trainer + w.item + w.center + (w.casino ?? 0) + (w.trick ?? 0)
@@ -249,7 +271,8 @@ describe('Snowglobe Valley', () => {
         continue
       }
       expect([a.name, total]).toEqual([a.name, a.hidden ? 6 : 10])
-      expect([w.item, w.center]).toEqual([1, 1])
+      const finds = a.lootPool.some((l) => l.itemKey in EVOLUTION_FINDS)
+      expect([a.name, w.item, w.center]).toEqual([a.name, finds ? 2 : 1, 1])
     }
     expect(AREAS).toHaveLength(16)
   })
@@ -262,9 +285,11 @@ describe('Snowglobe Valley', () => {
     }
     for (const a of h.areas.filter((x) => !x.hidden && x.name !== 'Frost League')) {
       expect([a.name, a.encounterWeights.gift]).toEqual([a.name, 1])
-      // Off (the default): the item card, as before; on: a Gift in its place, the deck still 10 cards.
-      expect(dealt(data, a.name)).toMatchObject({ item: 1, gift: 0 })
-      expect(dealt(on, a.name)).toMatchObject({ item: 0, gift: 1 })
+      // Off (the default): the item cards, as before; on: a Gift in one's place, the deck still 10 cards (Toy Workshop
+      // and Icicle Cave keep their second item card, so the evolution items are still found).
+      const items = a.encounterWeights.item
+      expect(dealt(data, a.name)).toMatchObject({ item: items, gift: 0 })
+      expect(dealt(on, a.name)).toMatchObject({ item: items - 1, gift: 1 })
       expect(Object.values(dealt(on, a.name)).reduce((x, y) => x + y, 0)).toBe(10)
     }
     // Evergreen Hill: 2 wild, 2 trainers, a Center and 3 Gift cards, no item card; off, a plain secret area's 6 cards.

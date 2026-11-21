@@ -163,9 +163,8 @@ describe('the rewards', () => {
   })
 
   it('gives an evolution item the world’s Mart sells', () => {
-    expect(giftEvolutionItems(trail, sg).sort()).toEqual(
-      ['dawn-stone', 'ice-stone', 'peat-block', 'razor-claw', 'water-stone'].sort(),
-    )
+    // Not the starters' Ice Stone and Razor Claw: found on the road only (docs/64 §2.2).
+    expect(giftEvolutionItems(trail, sg).sort()).toEqual(['dawn-stone', 'peat-block', 'water-stone'].sort())
   })
 
   it('draws one option per level: balls, then better balls or Super Potions, … 3 Rare Candies, then a Revive too', () => {
@@ -245,6 +244,16 @@ describe('the card in the deck', () => {
     // An area that counts no gift keeps its item card.
     const { data } = world('all')
     expect(giftDealable(data, base.areas[1]!)).toBe(false)
+  })
+
+  it('takes one item card’s place per gift: an area dealt more item cards keeps the rest (docs/64 §2.2)', () => {
+    const can = { wild: true, trainer: true, item: true, gift: true }
+    expect(deckCounts({ wild: 4, trainer: 3, center: 1, item: 2, gift: 1 }, can)).toMatchObject({ item: 1, gift: 1 })
+    expect(deckCounts({ wild: 2, trainer: 2, center: 1, item: 1, gift: 3 }, can)).toMatchObject({ item: 0, gift: 3 })
+    expect(deckCounts({ wild: 4, trainer: 3, center: 1, item: 2, gift: 1 }, { ...can, gift: false })).toMatchObject({
+      item: 2,
+      gift: 0,
+    })
   })
 
   it('switched on, its card is a present; switched off, the item card as before and a gift left in a deck is discarded', () => {
