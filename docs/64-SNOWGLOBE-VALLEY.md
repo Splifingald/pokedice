@@ -48,7 +48,8 @@ shares with Haunted Hollow (its output unchanged, byte for byte). Names in the t
   Stones and 3 Razor Claws in Toy Workshop, 3 Ice Stones in Icicle Cave (`EVOLUTION_FINDS`). Galarian Darumaka,
   Crabrawler and Cetoddle share those Ice Stones.
 - No legendary or mythical but the prizes; no fossil; no starter of another region.
-- A level-evolving species is wild only below its evolution level, its evolution only above it.
+- A level-evolving species is wild only below its evolution level, its evolution only from that level on, wild or on
+  a trainer (a test checks both; the user's report of 2026-11-21: a wild Staravia at Lv.11 in Pinewood Forest).
 - Every Pokémon of Moonlit Glade, Evergreen Hill and Crown Shrine is also found on the road: a secret area closes once
   its boss is caught.
 - No Houndour line (the user: it led Haunted Hollow's picks).
@@ -461,6 +462,13 @@ its switch comes with 0127 (step 7).
    bumps `configVersion`; nothing else of the world changes. `supabase/seed.sql` does not carry it (content,
    as 0122). Re-running 0122 after it would bring back the old starters: run 0150 again then.
 
+9. **No Pokémon below the level it is reached at** (§2.1): run, after 0122 and 0150,
+   [`supabase/migrations/0151_snowglobe_levels.sql`](https://github.com/Splifingald/pokedice/blob/ccr-d16664f2-7ggbid/supabase/migrations/0151_snowglobe_levels.sql)
+   (safe to run again). Staravia moves from Pinewood Forest to Holly Village (15–18), Quagsire from Frozen Pond and
+   Ampharos from Holly Village to Frostbite Harbour (31–34, 33–36), Sudowoodo from Toy Workshop to Icicle Cave
+   (30–32); Clown Jingle's Sudowoodo becomes a Bonsly and Ace Trainer Crystal's Piloswine a Swinub. It bumps
+   `configVersion`. Content only: no deploy needed, and `supabase/seed.sql` does not carry it.
+
 Later changes, once 0122 has run on live, come as patches of their own (as Haunted Hollow's 0055 onwards), never by
 regenerating 0122 (`tests/snowglobe-valley-sql.test.ts` checks that 0122 and its patches land what the script writes).
 
@@ -496,4 +504,5 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 |---|---|
 | Starters: Alolan Sandshrew, Sneasel, Alolan Vulpix, also catchable in the first areas | Built (§1, §3): all three wild on Snowy Trail (rare) and Pinewood Forest; 0150 |
 | Their evolution items: found in the Lv.20–25 areas (2 Ice Stones and the Razor Claw), none before, not sold, three times the quantities (shiny hunters), easy to get | Built (§2.1, §2.2): 3 Ice Stones + 3 Razor Claws in Toy Workshop (20–26), 3 Ice Stones in Icicle Cave (25–32), all on the first round (two item cards, only those finds); out of the Mart and of Holly Village; a gift now takes one item card's place, not all of them (§4.0); 0150 |
+| A wild Staravia at Lv.11 in Pinewood Forest | Five Pokémon met below the level they're reached at, moved to areas of their level (§2.1, §5 step 9); a test checks it for wild Pokémon and trainers; 0151 |
 | Secret areas' banners: show the date conditions well | A locked row says its date ("Opens Thu 24 Dec, 13:00", with a clock): alone when no condition is left (Evergreen Hill showed nothing), on a line under the condition when both are still to come (Spear Pillar, the Hall of Origin); the toast and the Areas sheet say both (docs/15 §22) |
