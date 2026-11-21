@@ -253,6 +253,26 @@ describe('Snowglobe Valley', () => {
             expect(w.maxLevel, `${a.name}: ${data.species[w.dex]!.name}`).toBeLessThan(e.level)
   })
 
+  it('meets a species reached by level only from that level on, wild or on a trainer (the user’s report)', () => {
+    // A wild Staravia at Lv.11 in Pinewood Forest, when Starly evolves at 14 (2026-11-21).
+    const reachedAt = new Map<number, number>()
+    for (const s of Object.values(data.species))
+      for (const e of evolutionsIn(s.evolutions ?? [], REGION_ID))
+        if (e.level != null) reachedAt.set(e.toDex, Math.min(reachedAt.get(e.toDex) ?? Infinity, e.level))
+    for (const a of h.areas) {
+      for (const w of a.wildPool) {
+        const at = reachedAt.get(w.dex)
+        if (at != null) expect(w.minLevel, `${a.name}: ${data.species[w.dex]!.name}`).toBeGreaterThanOrEqual(at)
+      }
+      for (const id of [...a.trainerPool.map((p) => p.trainerId), ...a.gyms])
+        for (const m of data.trainers[id]!.team) {
+          const at = reachedAt.get(m.dex)
+          if (at != null)
+            expect(m.level, `${a.name}: ${data.trainers[id]!.name}'s ${data.species[m.dex]!.name}`).toBeGreaterThanOrEqual(at)
+        }
+    }
+  })
+
   it('has no legendary or mythical but its prizes', () => {
     // The Egg groups' flag covers both (Arceus is a mythical).
     const met = h.areas.flatMap(areaMons)

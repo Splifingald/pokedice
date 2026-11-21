@@ -12,7 +12,7 @@ import { REGION_ID, WORLD_ID, snowglobe } from '../scripts/content-snowglobe-val
 const MIG = path.join(__dirname, '..', 'supabase', 'migrations')
 const sql = (file: string) => readFileSync(path.join(MIG, file), 'utf8')
 const FILE = '0122_snowglobe_valley.sql'
-const PATCHES = ['0150_snowglobe_starters.sql']
+const PATCHES = ['0150_snowglobe_starters.sql', '0151_snowglobe_levels.sql']
 const runAll = async () => {
   await db.exec(sql(FILE))
   for (const f of PATCHES) await db.exec(sql(f))
@@ -70,8 +70,8 @@ describe('0122: Snowglobe Valley', () => {
     expect(worlds.access).toBe('everyone')
     expect(worlds.list.map((w) => w.id)).toEqual(['haunted-hollow-2026', WORLD_ID])
     expect(worlds.list[1]).toEqual(JSON.parse(JSON.stringify(h.world)))
-    // 0122, then 0150.
-    expect(await cfg('configVersion')).toBe(122)
+    // 0122, then 0150 and 0151.
+    expect(await cfg('configVersion')).toBe(123)
   })
 
   it('has the script’s starters and wild pools once 0150 has run', async () => {
@@ -128,14 +128,22 @@ describe('0122: Snowglobe Valley', () => {
     )
   })
 
-  it('0150 leaves a database without Snowglobe Valley as it is', async () => {
+  it('has the script’s trainers’ teams once 0151 has run', async () => {
+    const teams = await db.query<{ id: string; team: unknown }>(`select id, team from trainers order by id`)
+    expect(teams.rows).toEqual(
+      [...h.trainers].sort((x, y) => (x.id < y.id ? -1 : 1)).map((t) => ({ id: t.id, team: t.team })),
+    )
+  })
+
+  it('0150 and 0151 leave a database without Snowglobe Valley as it is', async () => {
     const empty = new PGlite()
     await empty.exec(`create table regions (id text primary key, starters jsonb);
       create table areas (id uuid primary key, encounter_weights jsonb);
       create table area_loot_pool (id uuid primary key, area_id uuid, item_key text, weight int, unique_find boolean, min_qty int, max_qty int);
       create table area_wild_pool (id uuid primary key, area_id uuid, dex int, weight int, min_level int, max_level int);
       create table game_config (key text primary key, value jsonb);`)
-    await empty.exec(sql(PATCHES[0]!))
+    await empty.exec('create table trainers (id uuid primary key, team jsonb);')
+    for (const f of PATCHES) await empty.exec(sql(f))
     expect((await empty.query('select * from area_wild_pool')).rows).toEqual([])
     expect((await empty.query('select * from area_loot_pool')).rows).toEqual([])
     expect((await empty.query('select * from regions')).rows).toEqual([])
@@ -149,6 +157,6 @@ describe('0122: Snowglobe Valley', () => {
     expect(await count('select count(*)::int n from area_wild_pool')).toBe(
       h.areas.reduce((n, a) => n + a.wildPool.length, 0),
     )
-    expect(await cfg('configVersion')).toBe(124)
+    expect(await cfg('configVersion')).toBe(126)
   })
 })

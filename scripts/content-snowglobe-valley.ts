@@ -131,7 +131,6 @@ export const AREAS: AreaSpec[] = [
       [41, 12, 6, 9],
       [179, 12, 7, 10],
       [827, 12, 6, 9],
-      [397, 5, 9, 11],
       [613, 4, 8, 10],
       [10103, 8, 7, 9],
       [215, 8, 7, 9],
@@ -194,7 +193,6 @@ export const AREAS: AreaSpec[] = [
       [363, 10, 12, 15],
       [170, 8, 12, 15],
       [349, 4, 14, 16],
-      [195, 4, 14, 16],
     ],
     trainers: [
       {
@@ -251,7 +249,8 @@ export const AREAS: AreaSpec[] = [
       [764, 8, 16, 19],
       [225, 4, 18, 21],
       [446, 5, 17, 20],
-      [181, 3, 19, 21],
+      // Staravia from Lv.14 only (Starly evolves then): here, not in Pinewood Forest (the user's report, 2026-11-21).
+      [397, 5, 15, 18],
     ],
     trainers: [
       {
@@ -310,7 +309,6 @@ export const AREAS: AreaSpec[] = [
       [10176, 15, 21, 24],
       [624, 10, 22, 25],
       [958, 5, 24, 26],
-      [185, 5, 24, 26],
     ],
     trainers: [
       {
@@ -333,7 +331,7 @@ export const AREAS: AreaSpec[] = [
         name: 'Clown Jingle',
         sprite: 'sinnoh/clown',
         team: [
-          [185, 24],
+          [438, 24],
           [10176, 24],
         ],
       },
@@ -372,6 +370,8 @@ export const AREAS: AreaSpec[] = [
       [220, 15, 25, 28],
       [361, 8, 27, 31],
       [10101, 8, 26, 29],
+      // Sudowoodo from Lv.30 only (Bonsly evolves then): here, not in Toy Workshop.
+      [185, 5, 30, 32],
       // Very rare, as Dreepy in Haunted Hollow's Cavern: Arctibax at 35, Baxcalibur at 54.
       [996, 1, 25, 28],
     ],
@@ -398,7 +398,7 @@ export const AREAS: AreaSpec[] = [
         team: [
           [615, 30],
           [42, 30],
-          [221, 30],
+          [220, 31],
         ],
       },
       {
@@ -434,6 +434,10 @@ export const AREAS: AreaSpec[] = [
       [364, 10, 33, 36],
       [87, 5, 35, 38],
       [131, 3, 36, 38],
+      // Quagsire (Wooper evolves at 20) and Ampharos (Flaaffy at 30), met only past those levels: moved from Frozen
+      // Pond and Holly Village. Ampharos, the lighthouse Pokémon, by the harbour.
+      [195, 6, 31, 34],
+      [181, 4, 33, 36],
     ],
     trainers: [
       {
