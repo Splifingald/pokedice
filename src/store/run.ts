@@ -89,6 +89,7 @@ import {
   trainerPrize,
   uniformLevels,
   UNOWN_DEX,
+  rotomRoomBase,
   unownLetterFor,
   withWorldBoost,
   drawPortalCard,
@@ -248,6 +249,7 @@ import { serverNow } from './serverTime'
 import { trickAllowed } from './trick'
 import { giftAllowed } from './giftCard'
 import { tracksAllowed } from './tracks'
+import { rotomRoomAllowed } from './rotomRoom'
 import { sideQuestAllowed, sideQuestCached, sideQuestKnown } from './sideQuests'
 import { askSafari, closeSafariAsk, useSafariAsk } from './safariAsk'
 import { weatherHere } from './flavours'
@@ -307,6 +309,13 @@ export function enterArea(areaId: string): boolean {
       areaProgress: visited ? save.areaProgress : { ...save.areaProgress, [areaId]: emptyProgress() },
     })
   useGame.setState({ run: { ...initialRun(), areaId, firstInArea: true, forceNext: useGame.getState().run.forceNext }, battle: null })
+  // The Rotom Room (docs/73): the server confirms it's open to a signed-in player, or the player is sent back.
+  if (areaId === rotomRoomBase(data)?.id)
+    void rotomRoomAllowed().then((ok) => {
+      if (ok || useGame.getState().run.areaId !== areaId) return
+      leaveArea()
+      pushToast(t('ui.rotom.notOpen'), 'info')
+    })
   return true
 }
 

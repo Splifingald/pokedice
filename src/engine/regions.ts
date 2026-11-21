@@ -205,6 +205,8 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
       if (!out.has(e.toDex) && data.species[e.toDex] && allowed(e.toDex)) out.add(e.toDex)
     }
   }
+  // Rotom's appliances (docs/73) have their own page, the Rotom Pokédex: here Rotom keeps its one entry, as Unown do.
+  for (const dex of out) if (data.species[dex]?.form?.kind === 'appliance') out.delete(dex)
   return out
 }
 

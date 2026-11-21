@@ -101,6 +101,8 @@ export function featureTarget(
       return { name: t('ui.dex.shinyTitle'), icon: 'sparkle', to: '/pokedex?view=shiny' }
     case 'unownDex':
       return { name: t('ui.unown.title'), icon: 'dex', to: '/pokedex?view=unown' }
+    case 'rotomDex':
+      return { name: t('ui.rotom.title'), icon: 'dex', to: '/pokedex?view=rotom' }
     case 'raidRules':
       return { name: t('ui.events.raid.name'), icon: 'star', to: '/events/raid' }
     case 'underground':

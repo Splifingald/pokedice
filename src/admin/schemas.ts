@@ -178,7 +178,7 @@ export const ROW_SCHEMAS: Record<TableName, z.ZodTypeAny> = {
       form: z
         .object({
           of: int(1),
-          kind: z.enum(['regional', 'mega', 'gmax', 'battle']),
+          kind: z.enum(['regional', 'appliance', 'mega', 'gmax', 'battle']),
           region: z.string().nullable().optional(),
           trigger: z.enum(['lowHp', 'choice', 'weather']).nullable().optional(),
           // Castform's forms (docs/62 §3): the weathers that bring each.

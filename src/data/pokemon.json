@@ -42633,6 +42633,151 @@
   }
  },
  {
+  "dex": 10008,
+  "name": "Heat Rotom",
+  "type1": "electric",
+  "type2": "fire",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 86,
+  "spriteUrl": "/pokemon/10008_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "fire",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "rotom-heat · BST 520 · caught in the Rotom Room (docs/73)",
+  "form": {
+   "of": 479,
+   "kind": "appliance"
+  }
+ },
+ {
+  "dex": 10009,
+  "name": "Wash Rotom",
+  "type1": "electric",
+  "type2": "water",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 86,
+  "spriteUrl": "/pokemon/10009_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "water",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "rotom-wash · BST 520 · caught in the Rotom Room (docs/73)",
+  "form": {
+   "of": 479,
+   "kind": "appliance"
+  }
+ },
+ {
+  "dex": 10010,
+  "name": "Frost Rotom",
+  "type1": "electric",
+  "type2": "ice",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 86,
+  "spriteUrl": "/pokemon/10010_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "ice",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "rotom-frost · BST 520 · caught in the Rotom Room (docs/73)",
+  "form": {
+   "of": 479,
+   "kind": "appliance"
+  }
+ },
+ {
+  "dex": 10011,
+  "name": "Fan Rotom",
+  "type1": "electric",
+  "type2": "flying",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 86,
+  "spriteUrl": "/pokemon/10011_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "flying",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "rotom-fan · BST 520 · caught in the Rotom Room (docs/73)",
+  "form": {
+   "of": 479,
+   "kind": "appliance"
+  }
+ },
+ {
+  "dex": 10012,
+  "name": "Mow Rotom",
+  "type1": "electric",
+  "type2": "grass",
+  "baseHp": 12,
+  "maxHp": 241,
+  "speed": 86,
+  "spriteUrl": "/pokemon/10012_front.png",
+  "dice": [
+   {
+    "type": "electric",
+    "count": 2
+   },
+   {
+    "type": "grass",
+    "count": 2
+   }
+  ],
+  "rerolls": 3,
+  "catchValue": 5,
+  "evolutions": [],
+  "milestones": [],
+  "notes": "rotom-mow · BST 520 · caught in the Rotom Room (docs/73)",
+  "form": {
+   "of": 479,
+   "kind": "appliance"
+  }
+ },
+ {
   "dex": 10013,
   "name": "Castform",
   "type1": "fire",

@@ -79,9 +79,11 @@ export interface Evolution {
  * - `regional`: an Alolan, Galarian, Hisuian or Paldean form — a Pokémon of its own, caught, evolved and kept;
  * - `mega`: a Mega Evolution — battle only, from a Lv.50 Pokémon of species `of` once Mega Evolution is unlocked;
  * - `gmax`: a Gigantamax form — battle only, for a few turns, once Gigantamax is unlocked (never with a Mega);
- * - `battle`: another battle-only look (Giratina's Origin Forme, Arceus's types) the engine switches to mid-fight.
+ * - `battle`: another battle-only look (Giratina's Origin Forme, Arceus's types) the engine switches to mid-fight;
+ * - `appliance`: one of Rotom's appliances (docs/73) — saved like a regional form (caught, levelled, in the Box), but
+ *   on the Rotom Pokédex rather than the region's, where Rotom keeps its one entry.
  */
-export type FormKind = 'regional' | 'mega' | 'gmax' | 'battle'
+export type FormKind = 'regional' | 'appliance' | 'mega' | 'gmax' | 'battle'
 
 export interface SpeciesForm {
   /** The species this is a form of: the national dex number for a regional form, the Pokémon that turns into it otherwise. */
@@ -1509,6 +1511,11 @@ export interface GameConfig {
    */
   unownDex: { access: EventAccess; reward: number }
   /**
+   * The Rotom Room (docs/73): Sinnoh's secret area of Rotom's appliance forms, one a week, and the Rotom Pokédex, whose
+   * last form brings a shiny Rotom at `prizeLevel`. Migration 0153 inserts the same row; the server reads `access`.
+   */
+  rotomRoom: { access: EventAccess; prizeLevel: number }
+  /**
    * Route 1's set opening (docs/46): its first rounds dealt in a set order, card by card, the rounds after them at
    * random as before. Migration 0081 inserts the same row.
    */
@@ -2504,6 +2511,20 @@ export interface SaveData {
   unownDexPaid?: RegionId[]
   /** The Unown Pokédex's rules pop-up has been shown (once, when it opens; INFO shows it again). */
   unownDexSeen?: boolean
+  /**
+   * The Rotom Pokédex (docs/73): Rotom's appliance forms owned in Sinnoh (their dex numbers), kept when they leave.
+   * Filled whatever the switch says.
+   */
+  rotomDex?: number[]
+  /** The complete Rotom Pokédex's shiny Rotom was given (once). */
+  rotomDexPaid?: boolean
+  /** The Rotom Pokédex's page has been opened (ends Home's notice; INFO shows its rules). */
+  rotomDexSeen?: boolean
+  /**
+   * The Rotom Room's week (docs/73): the week (its Monday, "2026-11-23") and the form drawn for it, one the player
+   * didn't own (null: all owned). Pinned at the week's start, so a catch mid-week doesn't move it.
+   */
+  rotomRoom?: { week: string; form: number | null }
   /** The dice tutorial after Route 1's first round (docs/46 §5): shown and not finished, or finished for good. */
   diceTutorial?: 'started' | 'done'
   /** The reroll lesson in a new player's first fight (docs/46 §6) has played. */
@@ -3130,6 +3151,11 @@ export interface GameData {
   eggGroups: Record<number, EggGroupEntry>
   /** Family (its lowest dex) → its hidden talent, the game's own pick (docs/51). */
   talentFamilies: Record<string, string>
+  /**
+   * The Rotom Room as its content says it, all five weeks (docs/73): the store shows the player this week's in `areas`
+   * (`withRotomWeek`), and this keeps the whole room to start from again. Absent until then.
+   */
+  rotomRoomBase?: Area
   /** Who's playing, set by the store: the admin sees the events switched on for the admin only. Absent = a player. */
   /**
    * Who's playing: the admin (signed in), a beta tester (docs/65 §3: the server's list, read by friend_status), and the

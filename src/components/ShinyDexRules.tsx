@@ -9,8 +9,8 @@ import { PixelIcon } from './icons'
 import { RulesModal, type RuleRow, type RulesPicture } from './RulesModal'
 import { Seg } from './Segmented'
 
-/** The region's Pokédex, its shiny page, or the Unown's letters (docs/41). */
-export type DexView = 'all' | 'shiny' | 'unown'
+/** The region's Pokédex, its shiny page, the Unown's letters (docs/41) or Rotom's forms (docs/73). */
+export type DexView = 'all' | 'shiny' | 'unown' | 'rotom'
 
 /** The Pokédex's pages, at its top once another than the first is open (`views`: the ones open, besides it). */
 export function DexViewSwitch({
@@ -44,6 +44,7 @@ export function DexViewSwitch({
             ]
           : []),
         ...(views.includes('unown') ? [{ id: 'unown' as const, label: t('ui.dex.viewUnown') }] : []),
+        ...(views.includes('rotom') ? [{ id: 'rotom' as const, label: t('ui.dex.viewRotom') }] : []),
       ]}
     />
   )

@@ -25,6 +25,15 @@ import {
   titansOn,
   wildPoolAt,
   type UnownLetter,
+  ROTOM_FORMS,
+  rotomDexOf,
+  rotomDexOpen,
+  rotomDexPaid,
+  rotomPrizeLevel,
+  rotomRoomBase,
+  rotomRoomDone,
+  rotomRoomReopensAt,
+  rotomWeekForm,
 } from '@/engine'
 import { searchFold } from '@/i18n'
 import { useT } from '@/i18n/react'
@@ -38,10 +47,11 @@ import { DexViewSwitch, ShinyDexRulesModal, type DexView } from '@/components/Sh
 import { SplitView } from '@/components/SplitView'
 import { SortSelect } from '@/components/TypeSelect'
 import { UnownDexRulesModal, UnownSprite } from '@/components/UnownDex'
+import { RotomDexRulesModal, RotomWeekCard } from '@/components/RotomDex'
 import { markDexSeen, useDexNew } from '@/lib/dexSeen'
-import { dexNo, money } from '@/lib/format'
+import { dayTime, dexNo, money, typeName } from '@/lib/format'
 import { useMediaQuery } from '@/lib/useMediaQuery'
-import { markShinyDexSeen, markUnownDexSeen } from '@/store/actions'
+import { markRotomDexSeen, markShinyDexSeen, markUnownDexSeen } from '@/store/actions'
 import { useSeenOnOpen } from '@/lib/useSeenOnOpen'
 import { useDayTime } from '@/store/dayTime'
 import { useGame } from '@/store/game'
@@ -94,21 +104,34 @@ export function PokedexScreen() {
   const wide = useMediaQuery('(min-width: 1024px)')
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
-  const [info, setInfo] = useState<'shiny' | 'unown' | null>(null)
+  const [info, setInfo] = useState<'shiny' | 'unown' | 'rotom' | null>(null)
   // The shiny page (docs/39): there once the region's league is beaten. `?view=shiny` opens on it (its pop-up's GO).
   const shinyOpen = useGame((s) => !!s.save && shinyDexOpen(s.save, s.data))
   // The Unown's letters (docs/41): there once an area where Unown live is opened. `?view=unown` opens on it.
   const unownOpen = useGame((s) => !!s.save && unownDexOpen(s.save, s.data))
-  const views = [...(shinyOpen ? (['shiny'] as const) : []), ...(unownOpen ? (['unown'] as const) : [])]
+  // Rotom's forms (docs/73): there once Sinnoh's League has opened the Rotom Room. `?view=rotom` opens on it.
+  const rotomOpen = useGame((s) => !!s.save && rotomDexOpen(s.save, s.data))
+  const views = [
+    ...(shinyOpen ? (['shiny'] as const) : []),
+    ...(unownOpen ? (['unown'] as const) : []),
+    ...(rotomOpen ? (['rotom'] as const) : []),
+  ]
   const [params, setParams] = useSearchParams()
   const asked = params.get('view')
   const dexView: DexView =
-    asked === 'shiny' && shinyOpen ? 'shiny' : asked === 'unown' && unownOpen ? 'unown' : 'all'
+    asked === 'shiny' && shinyOpen
+      ? 'shiny'
+      : asked === 'unown' && unownOpen
+        ? 'unown'
+        : asked === 'rotom' && rotomOpen
+          ? 'rotom'
+          : 'all'
   const setDexView = (v: DexView) => setParams(v === 'all' ? {} : { view: v }, { replace: true })
   // Their rules where they apply (docs/43 §7): a card at the top of the view until GOT IT, then INFO at its foot. The
   // rows are the INFO pop-up's own, one source each.
   const shinySeen = useGame((s) => !!s.save?.shinyDexSeen)
   const unownSeen = useGame((s) => !!s.save?.unownDexSeen)
+  const rotomSeen = useGame((s) => !!s.save?.rotomDexSeen)
   // What was new on arrival keeps its NEW tag while the screen is open; looking clears the tab bar's dot.
   const newCount = useDexNew()
   const [fresh] = useState(() => new Set(newCount > 0 ? (save?.pokedex.slice(-newCount) ?? []) : []))
@@ -146,13 +169,15 @@ export function PokedexScreen() {
   // The shiny and Unown views' rules are behind INFO; opening the view is enough for Home's notice (docs/15 §20).
   useSeenOnOpen(dexView === 'shiny' && !shinySeen, markShinyDexSeen)
   useSeenOnOpen(dexView === 'unown' && !unownSeen, markUnownDexSeen)
+  useSeenOnOpen(dexView === 'rotom' && !rotomSeen, markRotomDexSeen)
 
   if (!save) return null
   const region = regionOf(save)
   const regionName = getRegion(data, region)?.name ?? ''
   const unown = dexView === 'unown'
+  const rotom = dexView === 'rotom'
   const shiny = dexView === 'shiny'
-  const titans = !shiny && !unown && titansOn(data) ? titansBeaten(save, data, region) : null
+  const titans = !shiny && !unown && !rotom && titansOn(data) ? titansBeaten(save, data, region) : null
   // Known by name: caught at all. Owned: on this page (caught, or owned shiny on the shiny page).
   const caught = new Set(save.pokedex)
   const owned = shiny ? new Set(shinyDexOf(save)) : caught
@@ -169,8 +194,58 @@ export function PokedexScreen() {
   let complete: ReactNode = null
   let empty: string | null = null
   let counts: Record<Filter, number> | null = null
+  let week: ReactNode = null
 
-  if (unown) {
+  if (rotom) {
+    // Rotom's page (docs/73): its five forms in the games' order, each opening its own entry; this week's form above.
+    const found = new Set(rotomDexOf(save))
+    total = ROTOM_FORMS.length
+    n = found.size
+    gaugeLabel = t('ui.rotom.count', { n, total })
+    const level = rotomPrizeLevel(data)
+    const room = rotomRoomBase(data)
+    const form = rotomRoomDone(save) ? null : rotomWeekForm(save)
+    const back = rotomRoomReopensAt(save)
+    if (n >= total)
+      complete = (
+        <DexCompleteCard
+          title={t('ui.rotom.complete')}
+          body={
+            rotomDexPaid(save)
+              ? t('ui.rotom.completePaid', { total, level })
+              : t('ui.rotom.completeBody', { total })
+          }
+        />
+      )
+    else if (form == null) under = t('ui.rotom.waiting')
+    else {
+      const owned = found.has(form) || save.pokedex.includes(form)
+      const f = ROTOM_FORMS.find((x) => x.dex === form)!
+      week = <RotomWeekCard dex={form} caught={owned} />
+      under = [
+        owned && back != null
+          ? t('ui.rotom.closedWeek', { date: dayTime(back) })
+          : t('ui.rotom.where', {
+              area: room?.name ?? '',
+              name: data.species[form]?.name ?? '',
+              type: typeName(f.type),
+            }),
+        t('ui.rotom.wherePrize', { total, level }),
+      ].join(' ')
+    }
+    tiles = ROTOM_FORMS.map((f) => {
+      const got = found.has(f.dex)
+      const sp = data.species[f.dex]
+      return {
+        key: `r-${f.dex}`,
+        dex: f.dex,
+        name: got ? (sp?.name ?? '') : null,
+        missing: !got,
+        near: !got && f.dex === form,
+        label: `${sp?.name ?? ''}, ${t(got ? 'ui.rotom.owned' : 'ui.rotom.missing')}`,
+      }
+    })
+  } else if (unown) {
     // The Unown's page (docs/41): 28 letters in the games' order, each opening the one Unown entry.
     const found = new Set<UnownLetter>(unownDexOf(save))
     total = UNOWN_LETTERS.length
@@ -347,6 +422,7 @@ export function PokedexScreen() {
           />
         </div>
         {views.length > 0 && <DexViewSwitch value={dexView} onChange={setDexView} views={views} />}
+        {week}
         {under && <p className="font-pixel-sm text-[18px] leading-tight text-muted">{under}</p>}
         {/* Paldea's Titans (docs/62 §7): how many are beaten, while their switch is on. */}
         {titans && titans.total > 0 && (
@@ -424,8 +500,9 @@ export function PokedexScreen() {
         ))}
       </DexGridList>
       {/* The shiny page's INFO sits under the Pokédex and its Shiny view while that page is open (docs/15 §35). */}
-      {shinyOpen && !unown && <InfoButton name={t('ui.dex.shinyTitle')} onClick={() => setInfo('shiny')} />}
+      {shinyOpen && !unown && !rotom && <InfoButton name={t('ui.dex.shinyTitle')} onClick={() => setInfo('shiny')} />}
       {unown && <InfoButton name={t('ui.unown.title')} onClick={() => setInfo('unown')} />}
+      {rotom && <InfoButton name={t('ui.rotom.title')} onClick={() => setInfo('rotom')} />}
     </>
   )
 
@@ -452,6 +529,7 @@ export function PokedexScreen() {
       />
       <ShinyDexRulesModal open={info === 'shiny'} onClose={() => setInfo(null)} />
       <UnownDexRulesModal open={info === 'unown'} onClose={() => setInfo(null)} />
+      <RotomDexRulesModal open={info === 'rotom'} onClose={() => setInfo(null)} />
     </div>
   )
 }

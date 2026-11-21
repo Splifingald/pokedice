@@ -527,6 +527,15 @@ export const saveSchema = z.object({
   unownDex: z.record(z.array(z.string().max(1)).max(UNOWN_LETTERS.length)).optional(),
   unownDexPaid: z.array(z.string().max(40)).max(40).optional(),
   unownDexSeen: z.boolean().optional(),
+  // The Rotom Room (docs/73): the forms owned, the prize given, the page seen, the week's form. An odd week (an edited
+  // save) is dropped, never the save: the next settle pins it again.
+  rotomDex: z.array(z.number().int().min(1)).max(10).optional().catch(undefined),
+  rotomDexPaid: z.boolean().optional(),
+  rotomDexSeen: z.boolean().optional(),
+  rotomRoom: z
+    .object({ week: z.string().max(10), form: z.number().int().min(1).nullable() })
+    .optional()
+    .catch(undefined),
   // Hidden talents (docs/51): the families unlocked by region, and those met.
   talents: z.record(z.array(z.number().int().min(1)).max(3000)).optional(),
   talentsMet: z.array(z.number().int().min(1)).max(3000).optional(),

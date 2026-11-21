@@ -26,6 +26,13 @@ import {
   syncTalents,
   noteUnownDex,
   payUnownDex,
+  getRegion,
+  noteRotomDex,
+  payRotomDex,
+  pinRotomWeek,
+  regionOf,
+  rotomRoomBase,
+  withRotomWeek,
   syncPowers,
   syncEggClocks,
   syncHpScale,
@@ -379,11 +386,15 @@ function settle(save: SaveData, data: GameData) {
   // The Unown Pokédex (docs/41): the letters held noted (a save from before it, a trade), and its prize once complete
   // (a page finished while the switch was off is paid the day it opens).
   const unown = payUnownDex(noteUnownDex(shinyDex), data)
+  // The Rotom Room (docs/73): the forms held noted, the week's form pinned when a new week has begun (on the server's
+  // clock), and the shiny Rotom once the Rotom Pokédex is complete.
+  const rotom = payRotomDex(pinRotomWeek(noteRotomDex(unown.save), data, trustedNow()), data, Date.now(), raidId)
   return {
     ...dup,
-    save: unown.save,
-    won: runsWon(save, unown.save),
+    save: rotom.save,
+    won: runsWon(save, rotom.save),
     unownPaid: unown.paid,
+    rotomPrize: rotom.prize,
     gemsGiven: powers.given,
     revived: fossils.revived,
     raidsReleased: raids.released,
@@ -475,9 +486,19 @@ useGame.subscribe((s, prev) => {
   if ((s.run !== prev.run || s.battle !== prev.battle) && s.save) scheduleWrite(onDisk(s.save))
 })
 useGame.subscribe((s, prev) => {
-  if (s.auth === prev.auth && s.data === prev.data && s.beta === prev.beta) return
-  const data = withViewer(s.data, s.auth, s.beta)
-  if (data !== s.data) useGame.setState({ data })
+  const week = s.save?.rotomRoom
+  if (s.auth === prev.auth && s.data === prev.data && s.beta === prev.beta && week === prev.save?.rotomRoom) return
+  // The Rotom Room (docs/73) as this player sees it: this week's form and Pokémon, or nowhere while it's off.
+  const data = withRotomWeek(withViewer(s.data, s.auth, s.beta), s.save)
+  if (data === s.data) return
+  // Off while the player stood in it: back to the region's League, as an area the admin removed.
+  const gone = s.save && s.save.currentAreaId === rotomRoomBase(data)?.id && !data.areas.some((a) => a.id === s.save!.currentAreaId)
+  const league = gone ? getRegion(data, regionOf(s.save!))?.leagueAreaId : null
+  useGame.setState({
+    data,
+    ...(gone && league && { save: { ...s.save!, currentAreaId: league } }),
+    ...(gone && s.run.areaId === s.save!.currentAreaId && { run: initialRun(), battle: null }),
+  })
 })
 
 // ---------------------------------------------------------------- core actions
@@ -579,6 +600,7 @@ export function commitSave(next: SaveData | null, opts: { silent?: boolean; keep
   for (const region of settled?.won ?? [])
     pushToast(t('ui.xrun.wonToast', { region: data.regions.find((r) => r.id === region)?.name ?? region }), 'good', 6000)
   if (settled?.unownPaid) pushToast(t('ui.unown.paidToast', { amount: money(settled.unownPaid) }), 'good', 5000)
+  if (settled?.rotomPrize) pushToast(t('ui.rotom.prizeToast', { level: settled.rotomPrize.level }), 'good', 6000)
   for (const id of settled?.back ?? []) {
     const inst = stamped?.box.find((p) => p.id === id)
     if (inst) pushToast(t('ui.extreme.backToast', { name: data.species[inst.dex]?.name ?? '' }), 'good', 4000)

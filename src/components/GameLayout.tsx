@@ -13,6 +13,7 @@ import { NightmareGuard } from '@/screens/area/NightmareRun'
 import { TimeRaceGuard } from '@/screens/area/TimeRaceRun'
 import { WhiteoutGuard } from '@/screens/area/WhiteoutRun'
 import { useUndergroundSettle } from '@/store/underground'
+import { useRotomWeekClock } from '@/store/rotomRoom'
 import { FriendBattlesService } from './pvp/FriendBattlesService'
 
 /** In-game shell: top bar, side bar (desktop) or bottom bar (phones), and the screen. No save → back to the title. */
@@ -39,6 +40,8 @@ export function GameLayout() {
   useServerTimeSync()
   // The Underground's block follows the event: a new one starts afresh, an ended one goes, free kits come in.
   useUndergroundSettle()
+  // The Rotom Room's week turns on Monday even while nothing is saved (docs/73).
+  useRotomWeekClock()
   if (!hasSave) return <Navigate to="/" replace />
   return (
     // The one-time pop-ups take turns (engine/popups.ts): the queue wraps the pages too, whose own pop-ups (the region
