@@ -1,0 +1,159 @@
+/*
+ * The race of time and space's gates (docs/64 §4.4, docs/15 §48; the user's call of 2026-11-22: "make them look
+ * cooler"): a gateway of the Spear Pillar ruins, stone pillars with their capitals under an arch, a keystone in the
+ * gate's type colour, and inside a rift of that colour swirling round its bright heart, star specks drifting through.
+ * `--gate` is the type's colour (set on the button). `.rg-live` (motion on) turns the swirl and drifts the stars.
+ */
+.rg-gate {
+  --gate-lit: color-mix(in srgb, var(--gate) 45%, #ffffff);
+  --gate-deep: color-mix(in srgb, var(--gate) 55%, #05061a);
+  background: #05061a;
+  box-shadow:
+    0 0 0 2px #1d2130,
+    0 0 14px -2px var(--gate);
+  transition: box-shadow 160ms steps(3);
+}
+.rg-gate:hover,
+.rg-gate:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--gate-lit),
+    0 0 22px 0 var(--gate);
+}
+
+/* The stone: two pillars (lit edge, face, shadow; a seam every few blocks), a capital and a base on each. */
+.rg-pillar {
+  position: absolute;
+  top: 18px;
+  bottom: 0;
+  width: 14px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 20px, #1d2130 20px 22px),
+    linear-gradient(90deg, #8d97ae 0 3px, #5b6378 3px 10px, #323849 10px 14px);
+}
+.rg-pillar::before,
+.rg-pillar::after {
+  content: '';
+  position: absolute;
+  left: -3px;
+  width: 20px;
+  height: 6px;
+  background: linear-gradient(180deg, #c9d6ea 0 2px, #8d97ae 2px 4px, #323849 4px 6px);
+}
+.rg-pillar::before {
+  top: -6px;
+}
+.rg-pillar::after {
+  bottom: 0;
+}
+.rg-pillar-l {
+  left: 6px;
+}
+.rg-pillar-r {
+  right: 6px;
+}
+
+/* The arch over them: a stone band, its keystone in the gate's colour. */
+.rg-arch {
+  position: absolute;
+  top: 4px;
+  left: 3px;
+  right: 3px;
+  height: 64px;
+  border-radius: 999px 999px 0 0 / 60px 60px 0 0;
+  border: 6px solid #5b6378;
+  border-bottom: 0;
+  box-shadow:
+    inset 0 2px 0 #8d97ae,
+    0 -2px 0 #323849;
+}
+.rg-key {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  translate: -50% 0;
+  rotate: 45deg;
+  background: var(--gate);
+  box-shadow:
+    0 0 0 2px #1d2130,
+    0 0 10px var(--gate);
+}
+
+/* The rift between the pillars: the type's light from a bright heart out to the night, arched at the top. */
+.rg-rift {
+  position: absolute;
+  top: 10px;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  overflow: hidden;
+  border-radius: 999px 999px 0 0 / 54px 54px 0 0;
+  background: radial-gradient(
+    ellipse 70% 50% at 50% 52%,
+    #ffffff 0%,
+    var(--gate-lit) 14%,
+    var(--gate) 36%,
+    var(--gate-deep) 66%,
+    #05061a 100%
+  );
+  box-shadow: inset 0 0 16px 2px #05061a;
+}
+.rg-rift::before {
+  /* The swirl: two arms of light turning round the heart. */
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in srgb, var(--gate-lit) 55%, transparent) 40deg,
+    transparent 110deg,
+    transparent 180deg,
+    color-mix(in srgb, var(--gate-lit) 55%, transparent) 220deg,
+    transparent 290deg
+  );
+  mix-blend-mode: screen;
+  opacity: 0.7;
+}
+.rg-rift::after {
+  /* Star specks. */
+  content: '';
+  position: absolute;
+  inset: 0 0 -60px 0;
+  background-image:
+    radial-gradient(2px 2px at 18% 22%, #ffffff 50%, transparent 51%),
+    radial-gradient(2px 2px at 76% 14%, #ffffff 50%, transparent 51%),
+    radial-gradient(2px 2px at 62% 48%, #fff2fa 50%, transparent 51%),
+    radial-gradient(2px 2px at 30% 70%, #ffffff 50%, transparent 51%),
+    radial-gradient(2px 2px at 84% 82%, #a8c8ff 50%, transparent 51%),
+    radial-gradient(2px 2px at 12% 92%, #ffffff 50%, transparent 51%);
+  opacity: 0.85;
+}
+.rg-gate:hover .rg-rift,
+.rg-gate:focus-visible .rg-rift {
+  filter: brightness(1.2);
+}
+
+@keyframes rg-swirl {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes rg-drift {
+  to {
+    translate: 0 -60px;
+  }
+}
+.rg-live .rg-rift::before {
+  animation: rg-swirl 9s steps(36) infinite;
+}
+.rg-live .rg-rift::after {
+  animation: rg-drift 6s steps(30) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rg-live .rg-rift::before,
+  .rg-live .rg-rift::after {
+    animation: none;
+  }
+}

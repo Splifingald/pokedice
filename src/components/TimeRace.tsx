@@ -3,7 +3,7 @@
 // gauge of fights with each fork's type, a fork's two gates (their type colours and finds), its rules from INFO, and the
 // win (the legend's roar, time and space settling). The scenes are the pixel engine's (src/fx/timelines/timeRace.ts).
 // Every number comes from the engine (the area's mode, the try's plan, the clock); these pieces only show them.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GameData, PokeType, TimeRaceGate, TimeRaceMode, TimeRacePlan } from '@/engine'
 import { fxSound } from '@/audio/sfx'
 import { playCry } from '@/audio/cries'
@@ -228,6 +228,9 @@ export function ForkView({
   const last = fork >= forks
   const first = useRef<HTMLButtonElement>(null)
   useEffect(() => first.current?.focus({ preventScroll: true }), [fork])
+  // The rifts turn and their stars drift only while motion is on.
+  const { level, calm } = useMotion()
+  const live = !calm && level !== 'off'
   return (
     <section className="pixel-panel flex flex-col gap-3 p-3" aria-labelledby="race-fork" data-race-fork>
       <div className="grid gap-1">
@@ -261,31 +264,23 @@ export function ForkView({
                 t('ui.timeRace.gateLabel', { type: typeName(g.type), find: find || '—' }) +
                 (legend ? ` · ${t('ui.timeRace.gateFor', { name: legend })}` : '')
               }
-              className="group relative flex min-h-[188px] flex-col items-center gap-2 overflow-hidden px-2 pb-3 pt-4 text-center shadow-ring-line outline-offset-4"
-              style={{ background: TR.deep }}
+              className={cx(
+                'rg-gate group relative flex min-h-[196px] flex-col items-center gap-2 overflow-hidden px-6 pb-3 pt-7 text-center outline-offset-4',
+                live && 'rg-live',
+              )}
+              style={{ '--gate': col } as CSSProperties}
               data-gate={g.type}
             >
-              {/* The archway: two pillars of the type's colour and a lintel, its light inside. */}
-              <span aria-hidden className="absolute inset-x-3 top-2 h-[10px]" style={{ background: col }} />
-              <span
-                aria-hidden
-                className="absolute bottom-0 left-3 top-2 w-[10px]"
-                style={{ background: col }}
-              />
-              <span
-                aria-hidden
-                className="absolute bottom-0 right-3 top-2 w-[10px]"
-                style={{ background: col }}
-              />
-              <span
-                aria-hidden
-                className="absolute inset-x-[22px] bottom-0 top-[12px] opacity-40 group-hover:opacity-60"
-                style={{ background: `repeating-linear-gradient(0deg, ${col} 0 2px, transparent 2px 4px)` }}
-              />
+              {/* A gateway of the ruins (race.css): the rift of the type's light, the pillars, the arch and its keystone. */}
+              <span aria-hidden className="rg-rift" />
+              <span aria-hidden className="rg-pillar rg-pillar-l" />
+              <span aria-hidden className="rg-pillar rg-pillar-r" />
+              <span aria-hidden className="rg-arch" />
+              <span aria-hidden className="rg-key" />
               <span className="relative mt-2">
                 <TypeBadge type={g.type} />
               </span>
-              <span className="relative grid min-h-[44px] place-items-center" aria-hidden>
+              <span className="relative grid min-h-[44px] place-items-center drop-shadow-[0_0_6px_#ffffff]" aria-hidden>
                 {g.find?.kind === 'shard' ? (
                   <ShardIcon size={36} />
                 ) : g.find?.kind === 'item' ? (
@@ -320,12 +315,11 @@ export function ForkView({
 
 /**
  * The race's rules, short (as the nightmare's): four one-line rows from the try's plan and the area's numbers: the
- * fights and the clock, the forks and their finds, the last gate's legends, the rest (no Center, no catch, one speed,
+ * fights and the clock, the forks and their finds, the last gate (its legends kept a surprise), the rest (no Center, no catch, one speed,
  * back to the start).
  */
-export function useTimeRaceRules(mode: TimeRaceMode, plan: TimeRacePlan, data: GameData): RuleRow[] {
+export function useTimeRaceRules(mode: TimeRaceMode, plan: TimeRacePlan, _data?: GameData): RuleRow[] {
   const { t } = useT()
-  const name = (dex: number) => data.species[dex]?.name ?? `#${dex}`
   const lastTypes = plan.forks[plan.forks.length - 1] ?? []
   const legends = mode.legends.filter((l) => lastTypes.includes(l.type))
   return [
@@ -339,22 +333,8 @@ export function useTimeRaceRules(mode: TimeRaceMode, plan: TimeRacePlan, data: G
       title: t('ui.timeRace.rule.forks', { n: mode.perFork }),
       text: t('ui.timeRace.rule.finds', { s: mode.shard.seconds }),
     },
-    {
-      icon: 'star',
-      title:
-        legends.length > 1
-          ? t('ui.timeRace.rule.legends', {
-              a: typeName(legends[0]!.type),
-              aName: name(legends[0]!.dex),
-              b: typeName(legends[1]!.type),
-              bName: name(legends[1]!.dex),
-            })
-          : t('ui.timeRace.rule.legend', {
-              a: typeName(legends[0]?.type ?? 'normal'),
-              aName: name(legends[0]?.dex ?? 0),
-            }),
-      text: '',
-    },
+    // Which gate leads to which legend stays a surprise until the last fork (the user's call, 2026-11-22).
+    { icon: 'star', title: t(legends.length > 1 ? 'ui.timeRace.rule.lastGate' : 'ui.timeRace.rule.lastGateOne'), text: '' },
     { icon: 'lock', title: t('ui.timeRace.rule.lock'), text: t('ui.timeRace.rule.lockText') },
   ]
 }

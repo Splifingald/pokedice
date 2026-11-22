@@ -258,15 +258,28 @@ export function timeRaceForkDue(save: SaveData, data: GameData, areaId: string):
   return !r.gates?.length && r.path.length < plan.forks.length && r.fights >= r.path.length * mode.perFork
 }
 
-/** A gate's find: a time shard `shard.chance` % of the time, else an item by weight (a shard when none can be had). */
-function drawFind(mode: TimeRaceMode, data: GameData, rng: Rng): TimeRaceGate['find'] {
+/**
+ * A gate's find: a time shard `shard.chance` % of the time, else an item by weight (a shard when none can be had). Never
+ * what another gate of the fork holds (the user's call, 2026-11-22: two doors, two different rewards): `taken`, its
+ * gates drawn already. Only when the admin's lists leave nothing else does a find repeat.
+ */
+function drawFind(mode: TimeRaceMode, data: GameData, rng: Rng, taken: readonly TimeRaceGate['find'][] = []): TimeRaceGate['find'] {
+  const shardTaken = taken.some((f) => f?.kind === 'shard')
+  const keys = new Set(taken.flatMap((f) => (f?.kind === 'item' ? [f.key] : [])))
   const shard = mode.shard.seconds > 0 ? ({ kind: 'shard', seconds: mode.shard.seconds } as const) : null
-  if (shard && rng.next() * 100 < mode.shard.chance) return shard
-  const item = rng.weighted(
-    mode.items.filter((i) => data.items[i.key]),
-    (i) => i.weight,
-  )
-  return item ? { kind: 'item', key: item.key, qty: item.qty } : shard
+  const freeShard = shardTaken ? null : shard
+  if (freeShard && rng.next() * 100 < mode.shard.chance) return freeShard
+  const pick = (exclude: boolean) =>
+    rng.weighted(
+      mode.items.filter((i) => data.items[i.key] && !(exclude && keys.has(i.key))),
+      (i) => i.weight,
+    )
+  const item = pick(true)
+  if (item) return { kind: 'item', key: item.key, qty: item.qty }
+  if (freeShard) return freeShard
+  // Nothing different left (one item and the shard taken): as before, a repeat rather than an empty gate.
+  const again = pick(false)
+  return again ? { kind: 'item', key: again.key, qty: again.qty } : shard
 }
 
 /** The fork due now opens: its gates are drawn with their finds and wait in the save for the pick. Null when none is due. */
@@ -275,7 +288,9 @@ export function openTimeRaceFork(save: SaveData, data: GameData, areaId: string,
   if (!mode || !timeRaceForkDue(save, data, areaId)) return null
   const r = timeRaceStateOf(save, areaId)
   const types = timeRacePlan(save, mode, areaId).forks[r.path.length]!
-  const gates: TimeRaceGate[] = types.map((type) => ({ type, find: drawFind(mode, data, rng) }))
+  // Drawn in turn, so no two gates of the fork hold the same find.
+  const gates: TimeRaceGate[] = []
+  for (const type of types) gates.push({ type, find: drawFind(mode, data, rng, gates.map((g) => g.find)) })
   return withRace(save, areaId, { ...r, gates })
 }
 

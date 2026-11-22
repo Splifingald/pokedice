@@ -2514,7 +2514,7 @@ one still frame with motion off.
   4/15".
 - **A fork** (`ForkView`): on the area's page, a panel "Fork 2/5: pick a gate" ("The last fork: pick your legend"; "The
   last gate" when the replay's is alone), one line on what it means, then **the gates side by side** (one alone, full
-  width): each an archway in its type's colour (`typeColor`) with its `TypeBadge`, what lies behind it (the item's sprite,
+  width): each a gateway of the ruins (`race.css`: stone pillars with capitals under an arch, a keystone and a rift swirling round a bright heart in its type's colour, star specks drifting, still with motion off; the user's call of 2026-11-22) with its `TypeBadge`, what lies behind it (the item's sprite,
   or a time shard: a small hourglass of light) and its words on the type's badge colours, and on the last fork the
   legend's raid in gold ("Opens Palkia's raid"). Each gate is one button of at least 44 px, its name all of it ("Water
   gate: Revive · Opens Palkia's raid"); the first holds the focus. Taking it: `race.gate`, or `race.shard` and a toast
