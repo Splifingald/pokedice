@@ -7698,7 +7698,7 @@ insert into game_config (key, value) values ('configVersion', '1'::jsonb) on con
 -- 3. configVersion + 1, so players fetch the new switch.
 
 -- 1.
-insert into game_config (key, value) values ('rotomRoom', '{"access": "off", "prizeLevel": 60}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('rotomRoom', '{"access": "off", "prizeLevel": 44}'::jsonb) on conflict (key) do nothing;
 
 -- 2. An odd value is off; never null.
 create or replace function rotom_room_open()
@@ -9434,7 +9434,7 @@ insert into areas (id, order_index, region_id, name, banner_url, rounds_to_clear
   ('3a951f35-e83d-5ac1-b2a3-2cfe91620fb4', 556, 'unova', 'The Abundant Shrine', '/banners/flowers.png#flip', 1, 52, 62, '{"item":0,"wild":8,"casino":0,"center":0,"trainer":0}'::jsonb, 0.5, '[{"dex":641,"level":56,"teamAvgThreshold":0,"raid":true},{"dex":642,"level":56,"teamAvgThreshold":0,"raid":true},{"dex":645,"level":60,"teamAvgThreshold":0,"raid":true}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"03b22d5c-9bdd-5024-80bb-7dfcaa848dc7"},{"kind":"maxLevel","level":52}]'::jsonb, '[]'::jsonb),
   ('e8936c27-eded-53f7-ad42-8c6eea16f5f6', 858, 'galar', 'Dyna Tree Hill', '/banners/snow_mountains.png', 1, 66, 74, '{"item":2,"wild":8,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":10169,"level":70,"teamAvgThreshold":0,"raid":true},{"dex":10170,"level":70,"teamAvgThreshold":0,"raid":true},{"dex":10171,"level":70,"teamAvgThreshold":0,"raid":true}]'::jsonb, false, null, false, 9, 'grass', true, '[{"kind":"area","areaId":"0c17194f-f7be-5221-91d0-68fcee8da9d9"},{"kind":"pokedex","count":173},{"kind":"maxLevel","level":70}]'::jsonb, '[]'::jsonb),
   ('38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 958, 'kanto', 'Safari Zone', '/banners/swamp.png', null, 24, 33, '{"wild":6,"item":2,"center":0,"trainer":0,"casino":0}'::jsonb, 0.5, null, false, null, false, 5, 'grass', true, '[{"kind":"area","areaId":"2238f26a-2629-5f28-af07-e74cb41d5f7a"}]'::jsonb, '[]'::jsonb),
-  ('875e7168-7d1b-58ac-bdd9-67c0ce365c95', 959, 'sinnoh', 'The Rotom Room', '/banners/factory.png', 2, 50, 60, '{"item":1,"wild":6,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":10008,"level":60},{"dex":10009,"level":60},{"dex":10010,"level":60},{"dex":10011,"level":60},{"dex":10012,"level":60}]'::jsonb, false, null, false, 8, 'default', true, '[{"kind":"cleared","areaId":"5dc66787-c27b-5d67-8d66-4df0f1aa1041"}]'::jsonb, '[]'::jsonb)
+  ('875e7168-7d1b-58ac-bdd9-67c0ce365c95', 959, 'sinnoh', 'The Rotom Room', '/banners/factory.png', 2, 36, 44, '{"item":1,"wild":6,"casino":0,"center":1,"trainer":0}'::jsonb, 0.5, '[{"dex":10008,"level":44},{"dex":10009,"level":44},{"dex":10010,"level":44},{"dex":10011,"level":44},{"dex":10012,"level":44}]'::jsonb, false, null, false, 7, 'default', true, '[{"kind":"area","areaId":"ffd172b1-9ee2-54a8-bc39-a66661a7e0b8"}]'::jsonb, '[]'::jsonb)
 on conflict (id) do update set order_index = excluded.order_index, region_id = excluded.region_id, name = excluded.name, banner_url = excluded.banner_url, rounds_to_clear = excluded.rounds_to_clear, min_level = excluded.min_level, max_level = excluded.max_level, encounter_weights = excluded.encounter_weights, backtrack_multiplier = excluded.backtrack_multiplier, legendary_boss = excluded.legendary_boss, scales_to_team = excluded.scales_to_team, scale_offsets = excluded.scale_offsets, easy_mode = excluded.easy_mode, enemy_upgrade_level = excluded.enemy_upgrade_level, battle_background = excluded.battle_background, hidden = excluded.hidden, unlock_conditions = excluded.unlock_conditions, gyms = excluded.gyms;
 
 insert into trainers (id, name, sprite_url, team, role, badge, upgrade_level, battle_background, rival_of, items, duo) values
@@ -14616,35 +14616,35 @@ insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level, time
   ('c510dc0e-8b27-58bc-818f-ab4603c87c9d', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 119, 3, 25, 30, null),
   ('00601b9e-944a-5b1e-888b-06a322043e8d', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 60, 5, 20, 25, null),
   ('cf3dbb9e-4510-5f10-8eb4-79929418732b', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 129, 5, 5, 15, null),
-  ('e32f7bfa-0445-58fd-a48e-9917e1d0d6f9', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 405, 10, 50, 58, null),
-  ('cd2c115a-70e7-5087-b901-c8a6ab815b2b', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 462, 8, 50, 58, null),
-  ('d2b25a31-1a38-59c1-be49-b7f33793b888', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 466, 8, 50, 58, null),
-  ('765f6216-5a80-571a-8d1c-ba6b820a0e91', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 171, 6, 50, 58, null),
-  ('40d73fdf-da1e-56ac-aea4-c2a854d00b7f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 417, 6, 50, 58, null),
-  ('5bb7b674-2246-5c8c-b49c-df7ab930986d', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 467, 8, 50, 58, null),
-  ('b3f218e1-64f4-5088-a80f-d02a8aa60c37', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 229, 8, 50, 58, null),
-  ('4e594de2-6b56-5cbc-b7fc-1fb6d12e595f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 324, 6, 50, 58, null),
-  ('5082ca31-80b6-5797-ab53-955ca69d2690', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 219, 6, 50, 58, null),
-  ('55528bee-0986-5dff-82ce-fe2c82ee4ec6', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 419, 8, 50, 58, null),
-  ('2192770b-a894-54bc-ac5d-4a2ab85c8325', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 423, 8, 50, 58, null),
-  ('06e500c9-a735-5729-94e2-35c1e24e3243', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 457, 6, 50, 58, null),
-  ('645466ba-e46e-5f73-9a31-ab67018b409e', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 55, 6, 50, 58, null),
-  ('b022d342-39a9-5cba-bdc8-eb5ad079034d', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 130, 3, 50, 58, null),
-  ('63e3aa66-cff6-5a10-8b2a-b5ccb09da114', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 461, 8, 50, 58, null),
-  ('e0a013c9-be66-51f0-a4da-24f90b69e026', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 478, 8, 50, 58, null),
-  ('71136eca-a0a5-5ce1-92bf-2ecd0721b4c2', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 362, 6, 50, 58, null),
-  ('7881bca8-449e-5708-acb7-2b2ddfca5d52', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 473, 6, 50, 58, null),
-  ('f483ca72-842c-5cc3-b10c-6732aa03130d', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 398, 8, 50, 58, null),
-  ('7a91f9aa-e235-5b2d-be7b-271dba3c1685', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 430, 8, 50, 58, null),
-  ('f23f9f49-d7a1-5f43-af2d-263e0646c4d1', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 426, 6, 50, 58, null),
-  ('094ea05b-be08-58bd-86bb-c5d3fb7448c6', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 472, 6, 50, 58, null),
-  ('cc66e78d-8017-5c8d-9dc0-2f6f228575ed', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 469, 6, 50, 58, null),
-  ('fd95784f-3fa2-5c24-b07a-b6ed273fd5c7', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 407, 8, 50, 58, null),
-  ('49f5b0bd-a633-5001-92ac-4ede78fc622a', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 465, 8, 50, 58, null),
-  ('c4d148dc-9bf0-5de4-9d38-546cc422522d', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 455, 6, 50, 58, null),
-  ('6f7170ff-787f-5a96-9d6f-bc9f36b6ec61', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 421, 6, 50, 58, null),
-  ('235b0587-db53-582f-b5e9-b155bb814277', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 460, 6, 50, 58, null),
-  ('5686f3dc-f5cd-5906-a798-61dd0c89a4c3', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 357, 4, 50, 58, null)
+  ('e32f7bfa-0445-58fd-a48e-9917e1d0d6f9', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 405, 10, 36, 42, null),
+  ('dcf25ed5-a596-5807-8009-daecfad2d16f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 125, 8, 36, 42, null),
+  ('765f6216-5a80-571a-8d1c-ba6b820a0e91', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 171, 6, 36, 42, null),
+  ('40d73fdf-da1e-56ac-aea4-c2a854d00b7f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 417, 6, 36, 42, null),
+  ('67716c54-84f9-5e82-9533-c5fd3333b3e8', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 126, 8, 36, 42, null),
+  ('b3f218e1-64f4-5088-a80f-d02a8aa60c37', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 229, 8, 36, 42, null),
+  ('4e594de2-6b56-5cbc-b7fc-1fb6d12e595f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 324, 6, 36, 42, null),
+  ('5082ca31-80b6-5797-ab53-955ca69d2690', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 219, 6, 38, 42, null),
+  ('55528bee-0986-5dff-82ce-fe2c82ee4ec6', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 419, 8, 36, 42, null),
+  ('2192770b-a894-54bc-ac5d-4a2ab85c8325', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 423, 8, 36, 42, null),
+  ('06e500c9-a735-5729-94e2-35c1e24e3243', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 457, 6, 36, 42, null),
+  ('645466ba-e46e-5f73-9a31-ab67018b409e', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 55, 6, 36, 42, null),
+  ('b022d342-39a9-5cba-bdc8-eb5ad079034d', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 130, 3, 36, 42, null),
+  ('7cec74a5-74b7-568f-80d4-81e6b590ef7f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 215, 8, 36, 42, null),
+  ('9a8a6029-1b74-564a-8f3a-6ba55d63bede', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 361, 8, 36, 41, null),
+  ('7881bca8-449e-5708-acb7-2b2ddfca5d52', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 473, 6, 36, 42, null),
+  ('b8991615-d321-5b2c-9ab8-ac8566ea8354', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 459, 6, 36, 39, null),
+  ('235b0587-db53-582f-b5e9-b155bb814277', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 460, 4, 40, 42, null),
+  ('f483ca72-842c-5cc3-b10c-6732aa03130d', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 398, 8, 36, 42, null),
+  ('edf03e0c-282d-5640-b625-4773072768fb', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 164, 8, 36, 42, null),
+  ('f23f9f49-d7a1-5f43-af2d-263e0646c4d1', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 426, 6, 36, 42, null),
+  ('094ea05b-be08-58bd-86bb-c5d3fb7448c6', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 472, 6, 36, 42, null),
+  ('cc66e78d-8017-5c8d-9dc0-2f6f228575ed', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 469, 6, 36, 42, null),
+  ('9b1cb4e9-7b56-5478-9c7c-5b9ad885a336', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 441, 4, 36, 42, null),
+  ('69d9cca0-f67e-5457-b425-3a110798b654', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 315, 8, 36, 42, null),
+  ('49f5b0bd-a633-5001-92ac-4ede78fc622a', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 465, 8, 36, 42, null),
+  ('c4d148dc-9bf0-5de4-9d38-546cc422522d', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 455, 6, 36, 42, null),
+  ('6f7170ff-787f-5a96-9d6f-bc9f36b6ec61', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 421, 6, 36, 42, null),
+  ('5686f3dc-f5cd-5906-a798-61dd0c89a4c3', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 357, 4, 36, 42, null)
 on conflict (id) do update set area_id = excluded.area_id, dex = excluded.dex, weight = excluded.weight, min_level = excluded.min_level, max_level = excluded.max_level, time_of_day = excluded.time_of_day;
 
 insert into area_trainer_pool (id, area_id, trainer_id, weight) values
@@ -17955,12 +17955,17 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('cb20f0b9-da4b-594a-a678-450d03ed770b', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'great-ball', 3, false, 1, 2, null),
   ('c11f996f-f818-5b78-a861-35f6faab7693', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'ultra-ball', 1, false, 1, 1, null),
   ('73301700-6705-5c69-a182-7aa6e9a72dc1', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'money', 3, false, 100, 300, null),
-  ('1a2904dd-10c9-5a44-9d54-498fd09f50df', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'hyper-potion', 20, false, 1, 2, null),
-  ('f2782a0d-a41f-52c5-aae3-85d924dfd4ee', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ultra-ball', 20, false, 1, 2, null),
-  ('980101ea-9ac4-5f41-871d-63b481352a4f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'max-ether', 12, false, 1, 1, null),
-  ('732742d4-8896-569e-b940-2637f6a25149', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'rare-candy', 8, false, 1, 1, null),
-  ('060f11f4-6a02-5e98-bf51-f58227fee985', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'money', 20, false, 200, 400, null),
-  ('80fd03f5-87b7-5654-b18d-90dd26f4ace8', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ether', 8, false, 1, 2, null)
+  ('775daf7f-9d46-5918-9f68-20d374f88091', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'super-potion', 12, false, 1, 2, null),
+  ('1a2904dd-10c9-5a44-9d54-498fd09f50df', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'hyper-potion', 14, false, 1, 1, null),
+  ('e41caeda-e677-5a63-8e14-2705f053f8d1', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'great-ball', 12, false, 1, 2, null),
+  ('f2782a0d-a41f-52c5-aae3-85d924dfd4ee', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ultra-ball', 12, false, 1, 1, null),
+  ('c983b98d-aa2a-5c54-9a84-54b9d39a188a', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'paralyze-heal', 4, false, 1, 1, null),
+  ('1c5e6781-5b56-52df-bb85-220a756e80cb', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'burn-heal', 4, false, 1, 1, null),
+  ('8920329b-7459-5c5e-81da-f74f3eb1c798', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ice-heal', 4, false, 1, 1, null),
+  ('80fd03f5-87b7-5654-b18d-90dd26f4ace8', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ether', 8, false, 1, 2, null),
+  ('980101ea-9ac4-5f41-871d-63b481352a4f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'max-ether', 6, false, 1, 1, null),
+  ('732742d4-8896-569e-b940-2637f6a25149', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'rare-candy', 3, false, 1, 1, null),
+  ('060f11f4-6a02-5e98-bf51-f58227fee985', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'money', 18, false, 100, 200, null)
 on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty, disguise = excluded.disguise;
 
 insert into combo_upgrades (combo_key, level, bonus, cost) values

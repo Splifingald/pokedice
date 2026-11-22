@@ -495,8 +495,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   // the same row.
   unownDex: { access: 'off', reward: 1000 },
   // The Rotom Room (docs/73): off until the admin switches it on; the complete Rotom Pokédex brings a shiny Rotom
-  // Lv.60. Migration 0153 inserts the same row.
-  rotomRoom: { access: 'off', prizeLevel: 60 },
+  // Lv.44, the room's own level. Migration 0153 inserts the same row.
+  rotomRoom: { access: 'off', prizeLevel: 44 },
   ccu: {
     access: 'off',
     cap: 30,
