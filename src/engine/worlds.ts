@@ -506,8 +506,12 @@ export const WORLD_SECRETS_MAX = 6
 /** One of a world's secret areas, as Home shows it: its boss or raid (its prize first), and whether it's caught. */
 export interface WorldSecret {
   area: Area
+  /** Its prize, the first of `bosses`. */
   boss: BossDef | null
+  /** Its prizes: the shiny ones (Spear Pillar's Dialga and Palkia), else its first boss. Home swaps between them. */
+  bosses: BossDef[]
   raid: boolean
+  /** Every prize caught. */
   caught: boolean
 }
 
@@ -518,15 +522,16 @@ export function worldSecrets(save: SaveData, data: GameData, world: SmallWorld):
     .sort((a, b) => a.orderIndex - b.orderIndex)
     .slice(0, WORLD_SECRETS_MAX)
     .map((area) => {
-      const bosses = area.legendaryBoss ?? []
-      const boss = bosses.find((b) => b.shiny) ?? bosses[0] ?? null
+      const all = area.legendaryBoss ?? []
+      const shinies = all.filter((b) => b.shiny)
+      const prizes = shinies.length ? shinies : all.slice(0, 1)
+      const boss = prizes[0] ?? null
       const raid = !!boss && isRaidBoss(data, boss)
-      const caught =
-        !!boss &&
-        (raid
-          ? !!save.events?.raidsDone?.includes(progressRaidKey(area.id, boss.dex))
-          : bossCaught(area, progressOf(save, area.id), save.pokedex, boss.dex, data))
-      return { area, boss, raid, caught }
+      const caughtOne = (b: BossDef) =>
+        isRaidBoss(data, b)
+          ? !!save.events?.raidsDone?.includes(progressRaidKey(area.id, b.dex))
+          : bossCaught(area, progressOf(save, area.id), save.pokedex, b.dex, data)
+      return { area, boss, bosses: prizes, raid, caught: prizes.length > 0 && prizes.every(caughtOne) }
     })
 }
 

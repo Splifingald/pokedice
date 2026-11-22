@@ -3,7 +3,8 @@
 // Inside: the world's colours, its strip on Home (its name, the time left, the way back), its two squares (the
 // mythical, its Mart), the way to finish it once everything in it is done, the booster chips, the mythical's result
 // card, and the panel the main game's pages show instead of theirs. Every rule and number comes from engine/worlds.ts; the store's actions are store/worlds.ts.
-import { type CSSProperties, type ReactNode, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { create } from 'zustand'
 import {
@@ -70,6 +71,7 @@ import {
 import { HeadTag, Meter, Widget, WidgetBanner, WidgetRows, WIDGET_BANNER_H } from '@/screens/home/Widget'
 import { areaStatus, lockReason } from '@/screens/home/areas'
 import { conditionLabel } from '@/i18n/text'
+import { useMotion } from '@/lib/motion'
 import { cx, textOn } from '@/theme/util'
 import { LiveGauge, liveTime } from './live'
 import { bannerUrl } from './shared'
@@ -800,6 +802,9 @@ export function MythicalSquare({ world, caught, state, onClick }: { world: Small
   )
 }
 
+/** How long each of a secret area's prizes shows on its row before the next (Spear Pillar's Dialga and Palkia). */
+const SECRET_SWAP_MS = 2000
+
 /** A secret area's row as Home inside a world shows it: locked (what opens it), new, open, or its prize caught. */
 export type SecretRowState = 'locked' | 'new' | 'open' | 'done'
 
@@ -811,7 +816,8 @@ export type SecretRowState = 'locked' | 'new' | 'open' | 'done'
 export function SecretRowView({
   area,
   state,
-  boss,
+  boss: first,
+  bosses,
   raid,
   cond,
   opens = null,
@@ -820,6 +826,8 @@ export function SecretRowView({
   area: Area
   state: SecretRowState
   boss: BossDef | null
+  /** Its prizes, when more than one (Spear Pillar's Dialga and Palkia): the row swaps between them every 2 s. */
+  bosses?: BossDef[]
   raid: boolean
   /** The condition still to meet, while locked. */
   cond: { kind: UnlockCondition['kind']; label: string; current: number; target: number } | null
@@ -829,8 +837,21 @@ export function SecretRowView({
 }) {
   const { t } = useT()
   const data = useGame((s) => s.data)
+  const { level, calm } = useMotion()
   const locked = state === 'locked'
-  const bossName = boss ? (data.species[boss.dex]?.name ?? `#${boss.dex}`) : ''
+  // Two prizes or more (the user's call, 2026-11-22): one after the other, every 2 seconds, the sprite, its name and
+  // its chip together; screen readers hear them all at once.
+  const prizes = bosses && bosses.length > 1 ? bosses : first ? [first] : []
+  const [turn, setTurn] = useState(0)
+  useEffect(() => {
+    if (prizes.length < 2) return
+    const timer = setInterval(() => setTurn((n) => n + 1), SECRET_SWAP_MS)
+    return () => clearInterval(timer)
+  }, [prizes.length])
+  const boss = prizes.length ? prizes[turn % prizes.length]! : null
+  const fade = prizes.length > 1 && !calm && level !== 'off'
+  const nameOf = (b: BossDef) => data.species[b.dex]?.name ?? `#${b.dex}`
+  const bossName = boss ? nameOf(boss) : ''
   // Its colours are on the sprite and the header's chip; the line keeps to the name, so a phone shows it whole.
   const shown = bossName
   const bottom = locked
@@ -846,6 +867,13 @@ export function SecretRowView({
       : state === 'done'
         ? t('ui.world.secret.done', { name: shown })
         : t(raid ? 'ui.world.secret.raid' : 'ui.world.secret.boss', { name: shown, level: boss.level })
+  // Said whole for screen readers: every prize, not the one on screen this second.
+  const said =
+    prizes.length > 1 && !locked && boss
+      ? state === 'done'
+        ? t('ui.world.secret.done', { name: joinList(prizes.map(nameOf)) })
+        : t(raid ? 'ui.world.secret.raid' : 'ui.world.secret.boss', { name: joinList(prizes.map(nameOf)), level: boss.level })
+      : bottom
   // Its date, while it hasn't come: on the condition's line when there's none left to meet, else on a line of its own
   // under it, so a row gated twice (Spear Pillar: the league, then 25 Dec) says both.
   const dated = locked ? opens : null
@@ -873,8 +901,8 @@ export function SecretRowView({
         state: locked
           ? [cond && `${cond.label}, ${bottom}`, dated].filter(Boolean).join(', ')
           : boss?.shiny
-            ? `${bottom} (${t('ui.mon.shiny')})`
-            : bottom,
+            ? `${said} (${t('ui.mon.shiny')})`
+            : said,
       })}
       className="pixel-panel lv-square w-square relative isolate col-span-2 flex min-h-[132px] min-w-0 flex-col gap-[5px] overflow-hidden px-2.5 pb-2.5 pt-2 text-left"
     >
@@ -888,7 +916,15 @@ export function SecretRowView({
       </span>
       {boss && (
         <span className="absolute right-3 top-1/2 z-[1] -translate-y-1/2" aria-hidden>
-          <SpriteImg dex={boss.dex} shiny={boss.shiny && !locked} silhouette={locked} size={64} className={locked ? 'w-sil' : 'w-got'} />
+          <motion.span
+            key={fade ? boss.dex : 'one'}
+            className="block"
+            initial={fade ? { opacity: 0 } : false}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+          >
+            <SpriteImg dex={boss.dex} shiny={boss.shiny && !locked} silhouette={locked} size={64} className={locked ? 'w-sil' : 'w-got'} />
+          </motion.span>
         </span>
       )}
       <span
@@ -952,6 +988,7 @@ export function WorldWidgets() {
       area={x.area}
       state={x.state}
       boss={x.boss}
+      bosses={x.bosses}
       raid={x.raid}
       cond={x.state === 'locked' ? x.cond : null}
       opens={x.opens}

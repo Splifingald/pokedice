@@ -1320,7 +1320,9 @@ on `/kitchen-sink` (`WorldBits`). Every rule and number comes from `engine/world
   it in `lv-ink` (white, an ink shadow): "Secret area" and a tag at the top, its boss on the right (a silhouette glowing
   in the accent while locked, its shiny colours with the gold glow once open), and on the foot its name, the gauge and
   one gold-light line. **Locked**: the picture greyed, a lock, the gauge and the condition still to meet ("12/20 in
-  Pokédex", "Best Lv. 41/60", "Clear Shadow Elite"); a tap says it in a toast. **New** (opened, never played): NEW,
+  Pokédex", "Best Lv. 41/60", "Clear Shadow Elite"); a tap says it in a toast. **Two prizes or more** (Spear Pillar's shiny Dialga and
+  Palkia, the user's call of 2026-11-22): the row swaps between them every 2 s, sprite, name and chip together (a short
+  fade; a plain swap with motion off), its label naming them all; caught once all are. **New** (opened, never played): NEW,
   "Boss: Haunter, Lv.30" (or "Raid: Darkrai, Lv.60"). **Open**: the same with its SHINY chip. **Done**: CAUGHT,
   "Spiritomb caught". Open, new or done, a tap travels there. The line keeps to the name so a phone shows it whole;
   "(Shiny)" is in the label for screen readers.

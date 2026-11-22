@@ -8,6 +8,8 @@ import {
   enterWorld,
   isAreaClosed,
   newSave,
+  progressRaidKey,
+  worldSecrets,
   type AreaProgress,
   type SaveData,
   type SmallWorld,
@@ -62,5 +64,25 @@ describe('a small world’s secret area: its boss until caught', () => {
     expect(isAreaClosed(s, GLADE.id, on)).toBe(false)
     // Its mode off, it is a plain secret area: caught, closed.
     expect(isAreaClosed(s, GLADE.id, data)).toBe(true)
+  })
+})
+
+describe('a secret area’s prizes on Home (the user’s call, 2026-11-22)', () => {
+  const PILLAR = h.areas.find((a) => a.name === 'Spear Pillar')!
+  it('Spear Pillar shows both shiny Dialga and Palkia, caught only once both are', () => {
+    const s = onHill({})
+    const row = worldSecrets(s, data, world).find((x) => x.area.id === PILLAR.id)!
+    expect(row.bosses.map((b) => b.dex)).toEqual([483, 484])
+    expect(row.boss?.dex).toBe(483)
+    expect(row.caught).toBe(false)
+    const one = { ...s, events: { ...s.events, raidsDone: [progressRaidKey(PILLAR.id, 484)] } }
+    expect(worldSecrets(one, data, world).find((x) => x.area.id === PILLAR.id)!.caught).toBe(false)
+    const both = { ...s, events: { ...s.events, raidsDone: [483, 484].map((d) => progressRaidKey(PILLAR.id, d)) } }
+    expect(worldSecrets(both, data, world).find((x) => x.area.id === PILLAR.id)!.caught).toBe(true)
+  })
+
+  it('an area with one prize keeps it alone (Evergreen Hill’s Delibird)', () => {
+    const row = worldSecrets(onHill({}), data, world).find((x) => x.area.id === HILL.id)!
+    expect(row.bosses.map((b) => b.dex)).toEqual([DELIBIRD])
   })
 })

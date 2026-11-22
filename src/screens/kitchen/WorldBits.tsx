@@ -169,6 +169,9 @@ export function WorldBits() {
         <SecretRowView area={haunted} state="locked" boss={{ dex: 493, level: 90, shiny: true, raid: true }} raid cond={{ kind: 'pokedex', label: 'Catch 90 Pokémon', current: 41, target: 90 }} opens="Opens Fri 1 Jan, 13:00" onClick={noop} />
         <SecretRowView area={haunted} state="new" boss={{ dex: 93, level: 30, shiny: true }} raid={false} cond={null} onClick={noop} />
         <SecretRowView area={island} state="open" boss={{ dex: 491, level: 60, shiny: true, raid: true }} raid cond={null} onClick={noop} />
+        {/* Two prizes (Spear Pillar's shiny Dialga and Palkia): the row swaps between them every 2 s, locked and open. */}
+        <SecretRowView area={island} state="locked" boss={{ dex: 483, level: 70, shiny: true, raid: true }} bosses={[{ dex: 483, level: 70, shiny: true, raid: true }, { dex: 484, level: 70, shiny: true, raid: true }]} raid cond={{ kind: 'cleared', label: 'Clear Frost League', current: 0, target: 1 }} onClick={noop} />
+        <SecretRowView area={island} state="open" boss={{ dex: 483, level: 70, shiny: true, raid: true }} bosses={[{ dex: 483, level: 70, shiny: true, raid: true }, { dex: 484, level: 70, shiny: true, raid: true }]} raid cond={null} onClick={noop} />
         <SecretRowView area={cave} state="done" boss={{ dex: 442, level: 50, shiny: true }} raid={false} cond={null} onClick={noop} />
         {/* Under the rows, the world's INFO: its pop-up again, with OK. */}
         <InfoButton name="Mirage Island" onClick={() => setInfo(true)} className="col-span-2" />
