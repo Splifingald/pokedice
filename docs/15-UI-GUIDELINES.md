@@ -2471,9 +2471,11 @@ day light of the same shrine for the end. **Its lasting effects follow §8**
 
 ## 48. The Race of Time and Space (Spear Pillar)
 
-**Its page and fights** (the user's call, 2026-11-22: "fit the theme of the intro"): while a race is under way, the
-area's page and its fights wear the intro's night: `GameLayout` puts the whole page under `.tr-scope` (`SCOPES.race`:
-night blue panels, light ink, time's blue edges, space's pink rings) on a fixed starry ground, time's blue glowing from
+**Its page and fights** (the user's calls, 2026-11-22: "fit the theme of the intro", "it should stay while in the
+area"): for as long as the player is in Spear Pillar (race or not, its end included), the area's page and its fights
+wear the intro's night, and so do its two raids' page and fights (`progressRaidLook`'s `race`, RaidView): the page
+goes under `.tr-scope` (`SCOPES.race`:
+night blue panels, light ink, time's blue edges, space's pink rings) on a fixed starry ground (`RaceGround`), time's blue glowing from
 the top left and space's pink from the bottom right (`html[data-tr-page]`, `race.css`); the fight's picture of the
 ruins (and its drawn background) turns to the intro's violet dusk (`.area-art`), its Pokémon and plates as they are.
 
@@ -2522,7 +2524,8 @@ one still frame with motion off.
   last gate" when the replay's is alone), one line on what it means, then **the gates side by side** (one alone, full
   width): each a gateway of the ruins (`race.css`: stone pillars with capitals under an arch, a keystone and a rift swirling round a bright heart in its type's colour, star specks drifting, still with motion off; the user's call of 2026-11-22) with its `TypeBadge`, what lies behind it (the item's sprite,
   or a time shard: a small hourglass of light) and its words on the type's badge colours, and on the last fork the
-  legend's raid in gold ("Opens Palkia's raid"). Each gate is one button of at least 44 px, its name all of it ("Water
+  legend never named (the user's call, 2026-11-22: a surprise; INFO says only "The last gate decides which legend you
+  face"). Each gate is one button of at least 44 px, its name all of it ("Water
   gate: Revive · Opens Palkia's raid"); the first holds the focus. Taking it: `race.gate`, or `race.shard` and a toast
   "+30 s on the clock"; an item's toast says it went into the bag; its first foe comes at once.
 - **The fights**: straight in, no preview card (a time trial). **One speed for everyone** (the user's call): every fight

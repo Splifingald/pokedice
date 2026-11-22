@@ -58,10 +58,6 @@ export function TimeRaceBits() {
     { type: 'steel', find: { kind: 'shard', seconds: 30 } },
   ]
   const only: TimeRaceGate[] = [{ type: 'steel', find: { kind: 'item', key: 'max-revive', qty: 1 } }]
-  const legends = {
-    water: data.species[PALKIA]?.name ?? 'Palkia',
-    steel: data.species[DIALGA]?.name ?? 'Dialga',
-  }
   const card =
     'light-scope flex items-center justify-center gap-2 bg-[#0b0f2e] p-2 text-center text-white shadow-[inset_0_3px_0_#a8c8ff,0_0_0_2px_#24304f]'
   return (
@@ -129,7 +125,6 @@ export function TimeRaceBits() {
           fork={5}
           forks={5}
           perFork={3}
-          legends={legends}
           data={data}
           onPick={(i) => setPicked(last[i]!.type)}
         />
@@ -138,7 +133,6 @@ export function TimeRaceBits() {
           fork={5}
           forks={5}
           perFork={3}
-          legends={legends}
           data={data}
           onPick={() => setPicked('steel')}
         />

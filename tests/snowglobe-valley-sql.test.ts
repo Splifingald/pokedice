@@ -17,6 +17,7 @@ const PATCHES = [
   '0151_snowglobe_levels.sql',
   '0152_welcome_gift.sql',
   '0155_spear_pillar_clock.sql',
+  '0156_spear_pillar_clock_6_5.sql',
 ]
 const runAll = async () => {
   await db.exec(sql(FILE))
@@ -75,8 +76,8 @@ describe('0122: Snowglobe Valley', () => {
     expect(worlds.access).toBe('everyone')
     expect(worlds.list.map((w) => w.id)).toEqual(['haunted-hollow-2026', WORLD_ID])
     expect(worlds.list[1]).toEqual(JSON.parse(JSON.stringify(h.world)))
-    // 0122, then 0150, 0151, 0152 and 0155.
-    expect(await cfg('configVersion')).toBe(125)
+    // 0122, then 0150, 0151, 0152, 0155 and 0156.
+    expect(await cfg('configVersion')).toBe(126)
   })
 
   it('has the script’s starters and wild pools once 0150 has run', async () => {
@@ -133,7 +134,7 @@ describe('0122: Snowglobe Valley', () => {
     )
   })
 
-  it('has the script’s race clock on Spear Pillar once 0155 has run: 7:00, the replay 6:00', async () => {
+  it('has the script’s race clock on Spear Pillar once 0156 has run: 6:00, the replay 5:00', async () => {
     const pillar = h.areas.find((a) => a.name === 'Spear Pillar')!
     const mode = (
       await db.query<{ m: { seconds: number; replay: { seconds: number } } }>(
@@ -141,7 +142,7 @@ describe('0122: Snowglobe Valley', () => {
         [pillar.id],
       )
     ).rows[0]!.m
-    expect([mode.seconds, mode.replay.seconds]).toEqual([420, 360])
+    expect([mode.seconds, mode.replay.seconds]).toEqual([360, 300])
     expect(mode).toEqual(JSON.parse(JSON.stringify(pillar.mode)))
   })
 
@@ -175,6 +176,6 @@ describe('0122: Snowglobe Valley', () => {
     expect(await count('select count(*)::int n from area_wild_pool')).toBe(
       h.areas.reduce((n, a) => n + a.wildPool.length, 0),
     )
-    expect(await cfg('configVersion')).toBe(130)
+    expect(await cfg('configVersion')).toBe(132)
   })
 })

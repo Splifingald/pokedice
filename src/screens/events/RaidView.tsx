@@ -90,6 +90,7 @@ import { DistortionFx, DistortionGround, StageTear } from '@/components/Portal'
 import { usePortalRaid } from './PortalRaid'
 import { NightGround, NightmareFx, StageShadow } from '@/components/Nightmare'
 import { useNightmareRaid } from './NightmareRaid'
+import { RaceGround, useRaceArea } from '@/components/TimeRace'
 
 const BANNER_TONE = {
   super: 'bg-gold text-ink',
@@ -362,13 +363,17 @@ export function RaidView({ run }: { run: RaidRun }) {
   const portal = usePortalRaid(run.raid.areaId)
   // Darkrai's raid, its area in nightmare mode (docs/15 §29): under the full moon.
   const nightmare = useNightmareRaid(run.raid.areaId) && !portal
+  // Spear Pillar's raids (docs/15 §48): the race's night, as its page and fights.
+  const race = useRaceArea(run.raid.areaId) && !portal && !nightmare
   // A legendary's own entrance (docs/40): with the overhaul on, its place and omen (a Mega raid's base's place). Skip
   // shows from the second time the player meets it.
   // With the legends' cinematics on (docs/53): its own when it has one (Mewtwo's lab…), and no warning tapes.
   const legend = useMemo(() => {
     if (portal || nightmare) return undefined
     const kind = run.source.kind === 'progress' ? 'progress' : 'daily'
-    if (!raidSpecialFor(data, run.raid.dex, kind, run.raid.areaId)) return undefined
+    // Spear Pillar's two raids keep the race's numbers but get Dialga's and Palkia's own entrances (the user's call,
+    // 2026-11-22), as anywhere else in the game.
+    if (!raidSpecialFor(data, run.raid.dex, kind, run.raid.areaId) && !race) return undefined
     const base = MEGA_RAIDS[run.raid.dex]?.base ?? run.raid.dex
     const scene = LEGEND_RAID_SCENES[base]
     const quiet = legendCinemaOn(data)
@@ -630,6 +635,7 @@ export function RaidView({ run }: { run: RaidRun }) {
           <NightmareFx />
         </>
       )}
+      {race && <RaceGround />}
       <section
         aria-label={heading}
         className={cx(
@@ -639,6 +645,7 @@ export function RaidView({ run }: { run: RaidRun }) {
           'lg:grid lg:max-w-[1440px] lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-5 lg:px-5 lg:pt-4',
           portal && 'dw-scope',
           nightmare && 'nm-scope',
+          race && 'tr-scope',
         )}
         data-portal-raid={portal || undefined}
         data-nightmare-raid={nightmare || undefined}

@@ -531,9 +531,12 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 | Starters: Alolan Sandshrew, Sneasel, Alolan Vulpix, also catchable in the first areas | Built (§1, §3): all three wild on Snowy Trail (rare) and Pinewood Forest; 0150 |
 | Their evolution items: found in the Lv.20–25 areas (2 Ice Stones and the Razor Claw), none before, not sold, three times the quantities (shiny hunters), easy to get | Built (§2.1, §2.2): 3 Ice Stones + 3 Razor Claws in Toy Workshop (20–26), 3 Ice Stones in Icicle Cave (25–32), all on the first round (two item cards, only those finds); out of the Mart and of Holly Village; a gift now takes one item card's place, not all of them (§4.0); 0150 |
 | A small blue gift right after the partner pick: 2 Potions, 5 Poké Balls, ₽10, 2 Ice Heals | Built (§4.7): its own switch, Off; 0152 |
-| Spear Pillar: the race's clock too long | 7:00 for the first run, 6:00 for the replay (`DEFAULT_TIME_RACE`); 0155 for live |
+| Spear Pillar: the race's clock too long | 6:00 for the first run, 5:00 for the replay (`DEFAULT_TIME_RACE`; 7:00 / 6:00 first); 0156 for live |
 | Spear Pillar: the same reward behind both doors | A fork's two gates never hold the same find (`drawFind`'s `taken`) |
 | Spear Pillar: INFO says which type leads to Dialga or Palkia | "The last gate decides which legend you face": the surprise kept until the last fork |
+| Spear Pillar: the last doors name Palkia and Dialga | They don't any more: the legend stays a surprise until its raid |
+| Spear Pillar: the theme for the whole area, and its raids | The intro's night for as long as the player is there, and on its raids' page and fights |
+| Spear Pillar: its raids' intro | Dialga's and Palkia's own entrances (docs/53), as anywhere in the game, with Legendary intros on |
 | Spear Pillar: the doors should look cooler | Gateways of the ruins: stone pillars and arch, a keystone and a swirling rift in the type's colour (docs/15 §48) |
 | Evergreen Hill: closed once the shiny Delibird is caught; missed, only its fight again | Built (§2.1): every small world's secret area played plainly |
 | A wild Staravia at Lv.11 in Pinewood Forest | Five Pokémon met below the level they're reached at, moved to areas of their level (§2.1, §5 step 9); a test checks it for wild Pokémon and trainers; 0151 |

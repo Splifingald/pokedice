@@ -5,10 +5,10 @@ import { eventOpenTo } from './events'
 import { POKE_TYPES, type Area, type GameData, type PokeType, type TimeRaceMode } from './types'
 
 /**
- * Spear Pillar's race (the user's design of 2026-11-01, docs/64 §4.4): 15 fights in 7:00 (12:00 until the user's call
- * of 2026-11-22), a fork every 3 fights (Fire
+ * Spear Pillar's race (the user's design of 2026-11-01, docs/64 §4.4): 15 fights in 6:00 (12:00, then 7:00, until the
+ * user's calls of 2026-11-22), a fork every 3 fights (Fire
  * or Grass, Dark or Psychic, Dragon or Ice, Electric or Ground, then Water for Palkia or Steel for Dialga), a time shard
- * of 0:30 or an item behind each gate; the replay's other types at +4 levels on 6:00; the raids at Lv.70, dice 8, three
+ * of 0:30 or an item behind each gate; the replay's other types at +4 levels on 5:00; the raids at Lv.70, dice 8, three
  * bars, teams up to Lv.70.
  */
 export const DEFAULT_TIME_RACE: TimeRaceMode = {
@@ -26,8 +26,8 @@ export const DEFAULT_TIME_RACE: TimeRaceMode = {
     { type: 'steel', dex: 483 },
   ],
   perFork: 3,
-  // 7:00 (the user's call of 2026-11-22: 12:00 was far too long).
-  seconds: 420,
+  // 6:00 (the user's calls of 2026-11-22: 12:00 was far too long, then 7:00 too).
+  seconds: 360,
   // About one gate in three holds a shard: a fork more often offers one than not, but never both gates for sure.
   shard: { chance: 35, seconds: 30 },
   // What helps a team with no Pokémon Center: HP, a K.O. brought back, rarely a full one.
@@ -46,8 +46,8 @@ export const DEFAULT_TIME_RACE: TimeRaceMode = {
       ['ice', 'dark'],
     ],
     levelBonus: 4,
-    // 6:00 (the user's call of 2026-11-22).
-    seconds: 360,
+    // 5:00 (the user's calls of 2026-11-22).
+    seconds: 300,
   },
   raid: { level: 70, upgradeLevel: 8, bars: 3, teamCap: 70 },
 }

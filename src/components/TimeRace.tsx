@@ -4,7 +4,8 @@
 // win (the legend's roar, time and space settling). The scenes are the pixel engine's (src/fx/timelines/timeRace.ts).
 // Every number comes from the engine (the area's mode, the try's plan, the clock); these pieces only show them.
 import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { GameData, PokeType, TimeRaceGate, TimeRaceMode, TimeRacePlan } from '@/engine'
+import { timeRaceModeOf, type GameData, type PokeType, type TimeRaceGate, type TimeRaceMode, type TimeRacePlan } from '@/engine'
+import { useGame } from '@/store/game'
 import { fxSound } from '@/audio/sfx'
 import { playCry } from '@/audio/cries'
 import { loadItemSprite, loadSprite, spriteKey } from '@/fx/sprites'
@@ -188,6 +189,24 @@ function useFindText() {
         : `${data.items[find.key]?.name ?? find.key}${find.qty > 1 ? ` ×${find.qty}` : ''}`
 }
 
+/**
+ * The race's night under the page (docs/15 §48): while mounted, `html[data-tr-page]` puts the intro's starry ground
+ * behind it (race.css); the page itself wears `.tr-scope`. As Darkrai's NightGround and Giratina's DistortionGround.
+ */
+export function RaceGround() {
+  useEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-tr-page', '')
+    return () => root.removeAttribute('data-tr-page')
+  }, [])
+  return null
+}
+
+/** This area plays the race of time and space (Spear Pillar): its page, fights and raids wear its night. */
+export function useRaceArea(areaId: string | null | undefined): boolean {
+  return useGame((s) => !!areaId && !!timeRaceModeOf(s.data.areas.find((a) => a.id === areaId), s.data))
+}
+
 /** A time shard: a small pixel hourglass of light (the find a gate shows). */
 function ShardIcon({ size = 28 }: { size?: number }) {
   return (
@@ -201,15 +220,15 @@ function ShardIcon({ size = 28 }: { size?: number }) {
 
 /**
  * A fork (docs/15 §48): two gates side by side (one alone for the replay's last), each an archway in its type's colour
- * with the type, what's behind it (an item, or a time shard and its seconds), the next foes' type, and on the last fork
- * the legend whose raid it opens. A gate is one button, its name saying all of that. The clock runs on above it.
+ * with the type, what's behind it (an item, or a time shard and its seconds) and the next foes' type; the last fork
+ * never says which legend each gate leads to (the user's call, 2026-11-22: a surprise). A gate is one button, its name
+ * saying all of that. The clock runs on above it.
  */
 export function ForkView({
   gates,
   fork,
   forks,
   perFork,
-  legends,
   data,
   onPick,
 }: {
@@ -218,8 +237,6 @@ export function ForkView({
   fork: number
   forks: number
   perFork: number
-  /** On the last fork: each gate type's legend name. */
-  legends?: Partial<Record<PokeType, string>>
   data: GameData
   onPick: (index: number) => void
 }) {
@@ -249,7 +266,6 @@ export function ForkView({
         {gates.map((g, i) => {
           const col = typeColor(g.type)
           const { bg, fg } = badgeColors(col)
-          const legend = legends?.[g.type]
           const find = findText(g.find, data)
           return (
             <button
@@ -260,10 +276,7 @@ export function ForkView({
                 fxSound(g.find?.kind === 'shard' ? 'race.shard' : 'race.gate')
                 onPick(i)
               }}
-              aria-label={
-                t('ui.timeRace.gateLabel', { type: typeName(g.type), find: find || '—' }) +
-                (legend ? ` · ${t('ui.timeRace.gateFor', { name: legend })}` : '')
-              }
+              aria-label={t('ui.timeRace.gateLabel', { type: typeName(g.type), find: find || '—' })}
               className={cx(
                 'rg-gate group relative flex min-h-[196px] flex-col items-center gap-2 overflow-hidden px-6 pb-3 pt-7 text-center outline-offset-4',
                 live && 'rg-live',
@@ -294,15 +307,6 @@ export function ForkView({
               >
                 {find}
               </span>
-              {legend && (
-                <span
-                  className="relative font-pixel-sm text-[16px] leading-tight"
-                  style={{ color: TR.gold }}
-                  aria-hidden
-                >
-                  {t('ui.timeRace.gateFor', { name: legend })}
-                </span>
-              )}
             </button>
           )
         })}

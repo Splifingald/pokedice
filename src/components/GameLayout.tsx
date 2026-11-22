@@ -1,6 +1,5 @@
-import { useEffect } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { inTimeRace } from '@/engine'
+import { RaceGround, useRaceArea } from './TimeRace'
 import { useGame } from '@/store/game'
 import { useFullscreen, useTopBarHidden } from '@/lib/fullscreen'
 import { useInFight } from '@/store/hooks'
@@ -38,16 +37,10 @@ export function GameLayout() {
   const bare = full && !home
   // Inside a small world (docs/21) the page wears its colours.
   const { inside, world } = useInWorld()
-  // A race of time and space under way (docs/15 §48, the user's call of 2026-11-22): its area's page and its fights
-  // wear the intro's night (`.tr-scope`) on its starry ground (`html[data-tr-page]`, race.css).
-  const racing = useGame((s) => !!s.save && !!s.run.areaId && inTimeRace(s.save, s.data, s.run.areaId))
-  const raceHere = racing && (area || inFight)
-  useEffect(() => {
-    if (!raceHere) return
-    const root = document.documentElement
-    root.setAttribute('data-tr-page', '')
-    return () => root.removeAttribute('data-tr-page')
-  }, [raceHere])
+  // The race of time and space's area (docs/15 §48, the user's calls of 2026-11-22): its page and its fights wear the
+  // intro's night (`.tr-scope`) on its starry ground (RaceGround), for as long as the player is in it, race or not.
+  const raceArea = useRaceArea(useGame((s) => s.run.areaId ?? s.save?.currentAreaId))
+  const raceHere = raceArea && (area || inFight)
   // The special events read the real time (docs/18): kept fresh while the game is open.
   useServerTimeSync()
   // The Underground's block follows the event: a new one starts afresh, an ended one goes, free kits come in.
@@ -68,6 +61,7 @@ export function GameLayout() {
           ...(area && { ['--bottom-nav' as string]: '0px', ['--bottom-safe' as string]: 'env(safe-area-inset-bottom)' }),
         }}
       >
+        {raceHere && <RaceGround />}
         {!noTop && <Header />}
         <div className="flex flex-1">
           {!full && <SideNav />}

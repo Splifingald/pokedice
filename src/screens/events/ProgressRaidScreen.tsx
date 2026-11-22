@@ -49,6 +49,7 @@ import { cx } from '@/theme/util'
 import { PortalRaidBanner } from './PortalRaid'
 import { NightGround, NightmareFx } from '@/components/Nightmare'
 import { NightmareRaidBanner } from './NightmareRaid'
+import { RaceGround } from '@/components/TimeRace'
 import { EventDock, StagePanel } from './layout'
 
 export function ProgressRaidScreen() {
@@ -76,6 +77,8 @@ export function progressRaidLook(data: GameData, raid: ProgressRaid, caught: boo
   const plates = !!pm && !portal
   // So does a nightmare area's (docs/30), once the player wakes up; it wears the moonlit night (docs/15 §29).
   const nightmare = !pm && !!nightmareModeOf(area, data)
+  // Spear Pillar's raids (docs/64 §4.4): the race's night (docs/15 §48), as its page and fights.
+  const race = !pm && !nightmare && !!timeRaceModeOf(area, data)
   const card: TodayRaid = {
     day: '',
     dex: raid.dex,
@@ -84,7 +87,14 @@ export function progressRaidLook(data: GameData, raid: ProgressRaid, caught: boo
     caught,
     tries: 0,
   }
-  return { portal, plates, nightmare, card, scope: portal ? 'dw-scope' : nightmare ? 'nm-scope' : undefined }
+  return {
+    portal,
+    plates,
+    nightmare,
+    race,
+    card,
+    scope: portal ? 'dw-scope' : nightmare ? 'nm-scope' : race ? 'tr-scope' : undefined,
+  }
 }
 
 /** A progression raid's card on its area, in its world. */
@@ -250,7 +260,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
   const save = useGame((s) => s.save)!
   const raid = progressRaidOf(data, raidKey)!
   const state = progressRaidState(save, data, raid)
-  const { portal, nightmare } = progressRaidLook(data, raid, state === 'done')
+  const { portal, nightmare, race } = progressRaidLook(data, raid, state === 'done')
   const area = data.areas.find((a) => a.id === raid.areaId)!
   const region = getRegion(data, raid.region)?.name ?? raid.region
 
@@ -281,7 +291,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
     // pop-ups, the portal turning as its banner, the void as its ground, the screen's tears and the UI's glitches.
     // Everything else is any progression raid's.
     <div
-      className={cx('flex flex-col', portal && 'dw-scope', nightmare && 'nm-scope')}
+      className={cx('flex flex-col', portal && 'dw-scope', nightmare && 'nm-scope', race && 'tr-scope')}
       data-portal-raid={portal || undefined}
       data-nightmare-raid={nightmare || undefined}
     >
@@ -297,6 +307,7 @@ function ProgressRaidPage({ raidKey }: { raidKey: string }) {
           <NightmareFx />
         </>
       )}
+      {race && <RaceGround />}
       <StagePanel
         head={
           portal ? (

@@ -2,7 +2,7 @@
 // (it runs on through a reload); a fork every 3 fights, its two gates each a type (the foes drawn from the area's pool by
 // that type) and a find (an item or a time shard of 0:30); the last gate picks the raid (Water: Palkia, Steel: Dialga);
 // out of time or a wipe sends the player back to the start, healed, XP and items kept; the one replay once that legend is
-// caught (other types, foes +4 levels, 6:00, only the other last gate); one speed and no auto inside; the switch.
+// caught (other types, foes +4 levels, 5:00, only the other last gate); one speed and no auto inside; the switch.
 import { describe, expect, it } from 'vitest'
 import {
   applyWipe,
@@ -133,7 +133,7 @@ describe('the area and its switch', () => {
         { type: 'steel', dex: DIALGA },
       ],
       perFork: 3,
-      seconds: 420,
+      seconds: 360,
       shard: { seconds: 30 },
       replay: {
         forks: [
@@ -143,11 +143,11 @@ describe('the area and its switch', () => {
           ['ice', 'dark'],
         ],
         levelBonus: 4,
-        seconds: 360,
+        seconds: 300,
       },
       raid: { level: 70, upgradeLevel: 8, bars: 3, teamCap: 70 },
     })
-    expect(timeRacePlanAt(atPillar(), data, SP.id)).toMatchObject({ replay: false, total: 15, seconds: 420 })
+    expect(timeRacePlanAt(atPillar(), data, SP.id)).toMatchObject({ replay: false, total: 15, seconds: 360 })
     expect(timeRaceModeOf(SP, off)).toBeNull()
   })
 
@@ -167,7 +167,7 @@ describe('the area and its switch', () => {
     expect(r.forks).toEqual([['rock', 'bug']])
     expect(r.legends).toEqual(DEFAULT_TIME_RACE.legends)
     expect(r.perFork).toBe(1)
-    expect(r.seconds).toBe(420)
+    expect(r.seconds).toBe(360)
     expect(r.speed).toBe(3)
     expect(normaliseTimeRace({ kind: 'portal' })).toBeNull()
   })
@@ -207,7 +207,7 @@ describe('the way in and the clock', () => {
       fights: 0,
       path: [],
       startedAt: NOW,
-      deadline: NOW + 7 * MIN,
+      deadline: NOW + 6 * MIN,
       tries: 1,
     })
     expect(r.box.every((p) => p.currentHp === instanceMaxHp(p, data))).toBe(true)
@@ -219,13 +219,13 @@ describe('the way in and the clock', () => {
 
   it('runs on the server’s time and from the save: a reload later finds the same clock, minutes gone', () => {
     const r = started()
-    expect(timeRaceLeft(r, data, SP.id, NOW)).toBe(7 * MIN)
+    expect(timeRaceLeft(r, data, SP.id, NOW)).toBe(6 * MIN)
     // The app closed and opened again 5 minutes later: the save read back as it was, the server's clock moved on.
     const reloaded = JSON.parse(JSON.stringify(r)) as SaveData
-    expect(timeRaceLeft(reloaded, data, SP.id, NOW + 5 * MIN)).toBe(2 * MIN)
+    expect(timeRaceLeft(reloaded, data, SP.id, NOW + 5 * MIN)).toBe(1 * MIN)
     expect(timeRaceTimeUp(reloaded, data, SP.id, NOW + 5 * MIN)).toBeNull()
     // Closed for 13 minutes: out of time, back to the start on the next look.
-    const up = timeRaceTimeUp(reloaded, data, SP.id, NOW + 8 * MIN)!
+    const up = timeRaceTimeUp(reloaded, data, SP.id, NOW + 7 * MIN)!
     expect(up.fights).toBe(0)
     expect(race(up.save)).toMatchObject({ active: false, fights: 0, path: [] })
     expect(timeRaceLock(up.save, data)).toBeNull()
@@ -276,12 +276,12 @@ describe('the forks', () => {
     const a = pickTimeRaceGate(shard, data, SP.id, 0)!.save
     expect(race(a)).toMatchObject({
       path: ['fire'],
-      deadline: NOW + 7 * MIN + 30_000,
+      deadline: NOW + 6 * MIN + 30_000,
       shards: 1,
       gates: null,
     })
     const b = pickTimeRaceGate(shard, data, SP.id, 1)!.save
-    expect(race(b).deadline).toBe(NOW + 7 * MIN)
+    expect(race(b).deadline).toBe(NOW + 6 * MIN)
     expect(b.inventory.revive).toBe(1)
     expect(pickTimeRaceGate(a, data, SP.id, 0)).toBeNull()
   })
@@ -312,10 +312,10 @@ describe('how it ends', () => {
     ] as const) {
       const before = runRace(started(), FIRST)
       const last = through(before, type)
-      const w1 = winTimeRaceFight(last, data, SP.id, NOW + 6 * MIN)!
-      const w2 = winTimeRaceFight(w1.save, data, SP.id, NOW + 6 * MIN)!
+      const w1 = winTimeRaceFight(last, data, SP.id, NOW + 5 * MIN)!
+      const w2 = winTimeRaceFight(w1.save, data, SP.id, NOW + 5 * MIN)!
       const hurt = w2.save
-      const end = winTimeRaceFight(hurt, data, SP.id, NOW + 6 * MIN)!
+      const end = winTimeRaceFight(hurt, data, SP.id, NOW + 5 * MIN)!
       expect(end).toMatchObject({ fights: 15, total: 15, legend: dex, outOfTime: false })
       expect(race(end.save)).toMatchObject({ active: false, won: [dex], wonSeen: false })
       expect(end.save.box.every((p) => p.currentHp === instanceMaxHp(p, data))).toBe(true)
@@ -338,18 +338,18 @@ describe('how it ends', () => {
 
   it('out of time: the last fight won a second late counts for nothing, back to the start, XP and items kept', () => {
     let s = through(runRace(started(), FIRST), 'water')
-    s = winTimeRaceFight(s, data, SP.id, NOW + 6 * MIN)!.save
-    s = winTimeRaceFight(s, data, SP.id, NOW + 6 * MIN)!.save
+    s = winTimeRaceFight(s, data, SP.id, NOW + 5 * MIN)!.save
+    s = winTimeRaceFight(s, data, SP.id, NOW + 5 * MIN)!.save
     s = { ...s, inventory: { ...s.inventory, revive: 3 } }
-    const late = winTimeRaceFight(s, data, SP.id, NOW + 7 * MIN + 1000)!
+    const late = winTimeRaceFight(s, data, SP.id, NOW + 6 * MIN + 1000)!
     expect(late).toMatchObject({ outOfTime: true, legend: null, fights: 14 })
     expect(race(late.save)).toMatchObject({ active: false, fights: 0, path: [] })
     expect(race(late.save).won).toBeUndefined()
     expect(late.save.inventory.revive).toBe(3)
     expect(canStartTimeRace(late.save, data, SP.id)).toBe(true)
     // A shard picked up on the way would have saved it.
-    const saved = withRace(s, { deadline: NOW + 7 * MIN + 30_000 })
-    expect(winTimeRaceFight(saved, data, SP.id, NOW + 7 * MIN + 1000)!.legend).toBe(PALKIA)
+    const saved = withRace(s, { deadline: NOW + 6 * MIN + 30_000 })
+    expect(winTimeRaceFight(saved, data, SP.id, NOW + 6 * MIN + 1000)!.legend).toBe(PALKIA)
   })
 
   it('a wipe: back to the start, healed, XP, ₽ and items kept, no limit to the tries', () => {
@@ -361,7 +361,7 @@ describe('how it ends', () => {
     expect(w.gold).toBe(900)
     expect(timeRaceLock(w, data)).toBeNull()
     const again = startTimeRace(w, data, SP.id, NOW + 20 * MIN)!
-    expect(race(again)).toMatchObject({ active: true, tries: 2, deadline: NOW + 27 * MIN })
+    expect(race(again)).toMatchObject({ active: true, tries: 2, deadline: NOW + 26 * MIN })
   })
 })
 
@@ -369,23 +369,23 @@ describe('the replay', () => {
   /** Palkia won through the race, and caught in its raid. */
   function palkiaCaught(): SaveData {
     let s = through(runRace(started(), FIRST), 'water')
-    s = winStretch(s, NOW + 6 * MIN)
+    s = winStretch(s, NOW + 5 * MIN)
     s = markTimeRaceWonSeen(s, SP.id)
     return { ...s, events: { ...s.events, raidsDone: [progressRaidKey(SP.id, PALKIA)] } }
   }
 
-  it('opens once that legend is caught: other types, foes +4 levels, 6:00, then only the other last gate', () => {
+  it('opens once that legend is caught: other types, foes +4 levels, 5:00, then only the other last gate', () => {
     const s = palkiaCaught()
     expect(isAreaSealed(s, data, SP.id)).toBe(false)
     expect(canStartTimeRace(s, data, SP.id)).toBe(true)
     expect(timeRacePlanAt(s, data, SP.id)).toMatchObject({
       replay: true,
-      seconds: 360,
+      seconds: 300,
       levelBonus: 4,
       total: 15,
     })
     let r = startTimeRace(s, data, SP.id, NOW + 60 * MIN)!
-    expect(race(r).deadline).toBe(NOW + 66 * MIN)
+    expect(race(r).deadline).toBe(NOW + 65 * MIN)
     const types: PokeType[] = []
     for (let f = 0; f < 5; f++) {
       const opened = openTimeRaceFork(r, data, SP.id, createRng(f))!
@@ -398,7 +398,7 @@ describe('the replay', () => {
       const entry = SP.wildPool.find((w) => w.dex === foe.encounter.dex)!
       expect(foe.encounter.level).toBeGreaterThanOrEqual(entry.minLevel + 4)
       expect(foe.encounter.level).toBeLessThanOrEqual(entry.maxLevel + 4)
-      r = winStretch(foe.save, NOW + 65 * MIN)
+      r = winStretch(foe.save, NOW + 64 * MIN)
     }
     expect(types).toEqual(['normal', 'fairy', 'rock', 'flying', 'bug', 'dragon', 'ice', 'dark', 'steel'])
     expect(race(r).won).toEqual([PALKIA, DIALGA])

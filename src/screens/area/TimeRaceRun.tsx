@@ -15,7 +15,6 @@ import {
   timeRaceVictoryDue,
   type Area,
   type GameData,
-  type PokeType,
   type SaveData,
   type TimeRaceMode,
 } from '@/engine'
@@ -167,16 +166,12 @@ export function TimeRaceStep({ area }: { area: Area }) {
   if (canStartTimeRace(save, data, area.id)) return <WayIn area={area} mode={mode} />
   if (r.active && r.gates?.length) {
     const plan = timeRacePlan(save, mode, area.id)
-    const last = r.path.length + 1 >= plan.forks.length
-    const legends: Partial<Record<PokeType, string>> = {}
-    if (last) for (const l of mode.legends) legends[l.type] = data.species[l.dex]?.name ?? `#${l.dex}`
     return (
       <ForkView
         gates={r.gates}
         fork={r.path.length + 1}
         forks={plan.forks.length}
         perFork={mode.perFork}
-        legends={last ? legends : undefined}
         data={data}
         onPick={pickRaceGate}
       />

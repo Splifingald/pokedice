@@ -78,13 +78,14 @@ describe('0126: the race on Spear Pillar and its switch', () => {
   }, 60_000)
 
   it('gives Spear Pillar its race with the engine’s numbers (its clock as 0155 sets it), and the switch Off', async () => {
-    // 0126 wrote the first clock, 12:00 and 10:00; 0155 (the user's call, 2026-11-22) makes it 7:00 and 6:00.
+    // 0126 wrote the first clock, 12:00 and 10:00; 0155 then 0156 (the user's calls, 2026-11-22) make it 6:00 and 5:00.
     expect(await mode()).toEqual({
       ...DEFAULT_TIME_RACE,
       seconds: 720,
       replay: { ...DEFAULT_TIME_RACE.replay, seconds: 600 },
     })
     await db.exec(sql('0155_spear_pillar_clock.sql'))
+    await db.exec(sql('0156_spear_pillar_clock_6_5.sql'))
     expect(await mode()).toEqual(DEFAULT_TIME_RACE)
     expect(await cfg(db, 'timeRace')).toEqual({ access: 'off' })
   })
