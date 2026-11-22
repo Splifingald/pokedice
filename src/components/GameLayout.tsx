@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { inTimeRace } from '@/engine'
 import { useGame } from '@/store/game'
 import { useFullscreen, useTopBarHidden } from '@/lib/fullscreen'
 import { useInFight } from '@/store/hooks'
@@ -36,6 +38,16 @@ export function GameLayout() {
   const bare = full && !home
   // Inside a small world (docs/21) the page wears its colours.
   const { inside, world } = useInWorld()
+  // A race of time and space under way (docs/15 §48, the user's call of 2026-11-22): its area's page and its fights
+  // wear the intro's night (`.tr-scope`) on its starry ground (`html[data-tr-page]`, race.css).
+  const racing = useGame((s) => !!s.save && !!s.run.areaId && inTimeRace(s.save, s.data, s.run.areaId))
+  const raceHere = racing && (area || inFight)
+  useEffect(() => {
+    if (!raceHere) return
+    const root = document.documentElement
+    root.setAttribute('data-tr-page', '')
+    return () => root.removeAttribute('data-tr-page')
+  }, [raceHere])
   // The special events read the real time (docs/18): kept fresh while the game is open.
   useServerTimeSync()
   // The Underground's block follows the event: a new one starts afresh, an ended one goes, free kits come in.
@@ -48,7 +60,7 @@ export function GameLayout() {
     // offer, the push question) wait their turn.
     <PopupQueue>
       <div
-        className={cx('flex min-h-[100dvh] flex-col', inside && 'in-world')}
+        className={cx('flex min-h-[100dvh] flex-col', inside && 'in-world', raceHere && 'tr-scope')}
         // --top-bar: the top bar's height, for a full-screen page under it to fit the rest of the screen (the battle).
         style={{
           ...(inside ? worldVars(world) : undefined),

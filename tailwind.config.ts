@@ -129,6 +129,18 @@ export default {
           '--silhouette': SILHOUETTE.light,
           color: `rgb(var(--c-ink))`,
         },
+        // The race of time and space's night (docs/15 §48): its page and fights while a race is under way.
+        ':where(.tr-scope)': {
+          ...vars(SCOPES.race),
+          '--silhouette': SILHOUETTE.dark,
+          'color-scheme': 'dark',
+          color: `rgb(var(--c-ink))`,
+        },
+        ':where(.tr-scope) :where(.light-scope, .lv-ink, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
+          ...vars(THEMES.light),
+          '--silhouette': SILHOUETTE.light,
+          color: `rgb(var(--c-ink))`,
+        },
         ':where(.dw-scope) :where(.light-scope, .lv-ink, .bg-gold, .bg-hp-green, .bg-hp-yellow)': {
           ...vars(THEMES.light),
           '--silhouette': SILHOUETTE.light,

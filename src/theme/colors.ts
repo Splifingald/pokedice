@@ -194,6 +194,38 @@ export const SCOPES = {
     rich: PALETTE.gold,
     link: '#a9c4ff',
   },
+  // The race of time and space (docs/64 §4.4, docs/15 §48; the user's call of 2026-11-22): its intro's night, time's
+  // blue and space's pink, while a race is under way (its area's page and its fights).
+  race: {
+    parchment: '#05061a',
+    ink: '#f2f0ff',
+    edge: '#a8c8ff',
+    panel: '#0b0f2e',
+    paper: '#151c4a',
+    shadow: '#3a3f8f',
+    line: '#223070',
+    lip: '#05061a',
+    muted: '#c3c6f2',
+    faint: '#6a62b8',
+    'gold-light': '#7a5212',
+    'gold-pale': '#2a2418',
+    danger: '#ff8ab2',
+    'danger-light': '#b3263a',
+    good: '#72dca0',
+    'good-pale': '#143428',
+    well: '#080b24',
+    'well-deep': '#22357a',
+    sky: '#151c4a',
+    'sky-line': '#3a3f8f',
+    rose: '#3a1c3a',
+    cream: '#262418',
+    sand: '#24202a',
+    'sand-lip': '#463a4a',
+    dot: '#101640',
+    'dialog-ring': '#e88ac0',
+    rich: PALETTE.gold,
+    link: '#a8c8ff',
+  },
 } as const satisfies Record<string, Record<keyof (typeof THEMES)['light'], string>>
 
 export type ScopeName = keyof typeof SCOPES

@@ -157,3 +157,42 @@
     animation: none;
   }
 }
+
+/*
+ * The page while a race is under way (GameLayout's `tr-scope`): the intro's night under it, fixed, time's blue glowing
+ * from the top left and space's pink from the bottom right, its stars still (the page's own ground, the world's colour,
+ * steps aside), as Darkrai's and Giratina's pages do.
+ */
+html[data-tr-page] body {
+  background-color: #05061a;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 34% 62%, #a8c8ff 50%, transparent 51%),
+    radial-gradient(2px 2px at 58% 26%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 78%, #ffd0ea 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 40%, #ffffff 50%, transparent 51%),
+    radial-gradient(2px 2px at 22% 88%, #fff2fa 50%, transparent 51%),
+    radial-gradient(1px 1px at 46% 8%, #a8c8ff 50%, transparent 51%),
+    radial-gradient(ellipse 70% 50% at 0% 0%, #22357a 0%, transparent 70%),
+    radial-gradient(ellipse 70% 50% at 100% 100%, #8a3f8c 0%, transparent 70%),
+    linear-gradient(180deg, #0b0f2e, #05061a);
+  background-size:
+    220px 220px,
+    260px 260px,
+    300px 300px,
+    240px 240px,
+    280px 280px,
+    320px 320px,
+    200px 200px,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  background-attachment: fixed;
+}
+html[data-tr-page] .in-world {
+  background-color: transparent;
+}
+/* Its fights: the area's daylight picture of the ruins turned to the intro's dusk, under a night sky. */
+html[data-tr-page] .area-art {
+  filter: brightness(0.62) saturate(1.25) sepia(0.35) hue-rotate(195deg);
+}

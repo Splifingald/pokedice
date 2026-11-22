@@ -238,9 +238,9 @@ test('ENTER THE RACE: the intro held for a tap, its pop-up (healed, NOT NOW), RE
   expect(raceOf(await stored(page))?.active ?? false).toBe(false)
   await page.keyboard.press('Enter')
   await expect(dialog).toBeVisible()
-  await expect(dialog.getByText('4 fights in 12:00')).toBeVisible()
+  await expect(dialog.getByText('4 fights in 7:00')).toBeVisible()
   await expect(dialog.getByText('A fork every 2 fights: pick a type')).toBeVisible()
-  await expect(dialog.getByText('The last gate: Water for Palkia, Steel for Dialga')).toBeVisible()
+  await expect(dialog.getByText('The last gate decides which legend you face')).toBeVisible()
   await expect(dialog.getByText('No Center, no catch, no auto: one speed for all')).toBeVisible()
   await expect(dialog.locator('li')).toHaveCount(4)
   await dialog.getByRole('button', { name: 'Not now' }).click()
@@ -254,11 +254,11 @@ test('ENTER THE RACE: the intro held for a tap, its pop-up (healed, NOT NOW), RE
     .poll(async () => raceOf(await stored(page)))
     .toMatchObject({ active: true, fights: 0, tries: 1 })
   const r = raceOf(await stored(page))!
-  expect(r.deadline! - r.startedAt!).toBe(12 * 60_000)
+  expect(r.deadline! - r.startedAt!).toBe(7 * 60_000)
   expect(Math.abs(r.startedAt! - T0)).toBeLessThan(60_000)
   await expect(page.getByRole('heading', { name: 'Fork 1/2: pick a gate' })).toBeVisible()
   await expect(page.getByRole('timer').first()).toBeVisible()
-  expect(await clockSeconds(page)).toBeGreaterThan(11 * 60)
+  expect(await clockSeconds(page)).toBeGreaterThan(6 * 60)
   await expect(page.getByRole('button', { name: /^Fire gate: / })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Grass gate: / })).toBeVisible()
 
@@ -319,7 +319,7 @@ test('a reload keeps the clock where it was (the save’s deadline, on the serve
   await expect(page.getByRole('heading', { name: 'The last fork: pick your legend' })).toBeVisible()
   await expect(page.getByRole('timer').first()).toBeVisible({ timeout: 15_000 })
   const again = await clockSeconds(page)
-  // The same clock, a few seconds on: not 12:00 again, not stopped while the page was gone.
+  // The same clock, a few seconds on: not 7:00 again, not stopped while the page was gone.
   expect(again).toBeLessThanOrEqual(first)
   expect(again).toBeGreaterThan(first - 60)
   expect(raceOf(await stored(page))?.deadline).toBe(T0 + 5 * 60_000)

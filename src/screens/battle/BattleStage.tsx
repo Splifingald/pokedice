@@ -65,7 +65,7 @@ function Zones() {
     g.drawImage(zones(W, H), 0, 0)
   }, [])
   return (
-    <canvas ref={ref} width={W} height={H} aria-hidden className="pixelated absolute inset-0 h-full w-full" />
+    <canvas ref={ref} width={W} height={H} aria-hidden className="area-art pixelated absolute inset-0 h-full w-full" />
   )
 }
 
@@ -98,7 +98,7 @@ function Backdrop({ calm }: { calm: boolean }) {
     return () => cancelAnimationFrame(raf)
   }, [calm])
   return (
-    <canvas ref={ref} width={W} height={H} aria-hidden className="pixelated absolute inset-0 h-full w-full" />
+    <canvas ref={ref} width={W} height={H} aria-hidden className="area-art pixelated absolute inset-0 h-full w-full" />
   )
 }
 
@@ -114,7 +114,7 @@ export function StageBackground({ art, zones = true }: { art: AreaPicture | null
   return (
     <>
       <Backdrop calm={calm || shown} />
-      {art && <AreaArt key={art.id} src={art.url} place={stagePlacement(art)} onShown={() => setShown(true)} />}
+      {art && <AreaArt key={art.id} src={art.url} place={stagePlacement(art)} onShown={() => setShown(true)} className="area-art" />}
       {shown && zones && <Zones />}
     </>
   )
@@ -834,6 +834,8 @@ export function BattleStage({
           src={art.url}
           place={stagePlacement(art)}
           onShown={() => setShownArt(art.id)}
+          // `area-art`: a race of time and space turns it to dusk (race.css).
+          className="area-art"
         />
       )}
       {artShown && !world && <Zones />}

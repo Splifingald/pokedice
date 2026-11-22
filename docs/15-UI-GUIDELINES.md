@@ -2471,6 +2471,12 @@ day light of the same shrine for the end. **Its lasting effects follow §8**
 
 ## 48. The Race of Time and Space (Spear Pillar)
 
+**Its page and fights** (the user's call, 2026-11-22: "fit the theme of the intro"): while a race is under way, the
+area's page and its fights wear the intro's night: `GameLayout` puts the whole page under `.tr-scope` (`SCOPES.race`:
+night blue panels, light ink, time's blue edges, space's pink rings) on a fixed starry ground, time's blue glowing from
+the top left and space's pink from the bottom right (`html[data-tr-page]`, `race.css`); the fight's picture of the
+ruins (and its drawn background) turns to the intro's violet dusk (`.area-art`), its Pokémon and plates as they are.
+
 An area's special mode (docs/64-SNOWGLOBE-VALLEY.md §4.4), Snowglobe Valley's S4: a time trial whose last gate picks the
 raid (Water: shiny Palkia, Steel: shiny Dialga). Built as the portal run's and the nightmare's parallel (§27, §29); the
 pieces are in `src/components/TimeRace.tsx` and `src/screens/area/TimeRaceRun.tsx`, every state on `/kitchen-sink`
