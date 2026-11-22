@@ -35,10 +35,10 @@ import { BattlesScreen } from '@/screens/Battles'
 import { BattleLiveScreen } from '@/screens/battles/Live'
 import { UndergroundDig } from '@/screens/events/UndergroundDig'
 import { ProgressRaidScreen } from '@/screens/events/ProgressRaidScreen'
+import { PlayerCapGate } from '@/components/PlayerCap'
 import { PageMeta } from '@/lib/pageMeta'
 import { soundOn } from '@/save/storage'
 import { useGame } from '@/store/game'
-import { startBackgroundServices } from '@/store/sync'
 import { useRunIntent } from '@/store/extremeRuns'
 
 /** A run chosen on the main save's Extreme page, carried out once this page plays the Extreme save (docs/48). */
@@ -81,7 +81,7 @@ export function App() {
     setCriesEnabled(soundOn(settings))
   }, [settings])
 
-  useEffect(() => startBackgroundServices(), [])
+  // The background services (sync, content, analytics…) start once the player cap's gate lets the player in (docs/74).
   useEffect(() => unlockCriesOnFirstTap(), [])
 
   return (
@@ -90,53 +90,56 @@ export function App() {
         <Router>
           {/* The tab's title per page, and the focus on its <h1> after a move (docs/15 §7). */}
           <PageMeta />
-          <RunIntent />
-          <Routes>
-            <Route path="/" element={<Title />} />
-            <Route path="/new" element={<NewGame />} />
-            <Route path="/f/:code" element={<FriendInvite />} />
-            <Route path="/t/:code" element={<TradeLink />} />
-            <Route path="/help" element={<Lazy><HelpPage /></Lazy>} />
-            <Route path="/setup" element={<Lazy><SetupPage /></Lazy>} />
-            <Route path="/admin" element={<Lazy><AdminApp /></Lazy>} />
-            <Route path="/admin/:section" element={<Lazy><AdminApp /></Lazy>} />
-            {import.meta.env.DEV && <Route path="/kitchen-sink" element={<Lazy><KitchenSink /></Lazy>} />}
-            {import.meta.env.DEV && <Route path="/kitchen-sink/fx" element={<Lazy><FxLab /></Lazy>} />}
-            <Route element={<GameLayout />}>
-              {import.meta.env.DEV && (
-                <Route path="/kitchen-sink/league-fight" element={<Lazy><LeagueFightLab /></Lazy>} />
-              )}
-              {import.meta.env.DEV && (
-                <Route path="/kitchen-sink/talent-lab" element={<Lazy><TalentLab /></Lazy>} />
-              )}
-              <Route path="/home" element={<HomeScreen />} />
-              {/* Home replaced the Map as the landing screen: old links land there. */}
-              <Route path="/map" element={<Navigate to="/home" replace />} />
-              <Route path="/daycare" element={<DayCareScreen />} />
-              <Route path="/extreme" element={<ExtremeScreen />} />
-              <Route path="/area" element={<AreaScreen />} />
-              <Route path="/team" element={<TeamScreen />} />
-              <Route path="/shop" element={<ShopScreen />} />
-              <Route path="/upgrades" element={<UpgradesScreen />} />
-              <Route path="/pokedex" element={<PokedexScreen />} />
-              <Route path="/social" element={<SocialScreen />} />
-              <Route path="/leaderboard" element={<LeaderboardScreen />} />
-              <Route path="/friends" element={<FriendsScreen />} />
-              <Route path="/versus" element={<VersusScreen />} />
-              <Route path="/trades" element={<TradesScreen />} />
-              <Route path="/events/:id" element={<EventsScreen />} />
-              <Route path="/underground" element={<UndergroundScreen />} />
-              <Route path="/underground/dig" element={<UndergroundDig />} />
-              <Route path="/calendar" element={<CalendarScreen />} />
-              <Route path="/boss" element={<BossScreen />} />
-              <Route path="/market" element={<FriendMarketScreen />} />
-              <Route path="/battles" element={<BattlesScreen />} />
-              <Route path="/battles/live" element={<BattleLiveScreen />} />
-              <Route path="/raid/:areaId/:dex" element={<ProgressRaidScreen />} />
-              <Route path="/settings" element={<SettingsScreen />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          {/* A place in the game before anything else reaches the server (docs/74). */}
+          <PlayerCapGate>
+            <RunIntent />
+            <Routes>
+              <Route path="/" element={<Title />} />
+              <Route path="/new" element={<NewGame />} />
+              <Route path="/f/:code" element={<FriendInvite />} />
+              <Route path="/t/:code" element={<TradeLink />} />
+              <Route path="/help" element={<Lazy><HelpPage /></Lazy>} />
+              <Route path="/setup" element={<Lazy><SetupPage /></Lazy>} />
+              <Route path="/admin" element={<Lazy><AdminApp /></Lazy>} />
+              <Route path="/admin/:section" element={<Lazy><AdminApp /></Lazy>} />
+              {import.meta.env.DEV && <Route path="/kitchen-sink" element={<Lazy><KitchenSink /></Lazy>} />}
+              {import.meta.env.DEV && <Route path="/kitchen-sink/fx" element={<Lazy><FxLab /></Lazy>} />}
+              <Route element={<GameLayout />}>
+                {import.meta.env.DEV && (
+                  <Route path="/kitchen-sink/league-fight" element={<Lazy><LeagueFightLab /></Lazy>} />
+                )}
+                {import.meta.env.DEV && (
+                  <Route path="/kitchen-sink/talent-lab" element={<Lazy><TalentLab /></Lazy>} />
+                )}
+                <Route path="/home" element={<HomeScreen />} />
+                {/* Home replaced the Map as the landing screen: old links land there. */}
+                <Route path="/map" element={<Navigate to="/home" replace />} />
+                <Route path="/daycare" element={<DayCareScreen />} />
+                <Route path="/extreme" element={<ExtremeScreen />} />
+                <Route path="/area" element={<AreaScreen />} />
+                <Route path="/team" element={<TeamScreen />} />
+                <Route path="/shop" element={<ShopScreen />} />
+                <Route path="/upgrades" element={<UpgradesScreen />} />
+                <Route path="/pokedex" element={<PokedexScreen />} />
+                <Route path="/social" element={<SocialScreen />} />
+                <Route path="/leaderboard" element={<LeaderboardScreen />} />
+                <Route path="/friends" element={<FriendsScreen />} />
+                <Route path="/versus" element={<VersusScreen />} />
+                <Route path="/trades" element={<TradesScreen />} />
+                <Route path="/events/:id" element={<EventsScreen />} />
+                <Route path="/underground" element={<UndergroundScreen />} />
+                <Route path="/underground/dig" element={<UndergroundDig />} />
+                <Route path="/calendar" element={<CalendarScreen />} />
+                <Route path="/boss" element={<BossScreen />} />
+                <Route path="/market" element={<FriendMarketScreen />} />
+                <Route path="/battles" element={<BattlesScreen />} />
+                <Route path="/battles/live" element={<BattleLiveScreen />} />
+                <Route path="/raid/:areaId/:dex" element={<ProgressRaidScreen />} />
+                <Route path="/settings" element={<SettingsScreen />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </PlayerCapGate>
         </Router>
         <ToastStack />
         {/* Phones and tablets play upright: turned sideways, the game waits behind it (docs/15 §6). */}

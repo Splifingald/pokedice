@@ -2,6 +2,7 @@
 // environment variables are missing — the game then simply runs offline.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { authStorage, makeAuthRoom } from '@/save/room'
+import { withCcuToken } from './ccuToken'
 import { guardRefresh } from './refreshGuard'
 
 // `import.meta.env` is Vite's, and is undefined when a Node script imports this module (scripts/pull-remote.ts
@@ -31,8 +32,9 @@ export function getSupabase(): Promise<SupabaseClient | null> {
           // all, supabase-js falls back to memory by itself.
           storage: makeAuthRoom() ? authStorage : undefined,
         },
-        // Session refreshes back off while Auth answers with server errors (src/lib/refreshGuard.ts).
-        global: { fetch: guardRefresh((...args) => fetch(...args)) },
+        // Session refreshes back off while Auth answers with server errors (src/lib/refreshGuard.ts); every database
+        // request carries the player cap's token (src/lib/ccuToken.ts, docs/74).
+        global: { fetch: withCcuToken(guardRefresh((...args) => fetch(...args))) },
       }),
     )
     .catch((err) => {

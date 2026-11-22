@@ -54,7 +54,10 @@ On for everyone switch; the migration removes its `game_config` row and function
 
 ## 3. What it costs
 
-One tiny call, `online_ping(device id, name, look, badges, team)` (`src/store/online.ts`):
+One tiny call, `online_ping(device id, name, look, badges, team)` (`src/store/online.ts`). Since the player cap
+(docs/74), a game in it sends the same card on its cap heartbeat instead (`ccu_heartbeat`'s `card`, at the same pace,
+the count in its answer), so there is one timer, not two; `online_ping` stays for older builds and for a game without
+a place (the cap's migration not run, offline at start):
 
 - every **5 minutes while the tab is visible**, on coming back to the tab (at most once per 5 minutes), and on opening
   the menu when the last answer is over a minute old. A hidden tab makes none.

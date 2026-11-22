@@ -64,7 +64,8 @@ import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
 import { AreaVersusBox } from './AreaVersusBox'
 import { RivalMatchBox } from './RivalMatchBox'
-import { BetaTestersBox, FriendBattlesBox } from './FriendBattlesBox'
+import { FriendBattlesBox } from './FriendBattlesBox'
+import { PlayerCapTab, WhitelistBox } from './PlayerCapBox'
 import { VersusLeagueGroups } from './VersusLeagueGroups'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
@@ -1583,6 +1584,7 @@ function GameSettings() {
 
 const TABS = [
   { id: 'switches', label: 'Switches', icon: 'gear' },
+  { id: 'capacity', label: 'Capacity', icon: 'user' },
   { id: 'game', label: 'Game', icon: 'trophy' },
   { id: 'odds', label: 'Pity & status', icon: 'burn' },
   { id: 'dayCare', label: 'Day Care', icon: 'heal' },
@@ -1892,7 +1894,8 @@ export function ConfigSection() {
         ))}
       </nav>
       {tab === 'switches' && <SwitchesTable open={open} />}
-      {tab === 'switches' && <BetaTestersBox />}
+      {tab === 'switches' && <WhitelistBox />}
+      {tab === 'capacity' && <PlayerCapTab />}
       {tab === 'game' && <GameSettings />}
       {tab === 'odds' && (
         <div className="grid gap-4 xl:grid-cols-2">

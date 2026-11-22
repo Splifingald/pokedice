@@ -19,6 +19,7 @@ import {
   inviteRewardsOn,
   looksOn,
   outfitsOn,
+  playerCapOn,
   POWER_KINDS,
   powerRulesOn,
   talentsOn,
@@ -45,6 +46,7 @@ import { InviteRulesModal } from './friends/InviteRewards'
 import { GeneralRulesModal } from './GeneralRules'
 import { GiftRulesModal as GiftCardRulesModal } from './GiftCard'
 import { PixelIcon, type IconName } from './icons'
+import { PlayerCapRulesModal } from './PlayerCap'
 import { IdleRulesModal } from './IdleMode'
 import { OutfitRulesModal } from './Outfit'
 import { PowerRulesModal } from './PowersRules'
@@ -245,6 +247,13 @@ function useFeatures(save: SaveData, data: GameData): Feature[] {
       icon: 'skull',
       on: extremeOn(data),
       rules: (p) => <ExtremeRulesModal {...p} />,
+    },
+    {
+      id: 'playerCap',
+      name: t('ui.ccu.title'),
+      icon: 'user',
+      on: playerCapOn(data),
+      rules: (p) => <PlayerCapRulesModal {...p} />,
     },
   ]
 }
