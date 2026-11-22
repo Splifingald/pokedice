@@ -9,7 +9,7 @@ import { portalRaidRules } from './portalMode'
 import { nightmareRaidRules } from './nightmareMode'
 import { timeRaceRaidRules } from './timeRaceMode'
 import { raidAllyAllowed } from './raidBattle'
-import { raidSpecialOf, type RaidSpecial } from './raidSpecials'
+import { raidSpecialOf, timeRaceRaidSpecial, type RaidSpecial } from './raidSpecials'
 import { regionOf, regionOfArea, regionOfSpecies } from './regions'
 import { createRng } from './rng'
 import type { Area, GameData, RaidMonRules, SaveData } from './types'
@@ -45,6 +45,9 @@ const specialRaidRules = (data: GameData, areaId: string | undefined) =>
  */
 export function raidSpecialFor(data: GameData, dex: number, kind: RaidKindOf = 'daily', areaId?: string): RaidSpecial | null {
   if (kind === 'progress') {
+    // Snowglobe Valley's Spear Pillar: its two raids' own effects on the race's numbers (the event only).
+    const race = timeRaceRaidRules(data, areaId)
+    if (race) return timeRaceRaidSpecial(dex, race, data.config.events.raid.barHp)
     if (specialRaidRules(data, areaId)) return null
     const area = areaId ? data.areas.find((a) => a.id === areaId) : undefined
     if (area && worldOfArea(data, area)) return null

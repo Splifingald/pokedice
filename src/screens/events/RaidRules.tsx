@@ -62,6 +62,9 @@ const MOD_ICON: Record<RaidMod['k'], IconName> = {
   noItems: 'potion',
   loveHate: 'heart',
   statusShort: 'check',
+  patience: 'history',
+  frostShort: 'check',
+  snowAll: 'cloud',
   extraDie: 'dice',
   airLock: 'cloud',
 }
@@ -151,6 +154,9 @@ function modRow(m: RaidMod, t: T): RuleRow {
     case 'noItems':
     case 'statusShort':
     case 'airLock':
+    case 'patience':
+    case 'frostShort':
+    case 'snowAll':
       return { icon, title: t(`${k}.title`), text: t(`${k}.text`) }
   }
 }

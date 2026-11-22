@@ -127,7 +127,7 @@ export type RaidLogEntry =
   /** The charged move fires. */
   | { kind: 'raid_move'; move: RaidMove }
   /** It skips a strike: recharging (or interrupted), or teleported away. */
-  | { kind: 'raid_skip'; reason: 'recharge' | 'teleport' }
+  | { kind: 'raid_skip'; reason: 'recharge' | 'teleport' | 'patience' }
   /** A side's Pokémon (`side`) or the raid Pokémon (`side` null) loses HP outside a hit. */
   | {
       kind: 'raid_tick'
@@ -542,7 +542,18 @@ function sideHit(s: RaidState): RaidHit | undefined {
   if (sp.weather === 'heavyRain') hit.nullType = 'fire'
   if (sp.weather === 'strongWinds' && s.boss.types.includes('flying')) hit.deltaStream = true
   if (sp.terrain === 'misty') hit.noStatus = true
+  // Patience's waiting round: hits on it do half, and no status takes.
+  if (patiencePhase(s) === 'wait') {
+    hit.mult = (hit.mult ?? 1) * 0.5
+    hit.noStatus = true
+  }
   return Object.keys(hit).length ? hit : undefined
+}
+
+/** Where Patience stands this round: as usual, waiting, or striking at ×1.5 (null without it, or before round 1). */
+function patiencePhase(s: RaidState): 'usual' | 'wait' | 'strike' | null {
+  if (!modOf(s, 'patience') || s.round < 1) return null
+  return (['usual', 'wait', 'strike'] as const)[(s.round - 1) % 3]!
 }
 
 /** What the raid's rules do to the raid Pokémon's strike on a side (`mult`: the strike's own ×). */
@@ -607,6 +618,13 @@ function bossTurn(s: RaidState, after: number, data: GameData, rng: Rng, log: Ra
   if (sp.skipNext) {
     sp.skipNext = false
     return void log.push({ kind: 'raid_skip', reason: 'recharge' })
+  }
+  // Patience (Snowglobe Valley's Dialga): a round as usual, a round waiting, a round striking at ×1.5.
+  const patient = patiencePhase(s)
+  if (patient === 'wait') return void log.push({ kind: 'raid_skip', reason: 'patience' })
+  if (patient === 'strike') {
+    log.push({ kind: 'raid_move', move: 'strong' })
+    return strike(s, sideIdx, 1.5, data, rng, log)
   }
   // Love and hate (Enamorus): odd rounds it heals the side it faces instead of striking, even rounds it hits harder.
   const loveHate = modOf(s, 'loveHate')
@@ -808,6 +826,8 @@ function afterStep(
       const back = Math.max(1, Math.round(harm * fin.reflect))
       tickSide(sideIdx, attacker, back, 'reflect', log)
     }
+    // Snowglobe Valley's Dialga and Palkia: freezing on them lasts one turn.
+    if (modOf(s, 'frostShort')) s.boss.status.frozen = Math.min(s.boss.status.frozen, 1)
     // Full Metal Body: statuses on it last one turn.
     if (modOf(s, 'statusShort')) {
       const st = s.boss.status
@@ -883,7 +903,8 @@ function startOfRound(s: RaidState, log: RaidLogEntry[]) {
 function endOfRound(s: RaidState, rng: Rng, log: RaidLogEntry[]) {
   const sp = s.special!
   const fin = sp.final ? sp.def.final : undefined
-  const spares = sp.weather ? WEATHER_SPARES[sp.weather] : undefined
+  // The snow that spares no one (Snowglobe Valley's Palkia): Ice types lose their share too.
+  const spares = sp.weather ? (modOf(s, 'snowAll') && sp.weather === 'snow' ? [] : WEATHER_SPARES[sp.weather]) : undefined
   const ins = s.sides.map((side, i) => ({ side, i })).filter(({ side }) => !side.out && live(activeOf(side)))
   if (spares)
     for (const { side, i } of ins) {
