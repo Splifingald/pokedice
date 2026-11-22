@@ -2526,7 +2526,7 @@ one still frame with motion off.
   or a time shard: a small hourglass of light) and its words on the type's badge colours, and on the last fork the
   legend never named (the user's call, 2026-11-22: a surprise; INFO says only "The last gate decides which legend you
   face"). Each gate is one button of at least 44 px, its name all of it ("Water
-  gate: Revive · Opens Palkia's raid"); the first holds the focus. Taking it: `race.gate`, or `race.shard` and a toast
+  gate: Revive"); the first holds the focus. Taking it: `race.gate`, or `race.shard` and a toast
   "+30 s on the clock"; an item's toast says it went into the bag; its first foe comes at once.
 - **The fights**: straight in, no preview card (a time trial). **One speed for everyone** (the user's call): every fight
   plays at the short motion level and the race's pace (the auto battle's quick 1.5×, the admin's number) whatever the
