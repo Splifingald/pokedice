@@ -1510,7 +1510,7 @@ export interface GameConfig {
   unownDex: { access: EventAccess; reward: number }
   /**
    * The Rotom Room (docs/73): Sinnoh's secret area of Rotom's appliance forms, one a week, and the Rotom Pokédex, whose
-   * last form brings a shiny Rotom at `prizeLevel`. Migration 0151 inserts the same row; the server reads `access`.
+   * last form brings a shiny Rotom at `prizeLevel`. Migration 0152 inserts the same row; the server reads `access`.
    */
   rotomRoom: { access: EventAccess; prizeLevel: number }
   /**

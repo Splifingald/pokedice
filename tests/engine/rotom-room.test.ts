@@ -1,4 +1,4 @@
-// The Rotom Room (docs/73): the content (the five forms, the room after Sinnoh's League, Sinnoh's own Pokémon); the
+// The Rotom Room (docs/73): the content (the five forms, the room once Lake Valor & Lake Acuity is reached, Sinnoh's own Pokémon); the
 // switch (off, the room is nowhere); each player's week (a form they don't own, pinned at the week's start, the room
 // starting afresh); the room as the week makes it (Electric and the form's type, the form as its only boss); closed
 // once the week's form is owned, for good with all five; the Rotom Pokédex (noted, kept, Rotom once in the Pokédex) and
@@ -37,18 +37,25 @@ import {
 import { makeData, newId } from '../fixtures'
 
 const OFF = makeData()
-const ON = makeData({ rotomRoom: { access: 'all', prizeLevel: 60 } })
-const ADMIN_ONLY = makeData({ rotomRoom: { access: 'admin', prizeLevel: 60 } })
+const ON = makeData({ rotomRoom: { access: 'all', prizeLevel: 44 } })
+const ADMIN_ONLY = makeData({ rotomRoom: { access: 'admin', prizeLevel: 44 } })
 
 const room = ON.areas.find((a) => a.name === 'The Rotom Room')!
-const sinnoh = ON.areas.filter((a) => a.regionId === 'sinnoh' && !a.hidden)
-const LEAGUE = '5dc66787-c27b-5d67-8d66-4df0f1aa1041'
+const LAKE_VALOR = 'ffd172b1-9ee2-54a8-bc39-a66661a7e0b8'
+const CANALAVE = 'e6d578d7-c61e-5b49-8f01-994d8f56116d'
+// Sinnoh's road up to Lake Valor & Lake Acuity: everything before it cleared, the League still ahead.
+const sinnoh = ON.areas.filter(
+  (a) =>
+    a.regionId === 'sinnoh' &&
+    !a.hidden &&
+    a.orderIndex < ON.areas.find((x) => x.id === LAKE_VALOR)!.orderIndex,
+)
 
 // Mondays 00:00 UTC.
 const MON_23 = Date.parse('2026-11-23T00:00:00Z')
 const WEEK = 7 * 86_400_000
 
-/** A Sinnoh save, its whole chain cleared (League included), standing in the room. */
+/** A Sinnoh save that has reached Lake Valor & Lake Acuity (the road before it cleared), standing in the room. */
 function inSinnoh(over: Partial<SaveData> = {}): SaveData {
   const base = newSave(387, ON, 123, newId)
   const progress = Object.fromEntries(
@@ -69,7 +76,7 @@ function inSinnoh(over: Partial<SaveData> = {}): SaveData {
 }
 
 const catchForm = (save: SaveData, dex: number, data: GameData = ON) =>
-  applyCatch(save, { dex, level: 60 }, catchTarget(save, dex, 60, 'boss', data)!, data, 0, newId)
+  applyCatch(save, { dex, level: 44 }, catchTarget(save, dex, 44, 'boss', data)!, data, 0, newId)
 
 describe('the content', () => {
   it('has the five forms as species of their own: Electric and the appliance’s type, saved like a regional form', () => {
@@ -87,12 +94,22 @@ describe('the content', () => {
     }
   })
 
-  it('opens the room in Sinnoh once its League is cleared, Lv.50–60, the five forms its bosses at Lv.60', () => {
+  it('opens the room in Sinnoh at Lake Valor & Lake Acuity, before the League, Lv.36–44, its bosses at Lv.44', () => {
     expect(room.regionId).toBe('sinnoh')
     expect(room.hidden).toBe(true)
-    expect(room.unlockConditions).toEqual([{ kind: 'cleared', areaId: LEAGUE }])
-    expect(room.legendaryBoss!.map((b) => [b.dex, b.level])).toEqual(ROTOM_FORM_DEXES.map((d) => [d, 60]))
-    for (const w of room.wildPool) expect([w.minLevel, w.maxLevel]).toEqual([50, 58])
+    expect(room.unlockConditions).toEqual([{ kind: 'area', areaId: LAKE_VALOR }])
+    expect(room.legendaryBoss!.map((b) => [b.dex, b.level])).toEqual(ROTOM_FORM_DEXES.map((d) => [d, 44]))
+    for (const w of room.wildPool) {
+      expect(w.minLevel).toBeGreaterThanOrEqual(36)
+      expect(w.maxLevel).toBeLessThanOrEqual(42)
+      // A level-evolving species only on its side of the evolution level: below it before, from it after.
+      for (const e of ON.species[w.dex]!.evolutions)
+        if (e.level != null) expect(w.maxLevel, `#${w.dex}`).toBeLessThan(e.level)
+      for (const p of ON.speciesList)
+        for (const e of p.evolutions)
+          if (e.toDex === w.dex && e.level != null)
+            expect(w.minLevel, `#${w.dex}`).toBeGreaterThanOrEqual(e.level)
+    }
   })
 
   it('deals only Sinnoh’s own Pokémon, each Electric or of an appliance’s type, two or more of each type', () => {
@@ -147,11 +164,11 @@ describe('the switch', () => {
     expect(rotomRoomBase(on)).toEqual(room)
   })
 
-  it('opens after Sinnoh’s League only', () => {
+  it('opens once Lake Valor & Lake Acuity is reached, not before', () => {
     const before = inSinnoh()
     before.areaProgress = {
       ...before.areaProgress,
-      [LEAGUE]: { ...before.areaProgress[LEAGUE]!, cleared: false },
+      [CANALAVE]: { ...before.areaProgress[CANALAVE]!, cleared: false },
     }
     expect(isAreaUnlocked(before, room.id, ON)).toBe(false)
     expect(rotomDexOpen(before, ON)).toBe(false)
@@ -233,7 +250,7 @@ describe('the room as the week makes it', () => {
       expect([sp.type1, sp.type2].some((t) => t === 'electric' || t === 'flying')).toBe(true)
     }
     const done = { roundsDone: 2, cleared: true, bossDefeated: false, bossesDefeated: [], gymsDefeated: [] }
-    expect(dueBoss(area, done, 60, data)?.dex).toBe(10011)
+    expect(dueBoss(area, done, 44, data)?.dex).toBe(10011)
   })
 })
 
@@ -280,9 +297,9 @@ describe('the Rotom Pokédex', () => {
     const r = catchForm(four, 10012)
     const shiny = r.save.box.filter((p) => p.dex === ROTOM_DEX && p.shiny)
     expect(shiny).toHaveLength(1)
-    expect(shiny[0]!.level).toBe(60)
+    expect(shiny[0]!.level).toBe(44)
     expect(r.save.rotomDexPaid).toBe(true)
-    expect(r.events).toContainEqual({ kind: 'rotom_form', dex: 10012, found: 5, total: 5, prizeLevel: 60 })
+    expect(r.events).toContainEqual({ kind: 'rotom_form', dex: 10012, found: 5, total: 5, prizeLevel: 44 })
     expect(payRotomDex(r.save, ON, 0, newId).prize).toBeNull()
     const lv70 = makeData({ rotomRoom: { access: 'all', prizeLevel: 70 } })
     expect(payRotomDex({ ...four, rotomDex: [...ROTOM_FORM_DEXES] }, lv70, 0, newId).prize?.level).toBe(70)

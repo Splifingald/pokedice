@@ -34,20 +34,25 @@ const data = compileGameData({
 } as BundleRaw)
 const sinnoh = data.regions.find((r) => r.id === 'sinnoh')!
 const room = data.areas.find((a) => a.name === 'The Rotom Room')!
+const lake = data.areas.find((a) => a.name === 'Lake Valor & Lake Acuity')!
 
-/** A Sinnoh save, its whole chain (the League too) cleared, standing in the Rotom Room. */
+/** A Sinnoh save that has reached Lake Valor & Lake Acuity (the road before it cleared), standing in the Rotom Room. */
 function inRoom(patch: Partial<SaveData> = {}): SaveData {
   let c = 0
   const block = newRegionBlock(sinnoh, sinnoh.starters[0]!, data, Date.now(), () => `e2e-s-${++c}`, createInstance)
   const s = { ...startRegion(makeSave(4), sinnoh, block), regionOfferSeen: ['sinnoh', 'unova'] }
-  const team = s.box.map((p) => ({ ...p, level: 62 }))
+  const team = s.box.map((p) => ({ ...p, level: 42 }))
   return {
     ...s,
     box: team,
     currentAreaId: room.id,
     areaProgress: {
       ...s.areaProgress,
-      ...Object.fromEntries(linearAreas(data, 'sinnoh').map((a) => [a.id, { ...progressOf(s, a.id), cleared: true }])),
+      ...Object.fromEntries(
+        linearAreas(data, 'sinnoh')
+          .filter((a) => a.orderIndex < lake.orderIndex)
+          .map((a) => [a.id, { ...progressOf(s, a.id), cleared: true }]),
+      ),
     },
     events: { seen: [...EVENT_IDS] },
     dayCare: { residents: [], guests: [], eggClaimed: false, ...s.dayCare, visited: true },
@@ -58,7 +63,7 @@ function inRoom(patch: Partial<SaveData> = {}): SaveData {
   }
 }
 
-const ROTOM_ON = { ...EVENTS_ON, rotomRoom: { access: 'all', prizeLevel: 60 } }
+const ROTOM_ON = { ...EVENTS_ON, rotomRoom: { access: 'all', prizeLevel: 44 } }
 
 async function boot(page: Page, save: SaveData, config: object = ROTOM_ON) {
   await page.setViewportSize({ width: 360, height: 640 })
@@ -79,7 +84,7 @@ const stored = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getIt
 const thisWeek = () => weekId(Date.now())
 
 test('switched off: no room, no banner, no Rotom page', async ({ page }) => {
-  await boot(page, inRoom({ currentAreaId: sinnoh.leagueAreaId! }), EVENTS_ON)
+  await boot(page, inRoom({ currentAreaId: lake.id }), EVENTS_ON)
   await page.goto('/home')
   await page.waitForTimeout(600)
   await expect(banner(page)).toHaveCount(0)
@@ -106,7 +111,7 @@ test('on: the week’s form pinned, the page with its card and five forms, INFO,
   await expect(page.getByRole('button', { name: /Rotom, (caught|not caught yet)$/ })).toHaveCount(5)
   await expect(page.locator(`[data-rotom-week="${form}"]`)).toContainText(name)
   await expect(page.getByText(new RegExp(`This week in The Rotom Room: ${name}`))).toBeVisible()
-  await expect(page.getByText(/Catch all 5 for a shiny Rotom \(Lv\.60\)/)).toBeVisible()
+  await expect(page.getByText(/Catch all 5 for a shiny Rotom \(Lv\.44\)/)).toBeVisible()
 
   await page.getByRole('button', { name: /Rotom Pokédex/ }).click()
   const info = page.getByRole('dialog', { name: 'Rotom Pokédex' })
@@ -142,7 +147,7 @@ test('all five: the shiny Rotom joins once, the room closed for good', async ({ 
   await boot(page, save)
   await page.goto('/pokedex?view=rotom')
   await expect(page.getByText('ROTOM POKÉDEX COMPLETE!')).toBeVisible()
-  await expect(page.getByText('All 5 forms caught: a shiny Rotom (Lv.60) joined you.')).toBeVisible()
+  await expect(page.getByText('All 5 forms caught: a shiny Rotom (Lv.44) joined you.')).toBeVisible()
   await expect.poll(async () => (await stored(page)).rotomDexPaid).toBe(true)
   const shiny = (s: SaveData) => s.box.filter((p) => p.dex === 479 && p.shiny)
   expect(shiny(await stored(page))).toHaveLength(1)

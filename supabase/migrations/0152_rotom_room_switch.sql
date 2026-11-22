@@ -8,7 +8,7 @@
 begin;
 
 -- 1.
-insert into game_config (key, value) values ('rotomRoom', '{"access": "off", "prizeLevel": 60}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('rotomRoom', '{"access": "off", "prizeLevel": 44}'::jsonb) on conflict (key) do nothing;
 
 -- 2. An odd value is off; never null.
 create or replace function rotom_room_open()

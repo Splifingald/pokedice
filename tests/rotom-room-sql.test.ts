@@ -100,17 +100,17 @@ describe('0151 and 0152: the Rotom Room', () => {
   })
 
   it('puts the switch in Off with the prize’s level, as the game defaults it, and bumps the content version', async () => {
-    expect(await value('rotomRoom')).toEqual({ access: 'off', prizeLevel: 60 })
-    expect(DEFAULT_CONFIG.rotomRoom).toEqual({ access: 'off', prizeLevel: 60 })
+    expect(await value('rotomRoom')).toEqual({ access: 'off', prizeLevel: 44 })
+    expect(DEFAULT_CONFIG.rotomRoom).toEqual({ access: 'off', prizeLevel: 44 })
     // One step each.
     expect(await value('configVersion')).toBe(152)
   })
 
   it('rotom_room_open(): off while Off; On for everyone opens it; On for admin only for the admin', async () => {
     expect(await open()).toBe(false)
-    await setSwitch('{"access": "all", "prizeLevel": 60}')
+    await setSwitch('{"access": "all", "prizeLevel": 44}')
     expect(await open()).toBe(true)
-    await setSwitch('{"access": "admin", "prizeLevel": 60}')
+    await setSwitch('{"access": "admin", "prizeLevel": 44}')
     expect(await open()).toBe(false)
     await asJwt(ADMIN_EMAIL)
     expect(await open()).toBe(true)

@@ -491,9 +491,16 @@ useGame.subscribe((s, prev) => {
   // The Rotom Room (docs/73) as this player sees it: this week's form and Pokémon, or nowhere while it's off.
   const data = withRotomWeek(withViewer(s.data, s.auth, s.beta), s.save)
   if (data === s.data) return
-  // Off while the player stood in it: back to the region's League, as an area the admin removed.
-  const gone = s.save && s.save.currentAreaId === rotomRoomBase(data)?.id && !data.areas.some((a) => a.id === s.save!.currentAreaId)
-  const league = gone ? getRegion(data, regionOf(s.save!))?.leagueAreaId : null
+  // Off while the player stood in it: back to the area that opened it (Lake Valor & Lake Acuity), open since, else the
+  // region's League.
+  const room = rotomRoomBase(data)
+  const gone = s.save && s.save.currentAreaId === room?.id && !data.areas.some((a) => a.id === s.save!.currentAreaId)
+  const opener = room?.unlockConditions?.find((c) => c.kind === 'area')
+  const league = gone
+    ? opener?.kind === 'area'
+      ? opener.areaId
+      : getRegion(data, regionOf(s.save!))?.leagueAreaId
+    : null
   useGame.setState({
     data,
     ...(gone && league && { save: { ...s.save!, currentAreaId: league } }),

@@ -2753,7 +2753,8 @@ pop-up seen. All on `/kitchen-sink` (`BossBits`).
 
 ## 55. The Rotom Room and the Rotom Pokédex
 
-A Sinnoh secret area, open once Sinnoh's League is cleared, where Rotom's five appliance forms are caught, one a week
+A Sinnoh secret area (Lv.36–44), open once Lake Valor & Lake Acuity is reached, before the League, where Rotom's five
+appliance forms are caught, one a week
 (docs/73), behind its switch (§20, Off: no room, no page, no banner, no notice). The region's Pokédex keeps its one
 Rotom, as it keeps one Unown (§37). The pieces are in `src/components/RotomDex.tsx`, every state on `/kitchen-sink`
 (`RotomDexBits`).

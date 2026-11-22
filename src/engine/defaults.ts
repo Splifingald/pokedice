@@ -495,8 +495,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   // the same row.
   unownDex: { access: 'off', reward: 1000 },
   // The Rotom Room (docs/73): off until the admin switches it on; the complete Rotom Pokédex brings a shiny Rotom
-  // Lv.60. Migration 0151 inserts the same row.
-  rotomRoom: { access: 'off', prizeLevel: 60 },
+  // Lv.44, the room's own level. Migration 0152 inserts the same row.
+  rotomRoom: { access: 'off', prizeLevel: 44 },
   // Route 1's set opening (docs/46): off until the admin switches it on. Two rounds met in a set order, ending with
   // Youngster Joey's Rattata (₽10); the rounds after them are shuffled as before. Migration 0081 inserts the switch's row.
   openingRounds: {

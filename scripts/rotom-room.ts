@@ -6,7 +6,7 @@
  *   schedule on Electric and the appliance's type (its Ghost dice become that type), Rotom's HP, the form's own speed;
  *   their names in every language, their egg groups (Rotom's), their offline sprites from PokeAPI (96×96, uncut like
  *   every form's) and their metrics.
- * - The area: after Sinnoh's League, Lv.50–60, its pool Sinnoh's Electric Pokémon and those of the five appliance
+ * - The area: open once Lake Valor & Lake Acuity is reached, Lv.36–44, its pool Sinnoh's Electric Pokémon and those of the five appliance
  *   types (each week only the Electric ones and the week's type are met: engine/rotomRoom.ts), the five forms as its
  *   bosses (one a week, the player's own), the Galactic Warehouse's lab as its picture.
  * - supabase/migrations/0151_rotom_room.sql from the same rows, and 0152_rotom_room_switch.sql (the switch, the server's
@@ -31,7 +31,8 @@ const SWITCH = path.join(ROOT, 'supabase', 'migrations', '0152_rotom_room_switch
 const SPRITES = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon'
 const CACHE = path.join(ROOT, 'scripts', '.cache', 'pokeapi')
 const ROTOM = 479
-const SINNOH_LEAGUE = '5dc66787-c27b-5d67-8d66-4df0f1aa1041'
+/** Lake Valor & Lake Acuity (Lv.36–44): reaching it opens the room (the user's call, 2026-11-22: before the League). */
+const LAKE_VALOR = 'ffd172b1-9ee2-54a8-bc39-a66661a7e0b8'
 
 /** The five appliances: PokeAPI's ids, the type each takes, its speed (base 86, Rotom's 91) and its names. */
 // prettier-ignore
@@ -49,28 +50,30 @@ const FORM_SPEED = 86
 const AREA_NAMES = ['The Rotom Room', 'La Salle des Motisma', 'La Sala de Rotom', 'Der Rotom-Raum', 'La Stanza di Rotom', 'A Sala do Rotom', 'A Sala do Rotom', 'ロトムのへや', '로토무의 방', '洛托姆的房间']
 
 export const ROTOM_ROOM_ID = stableUuid('area:rotom-room')
-const LEVEL_MIN = 50
-const LEVEL_MAX = 58
-const BOSS_LEVEL = 60
+const LEVEL_MIN = 36
+const LEVEL_MAX = 42
+const BOSS_LEVEL = 44
 
 /**
  * The pool, Sinnoh's own species only (the user's call, 2026-11-21: nothing new on Sinnoh's Pokédex). The Electric rows
- * are met every week; each other row only in the week of an appliance of one of its types.
+ * are met every week; each other row only in the week of an appliance of one of its types. Before the League: no
+ * item-evolved final the road keeps for Lv.50+ (Electabuzz, not Electivire), and a level-evolving species only on its
+ * side of its evolution level (Snover below 40, Abomasnow from 40), by the row's own levels.
  */
 // prettier-ignore
-const POOL: [dex: number, weight: number][] = [
-  // Electric, every week
-  [405, 10], [462, 8], [466, 8], [171, 6], [417, 6],
-  // Fire: Heat Rotom's week
-  [467, 8], [229, 8], [324, 6], [219, 6],
-  // Water: Wash Rotom's week
+const POOL: [dex: number, weight: number, min?: number, max?: number][] = [
+  // Electric, every week: Luxray, Electabuzz, Lanturn, Pachirisu
+  [405, 10], [125, 8], [171, 6], [417, 6],
+  // Fire, Heat Rotom's week: Magmar, Houndoom, Torkoal, Magcargo (from 38)
+  [126, 8], [229, 8], [324, 6], [219, 6, 38, 42],
+  // Water, Wash Rotom's week: Floatzel, Gastrodon, Lumineon, Golduck, Gyarados
   [419, 8], [423, 8], [457, 6], [55, 6], [130, 3],
-  // Ice: Frost Rotom's week
-  [461, 8], [478, 8], [362, 6], [473, 6],
-  // Flying: Fan Rotom's week
-  [398, 8], [430, 8], [426, 6], [472, 6], [469, 6],
-  // Grass: Mow Rotom's week
-  [407, 8], [465, 8], [455, 6], [421, 6], [460, 6], [357, 4],
+  // Ice, Frost Rotom's week: Sneasel, Snorunt (below 42), Mamoswine, Snover (below 40), Abomasnow (from 40)
+  [215, 8], [361, 8, 36, 41], [473, 6], [459, 6, 36, 39], [460, 4, 40, 42],
+  // Flying, Fan Rotom's week: Staraptor, Noctowl, Drifblim, Gliscor, Yanmega, Chatot
+  [398, 8], [164, 8], [426, 6], [472, 6], [469, 6], [441, 4],
+  // Grass, Mow Rotom's week: Roselia, Tangrowth, Carnivine, Cherrim, Tropius (and Snover, Abomasnow)
+  [315, 8], [465, 8], [455, 6], [421, 6], [357, 4],
 ]
 
 async function fetchCached(url: string, file: string): Promise<Buffer> {
@@ -209,7 +212,8 @@ async function main() {
 
   // ---- the area
   const areas = JSON.parse(await readFile(path.join(DATA, 'areas.json'), 'utf8')) as Area[]
-  const template = areas.find((a) => a.name === 'Fullmoon Island' && a.regionId === 'sinnoh')!
+  // Its finds are those of the road where it opens.
+  const template = areas.find((a) => a.id === LAKE_VALOR)!
   const area: Area = {
     id: ROTOM_ROOM_ID,
     orderIndex: 959,
@@ -224,17 +228,17 @@ async function main() {
     legendaryBoss: ROTOM_FORM_ROWS.map((f) => ({ dex: f.id, level: BOSS_LEVEL })),
     scalesToTeam: false,
     easyMode: false,
-    enemyUpgradeLevel: 8,
+    enemyUpgradeLevel: 7,
     battleBackground: 'default',
     hidden: true,
-    unlockConditions: [{ kind: 'cleared', areaId: SINNOH_LEAGUE }],
+    unlockConditions: [{ kind: 'area', areaId: LAKE_VALOR }],
     gyms: [],
-    wildPool: POOL.map(([dex, weight]) => ({
+    wildPool: POOL.map(([dex, weight, min, max]) => ({
       id: stableUuid(`rotom-room-wild:${dex}`),
       dex,
       weight,
-      minLevel: LEVEL_MIN,
-      maxLevel: LEVEL_MAX,
+      minLevel: min ?? LEVEL_MIN,
+      maxLevel: max ?? LEVEL_MAX,
     })),
     trainerPool: [],
     lootPool: template.lootPool.map((l) => ({ ...l, id: stableUuid(`rotom-room-loot:${l.itemKey}`) })),
@@ -284,7 +288,7 @@ async function main() {
 -- Written by scripts/rotom-room.ts from the bundle's rows. Safe to run again: every row is left alone when there (the
 -- admin's edits kept). Its switch is 0152 (run both); supabase/seed.sql carries these rows with the bundle's.
 -- 1. The five forms (10008–10012): Heat, Wash, Frost, Fan and Mow Rotom, Electric and the appliance's type.
--- 2. The area, The Rotom Room (after Sinnoh's League, Lv.50–60), its wild pool (each week the Electric rows and the
+-- 2. The area, The Rotom Room (once Lake Valor & Lake Acuity is reached, Lv.36–44), its wild pool (each week the Electric rows and the
 --    week's type), its loot, the five forms as its bosses (one a week, the player's own: engine/rotomRoom.ts).
 -- 3. configVersion + 1, so players fetch the new content.
 begin;
@@ -324,7 +328,7 @@ commit;
 begin;
 
 -- 1.
-insert into game_config (key, value) values ('rotomRoom', '{"access": "off", "prizeLevel": 60}'::jsonb) on conflict (key) do nothing;
+insert into game_config (key, value) values ('rotomRoom', '{"access": "off", "prizeLevel": 44}'::jsonb) on conflict (key) do nothing;
 
 -- 2. An odd value is off; never null.
 create or replace function rotom_room_open()

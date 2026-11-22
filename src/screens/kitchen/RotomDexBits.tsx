@@ -52,7 +52,7 @@ export function RotomDexBits() {
         <RotomFormBar found={ALL} />
       </Frame>
       <Frame name="Home banner · no form yet, this week Heat Rotom">
-        <RotomStripView found={[]} week={10008} reopensAt={null} paid={false} prizeLevel={60} onOpen={noop} />
+        <RotomStripView found={[]} week={10008} reopensAt={null} paid={false} prizeLevel={44} onOpen={noop} />
       </Frame>
       <Frame name="Home banner · 2 of 5, this week Wash Rotom">
         <RotomStripView
@@ -60,7 +60,7 @@ export function RotomDexBits() {
           week={10009}
           reopensAt={null}
           paid={false}
-          prizeLevel={60}
+          prizeLevel={44}
           onOpen={noop}
         />
       </Frame>
@@ -70,12 +70,12 @@ export function RotomDexBits() {
           week={10009}
           reopensAt={MONDAY}
           paid={false}
-          prizeLevel={60}
+          prizeLevel={44}
           onOpen={noop}
         />
       </Frame>
       <Frame name="Home banner · complete, the shiny Rotom given">
-        <RotomStripView found={ALL} week={null} reopensAt={null} paid prizeLevel={60} onOpen={noop} />
+        <RotomStripView found={ALL} week={null} reopensAt={null} paid prizeLevel={44} onOpen={noop} />
       </Frame>
       <Frame name="The page · 2 caught, Wash Rotom this week (map pin), the rest silhouettes">
         <DexGridList label={t('ui.rotom.title')}>
@@ -110,12 +110,12 @@ export function RotomDexBits() {
       <Frame name="Rotom Pokédex complete (the shiny Rotom given)">
         <DexCompleteCard
           title={t('ui.rotom.complete')}
-          body={t('ui.rotom.completePaid', { total: 5, level: 60 })}
+          body={t('ui.rotom.completePaid', { total: 5, level: 44 })}
         />
       </Frame>
       <Frame name="Result card · a form, the last with the shiny Rotom">
         <RotomFormCard dex={10011} found={3} total={5} />
-        <RotomFormCard dex={10012} found={5} total={5} prizeLevel={60} />
+        <RotomFormCard dex={10012} found={5} total={5} prizeLevel={44} />
       </Frame>
       <Frame name="Rules · INFO at the foot of the Rotom page (OK)">
         <InfoButton name={t('ui.rotom.title')} onClick={() => setInfo(true)} />
