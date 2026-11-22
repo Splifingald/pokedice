@@ -536,6 +536,7 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 | Spear Pillar: INFO says which type leads to Dialga or Palkia | "The last gate decides which legend you face": the surprise kept until the last fork |
 | Spear Pillar: the last doors name Palkia and Dialga | They don't any more: the legend stays a surprise until its raid |
 | Spear Pillar: the theme for the whole area, and its raids | The intro's night for as long as the player is there, and on its raids' page and fights |
+| Spear Pillar: its raids' effects (the event only) | `TIME_RACE_SPECIALS` on the race's numbers (Lv.70, 3 bars, dice 8). **Palkia**: snow that spares no one (every Pokémon out, Ice types too, loses 4 % a round; never Palkia), last bar +2 Water dice. **Dialga**: Patience (a round as usual, a round waiting: no strike, hits on it halved, no status takes; a round at ×1.5), last bar +2 Steel dice. Both: freezing lasts one turn. The main game's Dialga and Palkia keep theirs; the Hall of Origin's Arceus keeps its Plates (a test) |
 | Spear Pillar: its raids' intro | Dialga's and Palkia's own entrances (docs/53), as anywhere in the game, with Legendary intros on |
 | Spear Pillar: the doors should look cooler | Gateways of the ruins: stone pillars and arch, a keystone and a swirling rift in the type's colour (docs/15 §48) |
 | Evergreen Hill: closed once the shiny Delibird is caught; missed, only its fight again | Built (§2.1): every small world's secret area played plainly |

@@ -72,6 +72,15 @@ export type RaidMod =
   | { k: 'comboHeal'; pct: number }
   /** Its strike hits its target and the next side still in. */
   | { k: 'spacialRend' }
+  /**
+   * Patience (Snowglobe Valley's Dialga, the user's call of 2026-11-22), round by round: it strikes as usual; it waits
+   * (no strike, hits on it do half, no status takes); it strikes at ×1.5; and again.
+   */
+  | { k: 'patience' }
+  /** Freezing on it lasts one turn (Snowglobe Valley's Dialga and Palkia). */
+  | { k: 'frostShort' }
+  /** The snow spares no one: Ice types lose their share too (Snowglobe Valley's Palkia); the raid Pokémon never does. */
+  | { k: 'snowAll' }
   /** Super-effective hits on it are ×`mult`. */
   | { k: 'prism'; mult: number }
   /** The sides' combo bonuses are cut by `pct`. */
@@ -368,6 +377,27 @@ export const RAID_SPECIALS: Readonly<Record<number, RaidSpecial>> = {
   // where it changes plate before every strike. 1.5× its HP per bar was asked; with its plates and Judgment playing,
   // the sims won 0 % there, so each bar is 0.65× (33 %, docs/40 §4).
   493: S('mythic', [70, 5, 0.65, 9], { mods: [{ k: 'shift' }, tg('spread')], final: { shiftEvery: true } }),
+}
+
+/**
+ * Snowglobe Valley's Spear Pillar raids (docs/64 §4.4, the user's calls of 2026-11-22): the event's own effects, on the
+ * race's numbers (its level, bars and dice), never the main game's Dialga and Palkia (RAID_SPECIALS). Palkia's rain
+ * turns to snow in the cold and hurts every Pokémon out, Ice types too, 4 % a round, never Palkia; Dialga waits its
+ * turn (Patience); freezing on either lasts one turn; each gains two dice of its type on its last bar.
+ */
+export const TIME_RACE_SPECIALS: Readonly<Record<number, Pick<RaidSpecial, 'weather' | 'mods' | 'final'>>> = {
+  484: { weather: 'snow', mods: [{ k: 'snowAll' }, { k: 'frostShort' }], final: die('water', 'water') },
+  483: { mods: [{ k: 'patience' }, { k: 'frostShort' }], final: die('steel', 'steel') },
+}
+
+/** A Spear Pillar raid's special in Snowglobe Valley: its effects on the race's numbers; null for another Pokémon. */
+export function timeRaceRaidSpecial(
+  dex: number,
+  race: { level: number; bars: number; upgradeLevel: number },
+  barHp: number,
+): RaidSpecial | null {
+  const own = TIME_RACE_SPECIALS[dex]
+  return own ? S('box', [race.level, race.bars, barHp, race.upgradeLevel], own) : null
 }
 
 /** A Mega raid (after Kalos): the Pokémon of an earlier region's raid in its Mega or Primal form, and the item it gives. */
