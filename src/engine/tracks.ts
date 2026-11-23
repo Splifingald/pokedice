@@ -193,15 +193,18 @@ export function inTracks(save: SaveData, data: GameData, areaId: string | null |
   return !!area && !!tracksModeOf(area, data) && tracksStateOf(save, area.id).active
 }
 
-/** The shiny Stantler is caught: the glade is closed for good. */
+/** The shiny Stantler is caught: the glade is played again from then on, its last Stantler a classic one. */
 export const tracksWon = (save: SaveData, data: GameData, areaId: string): boolean =>
   !!modeAt(data, areaId) && !!tracksStateOf(save, areaId).won
 
-/** The glade can be entered here: switched on, not over, not already under way. */
+/**
+ * The glade can be entered here: switched on, not already under way, and not waiting for its outro. Once the shiny
+ * Stantler is caught and its outro has played, it can be played again (the user's call, 2026-11-23).
+ */
 export function canStartTracks(save: SaveData, data: GameData, areaId: string): boolean {
   if (!modeAt(data, areaId)) return false
   const s = tracksStateOf(save, areaId)
-  return !s.active && !s.won
+  return !s.active && (!s.won || !!s.wonSeen)
 }
 
 /** Its field as it stands (a fresh one when none was kept), with its round. Null outside the glade. */
@@ -243,6 +246,8 @@ export function startTracks(save: SaveData, data: GameData, areaId: string): Sav
     round,
     field: freshTracksField(tracksRoundOf(mode, round).spec),
     tries: (before.tries ?? 0) + 1,
+    // A replay keeps it known: its last Stantler is a classic one.
+    ...(before.won && { won: true, wonSeen: true }),
   })
 }
 
@@ -327,7 +332,8 @@ export function tracksEncounter(
   }
   if (bush !== 'stantler' || quarry == null || !ctx.data.species[quarry]) return null
   const boss = tracksBoss(area)
-  if (last && boss) {
+  // Once the shiny Stantler is caught, a replay's last round ends on a classic one too (the user's call, 2026-11-23).
+  if (last && boss && !ctx.progress.tracks?.won) {
     // Its hidden talent (docs/51 §1b): the admin's call for this boss, else the game's rule, as any boss's.
     const encounter: Encounter = {
       kind: 'boss',
@@ -359,13 +365,28 @@ export function tracksQuarryDown(
   save: SaveData,
   data: GameData,
   areaId: string,
-): { save: SaveData; round: number; total: number; last: boolean } | null {
+): { save: SaveData; round: number; total: number; last: boolean; replayed?: true } | null {
   const mode = modeAt(data, areaId)
   const area = areaOf(data, areaId)
   const s = tracksStateOf(save, areaId)
   if (!mode || !area || !s.active || !s.field?.found) return null
   const total = mode.rounds.length
   const { last } = tracksRoundOf(mode, s.round)
+  // A replay's last classic Stantler down: the replay is over, the next starts at round 1 again.
+  if (last && s.won)
+    return {
+      save: withTracks(save, areaId, {
+        active: false,
+        round: 0,
+        won: true,
+        wonSeen: true,
+        ...(s.tries != null && { tries: s.tries }),
+      }),
+      round: total,
+      total,
+      last: true,
+      replayed: true,
+    }
   if (last && tracksBoss(area)) return { save, round: s.round, total, last: true }
   if (last) return { save: tracksCaught(save, data, areaId), round: total, total, last: true }
   const round = s.round + 1
@@ -408,10 +429,10 @@ export function tracksBolt(save: SaveData, data: GameData, areaId: string): Save
   })
 }
 
-/** The outro has played: the glade is closed (`isAreaClosed`). */
+/** The outro has played: the glade can be played again, from its first round (`canStartTracks`). */
 export function markTracksWonSeen(save: SaveData, areaId: string): SaveData {
   const s = tracksStateOf(save, areaId)
-  return s.won && !s.wonSeen ? withTracks(save, areaId, { ...s, wonSeen: true }) : save
+  return s.won && !s.wonSeen ? withTracks(save, areaId, { ...s, wonSeen: true, round: 0 }) : save
 }
 
 /** The outro is due here. */

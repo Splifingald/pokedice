@@ -52,8 +52,12 @@ shares with Haunted Hollow (its output unchanged, byte for byte). Names in the t
   a trainer (a test checks both; the user's report of 2026-11-21: a wild Staravia at Lv.11 in Pinewood Forest).
 - Every Pokémon of Moonlit Glade, Evergreen Hill and Crown Shrine is also found on the road: a secret area closes once
   its boss is caught. Played plainly (its special mode off, or none: Evergreen Hill), a boss beaten and not caught is
-  the challenge again, straight away (no present the second time), until caught; caught, the area closes
-  (`bossUntilCaught`, `isAreaClosed`; the user's call of 2026-11-21, Evergreen Hill's shiny Delibird).
+  the challenge again, straight away (no present the second time), until caught (the user's call of 2026-11-21).
+  Caught, the area is **played again** (the user's call of 2026-11-23): each run's rounds end on its boss as a plain
+  one (not shiny but by the wild odds, straight into the fight), and a replay deals **one Gift card**, not three, so
+  it gives no more than it should (`bossReplay`, `areaForRound`, `AreaProgress.replayFrom`). Moonlit Glade's Tracks in
+  the Snow too: once its outro has played, the glade can be entered again from round 1, its last round ending on a
+  classic Stantler, whose K.O. ends the replay (§4.1).
 - No Houndour line (the user: it led Haunted Hollow's picks).
 - No Ghost type a player must get past (a league or a Crown Shrine wave): a team of Normal types can't touch one, and
   the simulator's all-Normal Lillipup runs stalled on Elite Four Holly's Froslass until it became a Walrein.
@@ -539,6 +543,7 @@ The user's notes, left in the artifact's feedback boxes, each answered there:
 | Spear Pillar: its raids' effects (the event only) | `TIME_RACE_SPECIALS` on the race's numbers (Lv.70, 3 bars, dice 8). **Palkia**: snow that spares no one (every Pokémon out, Ice types too, loses 4 % a round; never Palkia), last bar +2 Water dice. **Dialga**: Patience (a round as usual, a round waiting: no strike, hits on it halved, no status takes; a round at ×1.5), last bar +2 Steel dice. Both: freezing lasts one turn. The main game's Dialga and Palkia keep theirs; the Hall of Origin's Arceus keeps its Plates (a test) |
 | Spear Pillar: its raids' intro | Dialga's and Palkia's own entrances (docs/53), as anywhere in the game, with Legendary intros on |
 | Spear Pillar: the doors should look cooler | Gateways of the ruins: stone pillars and arch, a keystone and a swirling rift in the type's colour (docs/15 §48) |
+| Moonlit Glade and Evergreen Hill: played again once their shiny is caught | The glade from round 1 after its outro, ending on a classic Stantler; the hill's runs end on a plain Delibird, one Gift card a run (§2.1) |
 | Evergreen Hill: closed once the shiny Delibird is caught; missed, only its fight again | Built (§2.1): every small world's secret area played plainly |
 | A wild Staravia at Lv.11 in Pinewood Forest | Five Pokémon met below the level they're reached at, moved to areas of their level (§2.1, §5 step 9); a test checks it for wild Pokémon and trainers; 0151 |
 | Secret areas' banners: show the date conditions well | A locked row says its date ("Opens Thu 24 Dec, 13:00", with a clock): alone when no condition is left (Evergreen Hill showed nothing), on a line under the condition when both are still to come (Spear Pillar, the Hall of Origin); the toast and the Areas sheet say both (docs/15 §22) |

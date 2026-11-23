@@ -230,11 +230,27 @@ export const fightBosses = (area: Area, data: GameData): BossDef[] =>
 export const raidBosses = (area: Area, data: GameData): BossDef[] => (area.legendaryBoss ?? []).filter((b) => isRaidBoss(data, b))
 
 /**
- * A small world's secret area (docs/64 §2.1, the user's call of 2026-11-21: Evergreen Hill's shiny Delibird): its boss,
- * once beaten and not caught, is the challenge again, every time, until it's caught; caught, the area closes
- * (`isAreaClosed`). Its special mode, while on, has its own way (callers leave those out).
+ * A small world's secret area (docs/64 §2.1, the user's calls of 2026-11-21 and 23: Evergreen Hill's shiny Delibird):
+ * its boss, once beaten and not caught, is the challenge again, every time, until it's caught; caught, the area can be
+ * played again (`bossReplay`): each run's rounds end on its boss as a plain one, and Gift cards come one a round. Its
+ * special mode, while on, has its own way (callers leave those out).
  */
 export const bossUntilCaught = (area: Area, data: GameData): boolean => !!area.hidden && !!worldOfArea(data, area)
+
+/** Its prize is caught: the area is being played again (its boss plain at each run's end, one Gift card a round). */
+export const bossReplay = (area: Area, progress: AreaProgress, data: GameData): boolean => {
+  const bosses = fightBosses(area, data)
+  return (
+    bossUntilCaught(area, data) && bosses.length > 0 && bosses.every((b) => bossCaught(area, progress, [], b.dex, data))
+  )
+}
+
+/** The area as a round is dealt here: in a replay (`bossReplay`), one Gift card at most (the user's call, 2026-11-23). */
+export function areaForRound(area: Area, progress: AreaProgress, data: GameData): Area {
+  const gift = area.encounterWeights.gift ?? 0
+  if (gift <= 1 || !bossReplay(area, progress, data)) return area
+  return { ...area, encounterWeights: { ...area.encounterWeights, gift: 1 } }
+}
 
 /**
  * The legendary that can be challenged next, if any. Round bosses are due once every round is done; Victory Road style bosses
@@ -243,6 +259,11 @@ export const bossUntilCaught = (area: Area, data: GameData): boolean => !!area.h
  * bosses.
  */
 export function dueBoss(area: Area, progress: AreaProgress, teamAvgLevel: number, data: GameData): BossDef | null {
+  // Played again once its prize is caught: its boss, a plain one, closes each run of `roundsToClear` rounds.
+  if (bossReplay(area, progress, data)) {
+    const done = (progress.roundsDone ?? 0) - (progress.replayFrom ?? progress.roundsDone ?? 0)
+    return area.roundsToClear != null && done >= area.roundsToClear ? (fightBosses(area, data)[0] ?? null) : null
+  }
   for (const b of fightBosses(area, data)) {
     if (progress.bossesDefeated.includes(b.dex)) {
       // A small world's catch is the area's own (bossCaught reads its progress, not the Pokédex).
@@ -522,7 +543,7 @@ export const opensWithoutCenter = (area: Area, progress: AreaProgress, data: Gam
 /** Cards in the next round dealt here: the set opening's round when one is due (docs/46), else a fresh deck's. */
 export function nextRoundSize(area: Area, progress: AreaProgress, data: GameData, foe = false): number {
   const due = openingRoundDue(area, progress, data)
-  return (due == null ? null : openingRound(area, data, due))?.length ?? deckSize(area, data, foe)
+  return (due == null ? null : openingRound(area, data, due))?.length ?? deckSize(areaForRound(area, progress, data), data, foe)
 }
 
 /** `foe`: a real player's team waits for the area (docs/54); the caller has checked the save meets them here. */
@@ -701,12 +722,16 @@ export function challengeEncounter(
   const boss = dueBoss(area, progress, teamAvgLevel, data)
   // A Titan (docs/62 §7) is never shiny: it is fought, not caught.
   if (boss?.titan) return { kind: 'boss', dex: boss.dex, level: boss.level, titan: true }
+  // A replay's boss is a plain one: only the wild odds can make it shiny.
+  const plain = !!boss && bossReplay(area, progress, data)
   return boss
     ? talents({
         kind: 'boss',
         dex: boss.dex,
         level: boss.level,
-        ...(legendShiny(boss, area, data, rng, shinyOdds) && { shiny: true }),
+        ...((plain ? !!rng && rollShiny(data, rng, 1, shinyOdds) : legendShiny(boss, area, data, rng, shinyOdds)) && {
+          shiny: true,
+        }),
         ...bossTalent(boss, data),
       })
     : null
@@ -781,7 +806,8 @@ function dealRound(ctx: EncounterContext, rng: Rng, noCenterFirst: boolean): { d
   const opening = openingRoundDue(ctx.area, ctx.progress, ctx.data)
   const round = opening == null ? null : openingRound(ctx.area, ctx.data, opening)
   if (round) return { deck: openingDeck(round, ctx.noCenters), opening }
-  const deck = buildDeck(ctx.area, ctx.data, rng, legendCards(ctx), { noCenterFirst, noCenters: ctx.noCenters, foe: !!ctx.versusFoe })
+  const area = areaForRound(ctx.area, ctx.progress, ctx.data)
+  const deck = buildDeck(area, ctx.data, rng, legendCards(ctx), { noCenterFirst, noCenters: ctx.noCenters, foe: !!ctx.versusFoe })
   return { deck, opening: null }
 }
 

@@ -125,7 +125,8 @@ export function useContinue(area: Area) {
   const enterRace = !!raceMode && canStartTimeRace(save, data, area.id) && !busy
   const racePlan = raceMode ? timeRacePlan(save, raceMode, area.id) : null
   const enterWhite = !!whiteMode && !white?.active && !white?.won && !busy
-  const enterGlade = !!gladeMode && !glade?.active && !glade?.won && !busy
+  // Played again once its shiny Stantler is caught and its outro has played.
+  const enterGlade = !!gladeMode && !glade?.active && (!glade?.won || !!glade.wonSeen) && !busy
   const searching = !!glade?.active && !busy
   const enter = enterPortal || enterDream || enterRace || enterWhite || enterGlade
   // Darkrai's strike waits on the area's page after a round (docs/30); so does a bonfire after a wave (docs/64).

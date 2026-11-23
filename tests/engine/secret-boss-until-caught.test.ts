@@ -3,6 +3,11 @@
 // Delibird ("Cadoizo") was the case: it came back as one card of a whole new round, and the hill never closed.
 import { describe, expect, it } from 'vitest'
 import {
+  areaForRound,
+  challengeEncounter,
+  createRng,
+  deckAbilities,
+  deckCounts,
   dueBoss,
   emptyProgress,
   enterWorld,
@@ -45,10 +50,27 @@ describe('a small world’s secret area: its boss until caught', () => {
     expect(isAreaClosed(s, HILL.id, data)).toBe(false)
   })
 
-  it('caught: no challenge any more, and the hill closes for good', () => {
-    const s = onHill({ bossesDefeated: [DELIBIRD], bossesCaught: [DELIBIRD] })
+  it('caught: the hill stays open and is played again, a plain Delibird at the end of each run (the user’s call, 2026-11-23)', () => {
+    // Just caught: its run starts afresh from the rounds done (noteBossCaught's replayFrom).
+    const s = onHill({ bossesDefeated: [DELIBIRD], bossesCaught: [DELIBIRD], replayFrom: 1 })
+    expect(isAreaClosed(s, HILL.id, data)).toBe(false)
     expect(dueBoss(HILL, progress(s), 30, data)).toBeNull()
-    expect(isAreaClosed(s, HILL.id, data)).toBe(true)
+    // Its round played again: Delibird is due, a plain one (only the wild odds could make it shiny).
+    const after = onHill({ bossesDefeated: [DELIBIRD], bossesCaught: [DELIBIRD], replayFrom: 1, roundsDone: 2 })
+    expect(dueBoss(HILL, progress(after), 30, data)?.dex).toBe(DELIBIRD)
+    const enc = challengeEncounter(HILL, progress(after), data, 30, null, createRng(1), 0)
+    expect(enc).toMatchObject({ kind: 'boss', dex: DELIBIRD })
+    expect((enc as { shiny?: boolean }).shiny).toBeUndefined()
+  })
+
+  it('a replay deals one Gift card, not three (the user’s call, 2026-11-23)', () => {
+    const on = makeDataWith(
+      { areas: h.areas, regions: [h.region] },
+      { smallWorlds: { access: 'all', list: [world] }, giftCard: { ...data.config.giftCard, access: 'all' } },
+    )
+    const count = (s: SaveData) => deckCounts(areaForRound(HILL, progress(s), on).encounterWeights, deckAbilities(HILL, on)).gift
+    expect(count(onHill({}, HILL.id, on))).toBe(3)
+    expect(count(onHill({ bossesDefeated: [DELIBIRD], bossesCaught: [DELIBIRD] }, HILL.id, on))).toBe(1)
   })
 
   it('before its first fight, as before: due once the round is done, the hill open', () => {
@@ -57,13 +79,13 @@ describe('a small world’s secret area: its boss until caught', () => {
     expect(isAreaClosed(onHill({}), HILL.id, data)).toBe(false)
   })
 
-  it('an area playing its own mode closes its own way: the glade waits for its outro (docs/64 §4.1)', () => {
+  it('an area playing its own mode has its own way: the glade replays after its outro; off, a plain replay', () => {
     const on = dataWith('all')
     const stantler = GLADE.legendaryBoss![0]!.dex
     const s = onHill({ bossesDefeated: [stantler], bossesCaught: [stantler] }, GLADE.id, on)
     expect(isAreaClosed(s, GLADE.id, on)).toBe(false)
-    // Its mode off, it is a plain secret area: caught, closed.
-    expect(isAreaClosed(s, GLADE.id, data)).toBe(true)
+    // Its mode off, it is a plain secret area: caught, it is played again too.
+    expect(isAreaClosed(s, GLADE.id, data)).toBe(false)
   })
 })
 

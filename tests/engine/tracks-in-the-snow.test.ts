@@ -353,7 +353,7 @@ describe('Tracks in the Snow: the search', () => {
     expect(tracksBolt(bolted, data, GLADE.id)).toBe(bolted)
   })
 
-  it('caught, the outro is due and the glade closes for good once it has played', () => {
+  it('caught, the outro is due; once it has played, the glade is played again, ending on a classic Stantler', () => {
     const s = tracksQuarryDown(findStantler(begun(2), 5), data, GLADE.id)!.save
     const won = tracksCaught(s, data, GLADE.id)
     expect(tracksStateOf(won, GLADE.id)).toEqual({
@@ -368,9 +368,24 @@ describe('Tracks in the Snow: the search', () => {
     expect(isAreaSealed(won, data, GLADE.id)).toBe(true)
     expect(isAreaClosed(won, GLADE.id, data)).toBe(false)
     expect(canStartTracks(won, data, GLADE.id)).toBe(false)
+    // The outro played: the glade stays open and can be played again from round 1 (the user's call, 2026-11-23).
     const seen = markTracksWonSeen(won, GLADE.id)
     expect(tracksOutroDue(seen, data, GLADE.id)).toBe(false)
-    expect(isAreaClosed(seen, GLADE.id, data)).toBe(true)
+    expect(isAreaClosed(seen, GLADE.id, data)).toBe(false)
+    expect(isAreaSealed(seen, data, GLADE.id)).toBe(false)
+    expect(canStartTracks(seen, data, GLADE.id)).toBe(true)
+    const replay = startTracks(seen, data, GLADE.id)!
+    expect(tracksStateOf(replay, GLADE.id)).toMatchObject({ active: true, round: 0, won: true, wonSeen: true, tries: 2 })
+    // Its last round's Stantler is a classic one: a wild Stantler, never the shiny boss.
+    const last = withTracks(replay, { ...tracksStateOf(replay, GLADE.id), round: 2 })
+    const enc = tracksEncounter(ctxOf(last), 'stantler', true, createRng(4))!.encounter
+    expect(enc).toMatchObject({ kind: 'wild', dex: STANTLER })
+    expect((enc as { shiny?: boolean }).shiny).toBeUndefined()
+    // Down, the replay is over: the next one starts at round 1 again, the glade still open.
+    const down = tracksQuarryDown(findStantler(last, 6), data, GLADE.id)!
+    expect(down).toMatchObject({ last: true, replayed: true, round: 3, total: 3 })
+    expect(tracksStateOf(down.save, GLADE.id)).toMatchObject({ active: false, round: 0, won: true, wonSeen: true })
+    expect(canStartTracks(down.save, data, GLADE.id)).toBe(true)
   })
 
   it('a wipe: back at the glade’s edge, healed, the cleared rounds kept, XP and items kept', () => {

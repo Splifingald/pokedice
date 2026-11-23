@@ -555,7 +555,7 @@ export interface TracksState {
   /** Rounds cleared, kept through a wipe and a trip Home: the next is `rounds[round]`. */
   round: number
   field?: TracksField | null
-  /** The shiny Stantler caught: the glade closes for good. */
+  /** The shiny Stantler caught: from then on the glade is played again, its last Stantler a classic one. */
   won?: boolean
   /** The outro has played. */
   wonSeen?: boolean
@@ -2354,6 +2354,11 @@ export interface AreaProgress {
    * stays catchable until this says so, whatever the Pokédex holds; elsewhere the Pokédex decides.
    */
   bossesCaught?: number[]
+  /**
+   * A small world's secret area replayed once its prize is caught (docs/64 §2.1): the rounds done when this run began;
+   * its boss, a plain one, comes back once `roundsToClear` more are done.
+   */
+  replayFrom?: number
   /** Trainer ids of this area's gym / Elite battles already won. */
   gymsDefeated: string[]
   /** Encounter cards left in this area's current deck (drawn from the end). Dealt afresh when empty. */

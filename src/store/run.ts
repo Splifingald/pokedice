@@ -1560,7 +1560,8 @@ function settleBattle(stalemate: boolean) {
     // the team is healed again, the server hears of the meet, and the result card says so.
     const duel = isPlayerFoe(enc) && !trainerHasNext() ? duelOver(enc.player, !!run.trainer && run.trainer.index + 1 >= enc.team.length) : null
     const gladeEvents: RunEvent[] =
-      glade && !glade.last ? [{ kind: 'tracks_round', round: glade.round, total: glade.total }] : []
+      // A replay's last round counts too: its card says the glade is done (docs/64 §4.1).
+      glade && (!glade.last || glade.replayed) ? [{ kind: 'tracks_round', round: glade.round, total: glade.total }] : []
     const events = [...(cleared ? [...res.events, cleared] : res.events), ...dreamEvents, ...gladeEvents]
     const gold = res.events.reduce((g, e) => (e.kind === 'gold' ? g + e.amount : g), 0)
     // A wild or legendary K.O. that can be caught goes to the catch throw first; the rewards screen follows it.

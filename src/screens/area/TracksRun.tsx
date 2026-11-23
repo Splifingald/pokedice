@@ -60,9 +60,9 @@ export function tracksStepDue(
   run: { phase: string; tracksBush?: unknown },
 ): boolean {
   if (!tracksModeOf(area, s.data)) return false
-  const st = tracksStateOf(s.save, area.id)
   const between = run.phase === 'idle' || (run.phase === 'preview' && !!run.tracksBush)
-  return between && ((!!st.won && !st.wonSeen) || !st.won)
+  // Every state has its step: the outro, the way in (a replay's too), the glade.
+  return between
 }
 
 /** The area's own step: the outro once due, the way in while not begun, the glade while it is searched. */
@@ -84,7 +84,8 @@ export function TracksStep({ area }: { area: Area }) {
         }}
       />
     )
-  if (!st.active && !st.won) return <WayIn area={area} mode={mode} />
+  // Not begun, or played again once the shiny Stantler is caught (the user's call, 2026-11-23).
+  if (!st.active && (!st.won || st.wonSeen)) return <WayIn area={area} mode={mode} />
   if (st.active) return <Glade area={area} mode={mode} />
   return null
 }

@@ -4,7 +4,7 @@ import { getSpecies, linearAreas } from './data'
 import { KANTO, evolutionGate, inWorldRegion, pokedexEverywhere, regionOf, regionOfArea } from './regions'
 import { asSeenBy, gymsFor, playerSideOf } from './rival'
 import { nextComboCost, nextDieCost, pokemonXp, trainerGoldFor, healAmount, multiExpShareFor } from './economy'
-import { bossCaught, bossUntilCaught, deckAbilities, deckCounts, dueGym, fightBosses, roundsComplete } from './encounters'
+import { bossCaught, bossReplay, bossUntilCaught, deckAbilities, deckCounts, dueGym, fightBosses, roundsComplete } from './encounters'
 import { nightmareModeOf } from './nightmareMode'
 import { timeRaceModeOf } from './timeRaceMode'
 import { tracksModeOf } from './tracksMode'
@@ -371,17 +371,10 @@ export function isAreaClosed(save: SaveData, areaId: string, data: GameData): bo
   if (!area) return false
   // Crown Shrine once its whiteout is won (docs/64 §4.3): its boss caught, the shrine closes for good.
   if (whiteoutWon(save, data, areaId)) return true
-  // Tracks in the Snow (docs/64 §4.1): the shiny Stantler caught and its outro played, the glade closes for good.
-  if (tracksWon(save, data, areaId) && tracksStateOf(save, areaId).wonSeen) return true
   // The Rotom Room (docs/73): this week's form owned, closed until next Monday; all five, for good.
   if (rotomRoomClosed(save, data, areaId)) return true
-  // A small world's secret area played plainly (docs/64 §2.1): its boss caught, it closes for good. Its special mode,
-  // while on, closes it its own way (above), or seals it (the portal run, the nightmare, the race).
-  if (bossUntilCaught(area, data) && !specialModeOn(area, data)) {
-    const p = progressOf(save, areaId)
-    const bosses = fightBosses(area, data)
-    if (bosses.length && bosses.every((b) => bossCaught(area, p, save.pokedex, b.dex, data))) return true
-  }
+  // A small world's secret area played plainly, its prize caught, stays open: it is played again (bossReplay).
+  if (bossUntilCaught(area, data) && !specialModeOn(area, data)) return false
   const c = deckCounts(area.encounterWeights, deckAbilities(area))
   if (c.wild + c.trainer + c.casino > 0) return false
   const bosses = fightBosses(area, data)
@@ -405,13 +398,16 @@ export const isAreaSealed = (save: SaveData, data: GameData, areaId: string): bo
   nightmareWon(save, data, areaId) ||
   timeRaceSealed(save, data, areaId) ||
   whiteoutWon(save, data, areaId) ||
-  tracksWon(save, data, areaId)
+  // The glade until its outro has played (then it is played again, docs/64 §4.1).
+  (tracksWon(save, data, areaId) && !tracksStateOf(save, areaId).wonSeen)
 
 /** A boss of this area was caught here: noted in its progress (what a small world's bosses go by, docs/26 §2.5). */
 export function noteBossCaught(save: SaveData, areaId: string, dex: number): SaveData {
   const p = progressOf(save, areaId)
   const caught = p.bossesCaught ?? []
-  return caught.includes(dex) ? save : withProgress(save, areaId, { ...p, bossesCaught: [...caught, dex] })
+  // A replay's run starts afresh from here (docs/64 §2.1): its plain boss comes back after its rounds.
+  if (caught.includes(dex)) return withProgress(save, areaId, { ...p, replayFrom: p.roundsDone ?? 0 })
+  return withProgress(save, areaId, { ...p, bossesCaught: [...caught, dex], replayFrom: p.roundsDone ?? 0 })
 }
 
 /**
@@ -677,6 +673,8 @@ export function applyVictory(
 
   // Boss
   if (input.kind === 'boss') {
+    // A replay's plain boss beaten (docs/64 §2.1): its run is over, caught or not; the next starts from here.
+    if (bossReplay(area, progress, data)) progress = { ...progress, replayFrom: progress.roundsDone ?? 0 }
     if (!progress.bossesDefeated.includes(input.enemyDex))
       progress = { ...progress, bossesDefeated: [...progress.bossesDefeated, input.enemyDex] }
     const all = fightBosses(area, data).every((b) => progress.bossesDefeated.includes(b.dex))
