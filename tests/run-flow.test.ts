@@ -16,6 +16,7 @@ import {
   rollNext,
   seedRun,
   sendNextFoe,
+  settleOverFight,
   skipEncounter,
   startNewGame,
   canSkipCurrent,
@@ -313,6 +314,16 @@ describe('run flow', () => {
       },
     }))
     sendNextFoe()
+    expect(useGame.getState().run.phase).toBe('stalemate')
+
+    // Left stuck by the older build and picked up at load: the fight over, the run still in 'battle'.
+    allLinoone()
+    useGame.setState((s) => ({
+      run: { ...s.run, phase: 'preview', encounter: { kind: 'trainer', trainerId: 't', name: 'Hex Maniac', spriteUrl: null, team: [dusknoir] } },
+    }))
+    engage(useGame.getState().save!.team[0])
+    useGame.setState((s) => ({ run: { ...s.run, phase: 'battle', trainer: { index: 0, gold: 0 } } }))
+    settleOverFight()
     expect(useGame.getState().run.phase).toBe('stalemate')
   })
 })
