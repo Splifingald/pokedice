@@ -178,9 +178,10 @@ export function regionSpecies(data: GameData, regionId: RegionId): Set<number> {
     if ((area.encounterWeights.casino ?? 0) > 0) hasGameCorner = true
   }
   if (hasGameCorner && gameCornerOn(data) && data.species[data.config.slotMachine.prizeDex]) out.add(data.config.slotMachine.prizeDex)
-  // The Fortune Wheel's jackpot Pokémon belong to the region of the area that opens the wheel (Porygon: Kanto's).
+  // The Fortune Wheel's jackpot Pokémon belong to the region of the area that opens the wheel (Porygon: Kanto's), while
+  // the wheel is on (Extreme's is off: Porygon is wild there instead, engine/extremeRuns.ts).
   const wheelArea = data.areas.find((a) => a.id === data.config.events.wheel.unlockAreaId)
-  if (wheelArea && regionOfArea(wheelArea) === regionId)
+  if (wheelArea && regionOfArea(wheelArea) === regionId && eventOpenTo(data.config.events.wheel.access, data))
     for (const j of data.config.events.wheel.jackpot ?? []) if (j.reward.kind === 'pokemon' && data.species[j.reward.dex]) out.add(j.reward.dex)
   // The roamers belong to their region without sitting in any one area (see engine/encounters.ts).
   for (const dex of data.config.roamers?.regionId === regionId ? (data.config.roamers?.dex ?? []) : []) out.add(dex)

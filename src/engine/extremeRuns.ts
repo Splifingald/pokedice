@@ -10,6 +10,7 @@ import {
   leagueDone,
   newRegionBlock,
   regionOf,
+  regionOfArea,
   startRegion,
   switchRegion,
 } from './regions'
@@ -128,6 +129,8 @@ export function runsWon(before: SaveData, after: SaveData): RegionId[] {
  * shiny (the user, 2026-10-29: "absolutely no shiny Pokémon anywhere"): the wild odds are 0, and the trainers' and
  * bosses' set shinies are plain. (Gifts and invite rewards never open in Extreme: they wait for the main game and say
  * so.) Applied to the whole page's game data while the Extreme save is played; the same data when it is already.
+ * The set gifts (docs/61 §5.3) are never dealt in Extreme either, so they are off here too: the Pokédex counts only
+ * what a race can meet. What only the wheel gave is met in the wild instead (`wheelInTheWild`).
  */
 export function raceData(data: GameData): GameData {
   if (data.viewer?.race) return data
@@ -146,6 +149,7 @@ export function raceData(data: GameData): GameData {
       liveEvents: off(data.config.liveEvents),
       trickOrTreat: off(data.config.trickOrTreat),
       giftCard: off(data.config.giftCard),
+      giftMoments: off(data.config.giftMoments),
       // The region flavours (docs/62): none in a race, the Titans' bosses included.
       hoennWeather: off(data.config.hoennWeather),
       galarWeather: off(data.config.galarWeather),
@@ -161,13 +165,40 @@ export function raceData(data: GameData): GameData {
         tr.team.some((m) => m.shiny) ? { ...tr, team: tr.team.map(({ shiny: _s, ...m }) => m) } : tr,
       ]),
     ),
-    areas: data.areas.map((a) =>
+    areas: wheelInTheWild(data).map((a) =>
       a.legendaryBoss?.some((b) => b.shiny)
         ? { ...a, legendaryBoss: a.legendaryBoss.map(({ shiny: _s, ...b }) => b) }
         : a,
     ),
     viewer: { admin: !!data.viewer?.admin, race: true },
   }
+}
+
+/** How often, and how high, the wheel's Pokémon is met in the wild in Extreme: about as rare as Eevee there. */
+export const RACE_WHEEL_WILD = { weight: 3, minLevel: 20, maxLevel: 24 }
+
+/**
+ * The Fortune Wheel's jackpot Pokémon in the wild pool of the area that opens the wheel (Porygon on Routes 7 & 8, by
+ * Celadon's Game Corner), for Extreme, where the wheel is off (a player's report, 2026-11-23). Without it Porygon was
+ * out of reach there, and Faraway Island, which waits for 150 caught, with it Mew. One already wild in that region
+ * needs nothing. The areas as they are when there is nothing to add.
+ */
+function wheelInTheWild(data: GameData): GameData['areas'] {
+  const wheel = data.config.events.wheel
+  const home = data.areas.find((a) => a.id === wheel?.unlockAreaId)
+  if (!home) return data.areas
+  const region = regionOfArea(home)
+  const wild = new Set(
+    data.areas
+      .filter((a) => regionOfArea(a) === region)
+      .flatMap((a) => a.wildPool.filter((w) => w.weight > 0).map((w) => w.dex)),
+  )
+  const add = [
+    ...new Set((wheel.jackpot ?? []).flatMap((j) => (j.reward.kind === 'pokemon' ? [j.reward.dex] : []))),
+  ].filter((dex) => !!data.species[dex] && !wild.has(dex))
+  if (!add.length) return data.areas
+  const rows = add.map((dex) => ({ id: `race-wheel-${dex}`, dex, ...RACE_WHEEL_WILD }))
+  return data.areas.map((a) => (a === home ? { ...a, wildPool: [...a.wildPool, ...rows] } : a))
 }
 
 /**

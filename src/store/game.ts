@@ -17,6 +17,7 @@ import {
   reviveFossils,
   releaseDuplicates,
   releaseRaidLocks,
+  restoreRaidCatches,
   releaseWorldHome,
   releaseWorldPending,
   settleKo,
@@ -357,7 +358,14 @@ function settle(save: SaveData, data: GameData) {
   // Then the Egg clocks follow who is there: one starts when a pair forms, and resets when its last pair leaves.
   const fitted = syncEggClocks(fitDayCare(fossils.save, data, Date.now()), data, Date.now())
   // Raid catches locked until their area was completed: one completed since joins its region's Box.
-  const raids = releaseRaidLocks(fitted, data, Date.now(), raidId)
+  const locks = releaseRaidLocks(fitted, data, Date.now(), raidId)
+  // A progression raid won whose Pokémon a sync lost (another copy of the save won it before the catch went up) comes
+  // back into its region's Box.
+  const lost = restoreRaidCatches(locks.save, data, Date.now(), raidId)
+  const raids = {
+    save: lost.save,
+    released: [...locks.released, ...lost.restored.map((r) => ({ dex: r.dex, region: r.region }))],
+  }
   // A small world's shiny mythical waiting for its home region (docs/21): that region started since, it joins its Box.
   const worlds = releaseWorldPending(raids.save, data, Date.now(), raidId)
   // A closed world's Pokémon waiting in their home region (docs/26 §1): those whose region now has one at their level

@@ -20,7 +20,9 @@ import {
   openRun,
   progressOf,
   raceData,
+  RACE_WHEEL_WILD,
   regionOf,
+  regionSpecies,
   runOf,
   runState,
   runTime,
@@ -198,6 +200,37 @@ describe('a pure race', () => {
     expect(raceData(race)).toBe(race)
     // Extreme mode itself stays on.
     expect(race.config.extreme.access).toBe('all')
+  })
+
+  it("the wheel's Porygon is met in the wild instead, so Kanto's 151 (and Mew's island) can be reached", () => {
+    // A player's report (2026-11-23): the wheel was Porygon's only way, and Faraway Island waits for 150 caught.
+    const all = makeData({
+      extreme: { ...DEFAULT_CONFIG.extreme, access: 'all' },
+      giftMoments: { ...DEFAULT_CONFIG.giftMoments, access: 'all' },
+    })
+    const wheelArea = (d: GameData) => d.areas.find((a) => a.id === all.config.events.wheel.unlockAreaId)!
+    expect(wheelArea(all).wildPool.some((w) => w.dex === 137)).toBe(false)
+    const race = raceData(all)
+    expect(wheelArea(race).wildPool.find((w) => w.dex === 137)).toMatchObject({
+      weight: RACE_WHEEL_WILD.weight,
+    })
+    const kanto = regionSpecies(race, 'kanto')
+    expect(kanto.has(137)).toBe(true)
+    const faraway = race.areas.find((a) => a.legendaryBoss?.some((b) => b.dex === 151))!
+    const needed = faraway.unlockConditions?.find((c) => c.kind === 'pokedex') as { count: number }
+    // Everything Kanto gives but Mew herself.
+    expect(kanto.size - 1).toBeGreaterThanOrEqual(needed.count)
+    // The wheel off, its prize isn't counted where nothing else gives it; the gifts, never dealt in Extreme, neither.
+    const noWheel = {
+      ...all,
+      config: {
+        ...all.config,
+        events: { ...all.config.events, wheel: { ...all.config.events.wheel, access: 'off' as const } },
+      },
+    }
+    expect(regionSpecies(noWheel, 'kanto').has(137)).toBe(false)
+    expect(regionSpecies(all, 'sinnoh').has(175)).toBe(true)
+    expect(regionSpecies(race, 'sinnoh').has(175)).toBe(false)
   })
 
   it('no General upgrades and no shiny Pokémon anywhere', () => {

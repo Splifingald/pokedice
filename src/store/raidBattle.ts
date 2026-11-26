@@ -482,6 +482,9 @@ function settleRaidThrow(save: SaveData, roll: CatchRoll, ballKey: string | null
     ])
   }
   commitSave(next)
+  // The server notes the raid won at once (closeOnServer): the Pokémon goes up with it, not at the next automatic sync,
+  // so another copy of the save can't win a sync in between and keep the win without the catch.
+  if (roll.caught) void pushSaveNow().catch(() => {})
   useRaidRun.setState({ run: { ...run, catch: { result: { ...roll, ballKey, ...(baited && { baited }) }, ...landing } } })
 }
 
