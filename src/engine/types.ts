@@ -1286,6 +1286,20 @@ export interface RushProgress {
   given: number
 }
 
+/** The player cap's settings (docs/74, game_config 'ccu'), as migration 0157's ccu_cfg() keeps them. */
+export interface PlayerCapConfig {
+  /** Off: everyone in, counted. On for admin: the admin's own game waits in line like a regular player's. */
+  access: Exclude<EventAccess, 'beta'>
+  cap: number
+  /** The server gate: calls without an active place are refused (HTTP 428). */
+  enforceWrites: boolean
+  idleMinutes: number
+  heartbeatSeconds: number
+  queueHeartbeatSeconds: number
+  staleSeconds: number
+  reconnectGraceSeconds: number
+}
+
 export interface GameConfig {
   configVersion: number
   xpCurve: { A: number; B: number; C: number }
@@ -1515,6 +1529,12 @@ export interface GameConfig {
    * last form brings a shiny Rotom at `prizeLevel`. Migration 0153 inserts the same row; the server reads `access`.
    */
   rotomRoom: { access: EventAccess; prizeLevel: number }
+  /**
+   * The player cap (docs/74): how many players the game takes at once, the rest waiting in line. Migration 0157 inserts
+   * the same row and the server alone applies it (ccu_join); the game reads it only for the rules' numbers. The admin
+   * saves it live (Admin → Config → Capacity), not through Publish.
+   */
+  ccu: PlayerCapConfig
   /**
    * Route 1's set opening (docs/46): its first rounds dealt in a set order, card by card, the rounds after them at
    * random as before. Migration 0081 inserts the same row.

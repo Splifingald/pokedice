@@ -29,6 +29,10 @@ What gives first, in order:
 
 Players online (docs/70) adds one tiny call every 5 minutes per visible tab, ~12 per hour of play,
 on an unlogged table; no Realtime.
+
+**The player cap** (docs/74, 2026-11-22): at most `cap` players in the game at once (Admin → Config → Capacity, live),
+the rest in a first-come waiting line that asks the server for nothing else; a heartbeat every 30 s per open game
+(players online's ping rides on it), and a server gate that refuses calls without a place once it is on.
 3. Far away: 100k signed-in players a month, 8 GB of database, 250 GB of egress a month (Pro's quotas).
 
 ## 2. The Versus board, built at most once every 15 minutes (migration 0139)

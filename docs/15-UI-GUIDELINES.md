@@ -192,6 +192,7 @@ All live in `src/components/`. Every component, in every state, is on `/kitchen-
 | `RulesModal` / `InfoButton` | A feature's rules: once when it unlocks, then from the blue INFO button at the bottom of its page | The special events' pop-up: its picture as a banner (`RulesBanner`), or a banner drawn in code (the gifts'), a NOW OPEN tag on the unlock, 2–4 `RuleList` rows (an icon, a short title, a line with the config's numbers, optionally a small button under it); Later and Let's go! on the unlock, OK from INFO. The Day Care and Versus use it (`FeatureRules.tsx`); the events have their own copies (`EventUnlockPopup`, `EventInfo`), with the same words. INFO is a quiet 48 px button on the sky tint with a blue "i" mark (`.ev-info`), never a competing block; `compact` when it shares a dock row. `RulesCard`: the rules at the top of a feature's page the first time (§20) |
 | `ContinueButton` / `MapButton` / `StayHere` / `ComingUpView` / `LeaderboardTipModal` | Home (§12, docs/38 §6) | The big button: CONTINUE (the play arrow), a challenge waiting (the sword), greyed out (a tap says why), GO TO {area} behind in the region (the map) with Stay here under it, or CONTINUE with the green GO TO {area} (`GoToNext`) in its place once that area is started; the green map square left of CONTINUE (plain; shut by the nightmare); the "Coming up" line for the Day Care, the special events, Versus and a secret area (a level, the Pokédex); Prof. Oak's leaderboard tip with Later (✕ and Later end it for good) and SEE THE LEADERBOARD (`HomeBits`) |
 | `RotateCover` / `RotateView` | A phone held sideways (§6) | Over everything, not dismissable: the pixel phone tipping upright in steps (upright and still under reduced motion), the title and a line |
+| `PlayerCapGate` / `QueueView` / `PlayerCapRulesModal` | The player cap's waiting line (docs/74) | Before the game, nothing else reaching the server: the loading ball while the place is asked for (6 s at most), the **Waiting line** page when full (the ball wobbling, still when calm; the exact message, "You are #N in line" as a live region, keep the tab open, signed out: the whitelist line with CONNECT; INFO at its foot), the same as a pop-up that can't be closed over the game when sent back for idling (the idle line on gold-pale on top). The admin panel, setup and dev pages never wait |
 | `ToastStack` / `ToastCard` | A short word on what just happened, or why something didn't (§7) | On `<body>`, beside the dialogs: under the top bar on phones, at the bottom on desktop; four at most. Info (panel) and good (green): a tap closes them, they go after 4 s or 1.2 s + 70 ms a character, waiting while touched, hovered or focused. Error (red): a ✕ (44 px), stays until closed |
 | `DiceLogo` | The title with the game feel on (docs/38 §9) | The word POKÉDICE as eight pixel-art dice on a canvas (`role="img"`, named Pokédice, inside the `<h1>`): thrown in and landing crooked on their letters (full), dropped in (short), two-step drops (calm), at rest (off); two rows under 768 px, one from 768; the white flash, the gold rings, the tagline; a tap throws it again. Off: the wordmark and its five dice |
 | `HowToPlay` / `ButtonLook` | How to play's animated cards (§17, docs/38 §8b), with the Game feel on | Four `figure`s (throw the dice, reroll, deal damage, catch), each a scene drawn with the battle's own pieces on a 280 × 224 stage, an `h3` and a line: looping (full motion), a still of its key moment with PLAY (calm: it plays once), PLAY showing the end (animations off). `ButtonLook`: a picture of a `PixelButton` (same frame, label fit, pressed look) in a span, for a scene with nothing to press |
@@ -1167,6 +1168,13 @@ notifications' question last. A new pop-up gets a place in that list, not a list
   this is where a player finds them all. A new feature with a `RulesModal` gets a row there too.
 - **A passive announcement** (a small world's preview on Home, §22): the switch, but no rules pop-up and no INFO. It has
   nothing to do and no page; it says everything on its face, and the world's own pop-up opens at the start.
+- **The player cap** (docs/74, the user's ask of 2026-11-22): the switch (Off / On for admin / On for everyone, Off by
+  default, the server's own: `ccu_join` applies it), but in **its own tab**, Admin → Config → **Capacity**, saved live
+  without Publish (a content version bump would send every player the content again for one number), not in the
+  Switches table. **On for admin** means the admin's own game waits in line like a regular player's while everyone else
+  gets in. Its rules are behind **INFO at the foot of the waiting line** (its page) and in How to play. No "seen" flag
+  and no Home notice: it is nothing a player unlocks. The Switches tab's list of beta testers is the cap's whitelist
+  (`WhitelistBox`): one list, picked from the signed-in players by name or e-mail, with a note each.
 - **Players online** (docs/70): **no switch, no rules and no INFO**, the user's call of 2026-11-09, as global messages:
   the side menu's "12 players online" above SYNC ONLINE, a green dot as a friend online's (§50), hidden until the
   server has a count; VIEW (an eye, `sm`) at its end opens the list of up to 30, the closest to the player in badges,
@@ -2779,7 +2787,8 @@ pop-up seen. All on `/kitchen-sink` (`BossBits`).
 
 ## 55. The Rotom Room and the Rotom Pokédex
 
-A Sinnoh secret area, open once Sinnoh's League is cleared, where Rotom's five appliance forms are caught, one a week
+A Sinnoh secret area (Lv.36–44), open once Lake Valor & Lake Acuity is reached, before the League, where Rotom's five
+appliance forms are caught, one a week
 (docs/73), behind its switch (§20, Off: no room, no page, no banner, no notice). The region's Pokédex keeps its one
 Rotom, as it keeps one Unown (§37). The pieces are in `src/components/RotomDex.tsx`, every state on `/kitchen-sink`
 (`RotomDexBits`).

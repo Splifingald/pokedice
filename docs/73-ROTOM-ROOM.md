@@ -1,10 +1,10 @@
 # The Rotom Room and the Rotom Pokédex
 
 The user's brief of 2026-11-21: a secret area in Sinnoh where players find Rotom's forms. It changes weekly, an Electric
-area with Pokémon of the week's form's second type, Lv.50–60, unlocked after the League, with the form as a boss at its
-end. Once caught the area closes until next week; with every form owned, for good. Like the Unown Pokédex in Johto
-(docs/41), a Rotom Pokédex, whose completion brings a shiny normal Rotom. It sits behind its own admin switch (docs/15
-§20), Off by default.
+area with Pokémon of the week's form's second type, with the form as a boss at its end. First Lv.50–60 after the League;
+**moved before the League, Lv.36–44** (the user's call, 2026-11-22). Once caught the area closes until next week; with
+every form owned, for good. Like the Unown Pokédex in Johto (docs/41), a Rotom Pokédex, whose completion brings a shiny
+normal Rotom. It sits behind its own admin switch (docs/15 §20), Off by default.
 
 Built on `claude/sinnoh-rotom-secret-area-na9l8t`.
 
@@ -18,7 +18,8 @@ The user's answers (2026-11-21) and the calls made on them:
 | The week's form already owned (a trade, a gift) | **Closed that week**, as after a catch. |
 | Where the forms are listed | **The Rotom Pokédex only.** Sinnoh's Pokédex keeps its one Rotom (`regionSpecies` leaves the forms out); catching a form also notes Rotom (#479) there, as an Unown letter notes Unown. |
 | The wild Pokémon | **Sinnoh's own species only**, so Sinnoh's Pokédex gains nothing and is the same every week (a test checks every row is met elsewhere in Sinnoh). |
-| Defaults taken (not asked) | The boss is the week's form at **Lv.60**, a plain boss fight, catchable (the wild shiny odds apply). The page has **5 entries** (the appliances; the plain Rotom is the prize). The prize is a **shiny Rotom Lv.60** (the admin's number), once. The forms can't be traded (as every non-regional form), so the room is where they come from. |
+| Where on the road (2026-11-22) | **Lv.36–44, before the League**: it opens once **Lake Valor & Lake Acuity** (Lv.36–44) is reached, as the Great Marsh opens at Pastoria. |
+| Defaults taken (not asked) | The boss is the week's form at **Lv.44**, a plain boss fight, catchable (the wild shiny odds apply). The page has **5 entries** (the appliances; the plain Rotom is the prize). The prize is a **shiny Rotom Lv.44** (the room's level, the admin's number), once. The forms can't be traded (as every non-regional form), so the room is where they come from. |
 
 ## 2. The content
 
@@ -38,14 +39,17 @@ content, from the same rows) and 0154 (the switch); then `pnpm showdown-sprites 
   | Fan Rotom | 10011 | Electric / Flying |
   | Mow Rotom | 10012 | Electric / Grass |
 
-- **The room**: **The Rotom Room** (Platinum's locked room of the Galactic Warehouse), Sinnoh, hidden, opens with Sinnoh's
-  League **cleared**. Picture `lair-lab`. 2 rounds of 8 cards (6 wild, 1 item, 1 Pokémon Center), foes' upgrades 8,
-  wild Lv.50–58, Fullmoon Island's loot. Its bosses are the five forms at Lv.60; the week keeps only its own.
-- **The pool** (each week the Electric rows and the week's type; a Pokémon of two such types comes both weeks):
-  Electric, always — Luxray, Magnezone, Electivire, Lanturn, Pachirisu. Fire — Magmortar, Houndoom, Torkoal, Magcargo.
-  Water — Floatzel, Gastrodon, Lumineon, Golduck, Gyarados. Ice — Weavile, Froslass, Glalie, Mamoswine. Flying —
-  Staraptor, Honchkrow, Drifblim, Gliscor, Yanmega (and Gyarados). Grass — Roserade, Tangrowth, Carnivine, Cherrim,
-  Abomasnow, Tropius (Abomasnow in Frost's week too, Tropius in Fan's). The admin edits it in Admin → Areas like any
+- **The room**: **The Rotom Room** (Platinum's locked room of the Galactic Warehouse), Sinnoh, hidden, opens once
+  **Lake Valor & Lake Acuity is reached** (an `area` condition). Picture `lair-lab`. 2 rounds of 8 cards (6 wild, 1
+  item, 1 Pokémon Center), foes' upgrades 7 (Lake Valor's), wild Lv.36–42, Lake Valor's loot. Its bosses are the five
+  forms at Lv.44; the week keeps only its own.
+- **The pool** (each week the Electric rows and the week's type; a Pokémon of two such types comes both weeks). Before
+  the League, no item-evolved final the road keeps for Lv.50+ (Electabuzz rather than Electivire), and a
+  level-evolving species only on its side of its evolution level (a test checks both):
+  Electric, always — Luxray, Electabuzz, Lanturn, Pachirisu. Fire — Magmar, Houndoom, Torkoal, Magcargo (from 38).
+  Water — Floatzel, Gastrodon, Lumineon, Golduck, Gyarados. Ice — Sneasel, Snorunt (to 41), Mamoswine, Snover (to
+  39), Abomasnow (from 40). Flying — Staraptor, Noctowl, Drifblim, Gliscor, Yanmega, Chatot (and Gyarados). Grass —
+  Roselia, Tangrowth, Carnivine, Cherrim, Tropius (and Snover, Abomasnow; Tropius in Fan's week too). The admin edits it in Admin → Areas like any
   pool: a row is met in the weeks of its types, whatever is added.
 
 ## 3. The engine (`src/engine/rotomRoom.ts`)
@@ -70,10 +74,10 @@ content, from the same rows) and 0154 (the switch); then `pnpm showdown-sprites 
   `prizeLevel`). `GameData.rotomRoomBase`.
 
 **The store**: every save settles through `noteRotomDex` → `pinRotomWeek` (on `trustedNow()`) → `payRotomDex`, with a
-toast when the prize comes (`store/game.ts`); the data subscription applies `withRotomWeek` after `withViewer` (a
-player standing in the room when it's switched off goes back to the League); `useRotomWeekClock` (GameLayout) pins
-Monday's form as soon as the time is known, then checks each minute; entering the room asks `rotom_room_open()` for a
-signed-in player and sends them back if it says no (`store/rotomRoom.ts`).
+toast when the prize comes (`store/game.ts`); the data subscription applies `withRotomWeek` after `withViewer` (a player
+standing in the room when it's switched off goes back to Lake Valor & Lake Acuity, the area that opened it);
+`useRotomWeekClock` (GameLayout) pins Monday's form as soon as the time is known, then checks each minute; entering the
+room asks `rotom_room_open()` for a signed-in player and sends them back if it says no (`store/rotomRoom.ts`).
 
 ## 4. What players see
 
@@ -92,15 +96,21 @@ is said as a wild Pokémon in battle, never "the legendary".
      `rotom_room_open()`.
      https://github.com/Splifingald/pokedice/blob/main/supabase/migrations/0154_rotom_room_switch.sql
 
-   `supabase/seed.sql` carries both: 0154 inlined, 0153's rows with the bundle's.
-3. Admin → Config → **Rotom Room**: the shiny Rotom's level if not 60, then **On for admin** to try it signed in,
+   - `supabase/migrations/0158_rotom_room_lake_valor.sql`: the room moved before the League (Lv.36–44, after Lake
+     Valor & Lake Acuity), for a database whose 0153 put it in at Lv.50–60; its pool and loot replaced, the prize 44
+     where it was still 60.
+     https://github.com/Splifingald/pokedice/blob/main/supabase/migrations/0158_rotom_room_lake_valor.sql
+
+   `supabase/seed.sql` carries 0153 and 0154: 0154 inlined, 0153's rows (already Lv.36–44) with the bundle's.
+   `supabase/releases/2026-11-22-main.sql` strings 0153 to 0158 together.
+3. Admin → Config → **Rotom Room**: the shiny Rotom's level if not 44, then **On for admin** to try it signed in,
    **On for everyone** to open it. Publish.
 
 ## 6. Tests
 
-- `tests/engine/rotom-room.test.ts`: the content (the forms' types and dice, the room after the League, Lv.50–60, the
+- `tests/engine/rotom-room.test.ts`: the content (the forms' types and dice, the room at Lake Valor & Lake Acuity, Lv.36–44, each species on its side of its evolution level, the
   bosses; the pool Sinnoh's own, each Electric or an appliance's type; Sinnoh's Pokédex with Rotom once, the same every
-  week); the switch (off nowhere, admin only, back from the content kept aside, the League first); the week (a form not
+  week); the switch (off nowhere, admin only, back from the content kept aside, Lake Valor first); the week (a form not
   owned, the same for the same week, pinned on the server's clock and kept, nothing without the time or outside Sinnoh,
   the room afresh); the week's room (its types, its boss, the fights, the boss once the rounds are done); closing (the
   week's form owned, back next Monday with another; all five; no week pinned); the Rotom Pokédex (a catch noted, Rotom

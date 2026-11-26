@@ -85,7 +85,8 @@ test('Config: the tabs, the switches in two columns, a name opens its numbers', 
   await expect(
     page.getByRole('radiogroup', { name: 'Outfits: who has it' }).getByRole('radio', { name: 'On for beta testers' }),
   ).toHaveCount(0)
-  await expect(page.getByRole('heading', { name: 'Beta testers' })).toBeVisible()
+  // The beta testers are the player cap's whitelist (docs/74): one list, under the switches.
+  await expect(page.getByRole('heading', { name: 'Whitelist & beta testers' })).toBeVisible()
   for (const name of ['Safari Zones', 'Rivals on the road', 'Rival teams matched to the player', "Hoenn's weather"])
     await expect(page.getByRole('radiogroup', { name: `${name}: who has it` })).toBeVisible()
   await expect(page.getByRole('radiogroup', { name: 'Paldea Titans: who has it' })).toBeVisible()
@@ -362,4 +363,80 @@ test("Versus league: this week's bot teams, seen and made from the admin's page"
   await expect(
     box.getByText(/^Made already\. This week's own bot teams \(40 \/ 40 \/ 40 \/ 80 a tier\)/),
   ).toBeVisible()
+})
+
+test('Capacity (docs/74): the cap saved live, the counters, the whitelist from a searchable pick of players', async ({ page }) => {
+  test.setTimeout(120_000)
+  const ASH = '00000000-0000-4000-8000-000000000001'
+  const MISTY = '00000000-0000-4000-8000-000000000002'
+  const saved: unknown[] = []
+  const added: unknown[] = []
+  let whitelist: unknown[] = [{ id: ASH, name: 'Ash', email: 'ash@example.com', note: 'streamer', addedAt: '2026-11-20T10:00:00Z' }]
+  const config = {
+    access: 'off',
+    cap: 30,
+    enforceWrites: false,
+    idleMinutes: 10,
+    heartbeatSeconds: 30,
+    queueHeartbeatSeconds: 15,
+    staleSeconds: 90,
+    reconnectGraceSeconds: 60,
+  }
+  await admin(page, {
+    rpc: {
+      ccu_admin_stats: () => ({
+        active: 41,
+        regular: 38,
+        admin: 1,
+        whitelist: 2,
+        queued: 0,
+        idleQueued: 0,
+        longestWaitSeconds: 0,
+        config,
+        at: new Date().toISOString(),
+      }),
+      ccu_admin_config: (body: { p_cfg: Record<string, unknown> }) => {
+        saved.push(body.p_cfg)
+        Object.assign(config, body.p_cfg)
+        return config
+      },
+      ccu_whitelist: () => whitelist,
+      ccu_admin_players: [
+        { id: ASH, name: 'Ash', email: 'ash@example.com', lastDay: '2026-11-21' },
+        { id: MISTY, name: 'Misty', email: 'misty@cerulean.example', lastDay: '2026-11-20' },
+      ],
+      ccu_whitelist_set: (body: { p_user: string; p_note: string | null }) => {
+        added.push(body)
+        whitelist = [{ id: body.p_user, name: 'Misty', email: 'misty@cerulean.example', note: body.p_note, addedAt: '2026-11-22T10:00:00Z' }, ...whitelist]
+        return true
+      },
+    },
+  })
+  await page.goto('/admin/config?tab=capacity')
+  await expect(page.getByRole('heading', { name: 'Player cap' })).toBeVisible({ timeout: 30_000 })
+  // The counters, and what the cap would do if it were on.
+  await expect(page.getByText('In the game (cap 30)')).toBeVisible()
+  await expect(page.getByText('On for everyone, 11 would be over the cap right now.')).toBeVisible()
+
+  // The cap and the switch, saved straight to the server: no Publish.
+  const save = page.getByRole('button', { name: 'Save', exact: true })
+  await expect(save).toBeDisabled()
+  await page.getByRole('radiogroup', { name: 'Player cap: who has it' }).getByRole('radio', { name: 'On for everyone' }).click()
+  const cap = page.locator('label', { hasText: 'Players at once (cap)' }).locator('input')
+  await cap.fill('50')
+  await save.click()
+  await expect.poll(() => saved).toEqual([expect.objectContaining({ access: 'all', cap: 50, enforceWrites: false })])
+  await expect(page.getByText('Saved, live now: cap 50, on for everyone, gate off.')).toBeVisible()
+
+  // The whitelist: the players to pick from leave out the ones listed already; a pick by e-mail, with a note.
+  await expect(page.getByRole('cell', { name: 'Ash', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: /Search a name or an e-mail/ }).click()
+  await page.getByRole('combobox').fill('cerulean')
+  await expect(page.getByRole('option')).toHaveCount(1)
+  await page.getByRole('option', { name: /Misty/ }).click()
+  await page.getByPlaceholder('Why (streamer, tester…)').fill('moderator')
+  await page.getByRole('button', { name: 'Add', exact: true }).click()
+  await expect.poll(() => added).toEqual([{ p_user: MISTY, p_note: 'moderator' }])
+  await expect(page.getByRole('cell', { name: 'Misty', exact: true })).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Note for Misty' })).toHaveValue('moderator')
 })

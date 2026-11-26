@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { liveBlock, regionOf, worldRegionOf } from '@/engine/regions'
 import { missesTrades } from '@/engine/trade'
 import type { RegionSave, SaveData, SaveMode } from '@/engine/types'
+import { CCU_HEADER, ccuToken } from '@/lib/ccuToken'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/lib/supabase'
 import { parseSave } from './schema'
 import type { CloudMark } from './storage'
@@ -135,6 +136,11 @@ export const KEEPALIVE_MAX_BYTES = 60_000
  * pushCloudSave; no answer is read, nobody is left to read it. False when it can't go this way (too big for keepalive,
  * no row known): the caller pushes as usual instead.
  */
+const ccuHeader = (): Record<string, string> => {
+  const t = ccuToken()
+  return t ? { [CCU_HEADER]: t } : {}
+}
+
 export function sendSaveOnLeave(userId: string, token: string, save: SaveData, base: number | null): boolean {
   if (base == null || !SUPABASE_URL || typeof fetch !== 'function') return false
   const body = JSON.stringify({ data: save, updated_at: iso(save.updatedAt) })
@@ -154,6 +160,8 @@ export function sendSaveOnLeave(userId: string, token: string, save: SaveData, b
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
       Prefer: 'return=minimal',
+      // The player cap's gate (docs/74) checks it on a save, as on every request the Supabase client makes.
+      ...ccuHeader(),
     },
     body,
   }).catch(() => {})

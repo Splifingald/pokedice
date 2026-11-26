@@ -100,17 +100,17 @@ describe('0153 and 0154: the Rotom Room', () => {
   })
 
   it('puts the switch in Off with the prize’s level, as the game defaults it, and bumps the content version', async () => {
-    expect(await value('rotomRoom')).toEqual({ access: 'off', prizeLevel: 60 })
-    expect(DEFAULT_CONFIG.rotomRoom).toEqual({ access: 'off', prizeLevel: 60 })
+    expect(await value('rotomRoom')).toEqual({ access: 'off', prizeLevel: 44 })
+    expect(DEFAULT_CONFIG.rotomRoom).toEqual({ access: 'off', prizeLevel: 44 })
     // One step each.
     expect(await value('configVersion')).toBe(152)
   })
 
   it('rotom_room_open(): off while Off; On for everyone opens it; On for admin only for the admin', async () => {
     expect(await open()).toBe(false)
-    await setSwitch('{"access": "all", "prizeLevel": 60}')
+    await setSwitch('{"access": "all", "prizeLevel": 44}')
     expect(await open()).toBe(true)
-    await setSwitch('{"access": "admin", "prizeLevel": 60}')
+    await setSwitch('{"access": "admin", "prizeLevel": 44}')
     expect(await open()).toBe(false)
     await asJwt(ADMIN_EMAIL)
     expect(await open()).toBe(true)
@@ -140,6 +140,52 @@ describe('0153 and 0154: the Rotom Room', () => {
     expect(
       (await db.query<{ m: number }>('select min_level m from areas where id = $1', [room.id])).rows[0]!.m,
     ).toBe(55)
+    expect(await value('configVersion')).toBe(before + 2)
+  })
+
+  it('0158 moves a room 0153 put in at Lv.50–60 to Lake Valor’s road, the old pool and loot rows out', async () => {
+    // The room as the first 0153 wrote it: Lv.50–60, after the League, a pool row and a loot row it no longer has.
+    await db.query(
+      `update areas set min_level = 50, max_level = 60, enemy_upgrade_level = 8,
+         legendary_boss = '[{"dex":10008,"level":60}]'::jsonb, unlock_conditions = '[]'::jsonb where id = $1`,
+      [room.id],
+    )
+    await db.query(
+      `insert into area_wild_pool (id, area_id, dex, weight, min_level, max_level)
+       values ('cd2c115a-70e7-5087-b901-c8a6ab815b2b', $1, 405, 8, 50, 58)`,
+      [room.id],
+    )
+    await db.query(
+      `insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty, max_qty)
+       values ('00000000-0000-4000-8000-000000000158', $1, 'ether', 20, false, 1, 2)`,
+      [room.id],
+    )
+    await db.query(`update area_wild_pool set min_level = 50, max_level = 58 where area_id = $1`, [room.id])
+    await setSwitch('{"access": "admin", "prizeLevel": 60}')
+    const before = (await value('configVersion')) as number
+    for (let i = 0; i < 2; i++) await db.exec(sql('0158_rotom_room_lake_valor.sql'))
+    const a = await db.query<{
+      min_level: number
+      max_level: number
+      legendary_boss: unknown
+      unlock_conditions: unknown
+    }>('select min_level, max_level, legendary_boss, unlock_conditions from areas where id = $1', [room.id])
+    expect(a.rows[0]).toMatchObject({ min_level: room.minLevel, max_level: room.maxLevel })
+    expect(a.rows[0]!.legendary_boss).toEqual(room.legendaryBoss)
+    expect(a.rows[0]!.unlock_conditions).toEqual(room.unlockConditions)
+    const wild = await db.query<{ dex: number; min_level: number; max_level: number }>(
+      'select dex, min_level, max_level from area_wild_pool where area_id = $1 order by id',
+      [room.id],
+    )
+    expect(wild.rows).toHaveLength(room.wildPool.length)
+    expect(wild.rows.every((w) => w.max_level <= 42)).toBe(true)
+    const loot = await db.query<{ n: number }>(
+      'select count(*)::int n from area_loot_pool where area_id = $1',
+      [room.id],
+    )
+    expect(loot.rows[0]!.n).toBe(room.lootPool.length)
+    // The admin's switch kept, the old default prize moved; an edited prize would stay.
+    expect(await value('rotomRoom')).toEqual({ access: 'admin', prizeLevel: 44 })
     expect(await value('configVersion')).toBe(before + 2)
   })
 

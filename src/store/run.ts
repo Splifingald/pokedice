@@ -1295,6 +1295,10 @@ function startBattle(kind: BattleKind, enemy: FoeSeed, leadUid?: string, double?
     data,
   )
   useGame.setState((s) => ({ battle: { state, log, id: ++battleSeq }, run: { ...s.run, phase: 'battle' } }))
+  // A fight over before anyone acts (nobody on either side can hurt the other: an all-Normal team against a Ghost
+  // trainer) gets no dispatch to settle it, so it is settled here, or the screen waits on it forever.
+  if (state.phase === 'won' || state.phase === 'lost' || state.phase === 'fled')
+    settleBattle(log.some((l) => l.kind === 'end' && l.reason === 'stalemate'))
 }
 
 /** What ENGAGE settles once the fight is really on: the skips start over, a challenge goes on the area's record. */
@@ -2405,3 +2409,17 @@ export function replaceSave(save: SaveData) {
 }
 
 export const rewardEvents = (): RunEvent[] => useGame.getState().run.events
+
+/**
+ * A fight picked up at load (store/resume.ts) that is already over, never settled: an older build left a fight that
+ * ended as it opened (nobody able to hurt anybody) in 'battle', with no button out. Settled now, so its card shows.
+ */
+export function settleOverFight() {
+  const { run, battle } = useGame.getState()
+  const phase = battle?.state.phase
+  if (run.phase !== 'battle' || (phase !== 'won' && phase !== 'lost' && phase !== 'fled')) return
+  settleBattle(battle!.log.some((l) => l.kind === 'end' && l.reason === 'stalemate'))
+}
+
+// Last in the module: settleBattle needs the run's random numbers above.
+settleOverFight()

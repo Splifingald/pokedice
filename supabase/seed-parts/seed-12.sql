@@ -1185,12 +1185,17 @@ insert into area_loot_pool (id, area_id, item_key, weight, unique_find, min_qty,
   ('cb20f0b9-da4b-594a-a678-450d03ed770b', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'great-ball', 3, false, 1, 2, null),
   ('c11f996f-f818-5b78-a861-35f6faab7693', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'ultra-ball', 1, false, 1, 1, null),
   ('73301700-6705-5c69-a182-7aa6e9a72dc1', '38fc3c59-6f8d-5aa8-a299-a5bb949254b2', 'money', 3, false, 100, 300, null),
-  ('1a2904dd-10c9-5a44-9d54-498fd09f50df', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'hyper-potion', 20, false, 1, 2, null),
-  ('f2782a0d-a41f-52c5-aae3-85d924dfd4ee', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ultra-ball', 20, false, 1, 2, null),
-  ('980101ea-9ac4-5f41-871d-63b481352a4f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'max-ether', 12, false, 1, 1, null),
-  ('732742d4-8896-569e-b940-2637f6a25149', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'rare-candy', 8, false, 1, 1, null),
-  ('060f11f4-6a02-5e98-bf51-f58227fee985', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'money', 20, false, 200, 400, null),
-  ('80fd03f5-87b7-5654-b18d-90dd26f4ace8', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ether', 8, false, 1, 2, null)
+  ('775daf7f-9d46-5918-9f68-20d374f88091', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'super-potion', 12, false, 1, 2, null),
+  ('1a2904dd-10c9-5a44-9d54-498fd09f50df', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'hyper-potion', 14, false, 1, 1, null),
+  ('e41caeda-e677-5a63-8e14-2705f053f8d1', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'great-ball', 12, false, 1, 2, null),
+  ('f2782a0d-a41f-52c5-aae3-85d924dfd4ee', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ultra-ball', 12, false, 1, 1, null),
+  ('c983b98d-aa2a-5c54-9a84-54b9d39a188a', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'paralyze-heal', 4, false, 1, 1, null),
+  ('1c5e6781-5b56-52df-bb85-220a756e80cb', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'burn-heal', 4, false, 1, 1, null),
+  ('8920329b-7459-5c5e-81da-f74f3eb1c798', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ice-heal', 4, false, 1, 1, null),
+  ('80fd03f5-87b7-5654-b18d-90dd26f4ace8', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'ether', 8, false, 1, 2, null),
+  ('980101ea-9ac4-5f41-871d-63b481352a4f', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'max-ether', 6, false, 1, 1, null),
+  ('732742d4-8896-569e-b940-2637f6a25149', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'rare-candy', 3, false, 1, 1, null),
+  ('060f11f4-6a02-5e98-bf51-f58227fee985', '875e7168-7d1b-58ac-bdd9-67c0ce365c95', 'money', 18, false, 100, 200, null)
 on conflict (id) do update set area_id = excluded.area_id, item_key = excluded.item_key, weight = excluded.weight, unique_find = excluded.unique_find, min_qty = excluded.min_qty, max_qty = excluded.max_qty, disguise = excluded.disguise;
 
 insert into combo_upgrades (combo_key, level, bonus, cost) values

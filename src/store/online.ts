@@ -24,6 +24,35 @@ const TIMER_GAP_MS = ONLINE_PING_MS - 15_000
 let lastPing = 0
 let pinging = false
 
+/**
+ * The player cap's heartbeat (docs/74, src/store/ccu.ts) carries this ping when it runs: one timer, not two. It answers
+ * whether it took it (false: not in the game, or the cap isn't on this server: online_ping as before).
+ */
+let viaHeartbeat: ((minGap: number) => boolean) | null = null
+export function routeOnlineThroughHeartbeat(fn: ((minGap: number) => boolean) | null) {
+  viaHeartbeat = fn
+}
+
+/** Whether the card is due, by the same rules as the ping's own (visible, the sign-in known, the gap). */
+export function onlineCardDue(minGap = TIMER_GAP_MS): boolean {
+  if (useGame.getState().auth.status === 'unknown') return false
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return false
+  return Date.now() - lastPing >= minGap
+}
+
+/** The card as the heartbeat sends it (ccu_heartbeat's p_card), or null without a save to show. */
+export function onlineCard(): { name: string | null; look?: string; badges: number; team: OnlineMon[] } | null {
+  const c = myCard()
+  if (c.p_badges == null) return null
+  return { name: c.p_name ?? null, look: c.p_look, badges: c.p_badges, team: c.p_team ?? [] }
+}
+
+/** The heartbeat carried the card: the count it brought back, and the next one due from now. */
+export function onlineAnswered(n: number | null) {
+  lastPing = Date.now()
+  if (n != null) useOnlineCount.setState({ count: n > 0 ? n : null })
+}
+
 /** A team holds 3 Pokémon: the most a card carries (the server keeps no more). */
 export const ONLINE_TEAM_MAX = 3
 
@@ -59,6 +88,7 @@ function myCard(): { p_name?: string | null; p_look?: string; p_badges?: number;
 /** Says this game is open and keeps the count, unless the last call was less than `minGap` ago. */
 export async function pingOnline(minGap = TIMER_GAP_MS): Promise<void> {
   if (!isSupabaseConfigured || pinging) return
+  if (viaHeartbeat?.(minGap)) return
   // Until the sign-in is known, the call would count the device and then the account: the same player twice.
   if (useGame.getState().auth.status === 'unknown') return
   if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
@@ -168,5 +198,6 @@ export async function inviteOnline(id: string): Promise<InviteStatus> {
 export function resetOnlinePing() {
   lastPing = 0
   pinging = false
+  viaHeartbeat = null
   useOnlineCount.setState({ count: null })
 }

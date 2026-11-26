@@ -15,6 +15,8 @@ import {
   resolveCatch,
   rollNext,
   seedRun,
+  sendNextFoe,
+  settleOverFight,
   skipEncounter,
   startNewGame,
   canSkipCurrent,
@@ -277,5 +279,51 @@ describe('run flow', () => {
     }))
     expect(travelTo(data.areas[1]!)).toBe(false)
     expect(useGame.getState().run.phase).toBe('victory')
+  })
+
+  // Rextar's fight (2026-11-22): an all-Linoone team against a trainer's Dusknoir. Nobody can hurt anybody, so the
+  // engine ends the fight as it opens; the store has to settle it then, or the screen waits forever with no way out.
+  it('a fight over as it opens (nobody can hurt anybody) is settled as a stalemate', () => {
+    const allLinoone = () => {
+      seedRun(5)
+      startNewGame(4)
+      enterArea(useGame.getState().data.areas[0]!.id)
+      useGame.setState((s) => ({
+        save: { ...s.save!, box: s.save!.box.map((p) => (s.save!.team.includes(p.id) ? { ...p, dex: 264 } : p)) },
+      }))
+    }
+    const dusknoir = { dex: 477, level: 90 }
+
+    // Met first.
+    allLinoone()
+    useGame.setState((s) => ({
+      run: { ...s.run, phase: 'preview', encounter: { kind: 'trainer', trainerId: 't', name: 'Hex Maniac', spriteUrl: null, team: [dusknoir] } },
+    }))
+    engage(useGame.getState().save!.team[0])
+    expect(useGame.getState().battle!.state.phase).toBe('fled')
+    expect(useGame.getState().run.phase).toBe('stalemate')
+
+    // Sent out after the trainer's first one is down.
+    allLinoone()
+    useGame.setState((s) => ({
+      run: {
+        ...s.run,
+        phase: 'victory',
+        encounter: { kind: 'trainer', trainerId: 't', name: 'Hex Maniac', spriteUrl: null, team: [{ dex: 19, level: 3 }, dusknoir] },
+        trainer: { index: 0, gold: 10 },
+      },
+    }))
+    sendNextFoe()
+    expect(useGame.getState().run.phase).toBe('stalemate')
+
+    // Left stuck by the older build and picked up at load: the fight over, the run still in 'battle'.
+    allLinoone()
+    useGame.setState((s) => ({
+      run: { ...s.run, phase: 'preview', encounter: { kind: 'trainer', trainerId: 't', name: 'Hex Maniac', spriteUrl: null, team: [dusknoir] } },
+    }))
+    engage(useGame.getState().save!.team[0])
+    useGame.setState((s) => ({ run: { ...s.run, phase: 'battle', trainer: { index: 0, gold: 0 } } }))
+    settleOverFight()
+    expect(useGame.getState().run.phase).toBe('stalemate')
   })
 })

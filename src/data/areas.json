@@ -61532,8 +61532,8 @@
   "name": "The Rotom Room",
   "bannerUrl": "/banners/factory.png",
   "roundsToClear": 2,
-  "minLevel": 50,
-  "maxLevel": 60,
+  "minLevel": 36,
+  "maxLevel": 44,
   "encounterWeights": {
    "item": 1,
    "wild": 6,
@@ -61545,34 +61545,34 @@
   "legendaryBoss": [
    {
     "dex": 10008,
-    "level": 60
+    "level": 44
    },
    {
     "dex": 10009,
-    "level": 60
+    "level": 44
    },
    {
     "dex": 10010,
-    "level": 60
+    "level": 44
    },
    {
     "dex": 10011,
-    "level": 60
+    "level": 44
    },
    {
     "dex": 10012,
-    "level": 60
+    "level": 44
    }
   ],
   "scalesToTeam": false,
   "easyMode": false,
-  "enemyUpgradeLevel": 8,
+  "enemyUpgradeLevel": 7,
   "battleBackground": "default",
   "hidden": true,
   "unlockConditions": [
    {
-    "kind": "cleared",
-    "areaId": "5dc66787-c27b-5d67-8d66-4df0f1aa1041"
+    "kind": "area",
+    "areaId": "ffd172b1-9ee2-54a8-bc39-a66661a7e0b8"
    }
   ],
   "gyms": [],
@@ -61581,212 +61581,228 @@
     "id": "e32f7bfa-0445-58fd-a48e-9917e1d0d6f9",
     "dex": 405,
     "weight": 10,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
-    "id": "cd2c115a-70e7-5087-b901-c8a6ab815b2b",
-    "dex": 462,
+    "id": "dcf25ed5-a596-5807-8009-daecfad2d16f",
+    "dex": 125,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
-   },
-   {
-    "id": "d2b25a31-1a38-59c1-be49-b7f33793b888",
-    "dex": 466,
-    "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "765f6216-5a80-571a-8d1c-ba6b820a0e91",
     "dex": 171,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "40d73fdf-da1e-56ac-aea4-c2a854d00b7f",
     "dex": 417,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
-    "id": "5bb7b674-2246-5c8c-b49c-df7ab930986d",
-    "dex": 467,
+    "id": "67716c54-84f9-5e82-9533-c5fd3333b3e8",
+    "dex": 126,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "b3f218e1-64f4-5088-a80f-d02a8aa60c37",
     "dex": 229,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "4e594de2-6b56-5cbc-b7fc-1fb6d12e595f",
     "dex": 324,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "5082ca31-80b6-5797-ab53-955ca69d2690",
     "dex": 219,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 38,
+    "maxLevel": 42
    },
    {
     "id": "55528bee-0986-5dff-82ce-fe2c82ee4ec6",
     "dex": 419,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "2192770b-a894-54bc-ac5d-4a2ab85c8325",
     "dex": 423,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "06e500c9-a735-5729-94e2-35c1e24e3243",
     "dex": 457,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "645466ba-e46e-5f73-9a31-ab67018b409e",
     "dex": 55,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "b022d342-39a9-5cba-bdc8-eb5ad079034d",
     "dex": 130,
     "weight": 3,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
-    "id": "63e3aa66-cff6-5a10-8b2a-b5ccb09da114",
-    "dex": 461,
+    "id": "7cec74a5-74b7-568f-80d4-81e6b590ef7f",
+    "dex": 215,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
-    "id": "e0a013c9-be66-51f0-a4da-24f90b69e026",
-    "dex": 478,
+    "id": "9a8a6029-1b74-564a-8f3a-6ba55d63bede",
+    "dex": 361,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
-   },
-   {
-    "id": "71136eca-a0a5-5ce1-92bf-2ecd0721b4c2",
-    "dex": 362,
-    "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 41
    },
    {
     "id": "7881bca8-449e-5708-acb7-2b2ddfca5d52",
     "dex": 473,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
+   },
+   {
+    "id": "b8991615-d321-5b2c-9ab8-ac8566ea8354",
+    "dex": 459,
+    "weight": 6,
+    "minLevel": 36,
+    "maxLevel": 39
+   },
+   {
+    "id": "235b0587-db53-582f-b5e9-b155bb814277",
+    "dex": 460,
+    "weight": 4,
+    "minLevel": 40,
+    "maxLevel": 42
    },
    {
     "id": "f483ca72-842c-5cc3-b10c-6732aa03130d",
     "dex": 398,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
-    "id": "7a91f9aa-e235-5b2d-be7b-271dba3c1685",
-    "dex": 430,
+    "id": "edf03e0c-282d-5640-b625-4773072768fb",
+    "dex": 164,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "f23f9f49-d7a1-5f43-af2d-263e0646c4d1",
     "dex": 426,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "094ea05b-be08-58bd-86bb-c5d3fb7448c6",
     "dex": 472,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "cc66e78d-8017-5c8d-9dc0-2f6f228575ed",
     "dex": 469,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
-    "id": "fd95784f-3fa2-5c24-b07a-b6ed273fd5c7",
-    "dex": 407,
+    "id": "9b1cb4e9-7b56-5478-9c7c-5b9ad885a336",
+    "dex": 441,
+    "weight": 4,
+    "minLevel": 36,
+    "maxLevel": 42
+   },
+   {
+    "id": "69d9cca0-f67e-5457-b425-3a110798b654",
+    "dex": 315,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "49f5b0bd-a633-5001-92ac-4ede78fc622a",
     "dex": 465,
     "weight": 8,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "c4d148dc-9bf0-5de4-9d38-546cc422522d",
     "dex": 455,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "6f7170ff-787f-5a96-9d6f-bc9f36b6ec61",
     "dex": 421,
     "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
-   },
-   {
-    "id": "235b0587-db53-582f-b5e9-b155bb814277",
-    "dex": 460,
-    "weight": 6,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    },
    {
     "id": "5686f3dc-f5cd-5906-a798-61dd0c89a4c3",
     "dex": 357,
     "weight": 4,
-    "minLevel": 50,
-    "maxLevel": 58
+    "minLevel": 36,
+    "maxLevel": 42
    }
   ],
   "trainerPool": [],
   "lootPool": [
    {
+    "id": "775daf7f-9d46-5918-9f68-20d374f88091",
+    "itemKey": "super-potion",
+    "weight": 12,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 2
+   },
+   {
     "id": "1a2904dd-10c9-5a44-9d54-498fd09f50df",
     "itemKey": "hyper-potion",
-    "weight": 20,
+    "weight": 14,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "e41caeda-e677-5a63-8e14-2705f053f8d1",
+    "itemKey": "great-ball",
+    "weight": 12,
     "unique": false,
     "minQty": 1,
     "maxQty": 2
@@ -61794,34 +61810,34 @@
    {
     "id": "f2782a0d-a41f-52c5-aae3-85d924dfd4ee",
     "itemKey": "ultra-ball",
-    "weight": 20,
-    "unique": false,
-    "minQty": 1,
-    "maxQty": 2
-   },
-   {
-    "id": "980101ea-9ac4-5f41-871d-63b481352a4f",
-    "itemKey": "max-ether",
     "weight": 12,
     "unique": false,
     "minQty": 1,
     "maxQty": 1
    },
    {
-    "id": "732742d4-8896-569e-b940-2637f6a25149",
-    "itemKey": "rare-candy",
-    "weight": 8,
+    "id": "c983b98d-aa2a-5c54-9a84-54b9d39a188a",
+    "itemKey": "paralyze-heal",
+    "weight": 4,
     "unique": false,
     "minQty": 1,
     "maxQty": 1
    },
    {
-    "id": "060f11f4-6a02-5e98-bf51-f58227fee985",
-    "itemKey": "money",
-    "weight": 20,
+    "id": "1c5e6781-5b56-52df-bb85-220a756e80cb",
+    "itemKey": "burn-heal",
+    "weight": 4,
     "unique": false,
-    "minQty": 200,
-    "maxQty": 400
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "8920329b-7459-5c5e-81da-f74f3eb1c798",
+    "itemKey": "ice-heal",
+    "weight": 4,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
    },
    {
     "id": "80fd03f5-87b7-5654-b18d-90dd26f4ace8",
@@ -61830,6 +61846,30 @@
     "unique": false,
     "minQty": 1,
     "maxQty": 2
+   },
+   {
+    "id": "980101ea-9ac4-5f41-871d-63b481352a4f",
+    "itemKey": "max-ether",
+    "weight": 6,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "732742d4-8896-569e-b940-2637f6a25149",
+    "itemKey": "rare-candy",
+    "weight": 3,
+    "unique": false,
+    "minQty": 1,
+    "maxQty": 1
+   },
+   {
+    "id": "060f11f4-6a02-5e98-bf51-f58227fee985",
+    "itemKey": "money",
+    "weight": 18,
+    "unique": false,
+    "minQty": 100,
+    "maxQty": 200
    }
   ]
  }

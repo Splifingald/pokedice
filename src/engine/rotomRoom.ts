@@ -1,4 +1,4 @@
-// The Rotom Room (docs/73): a Sinnoh secret area, open once the League is cleared, where Rotom's five appliance forms
+// The Rotom Room (docs/73): a Sinnoh secret area, open once Lake Valor & Lake Acuity is reached (Lv.36–44), where Rotom's five appliance forms
 // are caught, one a week. Each player's week has its own form, one they don't own yet (drawn at the week's start and
 // pinned in the save), and the room deals that week's Pokémon: the Electric ones and those of the form's type. After
 // its rounds comes the form itself, a boss. Caught, the room is closed until next Monday; with all five owned, for
@@ -37,7 +37,7 @@ export const rotomRoomOn = (data: GameData): boolean => eventOpenTo(data.config.
 
 /** The level of the shiny Rotom the complete Rotom Pokédex brings (the admin's number). */
 export const rotomPrizeLevel = (data: GameData): number =>
-  Math.max(1, Math.min(data.config.maxLevel, Math.round(data.config.rotomRoom?.prizeLevel ?? 60)))
+  Math.max(1, Math.min(data.config.maxLevel, Math.round(data.config.rotomRoom?.prizeLevel ?? 44)))
 
 /** The Rotom Room: the area whose bosses are Rotom's forms. */
 export const isRotomRoom = (area: Pick<Area, 'legendaryBoss'>): boolean =>
@@ -86,7 +86,7 @@ export function noteRotomDex(save: SaveData): SaveData {
   return addRotomForms(save, [...formsIn(box), ...formsIn(care.map((r) => r.inst))])
 }
 
-/** The page is there: the switch, and the room opened (Sinnoh's League cleared) while playing Sinnoh. */
+/** The page is there: the switch, and the room opened (Lake Valor & Lake Acuity reached) while playing Sinnoh. */
 export function rotomDexOpen(save: SaveData, data: GameData): boolean {
   if (!rotomRoomOn(data) || regionOf(save) !== ROTOM_REGION) return false
   const room = rotomRoomBase(data)

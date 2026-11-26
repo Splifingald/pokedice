@@ -64,7 +64,8 @@ import { PushBox } from './PushBox'
 import { VersusLeagueBox } from './VersusLeagueBox'
 import { AreaVersusBox } from './AreaVersusBox'
 import { RivalMatchBox } from './RivalMatchBox'
-import { BetaTestersBox, FriendBattlesBox } from './FriendBattlesBox'
+import { FriendBattlesBox } from './FriendBattlesBox'
+import { PlayerCapTab, WhitelistBox } from './PlayerCapBox'
 import { VersusLeagueGroups } from './VersusLeagueGroups'
 
 export function useConfigRow<K extends keyof GameConfig>(key: K): [GameConfig[K], (v: GameConfig[K]) => void] {
@@ -719,7 +720,7 @@ function RotomRoomBox() {
     <Box
       title="Rotom Room"
       icon="book"
-      hint="A Sinnoh secret area, open once Sinnoh's League is cleared. Each Monday (00:00 UTC) every player gets one Rotom form they don't own yet; the room deals its Electric Pokémon and those of that form's type (rows of other types wait for their week), then the form as its boss. Caught, the room closes until next Monday; all five owned, for good. The Pokédex gets a Rotom page (the region's Pokédex keeps its one Rotom), and the fifth form brings a shiny Rotom at the level below, once. Off, the room is nowhere."
+      hint="A Sinnoh secret area (Lv.36–44), open once the player reaches Lake Valor & Lake Acuity, before the League. Each Monday (00:00 UTC) every player gets one Rotom form they don't own yet; the room deals its Electric Pokémon and those of that form's type (rows of other types wait for their week), then the form as its boss. Caught, the room closes until next Monday; all five owned, for good. The Pokédex gets a Rotom page (the region's Pokédex keeps its one Rotom), and the fifth form brings a shiny Rotom at the level below, once. Off, the room is nowhere."
     >
       <div className="grid gap-3 sm:grid-cols-4">
         <Field label="Shiny Rotom's level" hint="for all five forms, once">
@@ -727,7 +728,7 @@ function RotomRoomBox() {
             min={1}
             max={100}
             value={cfg.prizeLevel}
-            onChange={(v) => setRaw({ ...cfg, prizeLevel: Math.max(1, Math.min(100, Math.round(v ?? 60))) })}
+            onChange={(v) => setRaw({ ...cfg, prizeLevel: Math.max(1, Math.min(100, Math.round(v ?? 44))) })}
           />
         </Field>
       </div>
@@ -1583,6 +1584,7 @@ function GameSettings() {
 
 const TABS = [
   { id: 'switches', label: 'Switches', icon: 'gear' },
+  { id: 'capacity', label: 'Capacity', icon: 'user' },
   { id: 'game', label: 'Game', icon: 'trophy' },
   { id: 'odds', label: 'Pity & status', icon: 'burn' },
   { id: 'dayCare', label: 'Day Care', icon: 'heal' },
@@ -1892,7 +1894,8 @@ export function ConfigSection() {
         ))}
       </nav>
       {tab === 'switches' && <SwitchesTable open={open} />}
-      {tab === 'switches' && <BetaTestersBox />}
+      {tab === 'switches' && <WhitelistBox />}
+      {tab === 'capacity' && <PlayerCapTab />}
       {tab === 'game' && <GameSettings />}
       {tab === 'odds' && (
         <div className="grid gap-4 xl:grid-cols-2">
