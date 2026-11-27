@@ -51,6 +51,11 @@ with `src/components/ExtremeRuns.tsx` and `src/components/ExtremeBoard.tsx`; the
   boot and with every new content or language, `withViewer`). Gifts and invite rewards never open in Extreme already
   (they wait for the main game and say so), and trades are main-save only. The Social tab has no Versus there, and its
   board is the Extreme one.
+- What only an event gave is still within reach (a player's report, 2026-11-23): the Fortune Wheel's jackpot Pokémon
+  (Porygon) is met in the wild of the wheel's own area, Routes 7 & 8, in Extreme (`wheelInTheWild`, `RACE_WHEEL_WILD`:
+  weight 3, Lv.20–24, about as rare as Eevee there), so Kanto's 151 and Faraway Island (150 caught) can be reached.
+  The set gifts (docs/61 §5.3) are never dealt in Extreme, so `raceData` switches them off too, and the Pokédex
+  (`regionSpecies`) counts neither them nor a wheel that is off: Sinnoh's Extreme page lists 190, not 200.
 - No General upgrades and no shinies: `raceData` also switches the General upgrades (and the Shiny Charm) off, Trick
   or Treat off, sets the wild shiny odds to 0 and takes the shiny off the trainers' and bosses' set Pokémon; `applyCatch`
   never makes an Extreme catch shiny; `noShinies(save)` (in the store's `settle`) takes the colours off any Pokémon an

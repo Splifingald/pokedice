@@ -127,7 +127,11 @@ checkbox per boss.
 ### 3.4 Save (`EventsSave`, zod schema)
 - `raidsDone?: string[]`: the progression raids caught (at most 200). Never undone: a sync keeps the ones either copy
   has, and at sign-in the game adds back any the server recorded in `raid_progress_done` and the save lost
-  (`raid_progress_mine`, migration 0089; docs/49).
+  (`raid_progress_mine`, migration 0089; docs/49). A raid caught pushes the save to the cloud at once, so the Pokémon
+  goes up with the server's record; and a raid in `raidsDone` whose Pokémon no Pokédex holds (a copy of the save that
+  won a sync before the catch went up: Latias and Latios, a player's report of 2026-11-19) joins its region's Box again
+  in the store's `settle` (`restoreRaidCatches`, with the "unlocked, it's in your Box" toast). Real regions only, never
+  in Extreme; a Pokédex never loses a species, so one traded or released isn't given back.
 - `raidTeams?: Record<string, string[]>`: the team left on each progression raid (three ids each).
 - `raidNpc?: { key: string; seed: number }`.
 

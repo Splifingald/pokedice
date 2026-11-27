@@ -4,6 +4,7 @@
 // on it: friends bring it to their own raid of that Pokémon. The fight itself is the day's raid's (engine/raidBattle.ts).
 import { raidBosses, shinyLocked } from './encounters'
 import { areaProgressAnywhere } from './events'
+import { isExtreme } from './extreme'
 import { portalModeOf } from './portalMode'
 import { nightmareModeOf } from './nightmareMode'
 import { timeRaceModeOf } from './timeRaceMode'
@@ -185,6 +186,52 @@ export function applyProgressRaidCatch(
     raid.boss.talent,
   )
   return { save: res.save, region: res.region, instId: res.instId, live: res.live }
+}
+
+/**
+ * A progression raid marked won whose Pokémon no Pokédex holds joins its region's Box (a player's report, 2026-11-19:
+ * Latias and Latios caught, then gone). The server notes the win at once (0089) but the Box reaches the cloud only with
+ * the next upload, so a copy of the save that wins a sync before that keeps the win (`keepRaidsDone`) and not the
+ * Pokémon. A Pokédex never loses a species, so a won raid missing from every one was lost that way. Real regions only
+ * (a small world's Pokédex goes when it closes, its catches home on their own) and never in Extreme. `restored` lists
+ * them, for a message.
+ */
+export function restoreRaidCatches(
+  save: SaveData,
+  data: GameData,
+  now: number,
+  newId: () => string,
+): { save: SaveData; restored: ProgressRaid[] } {
+  const done = save.events?.raidsDone
+  if (!done?.length || isExtreme(save)) return { save, restored: [] }
+  const caught = new Set(save.pokedex)
+  for (const block of Object.values(save.parked ?? {}))
+    for (const dex of block?.pokedex ?? []) caught.add(dex)
+  let next = save
+  const restored: ProgressRaid[] = []
+  for (const key of done) {
+    const raid = progressRaidOf(data, key)
+    if (
+      !raid ||
+      raid.mega ||
+      caught.has(raid.dex) ||
+      !data.species[raid.dex] ||
+      isWorldRegion(data, raid.region)
+    )
+      continue
+    next = addRaidMon(
+      next,
+      data,
+      { dex: raid.dex, shiny: progressRaidShiny(data, raid), areaId: raid.areaId },
+      now,
+      newId,
+      'progress',
+      raid.boss.talent,
+    ).save
+    caught.add(raid.dex)
+    restored.push(raid)
+  }
+  return { save: next, restored }
 }
 
 /**

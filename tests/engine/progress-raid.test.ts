@@ -23,6 +23,7 @@ import {
   raidTeamCap,
   regionBox,
   regionSpecies,
+  restoreRaidCatches,
   setProgressRaidTeam,
   settleClears,
   startRegion,
@@ -224,6 +225,56 @@ describe('the catch', () => {
       newId,
     )
     expect(r.save.box.find((p) => p.id === r.instId)?.talent).toBeFalsy()
+  })
+})
+
+describe('a raid catch a sync lost', () => {
+  // A player's report (2026-11-19): Latias and Latios caught, the raids closed, the Pokémon nowhere. Another copy of the
+  // save won a sync before the catch went up, and kept the raid won (keepRaidsDone) without the Pokémon.
+  const lugia = () => progressRaidOf(data, progressRaidKey(WHIRL.id, 249))!
+  const lost = (s: SaveData, key: string): SaveData => ({ ...s, events: { ...s.events, raidsDone: [key] } })
+
+  it('a raid won whose Pokémon no Pokédex holds joins its region’s Box again, parked or live', () => {
+    const s = lost(
+      playing(withProgress(playing(fresh(), 'johto'), WHIRL, { cleared: true }), 'hoenn'),
+      lugia().key,
+    )
+    const r = restoreRaidCatches(s, data, 5, newId)
+    expect(r.restored.map((x) => x.dex)).toEqual([249])
+    expect(r.save.parked?.johto?.box.map((p) => p.dex)).toContain(249)
+    expect(r.save.parked?.johto?.pokedex).toContain(249)
+    expect(r.save.box.map((p) => p.dex)).not.toContain(249)
+    // Once only: the Pokédex holds it now.
+    expect(restoreRaidCatches(r.save, data, 6, newId)).toEqual({ save: r.save, restored: [] })
+    const live = restoreRaidCatches(
+      lost(withProgress(fresh(), SEAFOAM, { cleared: true }), ARTICUNO),
+      data,
+      5,
+      newId,
+    )
+    expect(live.save.box.map((p) => p.dex)).toContain(144)
+  })
+
+  it('nothing when the Pokédex holds it (traded away, released), for a stale key, or in Extreme', () => {
+    const caught = applyProgressRaidCatch(
+      withProgress(fresh(), SEAFOAM, { cleared: true }),
+      data,
+      progressRaidOf(data, ARTICUNO)!,
+      5,
+      newId,
+    ).save
+    const gone = {
+      ...caught,
+      box: caught.box.filter((p) => p.dex !== 144),
+      team: caught.team.filter((id) => caught.box.find((p) => p.id === id)?.dex !== 144),
+    }
+    expect(restoreRaidCatches(gone, data, 6, newId).save).toBe(gone)
+    const stale = lost(fresh(), 'nowhere:144')
+    expect(restoreRaidCatches(stale, data, 6, newId).save).toBe(stale)
+    const off = lost(fresh(), ARTICUNO)
+    expect(restoreRaidCatches(off, bossData, 6, newId).save).toBe(off)
+    const extreme = { ...lost(fresh(), ARTICUNO), mode: 'extreme' as const }
+    expect(restoreRaidCatches(extreme, data, 6, newId).save).toBe(extreme)
   })
 })
 
