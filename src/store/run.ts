@@ -254,6 +254,7 @@ import { sideQuestAllowed, sideQuestCached, sideQuestKnown } from './sideQuests'
 import { askSafari, closeSafariAsk, useSafariAsk } from './safariAsk'
 import { weatherHere } from './flavours'
 import { t } from '@/i18n'
+import { money } from '@/lib/format'
 
 // An encounter picked up from the last visit (store/resume.ts) rolls on from where both streams stood, so a reload
 // throws the same dice staying would have; its ids carry on too, so the next battle or ghost is a new screen.
@@ -452,6 +453,7 @@ function rollPortal(save: SaveData, areaId: string) {
   if (drawn.card === 'distortion') {
     const opened = openDistortion(drawn.save, data, areaId, runRng)
     if (opened) commitSave(opened.save)
+    if (opened?.gold) pushToast(t('ui.plates.landingGold', { gold: money(opened.gold) }), 'good')
     if (opened?.closedAtOnce)
       pushToast(t(closedToastKey(data, areaId), { n: portalStateOf(opened.save, areaId).closed }), 'good')
     setRun({ phase: 'idle', encounter: null, firstInArea: false })
@@ -499,6 +501,8 @@ export function pickDistortionOffer(index: number) {
   commitSave(res.save)
   const n = portalStateOf(res.save, run.areaId).closed
   if (res.itemKey) pushToast(t('ui.portal.gotItem', { item: data.items[res.itemKey]?.name ?? res.itemKey }), 'good')
+  // The Hall of Origin's ₽ for a landing climbed the first time (landingGold).
+  if (res.gold) pushToast(t('ui.plates.landingGold', { gold: money(res.gold) }), 'good')
   pushToast(t(closedToastKey(data, run.areaId), { n }), 'good')
 }
 

@@ -116,10 +116,12 @@ describe('Snowglobe Valley', () => {
     const hall = h.areas.find((a) => a.name === 'Hall of Origin')!
     const mode = normalisePortal(hall.mode)!
     // The run's rules and numbers are Distortion World's; only its look and its raid are its own.
-    const { skin, raid, ...rules } = mode
-    const { raid: _dwRaid, ...dwRules } = DEFAULT_PORTAL_RUN
+    const { skin, raid, wild, landingGold, ...rules } = mode
+    const { raid: _dwRaid, wild: _dwWild, ...dwRules } = DEFAULT_PORTAL_RUN
     expect(rules).toEqual(dwRules)
     expect(skin).toBe('plates')
+    // 3 Pokémon a landing and ₽100 each the first time (the user's call, 2026-11-27).
+    expect([wild, landingGold]).toEqual([3, 100])
     expect(raid).toEqual({
       level: 90,
       upgradeLevel: 10,

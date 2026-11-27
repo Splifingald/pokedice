@@ -90,6 +90,8 @@ export function normalisePortal(raw: unknown): PortalRunMode | null {
     },
     die: { weight: num(die.weight, d.die.weight, 0, 1e6), maxDice: int(die.maxDice, d.die.maxDice, 1, 12) },
     item: { weight: num(item.weight, d.item.weight, 0, 1e6), items },
+    // Written only when set, so Distortion World's mode reads exactly as it always has.
+    ...(int(r.landingGold, 0, 0, 100000) > 0 && { landingGold: int(r.landingGold, 0, 0, 100000) }),
     raid: {
       level: int(raid.level, d.raid.level, 1, 100),
       upgradeLevel: int(raid.upgradeLevel, d.raid.upgradeLevel, 1, 10),

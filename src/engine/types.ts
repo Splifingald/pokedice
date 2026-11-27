@@ -652,6 +652,11 @@ export interface PortalRunMode {
   /** A rare item into the bag, drawn from `items` by weight. */
   item: { weight: number; items: { key: string; weight: number }[] }
   /**
+   * ₽ for each portal closed (each landing climbed) the first time only (the Hall of Origin's 100, the user's call of
+   * 2026-11-27): a run after a wipe pays only the ones never reached. Absent or 0: none.
+   */
+  landingGold?: number
+  /**
    * The area's raid once the run is won: its level, the foe's dice level, its HP bars and the teams' level cap.
    * `barTypes`: the type the raid Pokémon takes at the start of each bar (the Hall of Origin's Arceus changing its Plate:
    * Normal → Ice → Steel → Dragon), through its type forms; absent or short, it keeps the type it has.
@@ -692,6 +697,8 @@ export interface PortalState {
   wonSeen?: boolean
   /** Runs started here (a wipe ends one). */
   tries?: number
+  /** The most portals ever closed in one run here: `landingGold` is paid once for each (kept through a wipe). */
+  paid?: number
 }
 
 export type UnlockCondition =

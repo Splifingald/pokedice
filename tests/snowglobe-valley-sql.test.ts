@@ -18,6 +18,7 @@ const PATCHES = [
   '0152_welcome_gift.sql',
   '0155_spear_pillar_clock.sql',
   '0156_spear_pillar_clock_6_5.sql',
+  '0159_hall_of_origin_landings.sql',
 ]
 const runAll = async () => {
   await db.exec(sql(FILE))
@@ -76,8 +77,8 @@ describe('0122: Snowglobe Valley', () => {
     expect(worlds.access).toBe('everyone')
     expect(worlds.list.map((w) => w.id)).toEqual(['haunted-hollow-2026', WORLD_ID])
     expect(worlds.list[1]).toEqual(JSON.parse(JSON.stringify(h.world)))
-    // 0122, then 0150, 0151, 0152, 0155 and 0156.
-    expect(await cfg('configVersion')).toBe(126)
+    // 0122, then 0150, 0151, 0152, 0155, 0156 and 0159.
+    expect(await cfg('configVersion')).toBe(127)
   })
 
   it('has the script’s starters and wild pools once 0150 has run', async () => {
@@ -146,6 +147,13 @@ describe('0122: Snowglobe Valley', () => {
     expect(mode).toEqual(JSON.parse(JSON.stringify(pillar.mode)))
   })
 
+  it('has the script’s Hall of Origin run once 0159 has run: 3 Pokémon a landing, ₽100 each', async () => {
+    const hall = h.areas.find((a) => a.name === 'Hall of Origin')!
+    const mode = (await db.query<{ m: unknown }>(`select mode m from areas where id = $1`, [hall.id])).rows[0]!.m
+    expect(mode).toEqual(JSON.parse(JSON.stringify(hall.mode)))
+    expect(mode).toMatchObject({ wild: 3, landingGold: 100 })
+  })
+
   it('has the script’s trainers’ teams once 0151 has run', async () => {
     const teams = await db.query<{ id: string; team: unknown }>(`select id, team from trainers order by id`)
     expect(teams.rows).toEqual(
@@ -176,6 +184,6 @@ describe('0122: Snowglobe Valley', () => {
     expect(await count('select count(*)::int n from area_wild_pool')).toBe(
       h.areas.reduce((n, a) => n + a.wildPool.length, 0),
     )
-    expect(await cfg('configVersion')).toBe(132)
+    expect(await cfg('configVersion')).toBe(134)
   })
 })

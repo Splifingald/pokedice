@@ -35,6 +35,10 @@ import { DEFAULT_TIME_RACE } from '../src/engine/timeRaceMode'
 export const HALL_OF_ORIGIN_RUN: PortalRunMode = {
   ...DEFAULT_PORTAL_RUN,
   skin: 'plates',
+  // 3 Pokémon a landing, not 5 (the user's call, 2026-11-27); its find after them (portalCycle), and ₽100 the first
+  // time each landing is climbed, never again after a wipe.
+  wild: 3,
+  landingGold: 100,
   raid: { level: 90, upgradeLevel: 10, bars: 4, teamCap: 90, barTypes: [...PLATE_BARS] },
 }
 

@@ -9,7 +9,7 @@ import { reviveHp } from './economy'
 import { rollWild, type Encounter, type EncounterContext } from './encounters'
 import { drawLoot } from './items'
 import { instanceMaxHp, instanceStats } from './progression'
-import { portalModeOf } from './portalMode'
+import { portalModeOf, portalSkin } from './portalMode'
 import type { Rng } from './rng'
 import type { UpgradeLevels } from './damage'
 import type {
@@ -122,14 +122,24 @@ export function canStartPortal(save: SaveData, data: GameData, areaId: string): 
 
 /**
  * One cycle of the deck, in draw order from the end: the wild Pokémon and the finds shuffled, then the distortion,
- * always last (it sits at index 0).
+ * always last (it sits at index 0). On the Stairway of Plates (the user's call, 2026-11-27) the finds come after the
+ * landing's battles, just before its altar.
  */
 export function portalCycle(mode: PortalRunMode, rng: Rng): PortalCard[] {
-  const cards: PortalCard[] = [
-    ...Array.from({ length: mode.wild }, (): PortalCard => 'wild'),
-    ...Array.from({ length: mode.items }, (): PortalCard => 'item'),
-  ]
-  return ['distortion', ...shuffle(cards, rng)]
+  const wild = Array.from({ length: mode.wild }, (): PortalCard => 'wild')
+  const items = Array.from({ length: mode.items }, (): PortalCard => 'item')
+  if (portalSkin(mode) === 'plates') return ['distortion', ...items, ...wild]
+  return ['distortion', ...shuffle([...wild, ...items], rng)]
+}
+
+/**
+ * A portal closed (a landing climbed): `closed` now. Its `landingGold` the first time a run gets this far (the
+ * Hall of Origin's ₽100, the user's call of 2026-11-27), never again after a wipe; `gold` is what was paid.
+ */
+function payLanding(save: SaveData, mode: PortalRunMode, p: PortalState, closed: number): { save: SaveData; paid: number; gold: number } {
+  const before = p.paid ?? 0
+  const gold = mode.landingGold && closed > before ? mode.landingGold * (closed - before) : 0
+  return { save: gold ? { ...save, gold: save.gold + gold } : save, paid: Math.max(before, closed), gold }
 }
 
 /**
@@ -146,6 +156,8 @@ export function startPortalRun(save: SaveData, data: GameData, areaId: string, r
     closed: 0,
     deck: portalCycle(mode, rng),
     tries: (before.tries ?? 0) + 1,
+    // Landings paid in an earlier run stay paid (landingGold, once each).
+    ...(before.paid != null && { paid: before.paid }),
   })
 }
 
@@ -293,19 +305,25 @@ export function openDistortion(
   data: GameData,
   areaId: string,
   rng: Rng,
-): { save: SaveData; victory: boolean; closedAtOnce: boolean } | null {
+): { save: SaveData; victory: boolean; closedAtOnce: boolean; gold?: number } | null {
   const mode = portalModeOf(areaOf(data, areaId), data)
   const p = portalStateOf(save, areaId)
   if (!mode || !p.active) return null
-  if (p.closed + 1 >= mode.portals)
-    return { save: winPortal(save, data, areaId), victory: true, closedAtOnce: false }
+  if (p.closed + 1 >= mode.portals) {
+    const pay = payLanding(save, mode, p, p.closed + 1)
+    const won = winPortal(withPortal(pay.save, areaId, { ...p, paid: pay.paid }), data, areaId)
+    return { save: won, victory: true, closedAtOnce: false, ...(pay.gold && { gold: pay.gold }) }
+  }
   const offers = drawOffers(save, data, mode, p, rng)
-  if (!offers.length)
+  if (!offers.length) {
+    const pay = payLanding(save, mode, p, p.closed + 1)
     return {
-      save: withPortal(save, areaId, { ...p, closed: p.closed + 1, offers: null }),
+      save: withPortal(pay.save, areaId, { ...p, closed: p.closed + 1, offers: null, paid: pay.paid }),
       victory: false,
       closedAtOnce: true,
+      ...(pay.gold && { gold: pay.gold }),
     }
+  }
   return { save: withPortal(save, areaId, { ...p, offers }), victory: false, closedAtOnce: false }
 }
 
@@ -332,13 +350,14 @@ export function pickDistortion(
   areaId: string,
   index: number,
   rng: Rng,
-): { save: SaveData; offer: DistortionOffer; itemKey?: string } | null {
+): { save: SaveData; offer: DistortionOffer; itemKey?: string; gold?: number } | null {
   const mode = portalModeOf(areaOf(data, areaId), data)
   const p = portalStateOf(save, areaId)
   const offer = p.offers?.[index]
   if (!mode || !p.active || !offer) return null
-  let next = save
-  let portal: PortalState = { ...p, closed: p.closed + 1, offers: null }
+  const pay = payLanding(save, mode, p, p.closed + 1)
+  let next = pay.save
+  let portal: PortalState = { ...p, closed: p.closed + 1, offers: null, paid: pay.paid }
   let itemKey: string | undefined
   switch (offer.kind) {
     case 'heal':
@@ -377,7 +396,7 @@ export function pickDistortion(
       break
     }
   }
-  return { save: withPortal(next, areaId, portal), offer, ...(itemKey && { itemKey }) }
+  return { save: withPortal(next, areaId, portal), offer, ...(itemKey && { itemKey }), ...(pay.gold && { gold: pay.gold }) }
 }
 
 // ------------------------------------------------------------------ how it ends
@@ -396,6 +415,7 @@ export function winPortal(save: SaveData, data: GameData, areaId: string): SaveD
     won: true,
     wonSeen: false,
     ...(p.tries != null && { tries: p.tries }),
+    ...(p.paid != null && { paid: p.paid }),
   })
 }
 
@@ -421,6 +441,8 @@ export function portalWipe(save: SaveData, data: GameData, areaId: string): Save
     closed: 0,
     deck: [],
     ...(p.tries != null && { tries: p.tries }),
+    // The landings already paid stay paid: a new run pays only the ones it climbs further.
+    ...(p.paid != null && { paid: p.paid }),
   })
 }
 

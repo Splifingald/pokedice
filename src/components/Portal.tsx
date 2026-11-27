@@ -20,7 +20,7 @@ import { breachTimeline, distortionLevel, victoryTimeline } from '@/fx/timelines
 import { descentTimeline, stairwayTimeline } from '@/fx/timelines/plates'
 import { joinList } from '@/i18n'
 import { useHoldFullscreen } from '@/lib/fullscreen'
-import { typeName } from '@/lib/format'
+import { money, typeName } from '@/lib/format'
 import { useMotion } from '@/lib/motion'
 import { cx } from '@/theme/util'
 import { Die } from './Die'
@@ -128,6 +128,16 @@ export function usePortalRules(mode: PortalRunMode, data: GameData, prize?: numb
       title: t('ui.portal.rule.boons.title'),
       text: t('ui.portal.rule.boons.text', { n: mode.offers }),
     },
+    // ₽ for each landing the first time it's climbed (the Hall of Origin's 100, the user's call of 2026-11-27).
+    ...(mode.landingGold
+      ? [
+          {
+            icon: 'coin' as const,
+            title: t('ui.portal.rule.gold.title', { gold: money(mode.landingGold) }),
+            text: t('ui.portal.rule.gold.text'),
+          },
+        ]
+      : []),
     { icon: 'skull', title: t('ui.portal.rule.end.title'), text: t('ui.portal.rule.end.text', { name }) },
   ]
 }

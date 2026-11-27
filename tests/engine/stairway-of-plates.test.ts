@@ -17,6 +17,8 @@ import {
   newSave,
   normalisePortal,
   openDistortion,
+  pickDistortion,
+  portalWipe,
   PLATE_BARS,
   portalCycle,
   portalModeOf,
@@ -132,14 +134,56 @@ describe('the skin', () => {
 })
 
 describe('the Hall of Origin’s run', () => {
-  it('is Distortion World’s run with its numbers, in the Stairway of Plates’ look', () => {
+  it('is Distortion World’s run with its numbers but 3 Pokémon a landing and ₽100 each, in the Stairway of Plates’ look', () => {
     const mode = portalModeOf(HALL, data)!
     expect(portalSkin(mode)).toBe('plates')
-    const { skin: _s, raid: _r, ...rules } = mode
-    const { raid: _dr, ...dw } = DEFAULT_PORTAL_RUN
+    const { skin: _s, raid: _r, wild, landingGold, ...rules } = mode
+    const { raid: _dr, wild: _dw, ...dw } = DEFAULT_PORTAL_RUN
     expect(rules).toEqual(dw)
-    // The same deck as Distortion World's, card for card: 5 wild and a find, then the altar.
-    expect(portalCycle(mode, createRng(3))).toEqual(portalCycle(DEFAULT_PORTAL_RUN, createRng(3)))
+    // The user's call (2026-11-27): 3 Pokémon a landing, not 5; ₽100 the first time each is climbed.
+    expect([wild, landingGold]).toEqual([3, 100])
+    // Drawn from the end: its 3 Pokémon, then its find after the battles, then the altar.
+    const cycle = portalCycle(mode, createRng(3))
+    expect([...cycle].reverse()).toEqual(['wild', 'wild', 'wild', 'item', 'distortion'])
+    // Distortion World's stays shuffled, 5 Pokémon and its find, as it always was.
+    expect(portalCycle(DEFAULT_PORTAL_RUN, createRng(3)).filter((c) => c === 'wild')).toHaveLength(5)
+  })
+
+  it('pays ₽100 for each landing the first time it is climbed, never again after a wipe', () => {
+    const s = startPortalRun(atHall(), data, HALL.id, createRng(7))!
+    const withClosed = (x: SaveData, closed: number) => ({
+      ...x,
+      areaProgress: {
+        ...x.areaProgress,
+        [HALL.id]: { ...x.areaProgress[HALL.id]!, portal: { ...portalStateOf(x, HALL.id), closed, deck: [] } },
+      },
+    })
+    // A landing's altar: its boon picked (or closed at once) pays its ₽100.
+    const climb = (x: SaveData) => {
+      const o = openDistortion(x, data, HALL.id, createRng(2))!
+      if (o.closedAtOnce || o.victory) return { save: o.save, gold: o.gold ?? 0 }
+      const p = pickDistortion(o.save, data, HALL.id, 0, createRng(3))!
+      return { save: p.save, gold: p.gold ?? 0 }
+    }
+    const one = climb(s)
+    expect(one.gold).toBe(100)
+    expect(one.save.gold).toBe(s.gold + 100)
+    const two = climb(one.save)
+    expect(two.gold).toBe(100)
+    expect(portalStateOf(two.save, HALL.id)).toMatchObject({ closed: 2, paid: 2 })
+    // A wipe: the landings climbed go back to 0, the ones paid stay paid.
+    const wiped = portalWipe(two.save, data, HALL.id)
+    expect(portalStateOf(wiped, HALL.id)).toMatchObject({ closed: 0, paid: 2 })
+    const again = startPortalRun(wiped, data, HALL.id, createRng(8))!
+    const a1 = climb(again)
+    expect(a1.gold).toBe(0)
+    const a2 = climb(a1.save)
+    expect(a2.gold).toBe(0)
+    // The third landing has never been climbed: it pays.
+    expect(climb(a2.save).gold).toBe(100)
+    // The last altar (the 10th) pays too, as it wins.
+    const last = openDistortion(withClosed(again, 9), data, HALL.id, createRng(1))!
+    expect(last).toMatchObject({ victory: true, gold: 100 * (10 - 2) })
   })
 
   it('plays as the portal run: healed going in, its Pokémon never caught, the 10th altar wins and opens the raid', () => {
